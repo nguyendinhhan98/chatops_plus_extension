@@ -59,6 +59,17 @@ export interface ChatOpsPost {
   file_ids?: string[];
 }
 
+/**
+ * Reaction của user trên một post.
+ * Dùng để kiểm tra xem user đã thả icon vào tin nhắn hay chưa.
+ */
+export interface ChatOpsReaction {
+  user_id: string;
+  post_id: string;
+  emoji_name: string;
+  create_at: number;
+}
+
 export interface PostList {
   order: string[];
   posts: Record<string, ChatOpsPost>;
@@ -105,4 +116,22 @@ export interface PostMessageParams {
   parentId?: string;
   /** Danh sách file_id đã upload, gửi kèm tin nhắn */
   fileIds?: string[];
+}
+
+/**
+ * Thông tin thành viên của một channel, bao gồm số mention và trạng thái đọc.
+ * Dùng để phát hiện channel có mention chưa đọc mà không cần quét toàn bộ tin nhắn.
+ */
+export interface ChannelMember {
+  channel_id: string;
+  user_id: string;
+  /** Số mention chưa đọc trong channel (bao gồm cả reply) */
+  mention_count: number;
+  /** Số mention chưa đọc chỉ ở root posts */
+  mention_count_root: number;
+  /** Số tin nhắn user đã đọc */
+  msg_count: number;
+  /** Thời điểm user xem channel lần cuối (Unix ms) */
+  last_viewed_at: number;
+  notify_props: Record<string, string>;
 }

@@ -4,8 +4,8 @@ import { config } from '../config.js';
 let authToken: string | null = config.token ?? null;
 
 /**
- * Create a pre-configured Axios instance pointing at the ChatOps API.
- * Injects Cookie and CSRF (MMCSRF= format) based on available config.
+ * Tạo Axios instance trỏ đến ChatOps API.
+ * Tự động inject Cookie và CSRF token vào mỗi request.
  */
 function createAxiosInstance(): AxiosInstance {
   const url = new URL(config.chatopsUrl);
@@ -24,19 +24,17 @@ function createAxiosInstance(): AxiosInstance {
     timeout: 30_000,
   });
 
-  // Inject auth headers before each request
+  // Inject auth header trước mỗi request
   instance.interceptors.request.use((reqConfig) => {
-    // Debug log for monitoring
     console.error(`[ChatOps API] Calling: ${reqConfig.method?.toUpperCase()} ${reqConfig.url}`);
 
     if (config.cookie) {
-      // Expects MMAUTHTOKEN=... format
+      // Định dạng: MMAUTHTOKEN=...
       reqConfig.headers['cookie'] = config.cookie;
     }
-    
+
     if (config.csrf) {
-      // ChatOps often requires the token in x-csrf-token header.
-      // We handle the MMCSRF= prefix if provided.
+      // ChatOps yêu cầu CSRF token trong header x-csrf-token
       reqConfig.headers['x-csrf-token'] = config.csrf.replace('MMCSRF=', '');
     }
 
@@ -46,7 +44,7 @@ function createAxiosInstance(): AxiosInstance {
     return reqConfig;
   });
 
-  // Handle common errors
+  // Xử lý lỗi HTTP phổ biến
   instance.interceptors.response.use(
     (res) => res,
     (error: AxiosError) => {
@@ -55,15 +53,15 @@ function createAxiosInstance(): AxiosInstance {
       const message = data?.message ?? error.message;
 
       if (status === 401) {
-        throw new Error(`Authentication failed (401): ${message}. Check your ChatOps Cookie (MMAUTHTOKEN=) or CSRF (MMCSRF=).`);
+        throw new Error(`Xác thực thất bại (401): ${message}. Kiểm tra Cookie (MMAUTHTOKEN=) hoặc CSRF (MMCSRF=).`);
       }
       if (status === 403) {
-        throw new Error(`Access forbidden (403): ${message}. Insufficient permissions.`);
+        throw new Error(`Không có quyền truy cập (403): ${message}.`);
       }
       if (status === 404) {
-        throw new Error(`Not found (404): ${message}`);
+        throw new Error(`Không tìm thấy (404): ${message}`);
       }
-      throw new Error(`ChatOps API error (${status ?? 'unknown'}): ${message}`);
+      throw new Error(`ChatOps API lỗi (${status ?? 'unknown'}): ${message}`);
     }
   );
 
@@ -74,7 +72,7 @@ export const httpClient = createAxiosInstance();
 
 async function loginWithCredentials(): Promise<void> {
   if (!config.username || !config.password) {
-    throw new Error('ChatOps credentials missing: provide Cookie (MMAUTHTOKEN=) + CSRF (MMCSRF=)');
+    throw new Error('Thiếu thông tin đăng nhập: cung cấp Cookie (MMAUTHTOKEN=) + CSRF (MMCSRF=)');
   }
 
   try {
@@ -92,19 +90,19 @@ async function loginWithCredentials(): Promise<void> {
 
     const token = res.headers['token'] || res.headers['Token'];
     if (!token) {
-      throw new Error('Login successful but no session token returned');
+      throw new Error('Đăng nhập thành công nhưng không nhận được session token');
     }
 
     authToken = token as string;
-    console.error('  ✅ Logged in to ChatOps successfully');
+    console.error('  ✅ Đăng nhập ChatOps thành công');
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    throw new Error(`ChatOps login failed: ${message}`);
+    throw new Error(`Đăng nhập ChatOps thất bại: ${message}`);
   }
 }
 
 export async function ensureAuthenticated(): Promise<void> {
-  if (config.cookie) return; 
+  if (config.cookie) return;
   if (!authToken) {
     await loginWithCredentials();
   }

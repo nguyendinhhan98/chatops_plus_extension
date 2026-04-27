@@ -3,9 +3,10 @@ import { z } from 'zod';
 import { getTeamByName } from '../chatops/api/teams.js';
 import { searchPosts } from '../chatops/api/posts.js';
 import { getUsersByIds } from '../chatops/api/users.js';
+import { getChannelById } from '../chatops/api/channels.js';
 import { formatPostList } from '../utils/formatter.js';
 import { config } from '../config.js';
-import type { ChatOpsUser } from '../chatops/types.js';
+import type { ChatOpsUser, ChatOpsChannel } from '../chatops/types.js';
 
 export function registerSearchPostsTool(server: McpServer): void {
   server.registerTool(
@@ -62,7 +63,7 @@ export function registerSearchPostsTool(server: McpServer): void {
           };
         }
 
-        // Enrich with user info
+        // Enrich với user info
         const userIds = Array.from(new Set(posts.map((p) => p.user_id)));
         const users = await getUsersByIds(userIds);
         const usersMap = users.reduce((acc, user) => {
@@ -70,7 +71,20 @@ export function registerSearchPostsTool(server: McpServer): void {
           return acc;
         }, {} as Record<string, ChatOpsUser>);
 
-        const output = formatPostList(posts, usersMap);
+        // Enrich với channel info — BẮT BUỘC để AI không bao giờ nhầm group
+        const channelIds = Array.from(new Set(posts.map((p) => p.channel_id)));
+        const channelsMap: Record<string, ChatOpsChannel> = {};
+        await Promise.all(
+          channelIds.map(async (cid) => {
+            try {
+              channelsMap[cid] = await getChannelById(cid);
+            } catch {
+              // Giữ fallback — format sẽ hiển thị channel_id nếu không lấy được tên
+            }
+          })
+        );
+
+        const output = formatPostList(posts, usersMap, undefined, channelsMap, teamSlug);
         return {
           content: [
             {

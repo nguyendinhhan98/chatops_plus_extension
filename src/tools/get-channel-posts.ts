@@ -4,6 +4,7 @@ import { getChannelPosts } from '../chatops/api/posts.js';
 import { getUsersByIds } from '../chatops/api/users.js';
 import { formatPostList } from '../utils/formatter.js';
 import { parseFlexibleDate, toUnixMs } from '../utils/date.js';
+import { config } from '../config.js';
 import type { ChatOpsUser } from '../chatops/types.js';
 
 export function registerGetChannelPostsTool(server: McpServer): void {
@@ -73,7 +74,7 @@ export function registerGetChannelPostsTool(server: McpServer): void {
           }, {} as Record<string, ChatOpsUser>);
         }
 
-        const output = formatPostList(posts, usersMap, page);
+        const output = formatPostList(posts, usersMap, page, {}, config.teamName);
         return {
           content: [{ type: 'text', text: output }],
         };

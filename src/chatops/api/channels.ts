@@ -1,8 +1,8 @@
 import { httpClient, ensureAuthenticated } from '../client.js';
-import type { ChatOpsChannel } from '../types.js';
+import type { ChatOpsChannel, ChannelMember } from '../types.js';
 
 /**
- * Get channel information by its unique ID.
+ * Lấy thông tin channel theo ID.
  */
 export async function getChannelById(channelId: string): Promise<ChatOpsChannel> {
   await ensureAuthenticated();
@@ -11,7 +11,7 @@ export async function getChannelById(channelId: string): Promise<ChatOpsChannel>
 }
 
 /**
- * Get channel information by team ID and channel name (slug).
+ * Lấy thông tin channel theo team ID và tên (slug).
  */
 export async function getChannelByName(
   teamId: string,
@@ -25,7 +25,7 @@ export async function getChannelByName(
 }
 
 /**
- * Search for channels in a team by display name or name.
+ * Tìm kiếm channel trong team theo display name hoặc slug.
  */
 export async function searchChannels(
   teamId: string,
@@ -40,7 +40,7 @@ export async function searchChannels(
 }
 
 /**
- * Get all public channels visible to the current user in a team.
+ * Lấy tất cả public channel mà user hiện tại có thể thấy trong team.
  */
 export async function getPublicChannels(
   teamId: string,
@@ -55,7 +55,7 @@ export async function getPublicChannels(
 }
 
 /**
- * Get or create a Direct Message channel between two users.
+ * Lấy hoặc tạo kênh DM giữa hai user.
  */
 export async function getOrCreateDMChannel(
   userId1: string,
@@ -66,3 +66,15 @@ export async function getOrCreateDMChannel(
   return res.data;
 }
 
+/**
+ * Lấy danh sách tất cả ChannelMember của user hiện tại trong một team.
+ * Mỗi object chứa mention_count và last_viewed_at.
+ * Chỉ tốn 1 API call cho toàn bộ team.
+ */
+export async function getMyChannelMembers(teamId: string): Promise<ChannelMember[]> {
+  await ensureAuthenticated();
+  const res = await httpClient.get<ChannelMember[]>(
+    `/users/me/teams/${teamId}/channels/members`
+  );
+  return res.data;
+}

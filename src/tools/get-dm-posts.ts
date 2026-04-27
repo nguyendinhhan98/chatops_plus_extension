@@ -5,6 +5,7 @@ import { getOrCreateDMChannel } from '../chatops/api/channels.js';
 import { getChannelPosts } from '../chatops/api/posts.js';
 import { getUsersByIds } from '../chatops/api/users.js';
 import { formatPostList } from '../utils/formatter.js';
+import { config } from '../config.js';
 import type { ChatOpsUser } from '../chatops/types.js';
 
 export function registerGetDmPostsTool(server: McpServer): void {
@@ -53,7 +54,7 @@ export function registerGetDmPostsTool(server: McpServer): void {
           [otherUser.id]: otherUser,
         };
 
-        const output = formatPostList(posts, usersMap);
+        const output = formatPostList(posts, usersMap, undefined, {}, config.teamName);
         return {
           content: [{
             type: 'text',

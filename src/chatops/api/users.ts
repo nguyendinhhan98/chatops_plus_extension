@@ -2,7 +2,7 @@ import { httpClient, ensureAuthenticated } from '../client.js';
 import type { ChatOpsUser } from '../types.js';
 
 /**
- * Get user information by their unique ID.
+ * Lấy thông tin user theo ID.
  */
 export async function getUserById(userId: string): Promise<ChatOpsUser> {
   await ensureAuthenticated();
@@ -11,7 +11,7 @@ export async function getUserById(userId: string): Promise<ChatOpsUser> {
 }
 
 /**
- * Get user information by their email address.
+ * Lấy thông tin user theo email.
  */
 export async function getUserByEmail(email: string): Promise<ChatOpsUser> {
   await ensureAuthenticated();
@@ -20,7 +20,7 @@ export async function getUserByEmail(email: string): Promise<ChatOpsUser> {
 }
 
 /**
- * Get user information by their username.
+ * Lấy thông tin user theo username.
  */
 export async function getUserByUsername(username: string): Promise<ChatOpsUser> {
   await ensureAuthenticated();
@@ -29,7 +29,7 @@ export async function getUserByUsername(username: string): Promise<ChatOpsUser> 
 }
 
 /**
- * Search for users based on a term (matches username, email, first/last name).
+ * Tìm kiếm user theo từ khóa (khớp với username, email, họ tên).
  */
 export async function searchUsers(term: string, limit = 20): Promise<ChatOpsUser[]> {
   await ensureAuthenticated();
@@ -42,7 +42,7 @@ export async function searchUsers(term: string, limit = 20): Promise<ChatOpsUser
 }
 
 /**
- * Get multiple users by their IDs in a single request.
+ * Lấy nhiều user cùng lúc theo danh sách ID — dùng 1 API call duy nhất.
  */
 export async function getUsersByIds(userIds: string[]): Promise<ChatOpsUser[]> {
   if (userIds.length === 0) return [];
@@ -52,11 +52,10 @@ export async function getUsersByIds(userIds: string[]): Promise<ChatOpsUser[]> {
 }
 
 /**
- * Get profile of the currently authenticated user.
+ * Lấy profile của user đang xác thực.
  */
 export async function getMyProfile(): Promise<ChatOpsUser> {
   await ensureAuthenticated();
   const res = await httpClient.get<ChatOpsUser>('/users/me');
   return res.data;
 }
-

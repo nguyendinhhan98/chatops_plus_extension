@@ -3,6 +3,7 @@ import { createReadStream } from 'fs';
 import { access } from 'fs/promises';
 import type {
   ChatOpsPost,
+  ChatOpsReaction,
   PostList,
   SearchPostsParams,
   GetChannelPostsParams,
@@ -11,8 +12,8 @@ import type {
 } from '../types.js';
 
 /**
- * Get paginated posts from a specific channel.
- * Use `since` (Unix ms) for time-based filtering.
+ * Lấy danh sách post trong channel theo trang.
+ * Dùng `since` (Unix ms) để lọc theo thời gian.
  */
 export async function getChannelPosts(
   channelId: string,
@@ -35,7 +36,7 @@ export async function getChannelPosts(
 }
 
 /**
- * Search posts across a team using ChatOps search syntax.
+ * Tìm kiếm post trong team với cú pháp ChatOps search.
  */
 export async function searchPosts(
   teamId: string,
@@ -47,7 +48,7 @@ export async function searchPosts(
 }
 
 /**
- * Get a single post by ID.
+ * Lấy một post theo ID.
  */
 export async function getPost(postId: string): Promise<ChatOpsPost> {
   await ensureAuthenticated();
@@ -56,7 +57,7 @@ export async function getPost(postId: string): Promise<ChatOpsPost> {
 }
 
 /**
- * Get all posts in a thread (root + replies).
+ * Lấy toàn bộ thread (bài gốc + replies) theo post ID.
  */
 export async function getPostThread(postId: string): Promise<PostList> {
   await ensureAuthenticated();
@@ -64,10 +65,25 @@ export async function getPostThread(postId: string): Promise<PostList> {
   return res.data;
 }
 
+/**
+ * Lấy danh sách reaction của một post.
+ * Trả về mảng rỗng nếu không có reaction hoặc gặp lỗi.
+ */
+export async function getPostReactions(postId: string): Promise<ChatOpsReaction[]> {
+  await ensureAuthenticated();
+  try {
+    const res = await httpClient.get<ChatOpsReaction[]>(`/posts/${postId}/reactions`);
+    return res.data ?? [];
+  } catch {
+    return [];
+  }
+}
 
 /**
- * Get all posts in a channel within a time range.
- * Handles pagination automatically using before ID.
+ * Lấy toàn bộ post trong channel theo khoảng thời gian — tự động phân trang.
+ *
+ * ⚠️ Chú ý hiệu năng: Mỗi vòng lặp tốn 1 API call.
+ * Với channel bận rộn và khoảng thời gian dài, có thể tốn nhiều request.
  */
 export async function getAllChannelPostsInRange(
   channelId: string,
@@ -95,7 +111,6 @@ export async function getAllChannelPostsInRange(
         reachedStart = true;
         break;
       }
-      
       if (!untilMs || post.create_at <= untilMs) {
         allPosts.push(post);
       }
@@ -103,13 +118,16 @@ export async function getAllChannelPostsInRange(
 
     if (reachedStart || posts.length < perPage) break;
 
-    // Set beforeId to the oldest post in this batch to get the next batch (older posts)
+    // Lấy batch tiếp theo (cũ hơn) bằng cách dùng ID của post cũ nhất
     beforeId = posts[posts.length - 1].id;
   }
 
   return allPosts;
 }
 
+/**
+ * Gửi một tin nhắn vào channel (hoặc reply vào thread nếu có parentId).
+ */
 export async function postMessage(params: PostMessageParams): Promise<void> {
   await ensureAuthenticated();
 
@@ -131,14 +149,14 @@ export async function postMessage(params: PostMessageParams): Promise<void> {
 }
 
 /**
- * Upload một file lên ChatOps và trả về file_id.
+ * Upload file lên ChatOps và trả về file_id.
  * @param channelId - ID của channel nhận file (bắt buộc theo API Mattermost)
  * @param filePath  - Đường dẫn tuyệt đối đến file trên ổ cứng
  */
 export async function uploadFile(channelId: string, filePath: string): Promise<string> {
   await ensureAuthenticated();
 
-  // Kiểm tra file tồn tại
+  // Kiểm tra file tồn tại trước khi upload
   await access(filePath);
 
   const FormData = (await import('form-data')).default;
