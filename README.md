@@ -1,88 +1,55 @@
 # mcp-chatops
 
-MCP Server cho **ChatOps** — Giúp AI assistant tương tác với hệ thống ChatOps (Mattermost fork) của tổ chức.
+> **Trợ lý AI tích hợp ChatOps** — Cho phép AI assistant (Antigravity, Claude Code, Cursor, Copilot...) đọc tin nhắn, tìm kiếm, gửi tin, và thực hiện các nghiệp vụ tự động trực tiếp trên hệ thống **ChatOps** (Mattermost) của tổ chức.
 
-## ✨ Tính năng
+---
 
-- 👤 Tra cứu thông tin user, profile
-- 📢 Xem thông tin channel, đọc tin nhắn
-- 💬 Đọc tin nhắn riêng (Direct Message) giữa 2 người
-- 🧵 Đọc thread replies
-- 🔍 Tìm kiếm tin nhắn với bộ lọc nâng cao
-- 📊 Tổng hợp lịch sử xin trễ/nghỉ (nghiệp vụ mẫu)
-- 🔐 Cookie-based auth — chạy 100% local, an toàn
+## ✨ Tính năng nổi bật
 
-## 🚀 Cài đặt
+| Nhóm | Mô tả |
+|------|-------|
+| 👤 **Tra cứu người dùng** | Tìm thông tin thành viên theo email, username, hoặc từ khoá |
+| 📢 **Đọc tin nhắn channel** | Xem lịch sử chat, thread, DM — theo thời gian hoặc phân trang |
+| 🔍 **Tìm kiếm nâng cao** | Tìm tin nhắn với bộ lọc: người gửi, channel, ngày tháng |
+| 🔔 **Kiểm tra mention bị bỏ lỡ** | Tự động phát hiện @mention chưa reply hoặc chưa reaction |
+| 📨 **Gửi tin nhắn an toàn** | Gửi tin 2 bước (xem trước → xác nhận) để tránh gửi nhầm |
+| 📋 **Nghiệp vụ xin nghỉ/trễ** | Tổng hợp lịch sử xin trễ/nghỉ của từng thành viên |
+| 🖇️ **Gửi kèm tệp & Ảnh** | Hỗ trợ gửi file, ảnh trực tiếp từ máy tính vào chat |
 
-### Bước 1: Lấy Cookie từ trình duyệt
+---
+
+## 🚀 Cài đặt & Kết nối với AI
+
+### Bước 1: Build project
+
+```bash
+git clone https://github.com/nguyendinhhan98/mcp-chatops.git
+cd mcp-chatops
+npm install
+npm run build   # Tạo ra file dist/index.js
+```
+
+### Bước 2: Lấy Cookie từ trình duyệt
 
 1. Mở ChatOps (ví dụ: `https://chat.runsystem.vn`) → đăng nhập
-2. Nhấn **F12** → Tab **Network**
+2. Nhấn **F12** → chọn tab **Network**
 3. Chọn bất kỳ request nào tới `/api/v4/...`
-4. Trong **Request Headers**, copy:
-   - `Cookie:` → giá trị `MMAUTHTOKEN=...`
-   - `x-csrf-token:` → giá trị token (thêm prefix `MMCSRF=` phía trước)
+4. Trong **Request Headers**, copy 2 giá trị:
+   - `Cookie:` → lấy phần `MMAUTHTOKEN=...`
+   - `x-csrf-token:` → thêm prefix `MMCSRF=` phía trước
 
-### Bước 2: Thêm config vào AI client
+> [!TIP]
+> **Lấy đường dẫn nhanh tới `dist/index.js`:**
+> - **Mac/Linux:** Chạy `echo $(pwd)/dist/index.js` trong terminal (trong thư mục project)
+> - **Windows (PowerShell):** `(Get-Item dist\index.js).FullName`
 
-#### VS Code (GitHub Copilot)
-Mở **Settings (JSON)** (`Cmd+Shift+P` → `Open User Settings (JSON)`), thêm:
-```json
-{
-  "mcp.servers": {
-    "mcp-chatops": {
-      "command": "node",
-      "args": ["/đường/dẫn/tới/mcp-chatops/dist/index.js"],
-      "env": {
-        "CHATOPS_URL": "https://chat.runsystem.vn",
-        "CHATOPS_COOKIE": "MMAUTHTOKEN=<your_token>",
-        "CHATOPS_CSRF": "MMCSRF=<your_csrf>",
-        "CHATOPS_TEAM_NAME": "dn"
-      }
-    }
-  }
-}
-```
+### Bước 3: Cấu hình AI Client
 
-#### Cursor
-Tạo file `.cursor/mcp.json`:
-```json
-{
-  "mcpServers": {
-    "mcp-chatops": {
-      "command": "node",
-      "args": ["/đường/dẫn/tới/mcp-chatops/dist/index.js"],
-      "env": {
-        "CHATOPS_URL": "https://chat.runsystem.vn",
-        "CHATOPS_COOKIE": "MMAUTHTOKEN=<your_token>",
-        "CHATOPS_CSRF": "MMCSRF=<your_csrf>",
-        "CHATOPS_TEAM_NAME": "dn"
-      }
-    }
-  }
-}
-```
+Chọn AI client bạn đang dùng:
 
-#### Claude Desktop
-Mở `~/Library/Application Support/Claude/claude_desktop_config.json`:
-```json
-{
-  "mcpServers": {
-    "mcp-chatops": {
-      "command": "node",
-      "args": ["/đường/dẫn/tới/mcp-chatops/dist/index.js"],
-      "env": {
-        "CHATOPS_URL": "https://chat.runsystem.vn",
-        "CHATOPS_COOKIE": "MMAUTHTOKEN=<your_token>",
-        "CHATOPS_CSRF": "MMCSRF=<your_csrf>",
-        "CHATOPS_TEAM_NAME": "dn"
-      }
-    }
-  }
-}
-```
+<details open>
+<summary><b>🤖 Antigravity (Google)</b></summary>
 
-#### Antigravity (Google)
 Mở file `~/.gemini/antigravity/mcp_config.json`:
 ```json
 {
@@ -100,97 +67,368 @@ Mở file `~/.gemini/antigravity/mcp_config.json`:
   }
 }
 ```
+</details>
 
-> [!TIP]
-> **Mẹo lấy đường dẫn nhanh:**
-> - **Mac/Linux:** Chạy lệnh `echo $(pwd)/dist/index.js | pbcopy` trong terminal.
-> - **Windows (PowerShell):** Chạy lệnh `(Get-Item dist\index.js).FullName | Set-Clipboard`.
-> - **Windows (Manual):** Giữ phím **Shift + Chuột phải** vào file `index.js` -> Chọn **"Copy as path"**.
+<details open>
+<summary><b>💬 Claude Desktop</b></summary>
 
-### Bước 3: Kiểm tra
+Mở `~/Library/Application Support/Claude/claude_desktop_config.json`:
+```json
+{
+  "mcpServers": {
+    "mcp-chatops": {
+      "command": "node",
+      "args": ["/đường/dẫn/tới/mcp-chatops/dist/index.js"],
+      "env": {
+        "CHATOPS_URL": "https://chat.runsystem.vn",
+        "CHATOPS_COOKIE": "MMAUTHTOKEN=<your_token>",
+        "CHATOPS_CSRF": "MMCSRF=<your_csrf>",
+        "CHATOPS_TEAM_NAME": "dn"
+      }
+    }
+  }
+}
+```
+</details>
+
+<details open>
+<summary><b>🖱️ Cursor</b></summary>
+
+Tạo file `.cursor/mcp.json` tại thư mục project:
+```json
+{
+  "mcpServers": {
+    "mcp-chatops": {
+      "command": "node",
+      "args": ["/đường/dẫn/tới/mcp-chatops/dist/index.js"],
+      "env": {
+        "CHATOPS_URL": "https://chat.runsystem.vn",
+        "CHATOPS_COOKIE": "MMAUTHTOKEN=<your_token>",
+        "CHATOPS_CSRF": "MMCSRF=<your_csrf>",
+        "CHATOPS_TEAM_NAME": "dn"
+      }
+    }
+  }
+}
+```
+</details>
+
+<details open>
+<summary><b>💡 VS Code (GitHub Copilot)</b></summary>
+
+Nhấn `Cmd+Shift+P` → gõ **"Open User Settings (JSON)"** → Enter.
+
+> ⚠️ **Lưu ý:** File `settings.json` thường đã có nhiều config khác. Chỉ cần **thêm key `"mcp.servers"`** vào bên trong object `{}` hiện có — **không xoá** các setting cũ.
+
+```json
+{
+  "editor.wordWrap": "on",
+  "...": "...các setting khác của bạn...",
+
+  "mcp.servers": {
+    "mcp-chatops": {
+      "command": "node",
+      "args": ["/đường/dẫn/tới/mcp-chatops/dist/index.js"],
+      "env": {
+        "CHATOPS_URL": "https://chat.runsystem.vn",
+        "CHATOPS_COOKIE": "MMAUTHTOKEN=<your_token>",
+        "CHATOPS_CSRF": "MMCSRF=<your_csrf>",
+        "CHATOPS_TEAM_NAME": "dn"
+      }
+    }
+  }
+}
+```
+
+Lưu file (`Cmd+S`) → **restart VS Code** → kiểm tra trong GitHub Copilot Chat.
+</details>
+
+### Bước 4: Kiểm tra
+
 Hỏi AI: *"Thông tin tài khoản ChatOps của tôi là gì?"*
 
-Nếu AI trả về đúng tên của bạn → hoạt động OK! ✅
+Nếu AI trả về đúng tên của bạn → **Hoạt động thành công!** ✅
 
 ---
 
 ## ⚙️ Biến môi trường
 
 | Biến | Bắt buộc | Mô tả | Ví dụ |
-|------|----------|-------|-------|
+|------|:--------:|-------|-------|
 | `CHATOPS_URL` | ✅ | URL server ChatOps | `https://chat.runsystem.vn` |
-| `CHATOPS_COOKIE` | ✅ | Session cookie | `MMAUTHTOKEN=abc123` |
-| `CHATOPS_CSRF` | ✅ | CSRF token | `MMCSRF=def456` |
-| `CHATOPS_TEAM_NAME` | ❌ | Team mặc định (nếu không set, AI sẽ hỏi) | `dn` |
+| `CHATOPS_COOKIE` | ✅ | Session cookie | `MMAUTHTOKEN=abc123...` |
+| `CHATOPS_CSRF` | ✅ | CSRF token | `MMCSRF=def456...` |
+| `CHATOPS_TEAM_NAME` | ❌ | Team mặc định | `dn` hoặc `runsystem` |
 
 ---
 
-## 🛠️ Tools (8 tools)
+## 🛠️ Danh sách đầy đủ các chức năng (11 tools)
 
-| Tool | Mô tả | Ví dụ câu hỏi |
-|------|--------|---------------|
-| `get_my_info` | Xem profile mình | *"Tài khoản ChatOps của tôi?"* |
-| `get_user` | Tìm user khác | *"Tìm user xxx@runsystem.net"* |
-| `get_channel_info` | Thông tin channel | *"Info channel general"* |
-| `get_channel_posts` | Đọc tin nhắn | *"20 tin nhắn mới nhất trong channel devops"* |
-| `get_dm_posts` | Đọc tin nhắn riêng | *"Tin nhắn riêng giữa tôi và hauvt"* |
-| `get_thread_posts` | Đọc thread | *"Xem replies của post này"* |
-| `search_posts` | Tìm kiếm | *"Tìm 'deploy' trong channel devops tuần này"* |
-| `find_leave_requests` | Xin trễ/nghỉ | *"hannd xin nghỉ bao nhiêu lần tháng này?"* |
+### 📋 Bảng tóm tắt nhanh
+
+| Tool | Làm gì | Ví dụ nhanh |
+|------|--------|-------------|
+| `get_my_info` | Xem profile của mình | *"Tài khoản ChatOps của tôi?"* |
+| `get_user` | Tìm thông tin người khác | *"Tìm user hannd@runsystem.net"* |
+| `get_channel_info` | Xem thông tin channel | *"ID của channel CHECK.OFF.LATER?"* |
+| `get_channel_posts` | Đọc tin nhắn trong channel | *"20 tin nhắn mới nhất trong channel devops"* |
+| `get_dm_posts` | Đọc tin nhắn riêng (DM) | *"Xem DM với hannd"* |
+| `get_thread_posts` | Đọc replies trong thread | *"Xem toàn bộ replies của post này: [link]"* |
+| `search_posts` | Tìm kiếm tin nhắn | *"Tìm 'hotfix' từ hannd trong tháng 4"* |
+| `check-missed-mentions` | Phát hiện @mention bị bỏ lỡ | *"Tôi có mention nào bị miss 7 ngày qua?"* |
+| `preview-message` | Soạn & xem trước tin nhắn | *"Soạn tin gửi cho hannd: 'Review PR nha'"* |
+| `send-message` | Gửi tin sau khi xác nhận | *(Gọi sau `preview-message`)* |
+| `find_leave_requests` | Tra cứu lịch sử xin nghỉ/trễ | *"hannd xin nghỉ bao nhiêu lần tháng này?"* |
+
+---
+
+### 📖 Mô tả chi tiết
+
+### 👤 Quản lý người dùng
+
+---
+
+#### `get_my_info` — Xem thông tin tài khoản của mình
+
+> Lấy profile của chính bạn đang đăng nhập.
+
+**Ví dụ câu hỏi cho AI:**
+- *"Tài khoản ChatOps của tôi là gì?"*
+- *"Email và username của tôi trên ChatOps?"*
+
+---
+
+#### `get_user` — Tìm thông tin người dùng khác
+
+> Tìm kiếm thành viên theo email, username, ID, hoặc từ khoá mờ (tên, biệt danh...).
+
+**Ví dụ câu hỏi cho AI:**
+- *"Tìm thông tin user hannd@runsystem.net"*
+- *"Profile của @hannd là ai?"*
+- *"Tìm user tên Hân trong hệ thống"*
+
+---
+
+### 📢 Đọc tin nhắn
+
+---
+
+#### `get_channel_info` — Xem thông tin channel
+
+> Lấy thông tin chi tiết về một channel: tên, ID, loại (public/private), số tin nhắn.
+
+**Ví dụ câu hỏi cho AI:**
+- *"Thông tin channel [DN] CHECK.OFF.LATER là gì?"*
+- *"ID của channel general là bao nhiêu?"*
+
+---
+
+#### `get_channel_posts` — Đọc tin nhắn trong channel
+
+> Lấy danh sách tin nhắn từ một channel. Hỗ trợ phân trang và lọc theo thời gian.
+
+**Ví dụ câu hỏi cho AI:**
+- *"20 tin nhắn mới nhất trong channel devops"*
+- *"Tin nhắn trong channel team từ ngày 21/04 đến nay"*
+- *"Đọc 100 tin nhắn trang 2 trong channel general"*
+
+---
+
+#### `get_dm_posts` — Đọc tin nhắn riêng (Direct Message)
+
+> Xem lịch sử tin nhắn trực tiếp giữa bạn và một người khác.
+
+**Ví dụ câu hỏi cho AI:**
+- *"Tin nhắn riêng giữa tôi và hannd@runsystem.net"*
+- *"Xem DM với hannd"*
+
+---
+
+#### `get_thread_posts` — Đọc replies trong một thread
+
+> Lấy toàn bộ tin nhắn trong một thread (bài gốc + tất cả replies).
+
+**Ví dụ câu hỏi cho AI:**
+- *"Xem tất cả replies của post này: [link]"*
+- *"Đọc toàn bộ thread của bài post ID abc123"*
+
+---
+
+### 🔍 Tìm kiếm
+
+---
+
+#### `search_posts` — Tìm kiếm tin nhắn
+
+> Tìm kiếm tin nhắn trong toàn bộ ChatOps với các bộ lọc mạnh mẽ.
+
+**Cú pháp bộ lọc:**
+
+| Bộ lọc | Ý nghĩa | Ví dụ |
+|--------|---------|-------|
+| `from:username` | Lọc theo người gửi | `from:hannd` |
+| `in:channel-slug` | Lọc theo channel | `in:dn-check-off-later` |
+| `on:YYYY-MM-DD` | Đúng ngày đó | `on:2026-04-21` |
+| `after:YYYY-MM-DD` | Sau ngày đó | `after:2026-04-14` |
+| `before:YYYY-MM-DD` | Trước ngày đó | `before:2026-05-01` |
+
+**Ví dụ câu hỏi cho AI:**
+- *"Tìm 'deploy' trong channel devops tuần này"*
+- *"Tìm tin nhắn xin nghỉ của hannd từ đầu tháng"*
+- *"Tìm từ khoá 'hotfix' do anh Hậu gửi trong tháng 4"*
+
+---
+
+### 🔔 Thông báo & Mention
+
+---
+
+#### `check-missed-mentions` — Phát hiện mention bị bỏ lỡ
+
+> Tự động quét toàn bộ các channel bạn tham gia, tìm các tin nhắn có **@mention bạn** (cả `@all`, `@channel`, `@here`) mà bạn **chưa reply hoặc chưa reaction**.
+
+**Logic thông minh:** Nếu đã reply hoặc đã thả reaction → **không tính là bị bỏ lỡ**.
+
+**Ví dụ câu hỏi cho AI:**
+- *"Tôi có mention nào bị bỏ lỡ trong 24h qua không?"*
+- *"Check mention bị miss trong 7 ngày qua ở team runsystem"*
+- *"Quét mention trong channel [DN.DU2] Team từ hôm qua"*
+
+**Tham số tuỳ chỉnh:**
+- `since_hours`: Khoảng thời gian quét (mặc định 24h, tối đa 336h = 14 ngày)
+- `team_name`: Tên team cần quét (`dn`, `runsystem`...)
+- `channel_id`: Chỉ quét một channel cụ thể
+- `include_group_mentions`: Có tính `@all`, `@channel`, `@here` không (mặc định: có)
+
+---
+
+### 📨 Gửi tin nhắn
+
+> [!IMPORTANT]
+> Gửi tin nhắn là thao tác **không thể hoàn tác**. Tool này được thiết kế theo quy trình **2 bước bắt buộc** để tránh gửi nhầm.
+
+#### Quy trình gửi tin nhắn:
+
+```
+Bước 1: preview-message  →  AI tạo bản xem trước + sinh pending_id
+Bước 2: Bạn xác nhận     →  AI gọi send-message(pending_id) để gửi thật
+```
+
+---
+
+#### `preview-message` — Tạo bản xem trước tin nhắn
+
+> Soạn tin nhắn, kiểm tra thông tin người nhận. **Chưa gửi thật** — chỉ tạo preview để bạn xác nhận.
+> Hỗ trợ gửi kèm file/ảnh.
+
+**Ví dụ câu hỏi cho AI:**
+- *"Soạn tin nhắn gửi cho hannd: 'Hân ơi review PR giúp mình với'"*
+- *"Tạo preview tin nhắn gửi vào channel devops: 'Deploy xong rồi mọi người'"*
+- *"Gửi ảnh /Desktop/screenshot.png vào DM với hannd kèm nội dung 'Lỗi này nè'"*
+
+---
+
+#### `send-message` — Gửi tin nhắn đã xác nhận
+
+> Thực sự gửi tin nhắn sau khi bạn xác nhận ở bước preview. Yêu cầu `pending_id` từ bước trước.
+
+> [!NOTE]
+> `pending_id` **hết hạn sau 5 phút**. Nếu hết hạn, hãy tạo preview mới.
+
+---
+
+### 📋 Nghiệp vụ
+
+---
+
+#### `find_leave_requests` — Tra cứu lịch sử xin trễ/nghỉ
+
+> Tìm kiếm và tổng hợp toàn bộ tin nhắn xin trễ/nghỉ phép của một thành viên trong một channel cụ thể, trong khoảng thời gian xác định. Tự động phân trang để không bỏ sót.
+
+**Ví dụ câu hỏi cho AI:**
+- *"hannd xin nghỉ bao nhiêu lần tuần trước trong channel CHECK.OFF.LATER?"*
+- *"Lịch sử xin trễ của hannd@runsystem.net từ 01/04 đến 30/04"*
+- *"Tổng hợp xin nghỉ phép của team DU2 trong tháng này"*
 
 ---
 
 ## 🔒 Bảo mật
 
-- ✅ Cookie chỉ lưu trên máy bạn (trong IDE settings)
-- ✅ Tool chạy local — cookie **không đi qua** bất kỳ server trung gian nào
-- ✅ Chỉ gọi tới `CHATOPS_URL` mà bạn config, không gọi ra bên ngoài
-- ✅ Source code open source — ai cũng audit được
+- ✅ **Cookie chỉ lưu trên máy bạn** — trong file config của IDE, không upload đi đâu
+- ✅ **Chạy hoàn toàn local** — cookie không đi qua bất kỳ server trung gian nào
+- ✅ **Chỉ gọi tới `CHATOPS_URL` bạn cấu hình** — không kết nối ra ngoài
+- ✅ **Source code open source** — ai cũng có thể audit
+- ✅ **Gửi tin nhắn 2 bước** — bắt buộc xác nhận trước khi gửi thật
 
 ---
 
-## 🔧 Troubleshooting
+## 🔧 Xử lý sự cố thường gặp
 
-**Lỗi 401 — Authentication failed**
-→ Cookie đã hết hạn. Đăng nhập lại ChatOps trên trình duyệt, lấy cookie mới.
+**❌ Lỗi 401 — Authentication failed**
+→ Cookie đã hết hạn. Đăng nhập lại ChatOps trên trình duyệt và lấy cookie mới.
 
-**Lỗi 404 — Channel not found**
-→ Kiểm tra tên channel (dùng slug, không phải display name). Hoặc bạn chưa join channel đó.
+**❌ Lỗi 404 — Channel not found**
+→ Kiểm tra tên channel (dùng slug URL, không phải tên hiển thị). Hoặc bạn chưa join channel đó.
 
-**Lỗi "Vui lòng chỉ định team_name"**
-→ Bạn chưa set `CHATOPS_TEAM_NAME` và không nói team nào trong câu hỏi. Thêm `CHATOPS_TEAM_NAME` vào env hoặc nói rõ: *"tìm trong team dn"*.
+**❌ Lỗi "Vui lòng chỉ định team_name"**
+→ Chưa set `CHATOPS_TEAM_NAME` trong config. Thêm biến này hoặc nói rõ trong câu hỏi: *"tìm trong team dn"*.
+
+
 
 ---
 
 ## 🧑‍💻 Dành cho Developer
 
 ### Setup local
+
 ```bash
-git clone <repo-url>
-cd chatops_mcp
+git clone https://github.com/nguyendinhhan98/mcp-chatops.git
+cd mcp-chatops
 npm install
-cp .env.example .env   # Điền cookie của bạn
-npm run dev             # Chạy MCP server
+cp .env.example .env   # Điền cookie của bạn vào đây
+npm run dev             # Chạy MCP server ở chế độ dev
 ```
 
 ### Scripts
+
 ```bash
-npm run dev          # Chạy dev (tsx)
-npm run build        # Build TypeScript
-npm test             # Chạy unit tests
-npm run test:watch   # Watch mode
-npm run inspect      # MCP Inspector (debug tools)
+npm run dev          # Chạy dev (tsx watch)
+npm run build        # Build TypeScript → dist/
+npm test             # Chạy unit tests (vitest)
+npm run test:watch   # Chạy tests ở chế độ watch
+npm run inspect      # MCP Inspector — debug tools trong trình duyệt
 ```
 
 ### Thêm tool mới
-Xem hướng dẫn tại `.agents/skills/add-new-tool/SKILL.md`
+
+Xem hướng dẫn chi tiết tại [`.agents/skills/add-new-tool/SKILL.md`](.agents/skills/add-new-tool/SKILL.md)
+
+### Cấu trúc thư mục
+
+```
+mcp-chatops/
+├── src/
+│   ├── index.ts              # Entry point MCP Server
+│   ├── config.ts             # Đọc biến môi trường
+│   ├── chatops/
+│   │   ├── client.ts         # HTTP client (Cookie/CSRF auth)
+│   │   ├── types.ts          # TypeScript types
+│   │   └── api/              # Các module gọi API ChatOps
+│   ├── tools/                # 11 MCP tools (mỗi file = 1 tool)
+│   └── utils/                # Tiện ích: date, formatter
+├── tests/                    # Unit tests (vitest)
+├── .agents/                  # Hướng dẫn cho AI agent
+│   ├── rules/                # Quy tắc coding bắt buộc
+│   └── skills/               # Hướng dẫn kỹ thuật
+└── .env.example              # Template biến môi trường
+```
 
 ---
 
-## 📋 Yêu cầu
+## 📋 Yêu cầu hệ thống
 
-- Node.js >= 20
-- Tài khoản ChatOps
+- **Node.js** >= 20
+- Tài khoản **ChatOps** (Mattermost) đang hoạt động
 
 ## 📄 License
 

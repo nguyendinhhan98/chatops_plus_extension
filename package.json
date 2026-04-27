@@ -40,7 +40,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "git+https://github.com/nguyendinhhan98/mcp-chatops.git"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.10.2",
