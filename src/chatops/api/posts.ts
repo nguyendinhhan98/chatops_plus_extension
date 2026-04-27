@@ -1,9 +1,13 @@
 import { httpClient, ensureAuthenticated } from '../client.js';
+import { createReadStream } from 'fs';
+import { access } from 'fs/promises';
 import type {
   ChatOpsPost,
   PostList,
   SearchPostsParams,
   GetChannelPostsParams,
+  UploadFileResponse,
+  PostMessageParams,
 } from '../types.js';
 
 /**
@@ -104,4 +108,54 @@ export async function getAllChannelPostsInRange(
   }
 
   return allPosts;
+}
+
+export async function postMessage(params: PostMessageParams): Promise<void> {
+  await ensureAuthenticated();
+
+  const { message, channelId, parentId, fileIds } = params;
+
+  const payload: Record<string, unknown> = {
+    message,
+    channel_id: channelId,
+  };
+  if (parentId) payload['parent_id'] = parentId;
+  if (fileIds && fileIds.length > 0) payload['file_ids'] = fileIds;
+
+  console.error(`[ChatOps] postMessage → channel=${channelId} files=${fileIds?.length ?? 0}`);
+
+  await httpClient.post('/posts', payload, {
+    headers: { 'content-type': 'application/json' },
+    transformRequest: [(data) => JSON.stringify(data)],
+  });
+}
+
+/**
+ * Upload một file lên ChatOps và trả về file_id.
+ * @param channelId - ID của channel nhận file (bắt buộc theo API Mattermost)
+ * @param filePath  - Đường dẫn tuyệt đối đến file trên ổ cứng
+ */
+export async function uploadFile(channelId: string, filePath: string): Promise<string> {
+  await ensureAuthenticated();
+
+  // Kiểm tra file tồn tại
+  await access(filePath);
+
+  const FormData = (await import('form-data')).default;
+  const form = new FormData();
+  form.append('channel_id', channelId);
+  form.append('files', createReadStream(filePath));
+
+  console.error(`[ChatOps] uploadFile → ${filePath} → channel=${channelId}`);
+
+  const res = await httpClient.post<UploadFileResponse>('/files', form, {
+    headers: form.getHeaders(),
+  });
+
+  const fileInfo = res.data.file_infos?.[0];
+  if (!fileInfo?.id) {
+    throw new Error('Upload thành công nhưng không nhận được file_id từ server.');
+  }
+
+  return fileInfo.id;
 }

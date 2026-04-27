@@ -56,6 +56,7 @@ export interface ChatOpsPost {
   type: string;
   props: Record<string, any>;
   hashtags: string;
+  file_ids?: string[];
 }
 
 export interface PostList {
@@ -80,4 +81,28 @@ export interface GetChannelPostsParams {
   since?: number;
   before?: string;
   after?: string;
+}
+
+export interface ChatOpsFileInfo {
+  id: string;
+  name: string;
+  size: number;
+  mime_type: string;
+  channel_id: string;
+  user_id: string;
+  create_at: number;
+}
+
+export interface UploadFileResponse {
+  file_infos: ChatOpsFileInfo[];
+  client_ids: string[];
+}
+
+export interface PostMessageParams {
+  message: string;
+  channelId: string;
+  /** ID của post gốc nếu reply vào thread */
+  parentId?: string;
+  /** Danh sách file_id đã upload, gửi kèm tin nhắn */
+  fileIds?: string[];
 }

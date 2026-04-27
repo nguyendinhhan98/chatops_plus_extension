@@ -7,6 +7,7 @@ import { registerGetDmPostsTool } from './get-dm-posts.js';
 import { registerGetThreadPostsTool } from './get-thread-posts.js';
 import { registerSearchPostsTool } from './search-posts.js';
 import { registerFindLeaveRequestsTool } from './find-leave-requests.js';
+import { registerPostMessage } from './post-message.js';
 
 /**
  * Register all ChatOps tools to the MCP server.
@@ -22,8 +23,9 @@ export function registerAllTools(server: McpServer): void {
   registerGetThreadPostsTool(server);
   registerSearchPostsTool(server);
   registerFindLeaveRequestsTool(server);
-  
-  console.error('[ChatOps MCP] Registered 8 tools:');
+  registerPostMessage(server);
+
+  console.error('[ChatOps MCP] Registered 9 tools:');
   console.error('  ✅ get_my_info');
   console.error('  ✅ get_user');
   console.error('  ✅ get_channel_info');
@@ -32,4 +34,5 @@ export function registerAllTools(server: McpServer): void {
   console.error('  ✅ get_thread_posts');
   console.error('  ✅ search_posts');
   console.error('  ✅ find_leave_requests');
+  console.error('  ✅ post_message');
 }
