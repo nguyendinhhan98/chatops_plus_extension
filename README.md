@@ -18,136 +18,41 @@
 
 ---
 
-## 🚀 Cài đặt & Kết nối với AI
+## 🚀 Cài đặt & Kết nối
 
-### Bước 1: Build project
-
+### 1. Cài đặt package ⚡
+Chạy lệnh duy nhất này trong Terminal:
 ```bash
-git clone https://github.com/nguyendinhhan98/mcp-chatops.git
-cd mcp-chatops
-npm install
-npm run build   # Tạo ra file dist/index.js
+npm install -g @hannd98/mcp-chatops
 ```
 
-### Bước 2: Lấy Cookie từ trình duyệt
+### 2. Lấy Cookie & CSRF từ trình duyệt
+1. Đăng nhập ChatOps → Nhấn **F12** → tab **Network**.
+2. Click vào một request `/api/v4/...` bất kỳ.
+3. Trong **Request Headers**, copy:
+   - `Cookie:` phần `MMAUTHTOKEN=...`
+   - `x-csrf-token:` giá trị và thêm prefix `MMCSRF=`
 
-1. Mở ChatOps (ví dụ: `https://chat.runsystem.vn`) → đăng nhập
-2. Nhấn **F12** → chọn tab **Network**
-3. Chọn bất kỳ request nào tới `/api/v4/...`
-4. Trong **Request Headers**, copy 2 giá trị:
-   - `Cookie:` → lấy phần `MMAUTHTOKEN=...`
-   - `x-csrf-token:` → thêm prefix `MMCSRF=` phía trước
+---
 
-> [!TIP]
-> **Lấy đường dẫn nhanh tới `dist/index.js`:**
-> - **Mac/Linux:** Chạy `echo $(pwd)/dist/index.js` trong terminal (trong thư mục project)
-> - **Windows (PowerShell):** `(Get-Item dist\index.js).FullName`
+### 3. Cấu hình AI Client (JSON)
+Điền cấu hình này vào mục MCP Servers trong AI Client của bạn:
 
-### Bước 3: Cấu hình AI Client
-
-Chọn AI client bạn đang dùng:
-
-<details open>
-<summary><b>🤖 Antigravity (Google)</b></summary>
-
-Mở file `~/.gemini/antigravity/mcp_config.json`:
 ```json
 {
   "mcpServers": {
     "mcp-chatops": {
-      "command": "node",
-      "args": ["/đường/dẫn/tới/mcp-chatops/dist/index.js"],
+      "command": "mcp-chatops",
       "env": {
         "CHATOPS_URL": "https://chat.runsystem.vn",
-        "CHATOPS_COOKIE": "MMAUTHTOKEN=<your_token>",
-        "CHATOPS_CSRF": "MMCSRF=<your_csrf>",
+        "CHATOPS_COOKIE": "MMAUTHTOKEN=...",
+        "CHATOPS_CSRF": "MMCSRF=...",
         "CHATOPS_TEAM_NAME": "dn"
       }
     }
   }
 }
 ```
-</details>
-
-<details open>
-<summary><b>💬 Claude Desktop</b></summary>
-
-Mở `~/Library/Application Support/Claude/claude_desktop_config.json`:
-```json
-{
-  "mcpServers": {
-    "mcp-chatops": {
-      "command": "node",
-      "args": ["/đường/dẫn/tới/mcp-chatops/dist/index.js"],
-      "env": {
-        "CHATOPS_URL": "https://chat.runsystem.vn",
-        "CHATOPS_COOKIE": "MMAUTHTOKEN=<your_token>",
-        "CHATOPS_CSRF": "MMCSRF=<your_csrf>",
-        "CHATOPS_TEAM_NAME": "dn"
-      }
-    }
-  }
-}
-```
-</details>
-
-<details open>
-<summary><b>🖱️ Cursor</b></summary>
-
-Tạo file `.cursor/mcp.json` tại thư mục project:
-```json
-{
-  "mcpServers": {
-    "mcp-chatops": {
-      "command": "node",
-      "args": ["/đường/dẫn/tới/mcp-chatops/dist/index.js"],
-      "env": {
-        "CHATOPS_URL": "https://chat.runsystem.vn",
-        "CHATOPS_COOKIE": "MMAUTHTOKEN=<your_token>",
-        "CHATOPS_CSRF": "MMCSRF=<your_csrf>",
-        "CHATOPS_TEAM_NAME": "dn"
-      }
-    }
-  }
-}
-```
-</details>
-
-<details open>
-<summary><b>💡 VS Code (GitHub Copilot)</b></summary>
-
-Nhấn `Cmd+Shift+P` → gõ **"Open User Settings (JSON)"** → Enter.
-
-> ⚠️ **Lưu ý:** File `settings.json` thường đã có nhiều config khác. Chỉ cần **thêm key `"mcp.servers"`** vào bên trong object `{}` hiện có — **không xoá** các setting cũ.
-
-```json
-{
-  "editor.wordWrap": "on",
-  "...": "...các setting khác của bạn...",
-
-  "mcp.servers": {
-    "mcp-chatops": {
-      "command": "node",
-      "args": ["/đường/dẫn/tới/mcp-chatops/dist/index.js"],
-      "env": {
-        "CHATOPS_URL": "https://chat.runsystem.vn",
-        "CHATOPS_COOKIE": "MMAUTHTOKEN=<your_token>",
-        "CHATOPS_CSRF": "MMCSRF=<your_csrf>",
-        "CHATOPS_TEAM_NAME": "dn"
-      }
-    }
-  }
-}
-```
-
-Lưu file (`Cmd+S`) → **restart VS Code** → kiểm tra trong GitHub Copilot Chat.
-</details>
-
-### Bước 4: Kiểm tra
-
-Hỏi AI: *"Thông tin tài khoản ChatOps của tôi là gì?"*
-
-Nếu AI trả về đúng tên của bạn → **Hoạt động thành công!** ✅
 
 ---
 
