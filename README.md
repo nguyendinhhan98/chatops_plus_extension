@@ -18,7 +18,7 @@
 
 ---
 
-## 🚀 Cài đặt & Kết nối
+## 🚀 Cài đặt & Sử dụng
 
 ### 1. Cài đặt package ⚡
 Chạy lệnh duy nhất này trong Terminal:
@@ -26,33 +26,21 @@ Chạy lệnh duy nhất này trong Terminal:
 npm install -g @hannd98/mcp-chatops
 ```
 
-### 2. Lấy Cookie & CSRF từ trình duyệt
+### 2. Cấu hình tự động
+Sau khi cài xong, bạn chỉ cần gõ lệnh sau trong Terminal và làm theo hướng dẫn:
+```bash
+mcp-chatops
+```
+*(Công cụ sẽ yêu cầu bạn nhập Cookie và tự động kết nối với Cursor, Claude, Antigravity, VS Code cho bạn).*
+
+---
+
+## 🔑 Cách lấy Cookie & CSRF từ trình duyệt
 1. Đăng nhập ChatOps → Nhấn **F12** → tab **Network**.
 2. Click vào một request `/api/v4/...` bất kỳ.
 3. Trong **Request Headers**, copy:
    - `Cookie:` phần `MMAUTHTOKEN=...`
    - `x-csrf-token:` giá trị và thêm prefix `MMCSRF=`
-
----
-
-### 3. Cấu hình AI Client (JSON)
-Điền cấu hình này vào mục MCP Servers trong AI Client của bạn:
-
-```json
-{
-  "mcpServers": {
-    "mcp-chatops": {
-      "command": "mcp-chatops",
-      "env": {
-        "CHATOPS_URL": "https://chat.runsystem.vn",
-        "CHATOPS_COOKIE": "MMAUTHTOKEN=...",
-        "CHATOPS_CSRF": "MMCSRF=...",
-        "CHATOPS_TEAM_NAME": "dn"
-      }
-    }
-  }
-}
-```
 
 ---
 

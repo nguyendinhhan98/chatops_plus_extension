@@ -1,28 +1,32 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { registerAllTools } from './tools/index.js';
+import { runSetup } from './setup-logic.js';
 
 /**
  * Initialize the ChatOps MCP Server.
  */
 async function main() {
+  // Nếu người dùng chạy lệnh trực tiếp trong terminal (Interactive mode)
+  if (process.stdin.isTTY || process.argv.includes('--setup')) {
+    await runSetup();
+    return;
+  }
+
+  // Chế độ MCP Server (AI gọi)
   const server = new McpServer({
     name: 'mcp-chatops',
-    version: '1.0.0',
+    version: '1.0.2',
   });
 
-  // Register all tools
   registerAllTools(server);
 
-  // Connect via stdio transport
   const transport = new StdioServerTransport();
   await server.connect(transport);
-
-  console.error('[ChatOps MCP] Server started successfully via stdio');
 }
 
 main().catch((error) => {
-  console.error('[ChatOps MCP] Fatal error during startup:');
-  console.error(error);
+  // Chỉ log ra stderr để không làm hỏng JSON-RPC của MCP
+  console.error('[ChatOps MCP] Fatal error:', error);
   process.exit(1);
 });
