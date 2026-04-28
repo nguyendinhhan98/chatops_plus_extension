@@ -1,6 +1,6 @@
 {
   "name": "@hannd98/mcp-chatops",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "MCP Server for ChatOps - Tools for querying users, channels, messages, and business automation",
   "type": "module",
   "main": "dist/index.js",
