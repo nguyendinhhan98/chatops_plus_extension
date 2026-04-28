@@ -15,10 +15,10 @@
   ],
   "scripts": {
     "dev": "tsx src/index.ts",
-    "build": "esbuild src/index.ts --bundle --platform=node --format=esm --banner:js='#!/usr/bin/env node' --outfile=dist/index.js --packages=external",
+    "build": "esbuild src/index.ts --bundle --platform=node --format=esm --banner:js=\"#!/usr/bin/env node\" --outfile=dist/index.js --packages=external",
     "start": "node dist/index.js",
     "bundle": "esbuild src/index.ts --bundle --platform=node --format=esm --packages=external --outfile=dist/index.js",
-    "bundle:standalone": "esbuild src/index.ts --bundle --platform=node --format=esm --outfile=dist/index.js --banner:js='#!/usr/bin/env node'",
+    "bundle:standalone": "esbuild src/index.ts --bundle --platform=node --format=esm --outfile=dist/index.js --banner:js=\"#!/usr/bin/env node\"",
     "inspect": "npx @modelcontextprotocol/inspector tsx src/index.ts",
     "test": "vitest run",
     "test:watch": "vitest",

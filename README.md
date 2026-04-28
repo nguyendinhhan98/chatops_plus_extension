@@ -60,9 +60,6 @@ File: `.cursor/mcp.json`, `claude_desktop_config.json` hoặc `~/.gemini/antigra
 }
 ```
 
-#### Cho VS Code
-Hiện tại **GitHub Copilot Chat** chưa hỗ trợ MCP chính thức.
-
 ---
 
 ## 🔑 Cách lấy Cookie & CSRF từ trình duyệt
