@@ -18,88 +18,50 @@
 
 ---
 
-## 🚀 Hướng dẫn Cài đặt
+## 🚀 Hướng dẫn Cài đặt (Manual)
 
-Bạn có thể cài đặt MCP Server này theo 2 cách tùy vào nhu cầu sử dụng.
+Vì lý do bảo mật và linh hoạt, chúng tôi khuyến khích bạn cài đặt trực tiếp từ Source Code và cấu hình thủ công vào IDE.
 
-### Cách 1: Cài đặt qua NPM (Dành cho người dùng) ⚡
+### 1. Chuẩn bị (Local)
 
-Đây là cách nhanh nhất để sử dụng MCP Server trong các công cụ như Cursor, Claude Desktop, Antigravity.
+```bash
+# Clone repository
+git clone https://github.com/nguyendinhhan98/mcp-chatops.git
+cd mcp-chatops
 
-1. **Cài đặt package global**:
-   ```bash
-   npm install -g @hannd98/mcp-chatops
-   ```
+# Cài đặt dependencies & Build
+npm install
+npm run build
+```
 
-2. **Chạy trình cấu hình tự động**:
-   ```bash
-   mcp-chatops
-   ```
-   *(Công cụ sẽ yêu cầu bạn nhập Cookie/CSRF và tự động thêm cấu hình vào các IDE/Client cho bạn).*
+> [!TIP]
+> Để lấy **đường dẫn tuyệt đối** của thư mục hiện tại, hãy gõ lệnh `pwd` vào Terminal. Bạn sẽ cần đường dẫn này để điền vào phần `args` bên dưới.
 
----
+### 2. Cấu hình vào AI Client
 
-### Cách 2: Cài đặt từ Source Code (Dành cho Developer) 🛠️
+Bạn chỉ cần copy đoạn cấu hình dưới đây và dán vào file setting của IDE bạn đang dùng. Thay `/đường/dẫn/tới/` bằng kết quả lệnh `pwd` ở trên.
 
-Dùng cách này nếu bạn muốn can thiệp vào code, đóng góp tính năng hoặc dùng phiên bản mới nhất chưa publish lên NPM.
+#### Cho Cursor / Claude Desktop / Antigravity
+File: `.cursor/mcp.json`, `claude_desktop_config.json` hoặc `~/.gemini/antigravity/mcp_config.json`
+```json
+{
+  "mcpServers": {
+    "mcp-chatops": {
+      "command": "node",
+      "args": ["/đường/dẫn/tới/mcp-chatops/dist/index.js"],
+      "env": {
+        "CHATOPS_URL": "https://chat.runsystem.vn",
+        "CHATOPS_COOKIE": "MMAUTHTOKEN=...",
+        "CHATOPS_CSRF": "MMCSRF=...",
+        "CHATOPS_TEAM_NAME": "dn"
+      }
+    }
+  }
+}
+```
 
-1. **Clone repository**:
-   ```bash
-   git clone https://github.com/nguyendinhhan98/mcp-chatops.git
-   cd mcp-chatops
-   ```
-
-2. **Cài đặt dependencies & Build**:
-   ```bash
-   npm install
-   npm run build
-   ```
-
-3. **Chạy setup tự động**:
-   ```bash
-   node dist/index.js
-   ```
-   *(Lệnh này sẽ tự động nhận diện bạn đang dùng bản Git, yêu cầu bạn nhập Cookie/CSRF và tự động cấu hình đường dẫn tuyệt đối vào các AI Client cho bạn).*
-
-4. **Cấu hình thủ công (Tùy chọn)**:
-   
-   **Cho Claude Desktop / Cursor / Antigravity:**
-   Thêm vào file cấu hình (ví dụ `claude_desktop_config.json` hoặc `.cursor/mcp.json`):
-   ```json
-   {
-     "mcpServers": {
-       "mcp-chatops": {
-         "command": "node",
-         "args": ["/đường/dẫn/tới/mcp-chatops/dist/index.js"],
-         "env": {
-           "CHATOPS_URL": "https://chat.runsystem.vn",
-           "CHATOPS_COOKIE": "MMAUTHTOKEN=...",
-           "CHATOPS_CSRF": "MMCSRF=...",
-           "CHATOPS_TEAM_NAME": "dn"
-         }
-       }
-     }
-   }
-   ```
-
-   **Cho VS Code (MCP Client Extension):**
-   Thêm vào file `settings.json` của VS Code:
-   ```json
-   {
-     "mcp.servers": {
-       "mcp-chatops": {
-         "command": "node",
-         "args": ["/đường/dẫn/tới/mcp-chatops/dist/index.js"],
-         "env": {
-           "CHATOPS_URL": "https://chat.runsystem.vn",
-           "CHATOPS_COOKIE": "MMAUTHTOKEN=...",
-           "CHATOPS_CSRF": "MMCSRF=...",
-           "CHATOPS_TEAM_NAME": "dn"
-         }
-       }
-     }
-   }
-   ```
+#### Cho VS Code
+Hiện tại **GitHub Copilot Chat** chưa hỗ trợ MCP chính thức.
 
 ---
 

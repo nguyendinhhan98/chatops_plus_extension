@@ -1,6 +1,6 @@
 {
   "name": "@hannd98/mcp-chatops",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "MCP Server for ChatOps - Tools for querying users, channels, messages, and business automation",
   "type": "module",
   "main": "dist/index.js",
@@ -16,7 +16,6 @@
   "scripts": {
     "dev": "tsx src/index.ts",
     "build": "esbuild src/index.ts --bundle --platform=node --format=esm --banner:js='#!/usr/bin/env node' --outfile=dist/index.js --packages=external",
-    "setup": "tsx src/index.ts",
     "start": "node dist/index.js",
     "bundle": "esbuild src/index.ts --bundle --platform=node --format=esm --packages=external --outfile=dist/index.js",
     "bundle:standalone": "esbuild src/index.ts --bundle --platform=node --format=esm --outfile=dist/index.js --banner:js='#!/usr/bin/env node'",
