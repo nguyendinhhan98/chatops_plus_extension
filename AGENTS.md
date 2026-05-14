@@ -28,6 +28,7 @@ Cung cấp khả năng cho AI assistant tương tác toàn diện với ChatOps:
 - `.agents/skills/pagination-pattern/` — Pattern phân trang cho channel bận rộn
 - `.agents/skills/security-check/` — Quy trình kiểm tra bảo mật trước publish
 - `.agents/skills/write-action-safety/` — Phòng thủ prompt injection cho write actions
+- `.agents/skills/chrome-extension/` — Hướng dẫn phát triển Chrome Extension
 
 ---
 
@@ -66,6 +67,11 @@ chatops_mcp/
 │   ├── tools/                      ← MCP tools
 │   └── utils/                      ← date, formatter
 ├── tests/                          ← Unit tests (vitest)
+├── chrome-extension/               ← Chrome Extension (UI thay thế AI)
+│   ├── src/api/                    ← API client (port từ MCP)
+│   ├── popup/                      ← Popup UI
+│   ├── sidepanel/                  ← Side Panel UI
+│   └── settings/                   ← Settings page
 ├── .env.example
 └── .vscode/mcp.json
 ```

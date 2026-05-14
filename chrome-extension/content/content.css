@@ -1,0 +1,345 @@
+/* ─── ChatOps Helper — Content Script (Native ChatOps Theme) ─── */
+
+/* ─── Floating Button ─── */
+#chatops-ext-floating-btn {
+  position: fixed;
+  bottom: 80px;
+  right: 20px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  cursor: pointer;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+  user-select: none;
+}
+
+#chatops-ext-floating-btn:hover { transform: scale(1.06); }
+#chatops-ext-floating-btn.dragging { opacity: 0.85; }
+
+#chatops-ext-close-btn {
+  position: absolute;
+  top: -5px; right: -5px;
+  width: 17px; height: 17px;
+  border-radius: 50%;
+  background: #3a3d45;
+  color: #b8bac0;
+  font-size: 11px;
+  display: none;
+  align-items: center; justify-content: center;
+  line-height: 1; cursor: pointer;
+  border: 1px solid rgba(255,255,255,0.12);
+}
+#chatops-ext-floating-btn:hover #chatops-ext-close-btn { display: flex; }
+
+/* ─── Quick Note Inject Button ─── */
+.chatops-quick-note-btn {
+  background: none !important;
+  border: none !important;
+  cursor: pointer !important;
+  font-size: 14px !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+  opacity: 0;
+  transition: opacity 0.12s, background 0.12s !important;
+}
+
+.post:hover .chatops-quick-note-btn,
+[id^="post_"]:hover .chatops-quick-note-btn { opacity: 1 !important; }
+
+.chatops-quick-note-btn:hover {
+  background: rgba(28, 88, 217, 0.1) !important;
+  opacity: 1 !important;
+}
+
+/* ─── Quick Note Popover ─── */
+#chatops-quick-note-popover {
+  position: fixed;
+  width: 296px;
+  background: #ffffff;
+  border: 1px solid #e0e0e5;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0,0,0,0.08);
+  z-index: 999999;
+  font-family: 'Inter', -apple-system, sans-serif;
+  color: #3d3c40;
+  opacity: 0;
+  transform: scale(0.97) translateY(-6px);
+  pointer-events: none;
+  transition: opacity 0.16s ease, transform 0.16s ease;
+  overflow: hidden;
+}
+
+#chatops-quick-note-popover.visible {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  pointer-events: all;
+}
+
+.cqn-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 11px 13px 9px;
+  background: #1153ab;
+  border-bottom: 1px solid rgba(255,255,255,0.15);
+}
+
+.cqn-header span {
+  font-size: 11px; font-weight: 700;
+  color: #ffffff;
+  text-transform: uppercase; letter-spacing: 0.7px;
+}
+
+.cqn-header button {
+  background: none; border: none;
+  color: #6e7280; cursor: pointer;
+  font-size: 18px; line-height: 1;
+  transition: color 0.14s; padding: 0;
+}
+.cqn-header button:hover { color: #d0454c; }
+
+.cqn-preview {
+  margin: 10px 13px 6px;
+  padding: 8px 10px;
+  background: #f5f5f7;
+  border-left: 2px solid #1c58d9;
+  border-radius: 0 4px 4px 0;
+  font-size: 11px; color: #717274;
+  line-height: 1.4; font-style: italic;
+  max-height: 50px; overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+}
+
+/* Mode tabs */
+.cqn-mode-tabs {
+  display: flex; gap: 6px; padding: 8px 13px;
+}
+
+.cqn-mode-btn {
+  flex: 1; padding: 7px 4px;
+  background: #f5f5f7;
+  border: 1px solid #e0e0e5;
+  border-radius: 4px;
+  color: #717274;
+  font-size: 12px; font-weight: 600;
+  cursor: pointer; font-family: inherit;
+  transition: all 0.14s;
+}
+
+.cqn-mode-btn.active {
+  background: rgba(28, 88, 217, 0.08);
+  border-color: rgba(28, 88, 217, 0.3);
+  color: #1c58d9;
+}
+
+.cqn-mode-btn:hover:not(.active) {
+  background: #ebebed; color: #3d3c40;
+}
+
+/* Textarea */
+#chatops-quick-note-popover textarea {
+  display: block;
+  width: calc(100% - 26px);
+  margin: 4px 13px 8px;
+  padding: 8px 10px;
+  background: #f5f5f7;
+  border: 1px solid #e0e0e5;
+  border-radius: 4px;
+  color: #3d3c40;
+  font-size: 13px; font-family: inherit;
+  resize: none; height: 64px;
+  outline: none; transition: border-color 0.14s;
+}
+
+#chatops-quick-note-popover textarea:focus {
+  border-color: #1c58d9;
+  background: #ffffff;
+  box-shadow: 0 0 0 2px rgba(28, 88, 217, 0.12);
+}
+
+#chatops-quick-note-popover textarea::placeholder { color: #a0a0a8; }
+
+/* Task section */
+#cqn-task-section { padding: 0 13px 4px; }
+
+.cqn-reminder-row {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; color: #717274;
+}
+
+.cqn-reminder-row label { white-space: nowrap; font-weight: 500; }
+
+.cqn-reminder-row input[type="datetime-local"] {
+  flex: 1; padding: 6px 9px;
+  background: #f5f5f7;
+  border: 1px solid #e0e0e5;
+  border-radius: 4px;
+  color: #3d3c40; font-size: 12px; font-family: inherit;
+  outline: none; min-width: 0;
+}
+.cqn-reminder-row input:focus {
+  border-color: #1c58d9;
+  box-shadow: 0 0 0 2px rgba(28, 88, 217, 0.12);
+}
+
+.cqn-task-hint {
+  margin-top: 5px;
+  font-size: 10px; color: #a0a0a8; font-style: italic;
+}
+
+/* Buttons */
+.cqn-actions {
+  display: flex; gap: 8px; padding: 8px 13px 12px;
+}
+
+.cqn-btn {
+  flex: 1; padding: 8px;
+  border: none; border-radius: 4px;
+  font-size: 13px; font-weight: 600;
+  cursor: pointer; font-family: inherit;
+  transition: all 0.14s;
+}
+
+.cqn-btn-primary { background: #1c58d9; color: white; }
+.cqn-btn-primary:hover { background: #1648b8; }
+.cqn-btn-primary:active { transform: scale(0.98); }
+
+.cqn-btn-secondary { background: #f5f5f7; color: #717274; border: 1px solid #e0e0e5; }
+.cqn-btn-secondary:hover { background: #ebebed; color: #3d3c40; }
+.cqn-btn, .cqn-mode-btn, .cqn-header button, #chatops-ext-floating-btn, .crb-close, .crb-done-btn { cursor: pointer !important; }
+
+/* ─── Reminder Banner ─── */
+.chatops-reminder-banner {
+  position: fixed;
+  bottom: 24px; right: 20px; width: 310px;
+  background: #ffffff;
+  border: 1px solid #e0e0e5;
+  border-top: 3px solid #1c58d9;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.14);
+  z-index: 9999999;
+  font-family: 'Inter', -apple-system, sans-serif;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  overflow: hidden;
+}
+
+.chatops-reminder-banner.visible {
+  opacity: 1; transform: translateY(0);
+}
+
+.crb-inner {
+  display: flex; align-items: flex-start;
+  gap: 11px; padding: 13px 13px 9px;
+}
+
+.crb-icon {
+  font-size: 20px; flex-shrink: 0;
+  animation: crb-ring 0.8s ease-in-out 2;
+}
+
+@keyframes crb-ring {
+  0%, 100% { transform: rotate(0); }
+  25%       { transform: rotate(-12deg); }
+  75%       { transform: rotate(12deg); }
+}
+
+.crb-content { flex: 1; min-width: 0; }
+
+.crb-title {
+  font-size: 10px; font-weight: 700;
+  color: #1c58d9;
+  text-transform: uppercase; letter-spacing: 0.8px;
+  margin-bottom: 3px;
+}
+
+.crb-text { font-size: 13px; color: #3d3c40; line-height: 1.4; word-break: break-word; }
+
+.crb-close {
+  background: none; border: none;
+  color: #a0a0a8; cursor: pointer;
+  font-size: 18px; line-height: 1; padding: 0; flex-shrink: 0;
+  transition: color 0.14s;
+}
+.crb-close:hover { color: #d0454c; }
+
+.crb-task-actions { padding: 0 13px 11px; }
+
+.crb-done-btn {
+  width: 100%; padding: 8px;
+  background: rgba(61, 184, 135, 0.1);
+  border: 1px solid rgba(61, 184, 135, 0.3);
+  border-radius: 4px;
+  color: #3db887; font-size: 12px; font-weight: 700;
+  cursor: pointer; font-family: inherit;
+  transition: background 0.14s;
+}
+.crb-done-btn:hover { background: rgba(61, 184, 135, 0.18); }
+
+.crb-progress {
+  height: 2px; background: #1c58d9;
+  transform-origin: left;
+  animation: crb-shrink linear forwards;
+}
+
+@keyframes crb-shrink { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+
+/* ─── Toast ─── */
+.chatops-toast {
+  position: fixed; top: 24px; right: 24px;
+  transform: translateX(120%);
+  background: #1a1d24;
+  color: #ffffff;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: 'Inter', -apple-system, sans-serif;
+  z-index: 10000000;
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+  pointer-events: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  border-left: 4px solid #1c58d9;
+}
+
+.chatops-toast.visible {
+  opacity: 1; transform: translateX(0);
+}
+
+/* ─── Meme Picker (legacy) ─── */
+.chatops-meme-picker {
+  position: absolute; bottom: 50px; right: 0;
+  width: 280px; max-height: 360px;
+  background: #ffffff; border: 1px solid #e0e0e5;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  display: flex; flex-direction: column;
+  z-index: 20000; overflow: hidden;
+  font-family: 'Inter', sans-serif; color: #3d3c40;
+}
+.chatops-meme-picker-header {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e0e0e5;
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 13px; font-weight: 600;
+  background: #f5f5f7;
+}
+.chatops-meme-picker-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 6px; padding: 10px;
+  overflow-y: auto; flex: 1;
+}
+.chatops-meme-item {
+  width: 100%; height: 70px;
+  object-fit: cover; border-radius: 4px;
+  cursor: pointer; transition: opacity 0.1s;
+  border: 1px solid #e0e0e5;
+}
+.chatops-meme-item:hover { opacity: 0.8; }
+.chatops-meme-picker.hidden { display: none !important; }

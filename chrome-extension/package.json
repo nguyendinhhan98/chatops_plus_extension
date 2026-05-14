@@ -1,0 +1,13 @@
+{
+  "name": "chatops-chrome-extension",
+  "version": "1.0.0",
+  "description": "Chrome Extension kế thừa chức năng ChatOps MCP — gọi API trực tiếp, không cần AI.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "echo 'No linter configured yet'",
+    "icons": "echo 'Place icon files in icons/ directory'"
+  },
+  "author": "hannd",
+  "license": "MIT"
+}
