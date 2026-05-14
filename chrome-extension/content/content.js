@@ -65,9 +65,22 @@ function showToast(msg) {
   const t = document.createElement('div');
   t.className = 'chatops-toast';
   t.textContent = msg;
+  // Force top-right in case CSS is cached
+  Object.assign(t.style, {
+    position: 'fixed',
+    top: '20px',
+    right: '20px',
+    bottom: 'auto',
+    left: 'auto',
+    transform: 'translateX(120%)'
+  });
   document.body.appendChild(t);
-  setTimeout(() => t.classList.add('visible'), 10);
   setTimeout(() => {
+    t.style.transform = 'translateX(0)';
+    t.classList.add('visible');
+  }, 10);
+  setTimeout(() => {
+    t.style.transform = 'translateX(120%)';
     t.classList.remove('visible');
     setTimeout(() => t.remove(), 300);
   }, 2500);
@@ -320,10 +333,9 @@ function showToast(msg) {
     textarea.dispatchEvent(new Event('input', { bubbles: true }));
   }
 
-  // ─── Quick Note/Task on Messages ───
+  // ─── Quick Task on Messages ───
 
   let quickNotePopover = null;
-  let currentPopoverMode = 'task'; // 'task' | 'note'
 
   function getOrCreatePopover() {
     if (quickNotePopover) return quickNotePopover;
@@ -332,47 +344,24 @@ function showToast(msg) {
     quickNotePopover.id = 'chatops-quick-note-popover';
     quickNotePopover.innerHTML = `
       <div class="cqn-header">
-        <span>📌 ChatOps Helper</span>
+        <span>Tạo Task nhanh</span>
         <button id="cqn-close" title="Đóng">×</button>
       </div>
       <div id="cqn-msg-preview" class="cqn-preview"></div>
-
-      <div class="cqn-mode-tabs">
-        <button class="cqn-mode-btn active" data-mode="task">📋 Task</button>
-        <button class="cqn-mode-btn" data-mode="note">📝 Ghi chú</button>
-      </div>
-
       <textarea id="cqn-note-text" placeholder="Ghi chú thêm (tùy chọn)..."></textarea>
-
       <div id="cqn-task-section">
         <div class="cqn-reminder-row">
-          <label for="cqn-reminder-time">⏰ Nhắc từ:</label>
+          <label for="cqn-reminder-time">Nhắc lúc:</label>
           <input type="datetime-local" id="cqn-reminder-time">
         </div>
-        <div class="cqn-task-hint">Nhắc lại mỗi 5 phút cho đến khi hoàn thành ✅</div>
+        <div class="cqn-task-hint">Nhắc lại mỗi 5 phút cho đến khi hoàn thành</div>
       </div>
-
       <div class="cqn-actions">
-        <button id="cqn-save-note" class="cqn-btn cqn-btn-primary">💾 Lưu</button>
+        <button id="cqn-save-note" class="cqn-btn cqn-btn-primary">Lưu Task</button>
         <button id="cqn-cancel" class="cqn-btn cqn-btn-secondary">Hủy</button>
       </div>
     `;
     document.body.appendChild(quickNotePopover);
-
-    // Mode tabs
-    quickNotePopover.querySelectorAll('.cqn-mode-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        quickNotePopover.querySelectorAll('.cqn-mode-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        currentPopoverMode = btn.dataset.mode;
-        const taskSection = document.getElementById('cqn-task-section');
-        taskSection.style.display = currentPopoverMode === 'task' ? 'block' : 'none';
-        const placeholder = currentPopoverMode === 'task'
-          ? 'Ghi chú thêm (tùy chọn)...'
-          : 'Nội dung ghi chú...';
-        document.getElementById('cqn-note-text').placeholder = placeholder;
-      });
-    });
 
     document.getElementById('cqn-close').addEventListener('click', closePopover);
     document.getElementById('cqn-cancel').addEventListener('click', closePopover);
@@ -401,21 +390,16 @@ function showToast(msg) {
     document.getElementById('cqn-note-text').value = '';
     document.getElementById('cqn-reminder-time').value = '';
 
-    // Reset về Task mode
-    currentPopoverMode = 'task';
-    popover.querySelectorAll('.cqn-mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === 'task'));
-    document.getElementById('cqn-task-section').style.display = 'block';
-
     popover.dataset.postId = postId;
     popover.dataset.postText = msgText;
 
-    // Vị trí popover
+    // Position popover
     const rect = anchorBtn.getBoundingClientRect();
     const popoverWidth = 310;
     let left = rect.left - popoverWidth - 8;
     if (left < 8) left = rect.right + 8;
     let top = rect.top;
-    const maxTop = window.innerHeight - 360;
+    const maxTop = window.innerHeight - 300;
     if (top > maxTop) top = maxTop;
     if (top < 8) top = 8;
 
@@ -423,72 +407,71 @@ function showToast(msg) {
     popover.style.top = `${top}px`;
     popover.classList.add('visible');
 
-    // Gắn handler lưu (cloneNode để tránh duplicate listener)
+    // Bind save handler (clone to avoid duplicate listeners)
     const saveBtn = document.getElementById('cqn-save-note');
     const newSaveBtn = saveBtn.cloneNode(true);
     saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
-    newSaveBtn.addEventListener('click', () => saveItem(popover));
+    newSaveBtn.addEventListener('click', () => saveTask(popover));
 
     setTimeout(() => document.getElementById('cqn-note-text').focus(), 50);
   }
 
-  async function saveItem(popover) {
+  async function saveTask(popover) {
     const postId = popover.dataset.postId;
     const postText = popover.dataset.postText;
     const noteText = document.getElementById('cqn-note-text').value.trim();
     const reminderTime = document.getElementById('cqn-reminder-time').value;
-    const type = currentPopoverMode; // 'task' | 'note'
 
-    const id = `${type}_` + Date.now();
-
+    const id = `task_${Date.now()}`;
     const item = {
       id,
-      type,
+      type: 'task',
       postId,
       postText,
-      note: noteText,
+      note: noteText || postText,
       createdAt: Date.now(),
-      // Task fields
       done: false,
-      reminder: type === 'task' ? (reminderTime || null) : null,
+      reminder: reminderTime || null,
       status: 'pending'
     };
 
-    // Lưu storage
     const res = await chrome.storage.local.get(['memos']);
     const memos = res.memos || [];
     memos.unshift(item);
     await chrome.storage.local.set({ memos });
 
-    // Gửi tín hiệu để Side Panel cập nhật UI ngay lập tức
     chrome.runtime.sendMessage({ type: 'MEMO_UPDATED' });
 
-    // Nếu là Task → đặt alarm nhắc lặp
-    if (type === 'task') {
-      const startTime = reminderTime
-        ? new Date(reminderTime).getTime()
-        : Date.now() + 5 * 60 * 1000; // Ngay sau 5 phút nếu không chọn giờ
+    const startTime = reminderTime
+      ? new Date(reminderTime).getTime()
+      : Date.now() + 5 * 60 * 1000;
 
-      if (startTime > Date.now() || !reminderTime) {
-        chrome.runtime.sendMessage({
-          type: 'SET_TASK_ALARM',
-          taskId: id,
-          time: startTime
-        });
-      }
-    }
+    chrome.runtime.sendMessage({ type: 'SET_TASK_ALARM', taskId: id, time: startTime });
 
     closePopover();
-    showToast(type === 'task' ? '📋 Đã thêm Task!' : '📝 Đã lưu ghi chú!');
+    showToast('Task đã được lưu');
   }
 
   function showToast(message) {
     const toast = document.createElement('div');
     toast.className = 'chatops-toast';
     toast.textContent = message;
+    // Force top-right in case CSS is cached
+    Object.assign(toast.style, {
+      position: 'fixed',
+      top: '20px',
+      right: '20px',
+      bottom: 'auto',
+      left: 'auto',
+      transform: 'translateX(120%)'
+    });
     document.body.appendChild(toast);
-    setTimeout(() => toast.classList.add('visible'), 10);
     setTimeout(() => {
+      toast.style.transform = 'translateX(0)';
+      toast.classList.add('visible');
+    }, 10);
+    setTimeout(() => {
+      toast.style.transform = 'translateX(120%)';
       toast.classList.remove('visible');
       setTimeout(() => toast.remove(), 300);
     }, 2500);

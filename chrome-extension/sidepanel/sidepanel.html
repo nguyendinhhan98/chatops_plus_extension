@@ -62,16 +62,34 @@
 
     <!-- ─── Tab: Ghi chú / Memo ─── -->
     <div class="tab-content" id="tab-memo">
-      <div class="panel-section">
-        <div class="memo-tab-header">
-          <h2 class="section-title">Tasks &amp; Ghi chú</h2>
-          <button id="btnClearAllMemos" class="memo-clear-btn">Xóa tất cả</button>
+      <!-- Quick Note Bar -->
+      <div class="quick-note-bar" id="quickNoteBar">
+        <div class="quick-note-row">
+          <input type="text" id="quickNoteInput" placeholder="Ghi nhanh... (Enter để lưu)" class="quick-note-input" autocomplete="off">
+          <button id="btnQuickNoteSave" class="quick-note-btn" title="Lưu">+</button>
         </div>
-        <p class="memo-hint">Bấm 📌 trên tin nhắn để tạo Task nhắc lặp hoặc Ghi chú nhanh.</p>
+        <!-- Task reminder row: only shown in Tasks sub-tab -->
+        <div class="quick-task-row" id="quickTaskRow">
+          <span class="quick-task-label">Nhắc lúc:</span>
+          <input type="datetime-local" id="quickTaskReminder" class="quick-task-datetime">
+        </div>
       </div>
-      <div id="memoList" style="flex:1; overflow-y:auto; padding:12px 14px;">
-        <div class="empty-state">Chưa có gì.<br>Bấm 📌 trên tin nhắn.</div>
+
+      <!-- Sub-tabs -->
+      <div class="memo-sub-tabs">
+        <button class="memo-sub-tab active" data-subtab="tasks">
+          📋 Tasks <span id="taskBadge" class="memo-badge"></span>
+        </button>
+        <button class="memo-sub-tab" data-subtab="notes">
+          📝 Ghi chú <span id="noteBadge" class="memo-badge"></span>
+        </button>
       </div>
+
+      <!-- Task list -->
+      <div id="memoTaskList" class="memo-panel active"></div>
+
+      <!-- Note list -->
+      <div id="memoNoteList" class="memo-panel"></div>
     </div>
 
     <!-- ─── Tab: Mentions ─── -->

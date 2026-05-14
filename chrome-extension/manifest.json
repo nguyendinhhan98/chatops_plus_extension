@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "ChatOps Helper",
-  "version": "1.0.0",
-  "description": "Truy cập nhanh ChatOps: tìm kiếm, gửi tin nhắn, kiểm tra mention — trực tiếp từ trình duyệt.",
+  "name": "ChatOps++",
+  "version": "1.0.2",
+  "description": "Truy cập nhanh ChatOps: tìm kiếm, kiểm tra mention — trực tiếp từ trình duyệt.",
   "permissions": [
     "storage",
     "activeTab",
@@ -16,9 +16,15 @@
   ],
   "content_scripts": [
     {
-      "matches": ["https://chat.runsystem.vn/*"],
-      "css": ["content/content.css"],
-      "js": ["content/content.js"],
+      "matches": [
+        "https://chat.runsystem.vn/*"
+      ],
+      "css": [
+        "content/content.css"
+      ],
+      "js": [
+        "content/content.js"
+      ],
       "run_at": "document_idle"
     }
   ],
@@ -44,8 +50,12 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["icons/*.png"],
-      "matches": ["https://chat.runsystem.vn/*"]
+      "resources": [
+        "icons/*.png"
+      ],
+      "matches": [
+        "https://chat.runsystem.vn/*"
+      ]
     }
   ]
 }
