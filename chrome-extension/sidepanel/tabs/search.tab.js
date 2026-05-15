@@ -29,6 +29,7 @@ let _state = null;
 let searchState = { page: 0, hasMore: false, terms: '', isSearching: false };
 let searchInMS = null;
 let searchFromAC = null;
+let _joinedChannelsCache = null;
 
 /**
  * Initializes the Search Tab
@@ -95,13 +96,25 @@ export function setup(state) {
     'spSearchIn',
     {
       defaultFetch: async (page, perPage) => {
-        const channels = await getMyChannels(getTeamId());
-        const paginated = channels.slice(page * perPage, (page + 1) * perPage);
+        if (!_joinedChannelsCache) {
+          _joinedChannelsCache = await getMyChannels(getTeamId());
+        }
+        const paginated = _joinedChannelsCache.slice(page * perPage, (page + 1) * perPage);
         return enrichChannels(paginated);
       },
       searchFetch: async (term) => {
-        const channels = await searchChannels(getTeamId(), term);
-        return enrichChannels(channels);
+        if (!_joinedChannelsCache) {
+          _joinedChannelsCache = await getMyChannels(getTeamId());
+        }
+        const termLower = term.toLowerCase();
+        // Enrich first so we can search by display_name too (recipient name)
+        const enriched = await enrichChannels(_joinedChannelsCache);
+        
+        const filtered = enriched.filter(c => 
+          (c.display_name && c.display_name.toLowerCase().includes(termLower)) || 
+          (c.name && c.name.toLowerCase().includes(termLower))
+        );
+        return filtered;
       }
     },
     (channel) => renderChannelCard(channel),
@@ -124,6 +137,7 @@ export function setup(state) {
  * Resets the UI state of the tab
  */
 export function reset() {
+  _joinedChannelsCache = null;
   if (searchInMS) searchInMS.reset();
   if (searchFromAC) searchFromAC.reset();
   document.getElementById('spSearchResults').innerHTML = `<div class="empty-state">${language.searchEmptyState}</div>`;

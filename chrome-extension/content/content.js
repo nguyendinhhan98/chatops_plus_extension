@@ -379,17 +379,31 @@ function showToast(msg) {
   }
 
   function injectQuickNoteButtons() {
-    const posts = document.querySelectorAll(`.post:not(.chatops-note-injected), [class*="${SELECTORS.POST_ID_PREFIX}"]:not(.chatops-note-injected)`);
+    // 1. Find all post elements (in main view or RHS thread)
+    const posts = document.querySelectorAll(`.post, [id^="post_"], [class*="post-message"]`);
+    
     posts.forEach(postEl => {
-      if (!postEl.id?.startsWith(SELECTORS.POST_ID_PREFIX)) return;
-      postEl.classList.add('chatops-note-injected');
-      const actionArea = postEl.querySelector('.post__actions, .post-menu, [class*="post-menu"], [aria-label*="actions"], .actions-container');
+      // 2. If this specific post already contains our button, skip it to avoid duplicates
+      if (postEl.querySelector('.chatops-quick-note-btn')) return;
+
+      // 3. Find the action bar within this post
+      // We prioritize standard Mattermost/ChatOps action bar classes
+      const actionArea = postEl.querySelector('.post-menu, .post__actions, .dot-menu__container, [class*="post-menu"], .post-action-menu');
       if (!actionArea) return;
+
+      // 4. Create and inject our custom button
       const noteBtn = document.createElement('button');
       noteBtn.className = 'chatops-quick-note-btn';
       noteBtn.innerHTML = '📌';
-      noteBtn.title = 'Quick Task / Reminder';
-      noteBtn.addEventListener('click', (e) => { e.stopPropagation(); openQuickNote(postEl, noteBtn); });
+      noteBtn.title = language.quickTaskCreate || 'Quick Task / Reminder';
+      
+      noteBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation(); // Critical to avoid ChatOps native actions
+        openQuickNote(postEl, noteBtn);
+      });
+
+      // 5. Append to the action bar
       actionArea.appendChild(noteBtn);
     });
   }

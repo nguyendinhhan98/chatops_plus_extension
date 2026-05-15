@@ -92,11 +92,9 @@ export function getChannelLabel(channel) {
     return channel.display_name;
   }
   
-  // If it's a DM hash and display_name is empty/redundant
-  if (channel.name && channel.name.includes('__')) {
-    const hash = channel.name;
-    const shortHash = hash.split('__').map(id => id.slice(0, 4)).join('..');
-    return `${language.directMessage} [${shortHash}]`;
+  // Fallback for DMs without enriched names
+  if (channel.type === 'D' || (channel.name && channel.name.includes('__'))) {
+    return language.directMessage;
   }
   
   return channel.display_name || channel.name || channel.id;
@@ -109,12 +107,8 @@ export function renderChannelCard(channel) {
   const typeIcon = channel.type === 'P' ? '🔒' : (channel.type === 'D' ? '👤' : '#️⃣');
   const displayName = getChannelLabel(channel);
   
-  // Show the internal name (slug) if it's different from the display name,
-  // but truncate it if it's a long DM hash to keep UI clean.
-  let internalName = (channel.name && channel.name !== displayName) ? channel.name : '';
-  if (internalName.includes('__') && internalName.length > 20) {
-    internalName = internalName.split('__').map(id => id.slice(0, 6)).join('..');
-  }
+  // Only show internal name for non-DM channels if it's different from the display name
+  const internalName = (channel.name && channel.name !== displayName && !channel.name.includes('__')) ? channel.name : '';
   
   return `
     <div class="ms-channel-card">

@@ -46,6 +46,7 @@ let leaveState = {
 
 let leaveChannelMS = null;
 let leaveUserAC = null;
+let _joinedChannelsCache = null;
 
 /**
  * Initializes the Leave Tracker tab
@@ -127,13 +128,22 @@ export function setup(state) {
     'spLeaveChannel',
     {
       defaultFetch: async (page, perPage) => {
-        const channels = await getMyChannels(getTeamId());
-        const paginated = channels.slice(page * perPage, (page + 1) * perPage);
+        if (!_joinedChannelsCache) {
+          _joinedChannelsCache = await getMyChannels(getTeamId());
+        }
+        const paginated = _joinedChannelsCache.slice(page * perPage, (page + 1) * perPage);
         return enrichChannels(paginated);
       },
       searchFetch: async (term) => {
-        const channels = await searchChannels(getTeamId(), term);
-        return enrichChannels(channels);
+        if (!_joinedChannelsCache) {
+          _joinedChannelsCache = await getMyChannels(getTeamId());
+        }
+        const termLower = term.toLowerCase();
+        const enriched = await enrichChannels(_joinedChannelsCache);
+        return enriched.filter(c => 
+          (c.display_name && c.display_name.toLowerCase().includes(termLower)) || 
+          (c.name && c.name.toLowerCase().includes(termLower))
+        );
       }
     },
     (channel) => renderChannelCard(channel),
@@ -160,6 +170,7 @@ export function setup(state) {
  * Resets the UI state of the tab
  */
 export function reset() {
+  _joinedChannelsCache = null;
   if (leaveChannelMS) leaveChannelMS.reset();
   if (leaveUserAC) leaveUserAC.reset();
   document.getElementById('spLeaveResults').innerHTML = `<div class="empty-state">${language.leaveEmptyState}</div>`;
