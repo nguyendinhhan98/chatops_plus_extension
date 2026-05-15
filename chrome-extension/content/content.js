@@ -10,6 +10,9 @@ chrome.runtime.onMessage.addListener((message) => {
   }
 });
 
+/**
+ * Hiển thị banner nhắc nhở ở top trang
+ */
 function showReminderBanner(text, taskId, isTask = false) {
   document.querySelectorAll('.chatops-reminder-banner').forEach(el => el.remove());
 
@@ -61,18 +64,24 @@ function showReminderBanner(text, taskId, isTask = false) {
   }
 }
 
+/**
+ * Hiển thị toast notification (Shared version for content script)
+ */
 function showToast(msg) {
+  const existing = document.querySelector('.chatops-toast');
+  if (existing) existing.remove();
+
   const t = document.createElement('div');
   t.className = 'chatops-toast';
   t.textContent = msg;
-  // Force top-right in case CSS is cached
   Object.assign(t.style, {
     position: 'fixed',
     top: '20px',
     right: '20px',
     bottom: 'auto',
     left: 'auto',
-    transform: 'translateX(120%)'
+    transform: 'translateX(120%)',
+    zIndex: '10001'
   });
   document.body.appendChild(t);
   setTimeout(() => {
@@ -139,7 +148,6 @@ function showToast(msg) {
   let startX, startY, initialX, initialY;
 
   btn.addEventListener('mousedown', (e) => {
-    // Only handle left click
     if (e.button !== 0) return;
     isDragging = true;
     hasMoved = false;
@@ -157,7 +165,6 @@ function showToast(msg) {
 
   document.addEventListener('mousemove', (e) => {
     if (!isDragging) return;
-    
     const dx = e.clientX - startX;
     const dy = e.clientY - startY;
     
@@ -168,13 +175,10 @@ function showToast(msg) {
     if (hasMoved) {
       let newX = initialX + dx;
       let newY = initialY + dy;
-      
       const maxX = window.innerWidth - btn.offsetWidth;
       const maxY = window.innerHeight - btn.offsetHeight;
-      
       newX = Math.max(0, Math.min(newX, maxX));
       newY = Math.max(0, Math.min(newY, maxY));
-      
       btn.style.left = `${newX}px`;
       btn.style.top = `${newY}px`;
     }
@@ -184,29 +188,20 @@ function showToast(msg) {
     if (isDragging) {
       isDragging = false;
       btn.classList.remove('dragging');
-      
       if (hasMoved) {
         chrome.storage.local.set({
-          chatops_ext_btn_pos: {
-            top: btn.style.top,
-            left: btn.style.left
-          }
+          chatops_ext_btn_pos: { top: btn.style.top, left: btn.style.left }
         });
       }
-      
-      // Delay reset hasMoved so click event can check it
       setTimeout(() => { hasMoved = false; }, 50);
     }
   });
 
-  // Xử lý sự kiện click
   btn.addEventListener('click', (e) => {
     if (hasMoved) {
       e.preventDefault();
       return;
     }
-    
-    // Gửi message tới background script để toggle Side Panel
     try {
       chrome.runtime.sendMessage({ type: 'TOGGLE_SIDE_PANEL' }, (response) => {
         if (chrome.runtime.lastError) {
@@ -220,10 +215,7 @@ function showToast(msg) {
     }
   });
 
-  console.log('[ChatOps Ext] Floating button injected.');
-
   // ─── Meme Integration into Main UI ───
-
   function injectMemeButton() {
     const emojiBtn = document.getElementById('emojiPickerButton');
     if (!emojiBtn || document.getElementById('chatops-ext-meme-btn')) return;
@@ -233,8 +225,6 @@ function showToast(msg) {
     memeBtn.type = 'button';
     memeBtn.innerHTML = '🖼️';
     memeBtn.title = 'Chèn Meme nhanh';
-    
-    // Chèn sau nút Emoji
     emojiBtn.parentNode.insertBefore(memeBtn, emojiBtn.nextSibling);
 
     memeBtn.addEventListener('click', (e) => {
@@ -259,12 +249,9 @@ function showToast(msg) {
         </div>
       `;
       document.body.appendChild(memePickerEl);
-
       document.getElementById('chatops-meme-close').addEventListener('click', () => {
         memePickerEl.classList.add('hidden');
       });
-
-      // Event delegation for grid
       document.getElementById('chatops-meme-grid').addEventListener('click', (e) => {
         const img = e.target.closest('.chatops-meme-item');
         if (img) {
@@ -272,13 +259,11 @@ function showToast(msg) {
           memePickerEl.classList.add('hidden');
         }
       });
-
       loadMemesToMainUI();
     }
 
     const isHidden = memePickerEl.classList.contains('hidden');
     if (isHidden) {
-      // Position it above the anchor button
       const rect = anchorBtn.getBoundingClientRect();
       memePickerEl.style.bottom = `${window.innerHeight - rect.top + 10}px`;
       memePickerEl.style.left = `${Math.max(10, rect.left - 260)}px`;
@@ -295,7 +280,6 @@ function showToast(msg) {
         fetch('https://api.imgflip.com/get_memes').then(r => r.json()),
         fetch('https://meme-api.com/gimme/50').then(r => r.json())
       ]);
-
       let allMemes = [];
       if (imgflipRes.status === 'fulfilled' && imgflipRes.value.success) {
         allMemes.push(...imgflipRes.value.data.memes.map(m => ({ url: m.url })));
@@ -304,10 +288,7 @@ function showToast(msg) {
         allMemes.push(...redditRes.value.memes.map(m => ({ url: m.url })));
       }
       allMemes.sort(() => Math.random() - 0.5);
-      
-      grid.innerHTML = allMemes.slice(0, 60).map(m => `
-        <img src="${m.url}" class="chatops-meme-item" loading="lazy" />
-      `).join('');
+      grid.innerHTML = allMemes.slice(0, 60).map(m => `<img src="${m.url}" class="chatops-meme-item" loading="lazy" />`).join('');
     } catch (err) {
       grid.innerHTML = '<div style="grid-column: 1/-1; padding:20px; color:red;">Lỗi tải memes.</div>';
     }
@@ -315,45 +296,29 @@ function showToast(msg) {
 
   function insertMemeToChat(url) {
     const textarea = document.getElementById('post_textbox');
-    if (!textarea) {
-      console.warn('[ChatOps Ext] Không tìm thấy ô nhập liệu #post_textbox');
-      return;
-    }
-
+    if (!textarea) return;
     const markdown = `![meme](${url})`;
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const text = textarea.value;
-    
     textarea.value = text.substring(0, start) + markdown + text.substring(end);
     textarea.focus();
     textarea.selectionStart = textarea.selectionEnd = start + markdown.length;
-    
-    // Trigger input event for React/Mattermost to detect change
     textarea.dispatchEvent(new Event('input', { bubbles: true }));
   }
 
   // ─── Quick Task on Messages ───
-
   let quickNotePopover = null;
-
   function getOrCreatePopover() {
     if (quickNotePopover) return quickNotePopover;
-
     quickNotePopover = document.createElement('div');
     quickNotePopover.id = 'chatops-quick-note-popover';
     quickNotePopover.innerHTML = `
-      <div class="cqn-header">
-        <span>Tạo Task nhanh</span>
-        <button id="cqn-close" title="Đóng">×</button>
-      </div>
+      <div class="cqn-header"><span>Tạo Task nhanh</span><button id="cqn-close" title="Đóng">×</button></div>
       <div id="cqn-msg-preview" class="cqn-preview"></div>
       <textarea id="cqn-note-text" placeholder="Ghi chú thêm (tùy chọn)..."></textarea>
       <div id="cqn-task-section">
-        <div class="cqn-reminder-row">
-          <label for="cqn-reminder-time">Nhắc lúc:</label>
-          <input type="datetime-local" id="cqn-reminder-time">
-        </div>
+        <div class="cqn-reminder-row"><label for="cqn-reminder-time">Nhắc lúc:</label><input type="datetime-local" id="cqn-reminder-time"></div>
         <div class="cqn-task-hint">Nhắc lại mỗi 5 phút cho đến khi hoàn thành</div>
       </div>
       <div class="cqn-actions">
@@ -362,163 +327,76 @@ function showToast(msg) {
       </div>
     `;
     document.body.appendChild(quickNotePopover);
-
-    document.getElementById('cqn-close').addEventListener('click', closePopover);
-    document.getElementById('cqn-cancel').addEventListener('click', closePopover);
-
+    document.getElementById('cqn-close').addEventListener('click', () => quickNotePopover.classList.remove('visible'));
+    document.getElementById('cqn-cancel').addEventListener('click', () => quickNotePopover.classList.remove('visible'));
     document.addEventListener('mousedown', (e) => {
       if (quickNotePopover && !quickNotePopover.contains(e.target) && !e.target.closest('.chatops-quick-note-btn')) {
-        closePopover();
+        quickNotePopover.classList.remove('visible');
       }
     });
-
     return quickNotePopover;
-  }
-
-  function closePopover() {
-    if (quickNotePopover) quickNotePopover.classList.remove('visible');
   }
 
   function openQuickNote(postEl, anchorBtn) {
     const popover = getOrCreatePopover();
-
     const msgBodyEl = postEl.querySelector('.post-message__text, .post__body p, [class*="post-message"]');
     const msgText = msgBodyEl ? msgBodyEl.innerText.trim().slice(0, 120) : '(Không lấy được nội dung)';
     const postId = postEl.id ? postEl.id.replace('post_', '') : '';
-
     document.getElementById('cqn-msg-preview').textContent = msgText + (msgText.length >= 120 ? '...' : '');
     document.getElementById('cqn-note-text').value = '';
     document.getElementById('cqn-reminder-time').value = '';
-
     popover.dataset.postId = postId;
     popover.dataset.postText = msgText;
-
-    // Position popover
     const rect = anchorBtn.getBoundingClientRect();
     const popoverWidth = 310;
     let left = rect.left - popoverWidth - 8;
     if (left < 8) left = rect.right + 8;
-    let top = rect.top;
-    const maxTop = window.innerHeight - 300;
-    if (top > maxTop) top = maxTop;
-    if (top < 8) top = 8;
-
+    let top = Math.min(rect.top, window.innerHeight - 300);
     popover.style.left = `${left}px`;
-    popover.style.top = `${top}px`;
+    popover.style.top = `${Math.max(8, top)}px`;
     popover.classList.add('visible');
-
-    // Bind save handler (clone to avoid duplicate listeners)
     const saveBtn = document.getElementById('cqn-save-note');
     const newSaveBtn = saveBtn.cloneNode(true);
     saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
     newSaveBtn.addEventListener('click', () => saveTask(popover));
-
     setTimeout(() => document.getElementById('cqn-note-text').focus(), 50);
   }
 
   async function saveTask(popover) {
-    const postId = popover.dataset.postId;
-    const postText = popover.dataset.postText;
+    const { postId, postText } = popover.dataset;
     const noteText = document.getElementById('cqn-note-text').value.trim();
     const reminderTime = document.getElementById('cqn-reminder-time').value;
-
     const id = `task_${Date.now()}`;
-    const item = {
-      id,
-      type: 'task',
-      postId,
-      postText,
-      note: noteText || postText,
-      createdAt: Date.now(),
-      done: false,
-      reminder: reminderTime || null,
-      status: 'pending'
-    };
-
+    const item = { id, type: 'task', postId, postText, note: noteText || postText, createdAt: Date.now(), done: false, reminder: reminderTime || null, status: 'pending' };
     const res = await chrome.storage.local.get(['memos']);
     const memos = res.memos || [];
     memos.unshift(item);
     await chrome.storage.local.set({ memos });
-
     chrome.runtime.sendMessage({ type: 'MEMO_UPDATED' });
-
-    const startTime = reminderTime
-      ? new Date(reminderTime).getTime()
-      : Date.now() + 5 * 60 * 1000;
-
+    const startTime = reminderTime ? new Date(reminderTime).getTime() : Date.now() + 5 * 60 * 1000;
     chrome.runtime.sendMessage({ type: 'SET_TASK_ALARM', taskId: id, time: startTime });
-
-    closePopover();
+    popover.classList.remove('visible');
     showToast('Task đã được lưu');
   }
 
-  function showToast(message) {
-    const toast = document.createElement('div');
-    toast.className = 'chatops-toast';
-    toast.textContent = message;
-    // Force top-right in case CSS is cached
-    Object.assign(toast.style, {
-      position: 'fixed',
-      top: '20px',
-      right: '20px',
-      bottom: 'auto',
-      left: 'auto',
-      transform: 'translateX(120%)'
-    });
-    document.body.appendChild(toast);
-    setTimeout(() => {
-      toast.style.transform = 'translateX(0)';
-      toast.classList.add('visible');
-    }, 10);
-    setTimeout(() => {
-      toast.style.transform = 'translateX(120%)';
-      toast.classList.remove('visible');
-      setTimeout(() => toast.remove(), 300);
-    }, 2500);
-  }
-
   function injectQuickNoteButtons() {
-    // Selector cho từng bài post trong Mattermost
-    const posts = document.querySelectorAll(
-      '.post:not(.chatops-note-injected), [class*="post_"]:not(.chatops-note-injected)'
-    );
-
+    const posts = document.querySelectorAll('.post:not(.chatops-note-injected), [class*="post_"]:not(.chatops-note-injected)');
     posts.forEach(postEl => {
-      // Chỉ inject vào post có id bắt đầu bằng "post_"
-      if (!postEl.id || !postEl.id.startsWith('post_')) return;
+      if (!postEl.id?.startsWith('post_')) return;
       postEl.classList.add('chatops-note-injected');
-
-      // Tìm khu vực action bar của Mattermost (hover actions)
-      const actionArea = postEl.querySelector(
-        '.post__actions, .post-menu, [class*="post-menu"], [aria-label*="actions"], .actions-container'
-      );
-
+      const actionArea = postEl.querySelector('.post__actions, .post-menu, [class*="post-menu"], [aria-label*="actions"], .actions-container');
       if (!actionArea) return;
-
-      // Tạo nút Quick Note
       const noteBtn = document.createElement('button');
       noteBtn.className = 'chatops-quick-note-btn';
       noteBtn.innerHTML = '📌';
       noteBtn.title = 'Quick Note / Nhắc nhở';
-      noteBtn.setAttribute('aria-label', 'Ghi chú nhanh');
-
-      noteBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        openQuickNote(postEl, noteBtn);
-      });
-
+      noteBtn.addEventListener('click', (e) => { e.stopPropagation(); openQuickNote(postEl, noteBtn); });
       actionArea.appendChild(noteBtn);
     });
   }
 
-  // Monitor for emoji button and new posts
-  const observer = new MutationObserver(() => {
-    injectMemeButton();
-    injectQuickNoteButtons();
-  });
+  const observer = new MutationObserver(() => { injectMemeButton(); injectQuickNoteButtons(); });
   observer.observe(document.body, { childList: true, subtree: true });
-  
-  // Initial check
   injectMemeButton();
   injectQuickNoteButtons();
 })();

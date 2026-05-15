@@ -171,3 +171,48 @@ export function renderPostList(posts, usersMap, chatopsUrl, teamName) {
 
   return html;
 }
+
+/**
+ * Render leave request post item
+ * @param {Object} post 
+ * @param {Object} user 
+ * @param {string} permalink 
+ */
+export function renderLeaveItem(post, user, permalink) {
+  const author = user ? escapeHtml(user.username) : 'Unknown';
+  return `
+    <div class="leave-item">
+      <div class="post-header">
+        <span class="post-author">@${author}</span>
+        <span class="post-channel">in ${escapeHtml(post._channelName)}</span>
+        <span class="post-time">${formatUnixMsToVN(post.create_at)}</span>
+      </div>
+      <div class="leave-message">${escapeHtml(post.message).replace(/\n/g, '<br>')}</div>
+      <div class="post-actions">
+         <a href="${permalink}" class="post-link">🔗 Xem tin nhắn</a>
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * Render missed mention post item
+ * @param {Object} post 
+ * @param {Object} author 
+ * @param {string} permalink 
+ */
+export function renderMentionItem(post, author, permalink) {
+  const authorName = author ? formatUserDisplayName(author) : '(Unknown)';
+  return `
+    <div class="post-item">
+      <div class="post-header">
+        <span class="post-author">${escapeHtml(authorName)}</span>
+        <span class="post-time" title="${formatUnixMsToVN(post.create_at)}">${formatRelativeTime(post.create_at)}</span>
+      </div>
+      <div class="post-body">${escapeHtml(post.message).replace(/\n/g, '<br>')}</div>
+      <div class="post-actions">
+        <a href="${permalink}" target="_blank" class="post-link">🔗 Mở trong ChatOps</a>
+      </div>
+    </div>
+  `;
+}
