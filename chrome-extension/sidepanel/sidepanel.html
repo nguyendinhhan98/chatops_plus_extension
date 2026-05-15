@@ -28,15 +28,15 @@
       </button>
       <button class="tab-btn" data-tab="tasks" title="Việc cần làm">
         <span class="tab-icon">✅</span>
-        <span class="tab-label">Việc làm <span id="taskTabBadge" class="tab-badge"></span></span>
+        <span class="tab-label">Cần làm <span id="taskTabBadge" class="tab-badge"></span></span>
       </button>
       <button class="tab-btn" data-tab="memo" title="Ghi chú">
         <span class="tab-icon">📝</span>
         <span class="tab-label">Ghi chú <span id="noteTabBadge" class="tab-badge"></span></span>
       </button>
-      <button class="tab-btn" data-tab="mentions" title="Nhắc đến tôi">
+      <button class="tab-btn" data-tab="mentions" title="Thông báo bị bỏ lỡ">
         <span class="tab-icon">🔔</span>
-        <span class="tab-label">Nhắc tôi</span>
+        <span class="tab-label">Bỏ lỡ</span>
       </button>
       <button class="tab-btn" data-tab="leave" title="Xin nghỉ / Đi trễ">
         <span class="tab-icon">📋</span>
@@ -94,24 +94,21 @@
     <div class="tab-content" id="tab-tasks">
       <!-- Quick Add Task Bar -->
       <div class="task-quick-bar">
-        <div class="task-quick-title">➕ Thêm việc cần làm mới</div>
         <div class="task-quick-input-row">
-          <input type="text" id="quickTaskInput" placeholder="Nhập tên việc cần làm..." class="quick-note-input" autocomplete="off">
+          <input type="text" id="quickTaskInput" placeholder="Nhập việc cần làm (Enter để lưu)..." class="quick-note-input" autocomplete="off">
+          <button id="btnQuickTaskSave" class="quick-note-btn" title="Thêm việc">+</button>
         </div>
-        <div class="task-reminder-row">
-          <label class="task-reminder-label">
+        <div class="task-reminder-row" onclick="document.getElementById('quickTaskReminderDt').showPicker?.()">
+          <label class="task-reminder-label" for="quickTaskReminderDt">
             <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" style="margin-right:4px;opacity:0.7">
               <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
               <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
             </svg>
             Nhắc lúc:
           </label>
-          <input type="datetime-local" id="quickTaskReminderDt" class="quick-task-datetime" style="flex:1;">
+          <input type="datetime-local" id="quickTaskReminderDt" class="quick-task-datetime" style="flex:1; cursor:pointer;">
         </div>
-        <div class="input-helper" style="margin-top:2px;">Hệ thống sẽ nhắc lại mỗi 5 phút cho đến khi hoàn thành</div>
-        <button id="btnQuickTaskSave" class="btn btn-primary btn-full" style="margin-top:8px;">
-          ✅ Thêm việc
-        </button>
+        <div class="input-helper">⏰ Bắt đầu nhắc từ thời điểm chọn — cứ 5 phút nhắc lại cho đến khi bạn đánh dấu xong</div>
       </div>
 
       <!-- Task list -->
@@ -123,7 +120,8 @@
       <!-- Quick Note Bar -->
       <div class="quick-note-bar">
         <div class="quick-note-row">
-          <input type="text" id="quickNoteInput" placeholder="Ghi nhanh... (Enter để lưu)" class="quick-note-input" autocomplete="off">
+          <span class="quick-note-icon">📝</span>
+          <input type="text" id="quickNoteInput" placeholder="Ghi chú nhanh... (Enter để lưu)" class="quick-note-input" autocomplete="off">
           <button id="btnQuickNoteSave" class="quick-note-btn" title="Lưu">+</button>
         </div>
       </div>
@@ -135,7 +133,7 @@
     <!-- ─── Tab: Nhắc đến tôi / Mentions ─── -->
     <div class="tab-content" id="tab-mentions">
       <div class="panel-section">
-        <h2 class="section-title">Tin nhắn nhắc đến tôi</h2>
+        <h2 class="section-title">Thông báo bị bỏ lỡ</h2>
         <div class="search-form">
           <select id="spMentionHours">
             <option value="24" selected>24 giờ qua</option>

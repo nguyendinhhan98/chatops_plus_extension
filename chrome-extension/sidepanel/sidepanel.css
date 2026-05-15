@@ -1229,3 +1229,42 @@ textarea.search-form-textarea {
 #tab-tasks.active, #tab-memo.active {
   display: flex;
 }
+
+/* ─── ý 5: Date picker full-row clickable ─── */
+.task-reminder-row { cursor: pointer; transition: background var(--transition); }
+.task-reminder-row:hover { background: var(--bg-3); }
+.quick-task-datetime { pointer-events: none; }
+
+/* ─── ý 6: Note icon in quick bar ─── */
+.quick-note-icon { font-size: 18px; flex-shrink: 0; line-height: 1; }
+
+/* ─── ý 7: Note content row (text + copy btn side by side) ─── */
+.note-content-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.note-content-row .note-body { flex: 1; min-width: 0; }
+.note-content-row .btn-copy-note { flex-shrink: 0; margin-top: 2px; }
+
+/* ─── ý 10: Better font sizes globally ─── */
+.input-helper { font-size: 13px !important; color: var(--text-2) !important; line-height: 1.5; }
+.hint-text { font-size: 13px !important; color: var(--text-2) !important; }
+.memo-list-header { font-size: 13px; }
+.memo-meta { font-size: 12px !important; color: var(--text-2) !important; }
+.task-text { font-size: 14px; line-height: 1.6; }
+
+/* ─── Remove truncation on task/note post-preview ─── */
+.memo-post-preview {
+  -webkit-line-clamp: unset !important;
+  overflow: visible !important;
+  display: block !important;
+  font-size: 13px;
+  color: var(--text-2);
+  padding: 6px 8px;
+  background: var(--bg-2);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--accent-border);
+  margin-bottom: 8px;
+  word-break: break-word;
+}

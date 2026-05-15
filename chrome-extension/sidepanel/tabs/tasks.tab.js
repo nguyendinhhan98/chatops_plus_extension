@@ -158,6 +158,9 @@ function renderTaskCard(task, now) {
     ? makePermalinkSync(task.postId, cachedConfig.chatopsUrl, currentTeam?.name || CHATOPS_CONFIG.DEFAULT_TEAM)
     : null;
 
+  // Only show postText if it's different from the note (to avoid duplication)
+  const hasOriginalPost = task.postId && task.postText && task.postText !== task.note;
+
   return `
     <div class="memo-item ${task.done ? 'memo-done' : ''} ${isOverdue ? 'memo-overdue' : ''}" id="item_${task.id}">
       <div class="memo-item-header">
@@ -166,7 +169,7 @@ function renderTaskCard(task, now) {
           <span class="memo-checkmark-custom"></span>
         </label>
         <div class="memo-content">
-          ${task.postText ? `<div class="memo-post-preview">${escapeHtml(task.postText)}</div>` : ''}
+          ${hasOriginalPost ? `<div class="memo-post-preview">📌 ${escapeHtml(task.postText)}</div>` : ''}
           <div class="memo-note-text task-text">${escapeHtml(task.note || language.taskNoContent)}</div>
         </div>
       </div>
