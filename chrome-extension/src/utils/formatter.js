@@ -39,7 +39,7 @@ export function formatUserDisplayName(user) {
 /**
  * Renders a list of search result posts
  */
-export function renderPostList(posts, usersMap, baseUrl, teamName, channelsMap) {
+export function renderPostList(posts, usersMap, baseUrl, teamName, channelsMap, keyword = '') {
   if (!posts || posts.length === 0) return '';
 
   return posts.map((post) => {
@@ -49,16 +49,25 @@ export function renderPostList(posts, usersMap, baseUrl, teamName, channelsMap) 
     const channelName = channel ? (channel.display_name || channel.name) : language.unknown;
     const permalink = makePermalinkSync(post.id, baseUrl, teamName);
 
+    let contentHtml = escapeHtml(post.message);
+    if (keyword && keyword.length >= 2) {
+      const regex = new RegExp(`(${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+      contentHtml = contentHtml.replace(regex, '<mark class="highlight">$1</mark>');
+    }
+    contentHtml = contentHtml.replace(/\n/g, '<br>');
+
     return `
       <div class="post-item">
         <div class="post-header">
-          <span class="post-author">${escapeHtml(author)}</span>
-          <span class="post-channel">${language.in} ${escapeHtml(channelName)}</span>
+          <div class="post-header-left">
+            <span class="post-author">${escapeHtml(author)}</span>
+            <span class="post-channel">${language.in} ${escapeHtml(channelName)}</span>
+          </div>
           <span class="post-time">${formatUnixMsToVN(post.create_at)}</span>
         </div>
-        <div class="post-body">${escapeHtml(post.message).replace(/\n/g, '<br>')}</div>
+        <div class="post-body">${contentHtml}</div>
         <div class="post-actions">
-           <a href="${permalink}" class="post-link">🔗 ${language.viewMessage}</a>
+           <a href="${permalink}" class="post-jump-link" title="${language.viewMessage}">↗</a>
         </div>
       </div>
     `;

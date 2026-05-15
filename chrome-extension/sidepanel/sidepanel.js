@@ -7,6 +7,7 @@ import { setup as setupSearch, reset as resetSearch, getSelects as getSearchSele
 import { setup as setupMentions, reset as resetMentions, getSelects as getMentionsSelects } from './tabs/mentions.tab.js';
 import { setup as setupLeave, reset as resetLeave, getSelects as getLeaveSelects } from './tabs/leave.tab.js';
 import { setup as setupMemo, loadMemos } from './tabs/memo.tab.js';
+import { setup as setupTasks, loadTasks } from './tabs/tasks.tab.js';
 import { getMyProfile, getMyTeams, getConfig } from '../src/api/index.js';
 import { escapeHtml } from '../src/utils/index.js';
 import { STORAGE_KEYS, MESSAGE_TYPES, CHATOPS_CONFIG, TABS } from '../src/constants.js';
@@ -34,6 +35,7 @@ async function init() {
   setupMentions(state);
   setupLeave(state);
   setupMemo(state);
+  setupTasks(state);
   setupTabs();
   
   const selectors = { ...getSearchSelects(), ...getMentionsSelects(), ...getLeaveSelects() };
@@ -97,7 +99,10 @@ function resetAllTabs() {
 function setupStateHandlers() {
   chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (msg.type === MESSAGE_TYPES.PING_SIDE_PANEL) sendResponse({ open: true });
-    else if (msg.type === MESSAGE_TYPES.MEMO_UPDATED) loadMemos();
+    else if (msg.type === MESSAGE_TYPES.MEMO_UPDATED) {
+      loadMemos();
+      loadTasks();
+    }
   });
 
   window.addEventListener('beforeunload', () => 
@@ -105,13 +110,26 @@ function setupStateHandlers() {
   );
   
   document.addEventListener('click', (e) => {
-    const link = e.target.closest('.post-link');
+    const link = e.target.closest('.post-jump-link');
     if (!link) return;
+    
     e.preventDefault();
+    const url = link.href;
+
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      const url = link.href;
-      if (tabs[0]?.url?.includes(CHATOPS_CONFIG.DOMAIN)) chrome.tabs.update(tabs[0].id, { url });
-      else chrome.tabs.create({ url });
+      const activeTab = tabs[0];
+      if (activeTab?.url?.includes(CHATOPS_CONFIG.DOMAIN)) {
+        chrome.tabs.update(activeTab.id, { url });
+      } else {
+        chrome.tabs.query({ currentWindow: true }, (allTabs) => {
+          const chatOpsTab = allTabs.find(t => t.url?.includes(CHATOPS_CONFIG.DOMAIN));
+          if (chatOpsTab) {
+            chrome.tabs.update(chatOpsTab.id, { url, active: true });
+          } else {
+            chrome.tabs.create({ url });
+          }
+        });
+      }
     });
   });
 }

@@ -10,23 +10,32 @@ export const language = {
   searching: 'Đang tìm kiếm...',
   errorLoading: 'Lỗi khi tải dữ liệu',
   noResults: 'Không tìm thấy kết quả nào',
+  noResultsFriendly: 'Không tìm thấy kết quả phù hợp. Hãy thử kiểm tra lại workspace hoặc bộ lọc tìm kiếm.',
   viewMessage: 'Xem tin nhắn',
   openInChatOps: 'Mở trong ChatOps',
   unknown: 'Không xác định',
   channel: 'kênh',
   in: 'trong',
+  copied: 'Đã sao chép!',
 
   // Sidepanel Search Tab
+  search: 'Tìm kiếm',
   searchEmptyState: 'Nhập từ khóa và nhấn tìm kiếm',
   searchCriteriaRequired: 'Vui lòng nhập ít nhất 1 tiêu chí tìm kiếm',
+  searchHelpTooltip: 'Tìm kiếm tin nhắn theo từ khóa, người gửi, channel và khoảng thời gian.',
+  searchKeywordHelper: 'Từ khóa nên từ 2 ký tự trở lên.',
+  searchIncludeDM: 'Bao gồm Direct Message',
   resultsFor: 'Kết quả cho',
+  today: 'Hôm nay',
+  last7Days: '7 ngày qua',
+  last30Days: '30 ngày qua',
 
   // Sidepanel Mentions Tab
-  scanMentions: 'Quét Mention',
-  scanMentionsStart: 'Nhấn "Quét Mention" để bắt đầu',
-  scanningChannels: 'Đang quét các channel...',
-  noMissedMentions: 'Không có mention bị bỏ lỡ trong {hours}h qua! 🎉',
-  mentionsFound: 'Phát hiện {count} mention chưa xử lý trong {channels} channel',
+  scanMentions: 'Kiểm tra ngay',
+  scanMentionsStart: 'Nhấn "Kiểm tra ngay" để quét các kênh của bạn',
+  scanningChannels: 'Đang quét các kênh...',
+  noMissedMentions: 'Không có nhắc đến bị bỏ lỡ trong {hours}h qua! 🎉',
+  mentionsFound: 'Phát hiện {count} nhắc đến chưa xử lý trong {channels} kênh',
   notConnected: 'Chưa kết nối. Vui lòng kiểm tra Cài đặt.',
 
   // Sidepanel Leave Tab
@@ -37,31 +46,50 @@ export const language = {
   noLeaveRequests: 'Không tìm thấy đơn xin nghỉ nào',
   foundMessages: 'Tìm thấy {count} tin nhắn',
 
-  // Sidepanel Memo Tab
-  memoTasksEmpty: 'Chưa có Task nào.',
-  memoNotesEmpty: 'Chưa có Note nào.',
+  // Sidepanel Tasks Tab
+  taskTabLabel: 'Việc cần làm',
+  taskEmpty: 'Chưa có việc cần làm nào.',
+  taskClickHint: 'Nhấn 📌 trên tin nhắn hoặc nhập ở trên.',
+  taskPending: 'Đang thực hiện',
+  taskCompleted: 'Đã hoàn thành',
+  taskClearAll: 'Xóa tất cả',
+  taskPlaceholder: 'Nhập tên việc cần làm...',
+  taskMarkIncomplete: 'Đánh dấu chưa xong',
+  taskMarkDone: 'Đánh dấu đã xong',
+  taskNoContent: '(Không có nội dung)',
+  taskOverdue: 'Quá hạn',
+  taskDelete: 'Xóa',
+  taskViewOriginal: 'Xem tin nhắn gốc',
+  taskReminderLabel: 'Nhắc lúc:',
+  taskReminderHint: 'Hệ thống sẽ nhắc lại mỗi 5 phút cho đến khi hoàn thành',
+  taskAddBtn: 'Thêm việc',
+
+  // Sidepanel Memo (Notes) Tab
+  memoTasksEmpty: 'Chưa có việc cần làm nào.',
+  memoNotesEmpty: 'Chưa có ghi chú nào.',
   memoClickHint: 'Nhấn 📌 trên tin nhắn hoặc nhập ở trên.',
-  memoPending: 'Chưa xong',
-  memoCompleted: 'Đã xong',
+  memoPending: 'Đang thực hiện',
+  memoCompleted: 'Đã hoàn thành',
   memoClearAll: 'Xóa tất cả',
-  memoTaskPlaceholder: 'Tên task... (Enter để lưu)',
-  memoNotePlaceholder: 'Nội dung note... (Enter để lưu)',
+  memoTaskPlaceholder: 'Nhập tên việc cần làm...',
+  memoNotePlaceholder: 'Nội dung ghi chú... (Enter để lưu)',
   memoMarkIncomplete: 'Đánh dấu chưa xong',
   memoMarkDone: 'Đánh dấu đã xong',
   memoNoContent: '(Không có nội dung)',
-  memoEmptyNote: 'Note trống',
+  memoEmptyNote: 'Ghi chú trống',
   memoOverdue: 'Quá hạn',
   memoDelete: 'Xóa',
   memoViewOriginal: 'Xem tin nhắn gốc',
+  memoCopyNote: 'Sao chép nội dung',
 
   // Workspace Selector
   noWorkspaces: 'Không tìm thấy Workspace nào',
 
   // Content Script - Reminder Banner
-  reminderTaskTitle: 'Task chưa xong',
+  reminderTaskTitle: 'Việc cần làm chưa xong',
   reminderTitle: 'ChatOps Nhắc nhở',
   reminderDoneBtn: '✅ Xong — Dừng nhắc',
-  reminderTaskCompleted: '✅ Task đã hoàn thành!',
+  reminderTaskCompleted: '✅ Đã hoàn thành!',
   
   // Content Script - Floating Button
   floatingBtnTitle: 'Mở ChatOps Helper',
@@ -74,13 +102,13 @@ export const language = {
   memeError: 'Lỗi tải meme.',
 
   // Content Script - Quick Task Popover
-  quickTaskCreate: 'Tạo Task nhanh',
+  quickTaskCreate: 'Tạo việc cần làm nhanh',
   quickTaskNotePlaceholder: 'Thêm ghi chú (tùy chọn)...',
   quickTaskRemindAt: 'Nhắc lúc:',
-  quickTaskHint: 'Sẽ nhắc mỗi 5 phút cho đến khi hoàn thành',
-  quickTaskSave: 'Lưu Task',
+  quickTaskHint: 'Hệ thống sẽ nhắc lại mỗi 5 phút cho đến khi hoàn thành',
+  quickTaskSave: 'Lưu',
   quickTaskCancel: 'Hủy',
-  quickTaskSaveSuccess: 'Đã lưu Task thành công',
-  reminderTaskDefault: 'Bạn có một task chưa hoàn thành.',
+  quickTaskSaveSuccess: 'Đã lưu thành công',
+  reminderTaskDefault: 'Bạn có một việc cần làm chưa hoàn thành.',
   directMessage: 'Tin nhắn trực tiếp',
 };

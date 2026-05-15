@@ -16,21 +16,29 @@
       </select>
     </div>
 
-    <!-- ─── Tab Navigation ─── -->
+    <!-- ─── Tab Navigation (5 tabs) ─── -->
     <nav class="tab-nav">
       <button class="tab-btn active" data-tab="search" title="Tìm kiếm">
-        <span class="tab-icon">🔍</span>
+        <span class="tab-icon">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+          </svg>
+        </span>
         <span class="tab-label">Tìm kiếm</span>
+      </button>
+      <button class="tab-btn" data-tab="tasks" title="Việc cần làm">
+        <span class="tab-icon">✅</span>
+        <span class="tab-label">Việc làm <span id="taskTabBadge" class="tab-badge"></span></span>
       </button>
       <button class="tab-btn" data-tab="memo" title="Ghi chú">
         <span class="tab-icon">📝</span>
-        <span class="tab-label">Ghi chú</span>
+        <span class="tab-label">Ghi chú <span id="noteTabBadge" class="tab-badge"></span></span>
       </button>
-      <button class="tab-btn" data-tab="mentions" title="Mentions">
+      <button class="tab-btn" data-tab="mentions" title="Nhắc đến tôi">
         <span class="tab-icon">🔔</span>
-        <span class="tab-label">Mentions</span>
+        <span class="tab-label">Nhắc tôi</span>
       </button>
-      <button class="tab-btn" data-tab="leave" title="Xin nghỉ">
+      <button class="tab-btn" data-tab="leave" title="Xin nghỉ / Đi trễ">
         <span class="tab-icon">📋</span>
         <span class="tab-label">Xin nghỉ</span>
       </button>
@@ -39,20 +47,42 @@
     <!-- ─── Tab: Search ─── -->
     <div class="tab-content active" id="tab-search">
       <div class="panel-section">
-        <h2 class="section-title">Tìm kiếm tin nhắn</h2>
-        <div class="search-form">
-          <input type="text" id="spSearchTerms" placeholder="Từ khóa tìm kiếm...">
+        <div class="search-form-header">
+          <h2 class="section-title">Tìm kiếm tin nhắn</h2>
+          <button class="search-toggle-btn" id="btnToggleSearch" title="Thu gọn/Mở rộng">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
+              <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+            </svg>
+          </button>
+        </div>
+        <div class="search-form" id="spSearchForm">
+          <div class="search-main-row">
+            <input type="text" id="spSearchTerms" placeholder="Từ khóa tìm kiếm...">
+            <button class="btn btn-primary" id="btnSpSearch" title="Tìm kiếm" style="width: 42px; padding: 0;">
+              <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+              </svg>
+            </button>
+          </div>
+          <div class="input-helper">Từ khóa nên từ 2 ký tự trở lên. Nhấn Enter để tìm kiếm.</div>
+          
           <div class="search-filters-row">
             <div class="autocomplete-wrapper">
-              <input type="text" id="spSearchFrom" class="autocomplete-input" placeholder="from: username" autocomplete="off">
+              <input type="text" id="spSearchFrom" class="autocomplete-input" placeholder="from: tên người gửi" autocomplete="off">
             </div>
-            <div id="spSearchIn" data-placeholder="in: channel-name"></div>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+              <div id="spSearchIn" data-placeholder="in: channel-name"></div>
+              <label class="checkbox-label" style="margin-left: 2px;">
+                <input type="checkbox" id="chkSearchIncludeDM">
+                <span style="font-size: 11px;">Bao gồm Direct Message</span>
+              </label>
+            </div>
           </div>
+
           <div class="search-filters-row">
             <input type="date" id="spSearchAfter" title="Sau ngày">
             <input type="date" id="spSearchBefore" title="Trước ngày">
           </div>
-          <button class="btn btn-primary btn-full" id="btnSpSearch">Tìm kiếm</button>
         </div>
       </div>
       <div class="panel-section" id="spSearchResults" style="flex:1; overflow-y:auto; padding:16px;">
@@ -60,72 +90,87 @@
       </div>
     </div>
 
-    <!-- ─── Tab: Ghi chú / Memo ─── -->
-    <div class="tab-content" id="tab-memo">
-      <!-- Quick Note Bar -->
-      <div class="quick-note-bar" id="quickNoteBar">
-        <div class="quick-note-row">
-          <input type="text" id="quickNoteInput" placeholder="Ghi nhanh... (Enter để lưu)" class="quick-note-input" autocomplete="off">
-          <button id="btnQuickNoteSave" class="quick-note-btn" title="Lưu">+</button>
+    <!-- ─── Tab: Việc cần làm / Tasks ─── -->
+    <div class="tab-content" id="tab-tasks">
+      <!-- Quick Add Task Bar -->
+      <div class="task-quick-bar">
+        <div class="task-quick-title">➕ Thêm việc cần làm mới</div>
+        <div class="task-quick-input-row">
+          <input type="text" id="quickTaskInput" placeholder="Nhập tên việc cần làm..." class="quick-note-input" autocomplete="off">
         </div>
-        <!-- Task reminder row: only shown in Tasks sub-tab -->
-        <div class="quick-task-row" id="quickTaskRow">
-          <span class="quick-task-label">Nhắc lúc:</span>
-          <input type="datetime-local" id="quickTaskReminder" class="quick-task-datetime">
+        <div class="task-reminder-row">
+          <label class="task-reminder-label">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" style="margin-right:4px;opacity:0.7">
+              <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
+              <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
+            </svg>
+            Nhắc lúc:
+          </label>
+          <input type="datetime-local" id="quickTaskReminderDt" class="quick-task-datetime" style="flex:1;">
         </div>
-      </div>
-
-      <!-- Sub-tabs -->
-      <div class="memo-sub-tabs">
-        <button class="memo-sub-tab active" data-subtab="tasks">
-          📋 Tasks <span id="taskBadge" class="memo-badge"></span>
-        </button>
-        <button class="memo-sub-tab" data-subtab="notes">
-          📝 Ghi chú <span id="noteBadge" class="memo-badge"></span>
+        <div class="input-helper" style="margin-top:2px;">Hệ thống sẽ nhắc lại mỗi 5 phút cho đến khi hoàn thành</div>
+        <button id="btnQuickTaskSave" class="btn btn-primary btn-full" style="margin-top:8px;">
+          ✅ Thêm việc
         </button>
       </div>
 
       <!-- Task list -->
-      <div id="memoTaskList" class="memo-panel active"></div>
-
-      <!-- Note list -->
-      <div id="memoNoteList" class="memo-panel"></div>
+      <div id="taskList" class="memo-panel active" style="flex:1;overflow-y:auto;padding:12px;"></div>
     </div>
 
-    <!-- ─── Tab: Mentions ─── -->
+    <!-- ─── Tab: Ghi chú / Notes ─── -->
+    <div class="tab-content" id="tab-memo">
+      <!-- Quick Note Bar -->
+      <div class="quick-note-bar">
+        <div class="quick-note-row">
+          <input type="text" id="quickNoteInput" placeholder="Ghi nhanh... (Enter để lưu)" class="quick-note-input" autocomplete="off">
+          <button id="btnQuickNoteSave" class="quick-note-btn" title="Lưu">+</button>
+        </div>
+      </div>
+
+      <!-- Note list -->
+      <div id="memoNoteList" class="memo-panel active" style="flex:1;overflow-y:auto;padding:12px;"></div>
+    </div>
+
+    <!-- ─── Tab: Nhắc đến tôi / Mentions ─── -->
     <div class="tab-content" id="tab-mentions">
       <div class="panel-section">
-        <h2 class="section-title">Kiểm tra Mention bị bỏ lỡ</h2>
+        <h2 class="section-title">Tin nhắn nhắc đến tôi</h2>
         <div class="search-form">
           <select id="spMentionHours">
-            <option value="24">24 giờ qua</option>
+            <option value="24" selected>24 giờ qua</option>
             <option value="48">48 giờ qua</option>
-            <option value="168" selected>7 ngày qua</option>
+            <option value="168">7 ngày qua</option>
             <option value="336">14 ngày qua</option>
           </select>
           <div style="display:flex; flex-direction:column; gap:6px;">
             <label class="checkbox-label">
               <input type="checkbox" id="spMentionDirect" checked>
-              <span>Mention trực tiếp (@username)</span>
+              <span>Nhắc đến trực tiếp (@tên bạn)</span>
             </label>
             <label class="checkbox-label">
               <input type="checkbox" id="spMentionHere">
-              <span>Mention @here</span>
+              <span>Nhắc cả nhóm @here (đang online)</span>
             </label>
             <label class="checkbox-label">
               <input type="checkbox" id="spMentionChannel">
-              <span>Mention @channel / @all</span>
+              <span>Nhắc toàn kênh @channel / @all</span>
             </label>
           </div>
-          <div id="spMentionChannelsMS" data-placeholder="Theo dõi riêng Channels (Để trống = Quét tất cả)"></div>
-          <button class="btn btn-primary btn-full" id="btnSpScanMentions">Quét mentions</button>
+          <div id="spMentionChannelsMS" data-placeholder="Lọc theo kênh cụ thể (để trống = quét tất cả)"></div>
+          <button class="btn btn-primary btn-full" id="btnSpScanMentions">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style="margin-right:6px;">
+              <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+            </svg>
+            Kiểm tra ngay
+          </button>
         </div>
         <p class="hint-text">
-          Logic "miss": Chỉ tính là bị bỏ lỡ nếu bạn CHƯA reply VÀ CHƯA reaction.
+          💡 Chỉ tính là bị bỏ lỡ khi bạn <strong>chưa trả lời</strong> và <strong>chưa reaction</strong> vào tin nhắn đó.
         </p>
       </div>
       <div class="panel-section" id="spMentionResults" style="flex:1; overflow-y:auto; padding:16px;">
-        <div class="empty-state">Click "Quét mentions" để bắt đầu</div>
+        <div class="empty-state">Nhấn "Kiểm tra ngay" để bắt đầu</div>
       </div>
     </div>
 

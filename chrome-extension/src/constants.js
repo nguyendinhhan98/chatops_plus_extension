@@ -74,9 +74,10 @@ export const SELECTORS = {
 
 export const TABS = {
   SEARCH: 'search',
+  TASKS: 'tasks',
+  MEMO: 'memo',
   MENTIONS: 'mentions',
   LEAVE: 'leave',
-  MEMO: 'memo',
 };
 
 export const MEMO_SUB_TABS = {

@@ -16,10 +16,19 @@ import {
 import { ALARMS, UI_CONFIG, MESSAGE_TYPES, CHATOPS_CONFIG, STORAGE_KEYS } from './constants.js';
 
 /**
+ * Initialize extension services
+ */
+function initialize() {
+  setupSidePanel();
+  setupCookieSync();
+  syncCookies();
+}
+
+/**
  * Initialize extension on installation or update
  */
-chrome.runtime.onInstalled.addListener(async (details) => {
-  console.log('[ChatOps Extension] Installed/Updated:', details.reason);
+chrome.runtime.onInstalled.addListener((details) => {
+  console.log('[ChatOps Extension] Installed/Updated:', details?.reason);
 
   // Set up mention check alarm
   chrome.alarms.create(ALARMS.MENTION_CHECK, {
@@ -27,14 +36,11 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     periodInMinutes: UI_CONFIG.MENTION_CHECK_INTERVAL_MINUTES,
   });
 
-  setupSidePanel();
-  setupCookieSync();
-  syncCookies();
+  initialize();
 });
 
 // Initialize on startup
-setupSidePanel();
-setupCookieSync();
+initialize();
 
 /**
  * Alarm listener for periodic tasks

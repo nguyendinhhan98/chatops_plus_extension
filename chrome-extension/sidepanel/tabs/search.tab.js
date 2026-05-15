@@ -45,6 +45,20 @@ export function setup(state) {
     if (e.key === 'Enter') performSpSearch(false);
   });
 
+  // Toggle Collapse
+  const btnToggle = document.getElementById('btnToggleSearch');
+  const searchForm = document.getElementById('spSearchForm');
+  btnToggle.addEventListener('click', () => {
+    searchForm.classList.toggle('collapsed');
+    btnToggle.classList.toggle('collapsed');
+  });
+
+  // Include DM toggle - Clear cache to force re-fetch with new filter
+  document.getElementById('chkSearchIncludeDM').addEventListener('change', () => {
+    _joinedChannelsCache = null;
+    if (searchInMS) searchInMS.reset();
+  });
+
   const getTeamId = () => _state.getTeam()?.id;
 
   searchFromAC = setupAutocomplete(
@@ -54,8 +68,21 @@ export function setup(state) {
       searchFetch: async (term) => searchUsers(term, getTeamId())
     },
     (user) => renderUserCard(user),
-    (user) => user.username
+    (user) => {
+      // Store the username for the search logic
+      document.getElementById('spSearchFrom').dataset.username = user.username;
+      // Return the full name for display
+      const name = (user.first_name || user.last_name) 
+        ? `${user.first_name} ${user.last_name}`.trim() 
+        : user.username;
+      return name;
+    }
   );
+
+  document.getElementById('spSearchFrom').addEventListener('input', (e) => {
+    // If user types manually, clear the stored username
+    delete e.target.dataset.username;
+  });
 
   const enrichChannels = async (channels) => {
     const me = _state.getUser();
@@ -96,25 +123,34 @@ export function setup(state) {
     'spSearchIn',
     {
       defaultFetch: async (page, perPage) => {
+        const includeDM = document.getElementById('chkSearchIncludeDM').checked;
         if (!_joinedChannelsCache) {
           _joinedChannelsCache = await getMyChannels(getTeamId());
         }
-        const paginated = _joinedChannelsCache.slice(page * perPage, (page + 1) * perPage);
+        let filtered = _joinedChannelsCache;
+        if (!includeDM) {
+          filtered = filtered.filter(c => c.type !== 'D' && !(c.name && c.name.includes('__')));
+        }
+        const paginated = filtered.slice(page * perPage, (page + 1) * perPage);
         return enrichChannels(paginated);
       },
       searchFetch: async (term) => {
+        const includeDM = document.getElementById('chkSearchIncludeDM').checked;
         if (!_joinedChannelsCache) {
           _joinedChannelsCache = await getMyChannels(getTeamId());
         }
         const termLower = term.toLowerCase();
-        // Enrich first so we can search by display_name too (recipient name)
-        const enriched = await enrichChannels(_joinedChannelsCache);
+        let filtered = _joinedChannelsCache;
+        if (!includeDM) {
+          filtered = filtered.filter(c => c.type !== 'D' && !(c.name && c.name.includes('__')));
+        }
         
-        const filtered = enriched.filter(c => 
+        const enriched = await enrichChannels(filtered);
+        const searched = enriched.filter(c => 
           (c.display_name && c.display_name.toLowerCase().includes(termLower)) || 
           (c.name && c.name.toLowerCase().includes(termLower))
         );
-        return filtered;
+        return searched;
       }
     },
     (channel) => renderChannelCard(channel),
@@ -131,6 +167,27 @@ export function setup(state) {
       }
     }
   });
+}
+
+/**
+ * Clears the search results and resets the form
+ */
+export function clearResults() {
+  const resultsEl = document.getElementById('spSearchResults');
+  resultsEl.innerHTML = `<div class="empty-state">${language.searchEmptyState}</div>`;
+  searchState = { page: 0, hasMore: false, terms: '', isSearching: false, originalKeyword: '' };
+  
+  // Clear input fields
+  const fromInput = document.getElementById('spSearchFrom');
+  fromInput.value = '';
+  delete fromInput.dataset.username;
+  document.getElementById('spSearchTerms').value = '';
+  document.getElementById('spSearchAfter').value = '';
+  document.getElementById('spSearchBefore').value = '';
+  document.getElementById('chkSearchIncludeDM').checked = false;
+  
+  // Reset multi-select for channels
+  if (searchInMS) searchInMS.reset();
 }
 
 /**
@@ -154,16 +211,27 @@ export function getSelects() {
 export async function performSpSearch(isLoadMore = false) {
   if (searchState.isSearching) return;
   const resultsEl = document.getElementById('spSearchResults');
+  const btnSearch = document.getElementById('btnSpSearch');
 
   if (!isLoadMore) {
     const terms = document.getElementById('spSearchTerms').value.trim();
-    const from = document.getElementById('spSearchFrom').value.trim();
+    const fromInput = document.getElementById('spSearchFrom');
+    let from = fromInput.value.trim();
+    // Use the stored username if available, otherwise use input text
+    if (fromInput.dataset.username && from) {
+      from = fromInput.dataset.username;
+    }
     const inChannels = searchInMS ? searchInMS.getSelected() : [];
     const after = document.getElementById('spSearchAfter').value;
     const before = document.getElementById('spSearchBefore').value;
 
     if (!terms && !from && inChannels.length === 0) {
       resultsEl.innerHTML = `<div class="empty-state">${language.searchCriteriaRequired}</div>`;
+      return;
+    }
+
+    if (terms && terms.length < 2) {
+      resultsEl.innerHTML = `<div class="empty-state">${language.searchKeywordHelper}</div>`;
       return;
     }
 
@@ -177,9 +245,13 @@ export async function performSpSearch(isLoadMore = false) {
     if (before) searchTerms += ` before:${before}`;
 
     searchState.terms = searchTerms.trim();
+    searchState.originalKeyword = terms; // Save for highlighting
     searchState.page = 0;
     searchState.hasMore = true;
+    
     showLoading(resultsEl, language.searching);
+    btnSearch.classList.add('loading');
+    btnSearch.innerHTML = `<span class="spinner"></span>`;
   } else {
     const btn = document.getElementById('btnLoadMoreSearch');
     if (btn) btn.innerHTML = `<span class="spinner"></span> ${language.loading}`;
@@ -203,7 +275,7 @@ export async function performSpSearch(isLoadMore = false) {
     searchState.page++;
 
     if (!isLoadMore && posts.length === 0) {
-      resultsEl.innerHTML = `<div class="empty-state">${language.noResults}</div>`;
+      resultsEl.innerHTML = `<div class="empty-state">${language.noResultsFriendly}</div>`;
       searchState.isSearching = false;
       return;
     }
@@ -221,13 +293,22 @@ export async function performSpSearch(isLoadMore = false) {
       })
     );
 
-    const html = renderPostList(posts, usersMap, config.chatopsUrl, team.name, channelsMap);
+    const html = renderPostList(posts, usersMap, config.chatopsUrl, team.name, channelsMap, searchState.originalKeyword);
     
     if (!isLoadMore) {
       resultsEl.innerHTML = `
-        <div class="result-count">${language.resultsFor}: "${escapeHtml(searchState.terms)}"</div>
+        <div class="result-header">
+          <div class="result-count">${language.resultsFor}: "${escapeHtml(searchState.terms)}"</div>
+          <button class="btn-clear-search" id="btnClearSearch">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style="margin-right: 4px;">
+              <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+            </svg>
+            Xóa kết quả
+          </button>
+        </div>
         <div id="searchPostList">${html}</div>
       `;
+      document.getElementById('btnClearSearch')?.addEventListener('click', clearResults);
     } else {
       document.getElementById('searchPostList').insertAdjacentHTML('beforeend', html);
       document.getElementById('btnLoadMoreSearch')?.remove();
@@ -241,5 +322,11 @@ export async function performSpSearch(isLoadMore = false) {
     if (!isLoadMore) showError(resultsEl, err.message);
   } finally {
     searchState.isSearching = false;
+    btnSearch.classList.remove('loading');
+    btnSearch.innerHTML = `
+      <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor">
+        <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+      </svg>
+    `;
   }
 }
