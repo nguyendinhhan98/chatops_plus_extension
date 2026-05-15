@@ -1,7 +1,13 @@
+import { UI_CONFIG } from '../src/constants.js';
+import { language } from '../src/lang.js';
+
 /**
- * MultiSelect Component cho ChatOps Extension
+ * MultiSelect Component — ChatOps Chrome Extension
  */
 
+/**
+ * Initializes a multi-select component with autocomplete and infinite scroll
+ */
 export function setupMultiSelect(containerId, fetchOptions, renderFn, getValueFn, getLabelFn) {
   const container = document.getElementById(containerId);
   if (!container) return null;
@@ -18,7 +24,7 @@ export function setupMultiSelect(containerId, fetchOptions, renderFn, getValueFn
   const input = document.createElement('input');
   input.type = 'text';
   input.className = 'autocomplete-input multiselect-input';
-  input.placeholder = container.getAttribute('data-placeholder') || 'Tìm kiếm...';
+  input.placeholder = container.getAttribute('data-placeholder') || 'Search...';
   inputWrapper.appendChild(input);
   container.appendChild(inputWrapper);
 
@@ -30,7 +36,7 @@ export function setupMultiSelect(containerId, fetchOptions, renderFn, getValueFn
   let timeoutId = null;
   let currentSearch = '';
   let currentPage = 0;
-  const perPage = 10;
+  const perPage = UI_CONFIG.AUTOCOMPLETE_PAGE_SIZE;
   let isLoading = false;
   let hasMore = true;
 
@@ -59,13 +65,13 @@ export function setupMultiSelect(containerId, fetchOptions, renderFn, getValueFn
     isLoading = true;
     
     if (!isLoadMore) {
-      dropdown.innerHTML = '<div class="autocomplete-msg"><span class="spinner"></span> Đang tải...</div>';
+      dropdown.innerHTML = `<div class="autocomplete-msg"><span class="spinner"></span> ${language.loading}</div>`;
       currentPage = 0;
       hasMore = true;
     } else {
       const spinner = document.createElement('div');
       spinner.className = 'autocomplete-msg load-more-spinner';
-      spinner.innerHTML = '<span class="spinner"></span> Đang tải thêm...';
+      spinner.innerHTML = `<span class="spinner"></span> ${language.loadingMore}`;
       dropdown.appendChild(spinner);
     }
 
@@ -91,11 +97,11 @@ export function setupMultiSelect(containerId, fetchOptions, renderFn, getValueFn
         if (spinner) spinner.remove();
       }
 
-      // Lọc bỏ những item đã được chọn
+      // Filter out already selected items
       results = results.filter(r => !selectedItems.some(s => getValueFn(s) === getValueFn(r)));
 
       if (!isLoadMore && (!results || results.length === 0)) {
-        dropdown.innerHTML = '<div class="autocomplete-msg">Không tìm thấy hoặc đã chọn hết</div>';
+        dropdown.innerHTML = `<div class="autocomplete-msg">${language.noResults}</div>`;
         isLoading = false;
         return;
       }
@@ -107,12 +113,17 @@ export function setupMultiSelect(containerId, fetchOptions, renderFn, getValueFn
         
         itemEl.addEventListener('mousedown', (evt) => {
           evt.preventDefault();
+          // Prevent duplicates
+          if (selectedItems.some(s => getValueFn(s) === getValueFn(item))) return;
+          
           selectedItems.push(item);
           input.value = '';
           currentSearch = '';
-          dropdown.style.display = 'none';
           renderChips();
           container.dispatchEvent(new Event('change', { bubbles: true }));
+          
+          // Refresh the list to remove the selected item and keep dropdown open
+          loadData(false);
         });
         
         dropdown.appendChild(itemEl);
@@ -121,7 +132,7 @@ export function setupMultiSelect(containerId, fetchOptions, renderFn, getValueFn
       currentPage++;
     } catch (err) {
       if (!isLoadMore) {
-        dropdown.innerHTML = '<div class="autocomplete-msg" style="color:var(--error)">❌ Lỗi tải dữ liệu</div>';
+        dropdown.innerHTML = `<div class="autocomplete-msg" style="color:var(--error)">❌ ${language.errorLoading}</div>`;
       }
       hasMore = false;
     } finally {
@@ -129,9 +140,9 @@ export function setupMultiSelect(containerId, fetchOptions, renderFn, getValueFn
     }
   }
 
-  // Handle scroll for Infinite Load
+  // Infinite Scroll logic
   dropdown.addEventListener('scroll', () => {
-    if (dropdown.scrollTop + dropdown.clientHeight >= dropdown.scrollHeight - 20) {
+    if (dropdown.scrollTop + dropdown.clientHeight >= dropdown.scrollHeight - UI_CONFIG.SCROLL_THRESHOLD_PX) {
       loadData(true);
     }
   });
@@ -146,7 +157,7 @@ export function setupMultiSelect(containerId, fetchOptions, renderFn, getValueFn
     timeoutId = setTimeout(() => {
       dropdown.style.display = 'block';
       loadData(false);
-    }, 300);
+    }, UI_CONFIG.DEBOUNCE_DELAY_MS);
   });
 
   input.addEventListener('focus', () => {

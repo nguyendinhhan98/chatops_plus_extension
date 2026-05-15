@@ -1,17 +1,19 @@
 /**
- * Content Script cho trang chat.runsystem.vn
- * Nhúng một floating button để mở nhanh ChatOps Extension Side Panel.
+ * Content Script for ChatOps domain
  */
 
-// ─── Lắng nghe thông báo nhắc nhở từ Background ───
+import { MESSAGE_TYPES, UI_CONFIG, SELECTORS, STORAGE_KEYS, ALARMS } from '/src/constants.js';
+import { language } from '/src/lang.js';
+
+// --- Listen for reminder notifications from the background script ---
 chrome.runtime.onMessage.addListener((message) => {
-  if (message.type === 'SHOW_REMINDER') {
+  if (message.type === MESSAGE_TYPES.SHOW_REMINDER) {
     showReminderBanner(message.message, message.taskId, message.isTask);
   }
 });
 
 /**
- * Hiển thị banner nhắc nhở ở top trang
+ * Displays a reminder banner at the top of the page
  */
 function showReminderBanner(text, taskId, isTask = false) {
   document.querySelectorAll('.chatops-reminder-banner').forEach(el => el.remove());
@@ -22,30 +24,30 @@ function showReminderBanner(text, taskId, isTask = false) {
     <div class="crb-inner">
       <div class="crb-icon">${isTask ? '📋' : '⏰'}</div>
       <div class="crb-content">
-        <div class="crb-title">${isTask ? 'Task chưa hoàn thành' : 'Nhắc nhở từ ChatOps Helper'}</div>
+        <div class="crb-title">${isTask ? language.reminderTaskTitle : language.reminderTitle}</div>
         <div class="crb-text">${text.replace(/</g, '&lt;')}</div>
       </div>
-      <button class="crb-close" title="Đóng">×</button>
+      <button class="crb-close" title="${language.memoDelete}">×</button>
     </div>
     ${isTask ? `
       <div class="crb-task-actions">
-        <button class="crb-done-btn" data-task-id="${taskId}">✅ Đã xong — Dừng nhắc</button>
+        <button class="crb-done-btn" data-task-id="${taskId}">${language.reminderDoneBtn}</button>
       </div>
     ` : ''}
     <div class="crb-progress"></div>
   `;
   document.body.appendChild(banner);
 
-  const DURATION = isTask ? 20000 : 15000;
+  const duration = isTask ? UI_CONFIG.TASK_BANNER_DURATION : UI_CONFIG.BANNER_DURATION;
   const progressEl = banner.querySelector('.crb-progress');
-  progressEl.style.animationDuration = `${DURATION}ms`;
+  progressEl.style.animationDuration = `${duration}ms`;
 
   setTimeout(() => banner.classList.add('visible'), 10);
 
   const closeTimer = setTimeout(() => {
     banner.classList.remove('visible');
     setTimeout(() => banner.remove(), 400);
-  }, DURATION);
+  }, duration);
 
   banner.querySelector('.crb-close').addEventListener('click', () => {
     clearTimeout(closeTimer);
@@ -56,16 +58,16 @@ function showReminderBanner(text, taskId, isTask = false) {
   if (isTask && taskId) {
     banner.querySelector('.crb-done-btn').addEventListener('click', () => {
       clearTimeout(closeTimer);
-      chrome.runtime.sendMessage({ type: 'MARK_TASK_DONE', taskId });
+      chrome.runtime.sendMessage({ type: MESSAGE_TYPES.MARK_TASK_DONE, taskId });
       banner.classList.remove('visible');
       setTimeout(() => banner.remove(), 400);
-      showToast('✅ Task hoàn thành!');
+      showToast(language.reminderTaskCompleted);
     });
   }
 }
 
 /**
- * Hiển thị toast notification (Shared version for content script)
+ * Displays a toast notification
  */
 function showToast(msg) {
   const existing = document.querySelector('.chatops-toast');
@@ -92,16 +94,16 @@ function showToast(msg) {
     t.style.transform = 'translateX(120%)';
     t.classList.remove('visible');
     setTimeout(() => t.remove(), 300);
-  }, 2500);
+  }, UI_CONFIG.TOAST_DURATION);
 }
 
 (function () {
-  // Tránh tạo nhiều nút nếu script chạy nhiều lần
+  // Prevent duplicate injections
   if (document.getElementById('chatops-ext-floating-btn')) return;
 
   const btn = document.createElement('div');
   btn.id = 'chatops-ext-floating-btn';
-  btn.title = 'Mở ChatOps Helper';
+  btn.title = language.floatingBtnTitle;
   btn.style.cursor = 'pointer';
 
   const BUBBLE_SVG = `
@@ -116,24 +118,23 @@ function showToast(msg) {
 
   btn.innerHTML = BUBBLE_SVG;
 
-  // Thêm nút X nhỏ để tắt hẳn floating button nếu cần
+  // Tiny "X" button to hide the floating button
   const closeIconBtn = document.createElement('div');
   closeIconBtn.id = 'chatops-ext-close-btn';
   closeIconBtn.innerHTML = '×';
-  closeIconBtn.title = 'Ẩn nút này';
+  closeIconBtn.title = language.floatingBtnHide;
   btn.appendChild(closeIconBtn);
 
   closeIconBtn.addEventListener('click', (e) => {
     e.stopPropagation();
-    btn.remove(); // Xóa hẳn khỏi DOM trang hiện tại
+    btn.remove();
   });
 
-  // Thêm vào body
   document.body.appendChild(btn);
 
-  // Restore position from chrome.storage
-  chrome.storage.local.get(['chatops_ext_btn_pos'], (result) => {
-    const pos = result.chatops_ext_btn_pos;
+  // Restore position from storage
+  chrome.storage.local.get([STORAGE_KEYS.BTN_POSITION], (result) => {
+    const pos = result[STORAGE_KEYS.BTN_POSITION];
     if (pos) {
       btn.style.top = pos.top;
       btn.style.left = pos.left;
@@ -142,7 +143,7 @@ function showToast(msg) {
     }
   });
 
-  // Drag logic
+  // Drag-and-drop logic
   let isDragging = false;
   let hasMoved = false;
   let startX, startY, initialX, initialY;
@@ -190,7 +191,7 @@ function showToast(msg) {
       btn.classList.remove('dragging');
       if (hasMoved) {
         chrome.storage.local.set({
-          chatops_ext_btn_pos: { top: btn.style.top, left: btn.style.left }
+          [STORAGE_KEYS.BTN_POSITION]: { top: btn.style.top, left: btn.style.left }
         });
       }
       setTimeout(() => { hasMoved = false; }, 50);
@@ -203,28 +204,26 @@ function showToast(msg) {
       return;
     }
     try {
-      chrome.runtime.sendMessage({ type: 'TOGGLE_SIDE_PANEL' }, (response) => {
-        if (chrome.runtime.lastError) {
-          console.warn('[ChatOps Ext] Error toggling side panel:', chrome.runtime.lastError.message);
-        }
-      });
+      chrome.runtime.sendMessage({ type: MESSAGE_TYPES.TOGGLE_SIDE_PANEL });
     } catch (err) {
       if (err.message.includes('Extension context invalidated')) {
-        alert('Trợ lý ChatOps vừa được cập nhật bản mới! Vui lòng ấn F5 tải lại trang để tiếp tục sử dụng.');
+        alert(language.extensionUpdated);
       }
     }
   });
 
-  // ─── Meme Integration into Main UI ───
+  console.log('[ChatOps Ext] Floating button injected.');
+
+  // --- Meme Integration into Main Chat UI ---
   function injectMemeButton() {
-    const emojiBtn = document.getElementById('emojiPickerButton');
+    const emojiBtn = document.getElementById(SELECTORS.EMOJI_BUTTON.slice(1));
     if (!emojiBtn || document.getElementById('chatops-ext-meme-btn')) return;
 
     const memeBtn = document.createElement('button');
     memeBtn.id = 'chatops-ext-meme-btn';
     memeBtn.type = 'button';
     memeBtn.innerHTML = '🖼️';
-    memeBtn.title = 'Chèn Meme nhanh';
+    memeBtn.title = 'Quick Meme Picker';
     emojiBtn.parentNode.insertBefore(memeBtn, emojiBtn.nextSibling);
 
     memeBtn.addEventListener('click', (e) => {
@@ -241,11 +240,11 @@ function showToast(msg) {
       memePickerEl.className = 'chatops-meme-picker hidden';
       memePickerEl.innerHTML = `
         <div class="chatops-meme-picker-header">
-          <span>😂 Kho Memes</span>
+          <span>${language.memeLibrary}</span>
           <button type="button" id="chatops-meme-close" style="background:none; border:none; cursor:pointer;">✖</button>
         </div>
         <div id="chatops-meme-grid" class="chatops-meme-picker-grid">
-          <div style="grid-column: 1/-1; text-align:center; padding: 20px;">Đang tải...</div>
+          <div style="grid-column: 1/-1; text-align:center; padding: 20px;">${language.memeLoading}</div>
         </div>
       `;
       document.body.appendChild(memePickerEl);
@@ -290,12 +289,12 @@ function showToast(msg) {
       allMemes.sort(() => Math.random() - 0.5);
       grid.innerHTML = allMemes.slice(0, 60).map(m => `<img src="${m.url}" class="chatops-meme-item" loading="lazy" />`).join('');
     } catch (err) {
-      grid.innerHTML = '<div style="grid-column: 1/-1; padding:20px; color:red;">Lỗi tải memes.</div>';
+      grid.innerHTML = `<div style="grid-column: 1/-1; padding:20px; color:red;">${language.memeError}</div>`;
     }
   }
 
   function insertMemeToChat(url) {
-    const textarea = document.getElementById('post_textbox');
+    const textarea = document.getElementById(SELECTORS.CHAT_TEXTBOX.slice(1));
     if (!textarea) return;
     const markdown = `![meme](${url})`;
     const start = textarea.selectionStart;
@@ -307,23 +306,23 @@ function showToast(msg) {
     textarea.dispatchEvent(new Event('input', { bubbles: true }));
   }
 
-  // ─── Quick Task on Messages ───
+  // --- Quick Task on Messages ---
   let quickNotePopover = null;
   function getOrCreatePopover() {
     if (quickNotePopover) return quickNotePopover;
     quickNotePopover = document.createElement('div');
     quickNotePopover.id = 'chatops-quick-note-popover';
     quickNotePopover.innerHTML = `
-      <div class="cqn-header"><span>Tạo Task nhanh</span><button id="cqn-close" title="Đóng">×</button></div>
+      <div class="cqn-header"><span>${language.quickTaskCreate}</span><button id="cqn-close" title="${language.memoDelete}">×</button></div>
       <div id="cqn-msg-preview" class="cqn-preview"></div>
-      <textarea id="cqn-note-text" placeholder="Ghi chú thêm (tùy chọn)..."></textarea>
+      <textarea id="cqn-note-text" placeholder="${language.quickTaskNotePlaceholder}"></textarea>
       <div id="cqn-task-section">
-        <div class="cqn-reminder-row"><label for="cqn-reminder-time">Nhắc lúc:</label><input type="datetime-local" id="cqn-reminder-time"></div>
-        <div class="cqn-task-hint">Nhắc lại mỗi 5 phút cho đến khi hoàn thành</div>
+        <div class="cqn-reminder-row"><label for="cqn-reminder-time">${language.quickTaskRemindAt}</label><input type="datetime-local" id="cqn-reminder-time"></div>
+        <div class="cqn-task-hint">${language.quickTaskHint}</div>
       </div>
       <div class="cqn-actions">
-        <button id="cqn-save-note" class="cqn-btn cqn-btn-primary">Lưu Task</button>
-        <button id="cqn-cancel" class="cqn-btn cqn-btn-secondary">Hủy</button>
+        <button id="cqn-save-note" class="cqn-btn cqn-btn-primary">${language.quickTaskSave}</button>
+        <button id="cqn-cancel" class="cqn-btn cqn-btn-secondary">${language.quickTaskCancel}</button>
       </div>
     `;
     document.body.appendChild(quickNotePopover);
@@ -340,8 +339,8 @@ function showToast(msg) {
   function openQuickNote(postEl, anchorBtn) {
     const popover = getOrCreatePopover();
     const msgBodyEl = postEl.querySelector('.post-message__text, .post__body p, [class*="post-message"]');
-    const msgText = msgBodyEl ? msgBodyEl.innerText.trim().slice(0, 120) : '(Không lấy được nội dung)';
-    const postId = postEl.id ? postEl.id.replace('post_', '') : '';
+    const msgText = msgBodyEl ? msgBodyEl.innerText.trim().slice(0, 120) : '(Content not accessible)';
+    const postId = postEl.id ? postEl.id.replace(SELECTORS.POST_ID_PREFIX, '') : '';
     document.getElementById('cqn-msg-preview').textContent = msgText + (msgText.length >= 120 ? '...' : '');
     document.getElementById('cqn-note-text').value = '';
     document.getElementById('cqn-reminder-time').value = '';
@@ -366,30 +365,30 @@ function showToast(msg) {
     const { postId, postText } = popover.dataset;
     const noteText = document.getElementById('cqn-note-text').value.trim();
     const reminderTime = document.getElementById('cqn-reminder-time').value;
-    const id = `task_${Date.now()}`;
+    const id = `${ALARMS.TASK_PREFIX}${Date.now()}`;
     const item = { id, type: 'task', postId, postText, note: noteText || postText, createdAt: Date.now(), done: false, reminder: reminderTime || null, status: 'pending' };
-    const res = await chrome.storage.local.get(['memos']);
-    const memos = res.memos || [];
+    const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
+    const memos = res[STORAGE_KEYS.MEMOS] || [];
     memos.unshift(item);
-    await chrome.storage.local.set({ memos });
-    chrome.runtime.sendMessage({ type: 'MEMO_UPDATED' });
-    const startTime = reminderTime ? new Date(reminderTime).getTime() : Date.now() + 5 * 60 * 1000;
-    chrome.runtime.sendMessage({ type: 'SET_TASK_ALARM', taskId: id, time: startTime });
+    await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
+    chrome.runtime.sendMessage({ type: MESSAGE_TYPES.MEMO_UPDATED });
+    const startTime = reminderTime ? new Date(reminderTime).getTime() : Date.now() + UI_CONFIG.TASK_SNOOZE_MINUTES * 60 * 1000;
+    chrome.runtime.sendMessage({ type: MESSAGE_TYPES.SET_TASK_ALARM, taskId: id, time: startTime });
     popover.classList.remove('visible');
-    showToast('Task đã được lưu');
+    showToast(language.quickTaskSaveSuccess);
   }
 
   function injectQuickNoteButtons() {
-    const posts = document.querySelectorAll('.post:not(.chatops-note-injected), [class*="post_"]:not(.chatops-note-injected)');
+    const posts = document.querySelectorAll(`.post:not(.chatops-note-injected), [class*="${SELECTORS.POST_ID_PREFIX}"]:not(.chatops-note-injected)`);
     posts.forEach(postEl => {
-      if (!postEl.id?.startsWith('post_')) return;
+      if (!postEl.id?.startsWith(SELECTORS.POST_ID_PREFIX)) return;
       postEl.classList.add('chatops-note-injected');
       const actionArea = postEl.querySelector('.post__actions, .post-menu, [class*="post-menu"], [aria-label*="actions"], .actions-container');
       if (!actionArea) return;
       const noteBtn = document.createElement('button');
       noteBtn.className = 'chatops-quick-note-btn';
       noteBtn.innerHTML = '📌';
-      noteBtn.title = 'Quick Note / Nhắc nhở';
+      noteBtn.title = 'Quick Task / Reminder';
       noteBtn.addEventListener('click', (e) => { e.stopPropagation(); openQuickNote(postEl, noteBtn); });
       actionArea.appendChild(noteBtn);
     });

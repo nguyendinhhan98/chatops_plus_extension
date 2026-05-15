@@ -8,6 +8,56 @@ export const STORAGE_KEYS = {
   CURRENT_TEAM: 'spCurrentTeamId',
   MEMOS: 'memos',
   BTN_POSITION: 'chatops_ext_btn_pos',
+  SIDEPANEL_TAB: 'sidePanelTab',
+};
+
+export const CHATOPS_CONFIG = {
+  DEFAULT_URL: 'https://chat.runsystem.vn',
+  DOMAIN: 'chat.runsystem.vn',
+  EMAIL_DOMAIN: 'runsystem.net',
+  DEFAULT_TEAM: 'dn',
+  LEAVE_CHANNEL: 'check.off.later',
+};
+
+export const COOKIE_NAMES = {
+  AUTH_TOKEN: 'MMAUTHTOKEN',
+  CSRF_TOKEN: 'MMCSRF',
+};
+
+export const MESSAGE_TYPES = {
+  OPEN_SIDE_PANEL: 'OPEN_SIDE_PANEL',
+  TOGGLE_SIDE_PANEL: 'TOGGLE_SIDE_PANEL',
+  SIDE_PANEL_STATE: 'SIDE_PANEL_STATE',
+  SIDE_PANEL_UPDATE: 'SIDE_PANEL_UPDATE',
+  PING_SIDE_PANEL: 'PING_SIDE_PANEL',
+  CHECK_MENTIONS_NOW: 'CHECK_MENTIONS_NOW',
+  RESET_BADGE: 'RESET_BADGE',
+  SET_TASK_ALARM: 'SET_TASK_ALARM',
+  MARK_TASK_DONE: 'MARK_TASK_DONE',
+  GET_CONFIG: 'GET_CONFIG',
+  SYNC_COOKIES_NOW: 'SYNC_COOKIES_NOW',
+  MEMO_UPDATED: 'MEMO_UPDATED',
+  SHOW_REMINDER: 'SHOW_REMINDER',
+};
+
+export const ALARMS = {
+  MENTION_CHECK: 'check-mentions',
+  TASK_PREFIX: 'task_',
+};
+
+export const UI_CONFIG = {
+  TOAST_DURATION: 2500,
+  BANNER_DURATION: 15000,
+  TASK_BANNER_DURATION: 20000,
+  MENTION_BATCH_SIZE: 5,
+  SEARCH_PAGE_SIZE: 20,
+  LEAVE_PAGE_SIZE: 100,
+  AUTOCOMPLETE_PAGE_SIZE: 10,
+  DEBOUNCE_DELAY_MS: 300,
+  SCROLL_THRESHOLD_PX: 20,
+  TASK_SNOOZE_MINUTES: 5,
+  MENTION_CHECK_INTERVAL_MINUTES: 5,
+  MAX_SCAN_RESULTS: 20,
 };
 
 export const LEAVE_KEYWORDS = [
@@ -16,15 +66,20 @@ export const LEAVE_KEYWORDS = [
   'wfh', 'off', 'late',
 ];
 
-export const MENTION_BATCH_SIZE = 5;
-export const SEARCH_PAGE_SIZE = 20;
-export const LEAVE_PAGE_SIZE = 100;
-export const TASK_SNOOZE_MINUTES = 5;
-export const MENTION_CHECK_INTERVAL_MINUTES = 5;
+export const SELECTORS = {
+  CHAT_TEXTBOX: '#post_textbox',
+  EMOJI_BUTTON: '#emojiPickerButton',
+  POST_ID_PREFIX: 'post_',
+};
 
-export const DEFAULTS = {
-  DOMAIN: 'runsystem.net',
-  TEAM: 'dn',
-  CHATOPS_URL: 'https://chat.runsystem.vn',
-  LEAVE_CHANNEL: 'check.off.later',
+export const TABS = {
+  SEARCH: 'search',
+  MENTIONS: 'mentions',
+  LEAVE: 'leave',
+  MEMO: 'memo',
+};
+
+export const MEMO_SUB_TABS = {
+  TASKS: 'tasks',
+  NOTES: 'notes',
 };

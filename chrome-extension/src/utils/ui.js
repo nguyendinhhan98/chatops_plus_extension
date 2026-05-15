@@ -1,14 +1,16 @@
+import { language } from '../lang.js';
+
 /**
- * UI Helper Utilities — Chrome Extension
+ * UI Helper Utilities — ChatOps Chrome Extension
  */
 
 /**
- * Hiển thị toast notification
+ * Displays a toast notification
  * @param {string} message
  * @param {number} [duration=2500]
  */
 export function showToast(message, duration = 2500) {
-  // Tránh tạo nhiều toast cùng lúc
+  // Prevent multiple toasts at once
   const existing = document.querySelector('.chatops-toast');
   if (existing) existing.remove();
 
@@ -44,17 +46,17 @@ export function showToast(message, duration = 2500) {
 }
 
 /**
- * Render loading state vào element
+ * Renders loading state into an element
  * @param {HTMLElement} el 
  * @param {string} message 
  */
-export function showLoading(el, message = 'Đang tải...') {
+export function showLoading(el, message = language.loading) {
   if (!el) return;
   el.innerHTML = `<div class="loading-state"><span class="spinner"></span> ${message}</div>`;
 }
 
 /**
- * Render error state vào element
+ * Renders error state into an element
  * @param {HTMLElement} el 
  * @param {string} message 
  */
@@ -64,7 +66,7 @@ export function showError(el, message) {
 }
 
 /**
- * Render empty state vào element
+ * Renders empty state into an element
  * @param {HTMLElement} el 
  * @param {string} message 
  */

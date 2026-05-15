@@ -2,23 +2,35 @@
  * Mentions Tab Module — ChatOps Chrome Extension
  */
 
-import { getMyChannelMembers, getChannelById } from '../../src/api/channels.js';
-import { getChannelPosts, getPostThread, getPostReactions } from '../../src/api/posts.js';
-import { getUsersByIds } from '../../src/api/users.js';
+import { 
+  getMyChannelMembers, 
+  getChannelById, 
+  getChannelPosts, 
+  getPostThread, 
+  getPostReactions, 
+  getUsersByIds, 
+  getMyChannels, 
+  searchChannels 
+} from '../../src/api/index.js';
 import { setupMultiSelect } from '../multiselect.js';
-import { getMyChannels, searchChannels } from '../../src/api/channels.js';
 import { 
   renderChannelCard, 
   renderMentionItem, 
   makePermalinkSync, 
-  escapeHtml 
-} from '../../src/utils/formatter.js';
-import { showLoading, showError } from '../../src/utils/ui.js';
-import { MENTION_BATCH_SIZE } from '../../src/constants.js';
+  escapeHtml,
+  showLoading, 
+  showError 
+} from '../../src/utils/index.js';
+import { UI_CONFIG } from '../../src/constants.js';
+import { language } from '../../src/lang.js';
 
 let _state = null;
 let mentionChannelMS = null;
 
+/**
+ * Initializes the Mentions Tab
+ * @param {Object} state - Centralized state module
+ */
 export function setup(state) {
   _state = state;
   document.getElementById('btnSpScanMentions').addEventListener('click', scanMentionsDeep);
@@ -40,15 +52,21 @@ export function setup(state) {
   );
 }
 
+/**
+ * Resets the UI state of the tab
+ */
 export function reset() {
   if (mentionChannelMS) mentionChannelMS.reset();
-  document.getElementById('spMentionResults').innerHTML = '<div class="empty-state">Click "Quét mentions" để bắt đầu</div>';
+  document.getElementById('spMentionResults').innerHTML = `<div class="empty-state">${language.scanMentionsStart}</div>`;
 }
 
 export function getSelects() {
   return { mentionChannelMS };
 }
 
+/**
+ * Performs a deep scan for missed mentions across channels
+ */
 async function scanMentionsDeep() {
   const currentUser = _state.getUser();
   const currentTeam = _state.getTeam();
@@ -56,7 +74,7 @@ async function scanMentionsDeep() {
   const resultsEl = document.getElementById('spMentionResults');
 
   if (!currentUser) {
-    showError(resultsEl, 'Chưa kết nối. Kiểm tra Settings.');
+    showError(resultsEl, language.notConnected);
     return;
   }
 
@@ -70,7 +88,7 @@ async function scanMentionsDeep() {
 
   resultsEl.innerHTML = `
     <div class="progress-bar"><div class="progress-fill" id="mentionProgress" style="width:0%"></div></div>
-    <div class="loading-state"><span class="spinner"></span> Đang quét channels...</div>
+    <div class="loading-state"><span class="spinner"></span> ${language.scanningChannels}</div>
   `;
 
   try {
@@ -84,8 +102,9 @@ async function scanMentionsDeep() {
     const results = [];
     let processed = 0;
 
-    for (let i = 0; i < targetChannels.length; i += MENTION_BATCH_SIZE) {
-      const batch = targetChannels.slice(i, i + MENTION_BATCH_SIZE);
+    // Scan in batches to avoid overwhelming the API
+    for (let i = 0; i < targetChannels.length; i += UI_CONFIG.MENTION_BATCH_SIZE) {
+      const batch = targetChannels.slice(i, i + UI_CONFIG.MENTION_BATCH_SIZE);
       await Promise.all(
         batch.map(async (member) => {
           try {
@@ -99,7 +118,7 @@ async function scanMentionsDeep() {
               .filter(Boolean)
               .filter((post) => {
                 if (post.user_id === currentUser.id) return false;
-                if (post.type && post.type !== '') return false;
+                if (post.type && post.type !== '') return false; // Skip system messages
                 return hasMention(post.message, currentUser.username, direct, here, channelFlag);
               });
 
@@ -112,6 +131,7 @@ async function scanMentionsDeep() {
                 getPostReactions(post.id).catch(() => []),
               ]);
 
+              // Check if already replied or reacted
               const replied = Object.values(thread.posts).some(
                 (p) => p.user_id === currentUser.id && p.id !== post.id
               );
@@ -122,7 +142,7 @@ async function scanMentionsDeep() {
 
             if (trulyMissed.length > 0) {
               const channelInfo = await getChannelById(member.channel_id).catch(() => null);
-              const channelLabel = channelInfo ? (channelInfo.display_name || channelInfo.name) : 'Unknown Channel';
+              const channelLabel = channelInfo ? (channelInfo.display_name || channelInfo.name) : language.unknown;
               results.push({ channelLabel, posts: trulyMissed });
             }
           } catch {}
@@ -136,7 +156,7 @@ async function scanMentionsDeep() {
     }
 
     if (results.length === 0) {
-      resultsEl.innerHTML = `<div class="empty-state">✅ Không có mention bị bỏ lỡ trong ${hours}h qua! 🎉</div>`;
+      resultsEl.innerHTML = `<div class="empty-state">✅ ${language.noMissedMentions.replace('{hours}', hours)}</div>`;
       return;
     }
 
@@ -145,7 +165,7 @@ async function scanMentionsDeep() {
     const users = await getUsersByIds(allUserIds);
     const usersMap = Object.fromEntries(users.map((u) => [u.id, u]));
 
-    let html = `<div class="mention-summary">⚠️ Phát hiện ${totalMissed} mention chưa xử lý trong ${results.length} channel</div>`;
+    let html = `<div class="mention-summary">⚠️ ${language.mentionsFound.replace('{count}', totalMissed).replace('{channels}', results.length)}</div>`;
 
     for (const group of results) {
       html += `<div class="mention-channel-group">`;
@@ -164,6 +184,9 @@ async function scanMentionsDeep() {
   }
 }
 
+/**
+ * Checks if a message contains a specific mention
+ */
 function hasMention(message, username, direct, here, channelFlag) {
   const lower = message.toLowerCase();
   if (direct && lower.includes(`@${username.toLowerCase()}`)) return true;

@@ -1,14 +1,19 @@
+import { UI_CONFIG } from '../src/constants.js';
+import { language } from '../src/lang.js';
+
 /**
- * Smart Select (Autocomplete) Component cho ChatOps Extension
+ * Smart Select (Autocomplete) Component — ChatOps Chrome Extension
  */
 
+/**
+ * Initializes a smart select component with autocomplete and infinite scroll
+ */
 export function setupAutocomplete(inputId, fetchOptions, renderFn, onSelectFn) {
   const inputEl = document.getElementById(inputId);
   if (!inputEl) return;
 
   const wrapper = inputEl.parentElement;
   
-  // Tạo dropdown container
   const dropdown = document.createElement('div');
   dropdown.className = 'autocomplete-dropdown';
   wrapper.appendChild(dropdown);
@@ -16,24 +21,24 @@ export function setupAutocomplete(inputId, fetchOptions, renderFn, onSelectFn) {
   let timeoutId = null;
   let currentSearch = '';
   let currentPage = 0;
-  const perPage = 10;
+  const perPage = UI_CONFIG.AUTOCOMPLETE_PAGE_SIZE;
   let isLoading = false;
   let hasMore = true;
 
   async function loadData(isLoadMore = false) {
     if (isLoading) return;
-    if (isLoadMore && (!hasMore || currentSearch !== '')) return; // Không load more khi đang search
+    if (isLoadMore && (!hasMore || currentSearch !== '')) return; // Don't load more during search
 
     isLoading = true;
     
     if (!isLoadMore) {
-      dropdown.innerHTML = '<div class="autocomplete-msg"><span class="spinner"></span> Đang tải...</div>';
+      dropdown.innerHTML = `<div class="autocomplete-msg"><span class="spinner"></span> ${language.loading}</div>`;
       currentPage = 0;
       hasMore = true;
     } else {
       const spinner = document.createElement('div');
       spinner.className = 'autocomplete-msg load-more-spinner';
-      spinner.innerHTML = '<span class="spinner"></span> Đang tải thêm...';
+      spinner.innerHTML = `<span class="spinner"></span> ${language.loadingMore}`;
       dropdown.appendChild(spinner);
     }
 
@@ -50,7 +55,7 @@ export function setupAutocomplete(inputId, fetchOptions, renderFn, onSelectFn) {
         if (fetchOptions.searchFetch) {
           results = await fetchOptions.searchFetch(currentSearch);
         }
-        hasMore = false; // Search API thường không hỗ trợ phân trang
+        hasMore = false; // Search API usually doesn't support pagination
       }
 
       if (!isLoadMore) dropdown.innerHTML = '';
@@ -60,7 +65,7 @@ export function setupAutocomplete(inputId, fetchOptions, renderFn, onSelectFn) {
       }
 
       if (!isLoadMore && (!results || results.length === 0)) {
-        dropdown.innerHTML = '<div class="autocomplete-msg">Không tìm thấy kết quả</div>';
+        dropdown.innerHTML = `<div class="autocomplete-msg">${language.noResults}</div>`;
         isLoading = false;
         return;
       }
@@ -71,12 +76,11 @@ export function setupAutocomplete(inputId, fetchOptions, renderFn, onSelectFn) {
         itemEl.innerHTML = renderFn(item);
         
         itemEl.addEventListener('mousedown', (evt) => {
-          // Dùng mousedown để chạy trước khi blur event của input kịp kích hoạt
+          // Use mousedown to execute before the input's blur event fires
           evt.preventDefault(); 
           const displayValue = onSelectFn(item);
           inputEl.value = displayValue;
           dropdown.style.display = 'none';
-          // Cập nhật state
           inputEl.dispatchEvent(new Event('change', { bubbles: true }));
         });
         
@@ -86,7 +90,7 @@ export function setupAutocomplete(inputId, fetchOptions, renderFn, onSelectFn) {
       currentPage++;
     } catch (err) {
       if (!isLoadMore) {
-        dropdown.innerHTML = '<div class="autocomplete-msg" style="color:var(--error)">❌ Lỗi tải dữ liệu</div>';
+        dropdown.innerHTML = `<div class="autocomplete-msg" style="color:var(--error)">❌ ${language.errorLoading}</div>`;
       }
       hasMore = false;
     } finally {
@@ -96,7 +100,7 @@ export function setupAutocomplete(inputId, fetchOptions, renderFn, onSelectFn) {
 
   // Handle scroll for Infinite Load
   dropdown.addEventListener('scroll', () => {
-    if (dropdown.scrollTop + dropdown.clientHeight >= dropdown.scrollHeight - 20) {
+    if (dropdown.scrollTop + dropdown.clientHeight >= dropdown.scrollHeight - UI_CONFIG.SCROLL_THRESHOLD_PX) {
       loadData(true);
     }
   });
@@ -107,17 +111,16 @@ export function setupAutocomplete(inputId, fetchOptions, renderFn, onSelectFn) {
     
     currentSearch = value;
 
-    // Debounce 300ms
+    // Debounce
     clearTimeout(timeoutId);
     timeoutId = setTimeout(() => {
       dropdown.style.display = 'block';
       loadData(false);
-    }, 300);
+    }, UI_CONFIG.DEBOUNCE_DELAY_MS);
   });
 
   inputEl.addEventListener('focus', () => {
     dropdown.style.display = 'block';
-    // Load default if empty and not already loaded
     if (currentSearch === '' && dropdown.children.length === 0) {
       loadData(false);
     }

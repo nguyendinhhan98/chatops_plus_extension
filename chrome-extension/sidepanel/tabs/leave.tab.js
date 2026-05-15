@@ -2,31 +2,34 @@
  * Leave Tracker Tab Module — ChatOps Chrome Extension
  */
 
-import { getUserByEmail } from '../../src/api/users.js';
-import { getChannelPosts } from '../../src/api/posts.js';
-import { getChannelByName } from '../../src/api/channels.js';
+import { 
+  getUserByEmail, 
+  getChannelPosts, 
+  getChannelByName, 
+  getUsers, 
+  searchUsers, 
+  getMyChannels, 
+  searchChannels, 
+  getUsersByIds 
+} from '../../src/api/index.js';
 import { setupMultiSelect } from '../multiselect.js';
 import { setupAutocomplete } from '../autocomplete.js';
 import { 
   renderUserCard, 
   renderChannelCard, 
   renderLeaveItem, 
+  getChannelLabel,
   makePermalinkSync, 
-  escapeHtml 
-} from '../../src/utils/formatter.js';
-import { 
+  escapeHtml,
   parseFlexibleDate, 
   toUnixMs, 
   getLastWeekRange, 
-  formatUnixMsToVN 
-} from '../../src/utils/date.js';
-import { getUsers } from '../../src/api/users.js';
-import { searchUsers } from '../../src/api/users.js';
-import { getMyChannels } from '../../src/api/channels.js';
-import { searchChannels } from '../../src/api/channels.js';
-import { getUsersByIds } from '../../src/api/users.js';
-import { showLoading, showError } from '../../src/utils/ui.js';
-import { LEAVE_KEYWORDS, DEFAULTS } from '../../src/constants.js';
+  formatUnixMsToVN,
+  showLoading, 
+  showError 
+} from '../../src/utils/index.js';
+import { LEAVE_KEYWORDS, CHATOPS_CONFIG } from '../../src/constants.js';
+import { language } from '../../src/lang.js';
 
 let _state = null;
 let leaveState = { 
@@ -44,6 +47,10 @@ let leaveState = {
 let leaveChannelMS = null;
 let leaveUserAC = null;
 
+/**
+ * Initializes the Leave Tracker tab
+ * @param {Object} state - Centralized state module
+ */
 export function setup(state) {
   _state = state;
   const resultsEl = document.getElementById('spLeaveResults');
@@ -51,7 +58,7 @@ export function setup(state) {
   // Event Listeners
   document.getElementById('btnSpSearchLeave').addEventListener('click', () => searchLeave(false));
 
-  // Quick Actions
+  // Quick Date Presets
   const setDatesAndSearch = (daysBack) => {
     const to = new Date();
     const from = new Date();
@@ -68,7 +75,7 @@ export function setup(state) {
   document.getElementById('btnPresetWeek')?.addEventListener('click', () => setDatesAndSearch(7));
   document.getElementById('btnPresetMonth')?.addEventListener('click', () => setDatesAndSearch(30));
 
-  // Smart Selects
+  // Initialize Smart Selects
   const getTeamId = () => _state.getTeam()?.id;
 
   leaveUserAC = setupAutocomplete(
@@ -81,25 +88,64 @@ export function setup(state) {
     (user) => user.email || user.username
   );
 
+  const enrichChannels = async (channels) => {
+    const me = _state.getUser();
+    if (!me || !channels?.length) return channels;
+
+    const dmChannels = channels.filter(c => c.type === 'D' || (c.name && c.name.includes('__')));
+    if (!dmChannels.length) return channels;
+
+    const otherUserIds = new Set();
+    dmChannels.forEach(c => {
+      const parts = c.name.split('__');
+      const otherId = parts.find(id => id !== me.id);
+      if (otherId) otherUserIds.add(otherId);
+    });
+
+    if (otherUserIds.size > 0) {
+      try {
+        const users = await getUsersByIds([...otherUserIds]);
+        const usersMap = Object.fromEntries(users.map(u => [u.id, u]));
+        dmChannels.forEach(c => {
+          const parts = c.name.split('__');
+          const otherId = parts.find(id => id !== me.id);
+          const user = usersMap[otherId];
+          if (user) {
+            c.display_name = (user.first_name || user.last_name) 
+              ? `${user.first_name} ${user.last_name}`.trim() 
+              : user.username;
+          }
+        });
+      } catch (err) {
+        console.warn('Failed to fetch DM usernames:', err);
+      }
+    }
+    return channels;
+  };
+
   leaveChannelMS = setupMultiSelect(
     'spLeaveChannel',
     {
       defaultFetch: async (page, perPage) => {
         const channels = await getMyChannels(getTeamId());
-        return channels.slice(page * perPage, (page + 1) * perPage);
+        const paginated = channels.slice(page * perPage, (page + 1) * perPage);
+        return enrichChannels(paginated);
       },
-      searchFetch: async (term) => searchChannels(getTeamId(), term)
+      searchFetch: async (term) => {
+        const channels = await searchChannels(getTeamId(), term);
+        return enrichChannels(channels);
+      }
     },
     (channel) => renderChannelCard(channel),
     (channel) => channel.id,
-    (channel) => channel.name
+    (channel) => getChannelLabel(channel)
   );
 
-  // Default channel
+  // Set default channel (e.g. CHECK.OFF.LATER)
   setTimeout(() => {
     const teamId = getTeamId();
     if (teamId) {
-      getChannelByName(teamId, DEFAULTS.LEAVE_CHANNEL)
+      getChannelByName(teamId, CHATOPS_CONFIG.LEAVE_CHANNEL)
         .then(channel => {
           if (leaveChannelMS && leaveChannelMS.getSelected().length === 0) {
             leaveChannelMS.setSelected([channel]);
@@ -110,16 +156,23 @@ export function setup(state) {
   }, 1000);
 }
 
+/**
+ * Resets the UI state of the tab
+ */
 export function reset() {
   if (leaveChannelMS) leaveChannelMS.reset();
   if (leaveUserAC) leaveUserAC.reset();
-  document.getElementById('spLeaveResults').innerHTML = '<div class="empty-state">Nhập thông tin và nhấn tra cứu</div>';
+  document.getElementById('spLeaveResults').innerHTML = `<div class="empty-state">${language.leaveEmptyState}</div>`;
 }
 
 export function getSelects() {
   return { leaveChannelMS, leaveUserAC };
 }
 
+/**
+ * Searches for leave request posts
+ * @param {boolean} isLoadMore 
+ */
 export async function searchLeave(isLoadMore = false) {
   if (leaveState.isLoading) return;
   const resultsEl = document.getElementById('spLeaveResults');
@@ -131,19 +184,19 @@ export async function searchLeave(isLoadMore = false) {
     const channels = leaveChannelMS ? leaveChannelMS.getSelected() : [];
 
     if (channels.length === 0) {
-      resultsEl.innerHTML = '<div class="empty-state">Vui lòng chọn ít nhất 1 channel (vd: CHECK.OFF.LATER)</div>';
+      resultsEl.innerHTML = `<div class="empty-state">${language.selectChannelRequired}</div>`;
       return;
     }
 
-    showLoading(resultsEl, 'Đang tra cứu...');
+    showLoading(resultsEl, language.searching);
 
     let user = null;
     if (userEmail) {
-      const email = userEmail.includes('@') ? userEmail : `${userEmail}@runsystem.net`;
+      const email = userEmail.includes('@') ? userEmail : `${userEmail}@${CHATOPS_CONFIG.EMAIL_DOMAIN}`;
       try {
         user = await getUserByEmail(email);
       } catch (err) {
-        showError(resultsEl, `Không tìm thấy user với email: ${escapeHtml(email)}`);
+        showError(resultsEl, language.userNotFound.replace('{email}', email));
         return;
       }
     }
@@ -153,7 +206,7 @@ export async function searchLeave(isLoadMore = false) {
     const toDate = dateTo ? parseFlexibleDate(dateTo) : lastWeek.to;
 
     if (!fromDate || !toDate) {
-      showError(resultsEl, 'Định dạng ngày không hợp lệ');
+      showError(resultsEl, language.invalidDate);
       return;
     }
 
@@ -173,7 +226,7 @@ export async function searchLeave(isLoadMore = false) {
   } else {
     leaveState.isLoading = true;
     const btn = document.getElementById('btnLoadMoreLeave');
-    if (btn) btn.innerHTML = '<span class="spinner"></span> Đang tải...';
+    if (btn) btn.innerHTML = `<span class="spinner"></span> ${language.loading}`;
   }
 
   try {
@@ -181,7 +234,8 @@ export async function searchLeave(isLoadMore = false) {
     const config = _state.getConfig();
     let matchingPosts = [];
     
-    while (matchingPosts.length < 20 && leaveState.currentChannelIdx < leaveState.channels.length) {
+    // Batch processing channels until enough results are found or all channels scanned
+    while (matchingPosts.length < UI_CONFIG.MAX_SCAN_RESULTS && leaveState.currentChannelIdx < leaveState.channels.length) {
       const channel = leaveState.channels[leaveState.currentChannelIdx];
       const result = await getChannelPosts(channel.id, {
         per_page: 100,
@@ -205,6 +259,7 @@ export async function searchLeave(isLoadMore = false) {
         }
         if (p.create_at <= leaveState.toMs) {
           if (leaveState.user && p.user_id !== leaveState.user.id) continue;
+          
           const lower = p.message.toLowerCase();
           if (LEAVE_KEYWORDS.some(kw => lower.includes(kw))) {
             p._channelName = channel.display_name || channel.name;
@@ -226,7 +281,7 @@ export async function searchLeave(isLoadMore = false) {
     leaveState.postsCache.push(...matchingPosts);
 
     if (!isLoadMore && matchingPosts.length === 0) {
-      resultsEl.innerHTML = `<div class="empty-state">🔍 Không tìm thấy tin nhắn xin trễ/nghỉ nào ${leaveState.user ? `của @${leaveState.user.username}` : 'trong khoảng thời gian này'}</div>`;
+      resultsEl.innerHTML = `<div class="empty-state">🔍 ${language.noLeaveRequests} ${leaveState.user ? `cho @${leaveState.user.username}` : ''}</div>`;
       leaveState.isLoading = false;
       return;
     }
@@ -249,18 +304,18 @@ export async function searchLeave(isLoadMore = false) {
 
     if (!isLoadMore) {
       resultsEl.innerHTML = `
-        <div class="result-count" id="leaveResultCount">📋 Đã tìm thấy ${leaveState.postsCache.length} tin nhắn</div>
+        <div class="result-count" id="leaveResultCount">📋 ${language.foundMessages.replace('{count}', leaveState.postsCache.length)}</div>
         <div id="leavePostList">${html}</div>
       `;
     } else {
       document.getElementById('leavePostList').insertAdjacentHTML('beforeend', html);
       const countEl = document.getElementById('leaveResultCount');
-      if (countEl) countEl.innerHTML = `📋 Đã tìm thấy ${leaveState.postsCache.length} tin nhắn`;
+      if (countEl) countEl.innerHTML = `📋 ${language.foundMessages.replace('{count}', leaveState.postsCache.length)}`;
       document.getElementById('btnLoadMoreLeave')?.remove();
     }
 
     if (leaveState.hasMore) {
-      resultsEl.insertAdjacentHTML('beforeend', `<div class="loading-state" id="btnLoadMoreLeave"><span class="spinner"></span> Đang tải thêm...</div>`);
+      resultsEl.insertAdjacentHTML('beforeend', `<div class="loading-state" id="btnLoadMoreLeave"><span class="spinner"></span> ${language.loadingMore}</div>`);
     }
 
   } catch (err) {

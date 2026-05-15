@@ -1,5 +1,5 @@
 /**
- * Workspace State Management — Chrome Extension Sidepanel
+ * Workspace State Management — ChatOps Chrome Extension Sidepanel
  */
 
 let _currentTeam = null;
@@ -20,7 +20,7 @@ export const state = {
    * Reset state when changing workspace
    */
   reset: () => {
-    // We don't reset currentUser/cachedConfig as they are global
-    // Only currentTeam changes frequently in the UI
+    // Note: We don't reset currentUser/cachedConfig as they are global to the session
+    // Only currentTeam usually changes during a workspace switch
   }
 };

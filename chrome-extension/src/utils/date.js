@@ -1,96 +1,71 @@
 /**
- * Date Utilities — Chrome Extension
- * Port từ src/utils/date.ts — viết bằng native JS (không cần date-fns)
+ * Date and Time Utilities
  */
 
 /**
- * Get Monday–Sunday range for the current week (local time).
+ * Formats a Unix timestamp (ms) to Vietnam localized string
  */
-export function getCurrentWeekRange() {
-  const now = new Date();
-  const dayOfWeek = now.getDay(); // 0=Sun, 1=Mon, ...
-  const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-
-  const monday = new Date(now);
-  monday.setDate(now.getDate() + diffToMonday);
-  monday.setHours(0, 0, 0, 0);
-
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
-  sunday.setHours(23, 59, 59, 999);
-
-  return { from: monday, to: sunday };
+export function formatUnixMsToVN(ms) {
+  if (!ms) return '';
+  return new Date(ms).toLocaleString('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  });
 }
 
 /**
- * Get Monday–Sunday range for last week.
+ * Formats a Unix timestamp relative to now (e.g. "2 hours ago")
  */
-export function getLastWeekRange() {
-  const now = new Date();
-  const dayOfWeek = now.getDay();
-  const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+export function formatRelativeTime(ms) {
+  if (!ms) return '';
+  const now = Date.now();
+  const diff = now - ms;
+  const sec = Math.floor(diff / 1000);
+  const min = Math.floor(sec / 60);
+  const hour = Math.floor(min / 60);
+  const day = Math.floor(hour / 24);
 
-  const thisMonday = new Date(now);
-  thisMonday.setDate(now.getDate() + diffToMonday);
-
-  const lastMonday = new Date(thisMonday);
-  lastMonday.setDate(thisMonday.getDate() - 7);
-  lastMonday.setHours(0, 0, 0, 0);
-
-  const lastSunday = new Date(lastMonday);
-  lastSunday.setDate(lastMonday.getDate() + 6);
-  lastSunday.setHours(23, 59, 59, 999);
-
-  return { from: lastMonday, to: lastSunday };
+  if (sec < 60) return 'just now';
+  if (min < 60) return `${min}m ago`;
+  if (hour < 24) return `${hour}h ago`;
+  if (day < 7) return `${day}d ago`;
+  
+  return new Date(ms).toLocaleDateString('vi-VN');
 }
 
 /**
- * Parse a flexible date string (ISO format).
- * Returns null if invalid.
+ * Parses various date formats into a Date object
  */
-export function parseFlexibleDate(input) {
-  const d = new Date(input);
-  return isNaN(d.getTime()) ? null : d;
+export function parseFlexibleDate(str) {
+  if (!str) return null;
+  const d = new Date(str);
+  if (!isNaN(d.getTime())) return d;
+
+  // Handle DD/MM/YYYY
+  const parts = str.split('/');
+  if (parts.length === 3) {
+    return new Date(parts[2], parts[1] - 1, parts[0]);
+  }
+  return null;
 }
 
 /**
- * Convert a Date to Unix milliseconds.
+ * Converts Date object to Unix ms
  */
 export function toUnixMs(date) {
-  return date.getTime();
+  return date instanceof Date ? date.getTime() : 0;
 }
 
 /**
- * Format a Unix ms timestamp to Vietnamese-style datetime.
- * e.g. "25/04/2025 14:30:05"
+ * Gets the date range for the previous week
  */
-export function formatUnixMsToVN(unixMs) {
-  const d = new Date(unixMs);
-  const pad = (n) => String(n).padStart(2, '0');
-  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-}
-
-/**
- * Format Date to short Vietnamese-style date (no time).
- * e.g. "25/04/2025"
- */
-export function formatDateToVN(date) {
-  const pad = (n) => String(n).padStart(2, '0');
-  return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()}`;
-}
-
-/**
- * Format relative time (e.g., "5 phút trước", "2 giờ trước").
- */
-export function formatRelativeTime(unixMs) {
-  const diffMs = Date.now() - unixMs;
-  const diffMin = Math.floor(diffMs / 60000);
-  const diffHour = Math.floor(diffMs / 3600000);
-  const diffDay = Math.floor(diffMs / 86400000);
-
-  if (diffMin < 1) return 'vừa xong';
-  if (diffMin < 60) return `${diffMin} phút trước`;
-  if (diffHour < 24) return `${diffHour} giờ trước`;
-  if (diffDay < 7) return `${diffDay} ngày trước`;
-  return formatUnixMsToVN(unixMs);
+export function getLastWeekRange() {
+  const to = new Date();
+  const from = new Date();
+  from.setDate(to.getDate() - 7);
+  return { from, to };
 }

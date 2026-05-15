@@ -1,74 +1,50 @@
 /**
- * ChatOps Users API — Chrome Extension
- * Port 1:1 từ src/chatops/api/users.ts
+ * Users API Module
  */
 
-import { apiGet, apiPost } from './client.js';
+import { request } from './client.js';
 
 /**
- * Lấy thông tin user theo ID.
+ * Get current user profile
  */
-export function getUserById(userId) {
-  return apiGet(`/users/${userId}`);
+export async function getMyProfile() {
+  return request('/users/me');
 }
 
 /**
- * Lấy thông tin user theo email.
+ * Find user by email
  */
-export function getUserByEmail(email) {
-  return apiGet(`/users/email/${email}`);
+export async function getUserByEmail(email) {
+  return request(`/users/email/${email}`);
 }
 
 /**
- * Lấy thông tin user theo username.
+ * Get users list by team
  */
-export function getUserByUsername(username) {
-  return apiGet(`/users/username/${username}`);
+export async function getUsers(page = 0, perPage = 60, teamId = '') {
+  const query = teamId ? `?in_team=${teamId}&page=${page}&per_page=${perPage}` : `?page=${page}&per_page=${perPage}`;
+  return request(`/users${query}`);
 }
 
 /**
- * Tìm kiếm user theo từ khóa (khớp với username, email, họ tên).
- * Có thể lọc theo teamId.
+ * Search users by keyword
  */
-export function searchUsers(term, teamId, limit = 20) {
-  const payload = {
-    term,
-    limit,
-    allow_inactive: false,
-  };
-  if (teamId) {
-    payload.in_team_id = teamId;
-    payload.team_id = teamId;
-  }
-  
-  return apiPost('/users/search', payload);
+export async function searchUsers(term, teamId = '') {
+  const body = { term, allow_inactive: false };
+  if (teamId) body.team_id = teamId;
+  return request('/users/search', {
+    method: 'POST',
+    body: JSON.stringify(body)
+  });
 }
 
 /**
- * Lấy nhiều user cùng lúc theo danh sách ID — dùng 1 API call duy nhất.
+ * Get multiple users by their IDs
  */
-export function getUsersByIds(userIds) {
-  if (userIds.length === 0) return Promise.resolve([]);
-  return apiPost('/users/ids', userIds);
-}
-
-/**
- * Lấy profile của user đang xác thực.
- */
-export function getMyProfile() {
-  return apiGet('/users/me');
-}
-
-/**
- * Lấy danh sách users (có phân trang).
- * Có thể lọc theo teamId.
- */
-export function getUsers(page = 0, perPage = 10, teamId = null) {
-  const queryParams = {
-    page: String(page),
-    per_page: String(perPage)
-  };
-  if (teamId) queryParams.in_team = teamId;
-
-  return apiGet('/users', queryParams);
+export async function getUsersByIds(ids) {
+  if (!ids || ids.length === 0) return [];
+  return request('/users/ids', {
+    method: 'POST',
+    body: JSON.stringify(ids)
+  });
 }

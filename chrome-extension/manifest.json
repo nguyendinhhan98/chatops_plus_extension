@@ -23,7 +23,7 @@
         "content/content.css"
       ],
       "js": [
-        "content/content.js"
+        "content/loader.js"
       ],
       "run_at": "document_idle"
     }
@@ -51,7 +51,10 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "icons/*.png"
+        "icons/*.png",
+        "content/content.js",
+        "src/constants.js",
+        "src/lang.js"
       ],
       "matches": [
         "https://chat.runsystem.vn/*"

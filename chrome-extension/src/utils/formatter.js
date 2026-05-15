@@ -1,182 +1,134 @@
 /**
- * Formatter Utilities — Chrome Extension
- * Port từ src/utils/formatter.ts + thêm HTML rendering helpers.
+ * UI Formatting and Template Rendering Utilities
  */
 
 import { formatUnixMsToVN, formatRelativeTime } from './date.js';
-import { getConfig } from '../api/client.js';
+import { language } from '../lang.js';
 
 /**
- * Lấy tên hiển thị đẹp của một user.
- * Ưu tiên: Họ Tên đầy đủ > nickname > username.
+ * Escapes HTML special characters to prevent XSS
+ */
+export function escapeHtml(unsafe) {
+  if (typeof unsafe !== 'string') return unsafe;
+  return unsafe
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+/**
+ * Generates a ChatOps permalink URL
+ */
+export function makePermalinkSync(postId, baseUrl, teamName) {
+  return `${baseUrl}/${teamName}/pl/${postId}`;
+}
+
+/**
+ * Formats user display name (First Last or Username)
  */
 export function formatUserDisplayName(user) {
-  const fullName = `${user.last_name || ''} ${user.first_name || ''}`.trim();
-  if (fullName) return `${fullName} (@${user.username})`;
-  if (user.nickname) return `${user.nickname} (@${user.username})`;
-  return `@${user.username}`;
+  if (!user) return language.unknown;
+  if (user.first_name || user.last_name) {
+    return `${user.first_name} ${user.last_name}`.trim();
+  }
+  return user.username || user.email;
 }
 
 /**
- * Lấy label hiển thị đẹp của một channel.
+ * Renders a list of search result posts
  */
-export function formatChannelLabel(channel) {
-  const typeIcon =
-    channel.type === 'D' ? '💬' :
-    channel.type === 'G' ? '👥' :
-    channel.type === 'P' ? '🔒' : '📢';
-  const name = channel.display_name || channel.name || 'Unknown Channel';
-  return `${typeIcon} ${name}`;
-}
+export function renderPostList(posts, usersMap, baseUrl, teamName, channelsMap) {
+  if (!posts || posts.length === 0) return '';
 
-/**
- * Tạo permalink trực tiếp đến một post trong ChatOps.
- */
-export async function makePermalink(postId, teamName) {
-  const config = await getConfig();
-  const team = teamName || config.teamName || 'dn';
-  return `${config.chatopsUrl}/${team}/pl/${postId}`;
-}
+  return posts.map((post) => {
+    const user = usersMap[post.user_id];
+    const channel = channelsMap[post.channel_id];
+    const author = user ? formatUserDisplayName(user) : language.unknown;
+    const channelName = channel ? (channel.display_name || channel.name) : language.unknown;
+    const permalink = makePermalinkSync(post.id, baseUrl, teamName);
 
-/**
- * Tạo permalink đồng bộ (dùng cached config).
- */
-export function makePermalinkSync(postId, chatopsUrl, teamName) {
-  return `${chatopsUrl}/${teamName || 'dn'}/pl/${postId}`;
-}
-
-/**
- * Escape HTML để ngăn XSS khi render nội dung tin nhắn.
- */
-export function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
-
-/**
- * Render một user info card thành HTML.
- */
-export function renderUserCard(user) {
-  return `
-    <div class="user-card">
-      <div class="user-avatar">${(user.first_name || user.username)[0].toUpperCase()}</div>
-      <div class="user-info">
-        <div class="user-name">${escapeHtml(formatUserDisplayName(user))}</div>
-        <div class="user-email">${escapeHtml(user.email || '')}</div>
-        <div class="user-position">${escapeHtml(user.position || '')}</div>
-      </div>
-    </div>
-  `;
-}
-
-/**
- * Render một channel info card thành HTML.
- */
-export function renderChannelCard(channel) {
-  const typeLabel = {
-    O: 'Public',
-    P: 'Private',
-    D: 'Direct Message',
-    G: 'Group',
-  }[channel.type] || channel.type;
-
-  return `
-    <div class="channel-card">
-      <div class="channel-icon">${formatChannelLabel(channel).split(' ')[0]}</div>
-      <div class="channel-info">
-        <div class="channel-name">${escapeHtml(channel.display_name || channel.name)}</div>
-        <div class="channel-type">${typeLabel}</div>
-        <div class="channel-purpose">${escapeHtml(channel.purpose || '')}</div>
-      </div>
-    </div>
-  `;
-}
-
-/**
- * Render một post thành HTML theo phong cách ChatOps.
- */
-export function renderPost(post, user, chatopsUrl, teamName, isConsecutive = false) {
-  const authorName = user ? `${user.last_name || ''} ${user.first_name || ''}`.trim() || user.username : '(Unknown)';
-  const avatarUrl = user ? `${chatopsUrl}/api/v4/users/${user.id}/image` : null;
-  const time = formatRelativeTime(post.create_at);
-  const fullTime = formatUnixMsToVN(post.create_at);
-  const permalink = makePermalinkSync(post.id, chatopsUrl, teamName);
-  
-  // Simple markdown image parsing
-  let messageHtml = escapeHtml(post.message).replace(/\n/g, '<br>');
-  messageHtml = messageHtml.replace(/!\[.*?\]\((.*?)\)/g, '<img src="$1" class="post-image" loading="lazy" />');
-
-  const isPinned = post.is_pinned;
-  const replyCount = post.reply_count || 0;
-
-  if (isConsecutive) {
     return `
-      <div class="post-item consecutive" data-post-id="${post.id}">
-        <div class="post-avatar-spacer"></div>
-        <div class="post-content">
-          <div class="post-body">${messageHtml}</div>
-          <div class="post-actions-hover">
-            <button class="btn-post-action btn-reply" data-post-id="${post.id}" data-author="${authorName}" title="Trả lời">💬</button>
-            <a href="${permalink}" target="_blank" class="btn-post-action" title="Mở trong ChatOps">🔗</a>
-          </div>
+      <div class="post-item">
+        <div class="post-header">
+          <span class="post-author">${escapeHtml(author)}</span>
+          <span class="post-channel">${language.in} ${escapeHtml(channelName)}</span>
+          <span class="post-time">${formatUnixMsToVN(post.create_at)}</span>
+        </div>
+        <div class="post-body">${escapeHtml(post.message).replace(/\n/g, '<br>')}</div>
+        <div class="post-actions">
+           <a href="${permalink}" class="post-link">🔗 ${language.viewMessage}</a>
         </div>
       </div>
     `;
-  }
+  }).join('');
+}
 
+/**
+ * Renders a user card for autocomplete
+ */
+export function renderUserCard(user) {
+  const name = formatUserDisplayName(user);
   return `
-    <div class="post-item" data-post-id="${post.id}">
-      <div class="post-avatar">
-        ${avatarUrl ? `<img src="${avatarUrl}" alt="Avatar" />` : `<div class="avatar-placeholder">${authorName[0].toUpperCase()}</div>`}
-      </div>
-      <div class="post-content">
-        <div class="post-header">
-          <span class="post-author">${escapeHtml(authorName)}</span>
-          <span class="post-time" title="${fullTime}">${time}</span>
-          ${isPinned ? '<span class="post-badge pinned" title="Đã ghim">📌</span>' : ''}
-        </div>
-        <div class="post-body">${messageHtml}</div>
-        <div class="post-actions">
-          ${replyCount > 0 ? `<a href="${permalink}" target="_blank" class="post-thread-link">💬 ${replyCount} phản hồi</a>` : ''}
-          <button class="btn-post-action btn-reply" data-post-id="${post.id}" data-author="${authorName}">Phản hồi</button>
-          <a href="${permalink}" target="_blank" class="post-link">Mở</a>
-        </div>
+    <div class="ac-user-card">
+      <div class="ac-user-info">
+        <div class="ac-user-name">${escapeHtml(name)}</div>
+        <div class="ac-user-sub">@${escapeHtml(user.username)}</div>
       </div>
     </div>
   `;
 }
 
 /**
- * Render danh sách posts thành HTML (Hỗ trợ grouping).
+ * Gets a human-readable label for a channel
  */
-export function renderPostList(posts, usersMap, chatopsUrl, teamName) {
-  if (posts.length === 0) {
-    return '<div class="empty-state">Không có tin nhắn nào.</div>';
+export function getChannelLabel(channel) {
+  if (!channel) return language.unknown;
+  
+  // If we have a display name that isn't just a raw hash, use it.
+  // Note: DMs enriched with usernames will have a proper display_name.
+  if (channel.display_name && !channel.display_name.includes('__')) {
+    return channel.display_name;
   }
-
-  let html = '';
-  let lastPost = null;
-
-  posts.forEach((post) => {
-    const user = usersMap[post.user_id];
-    // Group nếu cùng user và cách nhau dưới 3 phút
-    const isConsecutive = lastPost && 
-                         lastPost.user_id === post.user_id && 
-                         (post.create_at - lastPost.create_at < 3 * 60 * 1000);
-    
-    html += renderPost(post, user, chatopsUrl, teamName, isConsecutive);
-    lastPost = post;
-  });
-
-  return html;
+  
+  // If it's a DM hash and display_name is empty/redundant
+  if (channel.name && channel.name.includes('__')) {
+    const hash = channel.name;
+    const shortHash = hash.split('__').map(id => id.slice(0, 4)).join('..');
+    return `${language.directMessage} [${shortHash}]`;
+  }
+  
+  return channel.display_name || channel.name || channel.id;
 }
 
 /**
- * Render leave request post item
- * @param {Object} post 
- * @param {Object} user 
- * @param {string} permalink 
+ * Renders a channel card for multi-select
+ */
+export function renderChannelCard(channel) {
+  const typeIcon = channel.type === 'P' ? '🔒' : (channel.type === 'D' ? '👤' : '#️⃣');
+  const displayName = getChannelLabel(channel);
+  
+  // Show the internal name (slug) if it's different from the display name,
+  // but truncate it if it's a long DM hash to keep UI clean.
+  let internalName = (channel.name && channel.name !== displayName) ? channel.name : '';
+  if (internalName.includes('__') && internalName.length > 20) {
+    internalName = internalName.split('__').map(id => id.slice(0, 6)).join('..');
+  }
+  
+  return `
+    <div class="ms-channel-card">
+      <span class="ms-channel-icon">${typeIcon}</span>
+      <div class="ms-channel-info">
+        <div class="ms-channel-name">${escapeHtml(displayName)}</div>
+        ${internalName ? `<div class="ms-channel-sub">${escapeHtml(internalName)}</div>` : ''}
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * Renders a leave request post item
  */
 export function renderLeaveItem(post, user, permalink) {
   const author = user ? escapeHtml(user.username) : 'Unknown';
@@ -184,22 +136,19 @@ export function renderLeaveItem(post, user, permalink) {
     <div class="leave-item">
       <div class="post-header">
         <span class="post-author">@${author}</span>
-        <span class="post-channel">in ${escapeHtml(post._channelName)}</span>
+        <span class="post-channel">${language.in} ${escapeHtml(post._channelName)}</span>
         <span class="post-time">${formatUnixMsToVN(post.create_at)}</span>
       </div>
       <div class="leave-message">${escapeHtml(post.message).replace(/\n/g, '<br>')}</div>
       <div class="post-actions">
-         <a href="${permalink}" class="post-link">🔗 Xem tin nhắn</a>
+         <a href="${permalink}" class="post-link">🔗 ${language.viewMessage}</a>
       </div>
     </div>
   `;
 }
 
 /**
- * Render missed mention post item
- * @param {Object} post 
- * @param {Object} author 
- * @param {string} permalink 
+ * Renders a missed mention post item
  */
 export function renderMentionItem(post, author, permalink) {
   const authorName = author ? formatUserDisplayName(author) : '(Unknown)';
@@ -211,7 +160,7 @@ export function renderMentionItem(post, author, permalink) {
       </div>
       <div class="post-body">${escapeHtml(post.message).replace(/\n/g, '<br>')}</div>
       <div class="post-actions">
-        <a href="${permalink}" target="_blank" class="post-link">🔗 Mở trong ChatOps</a>
+        <a href="${permalink}" target="_blank" class="post-link">🔗 ${language.openInChatOps}</a>
       </div>
     </div>
   `;

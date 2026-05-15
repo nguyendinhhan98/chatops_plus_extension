@@ -2,25 +2,38 @@
  * Search Tab Module — ChatOps Chrome Extension
  */
 
-import { searchPosts } from '../../src/api/posts.js';
-import { getUsersByIds, getUsers, searchUsers } from '../../src/api/users.js';
-import { getChannelById, getMyChannels, searchChannels } from '../../src/api/channels.js';
+import { 
+  searchPosts, 
+  getUsers, 
+  searchUsers, 
+  getChannelById, 
+  getMyChannels, 
+  searchChannels, 
+  getUsersByIds 
+} from '../../src/api/index.js';
 import { setupAutocomplete } from '../autocomplete.js';
 import { setupMultiSelect } from '../multiselect.js';
 import { 
-  renderPostList, 
+  renderPostList,
   renderUserCard, 
   renderChannelCard, 
-  escapeHtml 
-} from '../../src/utils/formatter.js';
-import { showLoading, showError } from '../../src/utils/ui.js';
-import { SEARCH_PAGE_SIZE } from '../../src/constants.js';
+  getChannelLabel,
+  escapeHtml,
+  showLoading, 
+  showError 
+} from '../../src/utils/index.js';
+import { UI_CONFIG } from '../../src/constants.js';
+import { language } from '../../src/lang.js';
 
 let _state = null;
 let searchState = { page: 0, hasMore: false, terms: '', isSearching: false };
 let searchInMS = null;
 let searchFromAC = null;
 
+/**
+ * Initializes the Search Tab
+ * @param {Object} state - Centralized state module
+ */
 export function setup(state) {
   _state = state;
   const btnSearch = document.getElementById('btnSpSearch');
@@ -43,21 +56,60 @@ export function setup(state) {
     (user) => user.username
   );
 
+  const enrichChannels = async (channels) => {
+    const me = _state.getUser();
+    if (!me || !channels?.length) return channels;
+
+    const dmChannels = channels.filter(c => c.type === 'D' || (c.name && c.name.includes('__')));
+    if (!dmChannels.length) return channels;
+
+    const otherUserIds = new Set();
+    dmChannels.forEach(c => {
+      const parts = c.name.split('__');
+      const otherId = parts.find(id => id !== me.id);
+      if (otherId) otherUserIds.add(otherId);
+    });
+
+    if (otherUserIds.size > 0) {
+      try {
+        const users = await getUsersByIds([...otherUserIds]);
+        const usersMap = Object.fromEntries(users.map(u => [u.id, u]));
+        dmChannels.forEach(c => {
+          const parts = c.name.split('__');
+          const otherId = parts.find(id => id !== me.id);
+          const user = usersMap[otherId];
+          if (user) {
+            c.display_name = (user.first_name || user.last_name) 
+              ? `${user.first_name} ${user.last_name}`.trim() 
+              : user.username;
+          }
+        });
+      } catch (err) {
+        console.warn('Failed to fetch DM usernames:', err);
+      }
+    }
+    return channels;
+  };
+
   searchInMS = setupMultiSelect(
     'spSearchIn',
     {
       defaultFetch: async (page, perPage) => {
         const channels = await getMyChannels(getTeamId());
-        return channels.slice(page * perPage, (page + 1) * perPage);
+        const paginated = channels.slice(page * perPage, (page + 1) * perPage);
+        return enrichChannels(paginated);
       },
-      searchFetch: async (term) => searchChannels(getTeamId(), term)
+      searchFetch: async (term) => {
+        const channels = await searchChannels(getTeamId(), term);
+        return enrichChannels(channels);
+      }
     },
     (channel) => renderChannelCard(channel),
     (channel) => channel.id,
-    (channel) => channel.name
+    (channel) => getChannelLabel(channel)
   );
 
-  // Infinite Scroll
+  // Implement infinite scroll for search results
   document.getElementById('spSearchResults').addEventListener('scroll', (e) => {
     const el = e.target;
     if (el.scrollHeight - el.scrollTop <= el.clientHeight + 50) {
@@ -68,16 +120,23 @@ export function setup(state) {
   });
 }
 
+/**
+ * Resets the UI state of the tab
+ */
 export function reset() {
   if (searchInMS) searchInMS.reset();
   if (searchFromAC) searchFromAC.reset();
-  document.getElementById('spSearchResults').innerHTML = '<div class="empty-state">Nhập từ khóa và nhấn tìm kiếm</div>';
+  document.getElementById('spSearchResults').innerHTML = `<div class="empty-state">${language.searchEmptyState}</div>`;
 }
 
 export function getSelects() {
   return { searchInMS, searchFromAC };
 }
 
+/**
+ * Executes a post search based on UI criteria
+ * @param {boolean} isLoadMore 
+ */
 export async function performSpSearch(isLoadMore = false) {
   if (searchState.isSearching) return;
   const resultsEl = document.getElementById('spSearchResults');
@@ -90,10 +149,11 @@ export async function performSpSearch(isLoadMore = false) {
     const before = document.getElementById('spSearchBefore').value;
 
     if (!terms && !from && inChannels.length === 0) {
-      resultsEl.innerHTML = '<div class="empty-state">Vui lòng nhập ít nhất 1 tiêu chí tìm kiếm</div>';
+      resultsEl.innerHTML = `<div class="empty-state">${language.searchCriteriaRequired}</div>`;
       return;
     }
 
+    // Build the search query string
     let searchTerms = terms;
     if (from) searchTerms += ` from:${from}`;
     if (inChannels.length > 0) {
@@ -105,10 +165,10 @@ export async function performSpSearch(isLoadMore = false) {
     searchState.terms = searchTerms.trim();
     searchState.page = 0;
     searchState.hasMore = true;
-    showLoading(resultsEl, 'Đang tìm kiếm...');
+    showLoading(resultsEl, language.searching);
   } else {
     const btn = document.getElementById('btnLoadMoreSearch');
-    if (btn) btn.innerHTML = '<span class="spinner"></span> Đang tải...';
+    if (btn) btn.innerHTML = `<span class="spinner"></span> ${language.loading}`;
   }
 
   searchState.isSearching = true;
@@ -120,20 +180,21 @@ export async function performSpSearch(isLoadMore = false) {
       terms: searchState.terms,
       is_or_search: false,
       page: searchState.page,
-      per_page: SEARCH_PAGE_SIZE
+      per_page: UI_CONFIG.SEARCH_PAGE_SIZE
     });
 
     const posts = result.order.map((id) => result.posts[id]).filter(Boolean);
     
-    if (posts.length < SEARCH_PAGE_SIZE) searchState.hasMore = false;
+    if (posts.length < UI_CONFIG.SEARCH_PAGE_SIZE) searchState.hasMore = false;
     searchState.page++;
 
     if (!isLoadMore && posts.length === 0) {
-      resultsEl.innerHTML = '<div class="empty-state">Không tìm thấy kết quả nào</div>';
+      resultsEl.innerHTML = `<div class="empty-state">${language.noResults}</div>`;
       searchState.isSearching = false;
       return;
     }
 
+    // Fetch related authors and channels info
     const userIds = [...new Set(posts.map((p) => p.user_id))];
     const users = await getUsersByIds(userIds);
     const usersMap = Object.fromEntries(users.map((u) => [u.id, u]));
@@ -150,7 +211,7 @@ export async function performSpSearch(isLoadMore = false) {
     
     if (!isLoadMore) {
       resultsEl.innerHTML = `
-        <div class="result-count">📋 Kết quả cho: "${escapeHtml(searchState.terms)}"</div>
+        <div class="result-count">${language.resultsFor}: "${escapeHtml(searchState.terms)}"</div>
         <div id="searchPostList">${html}</div>
       `;
     } else {
@@ -159,7 +220,7 @@ export async function performSpSearch(isLoadMore = false) {
     }
 
     if (searchState.hasMore) {
-      resultsEl.insertAdjacentHTML('beforeend', `<div class="loading-state" id="btnLoadMoreSearch"><span class="spinner"></span> Đang tải thêm...</div>`);
+      resultsEl.insertAdjacentHTML('beforeend', `<div class="loading-state" id="btnLoadMoreSearch"><span class="spinner"></span> ${language.loadingMore}</div>`);
     }
 
   } catch (err) {

@@ -5,7 +5,7 @@
 import { STORAGE_KEYS } from '../src/constants.js';
 
 /**
- * Save current UI state to storage
+ * Saves the current UI state to local storage
  * @param {Object} selectors - Object containing smart selectors from all tabs
  */
 export function saveState(selectors) {
@@ -35,7 +35,7 @@ export function saveState(selectors) {
 }
 
 /**
- * Restore UI state from storage
+ * Restores UI state from local storage
  * @param {Object} selectors - Object containing smart selectors from all tabs
  */
 export function restoreState(selectors) {
@@ -44,32 +44,61 @@ export function restoreState(selectors) {
     if (!s) return;
 
     if (s.search) {
-      if (document.getElementById('spSearchTerms')) document.getElementById('spSearchTerms').value = s.search.terms || '';
-      if (document.getElementById('spSearchFrom')) document.getElementById('spSearchFrom').value = s.search.from || '';
-      if (document.getElementById('spSearchAfter')) document.getElementById('spSearchAfter').value = s.search.after || '';
-      if (document.getElementById('spSearchBefore')) document.getElementById('spSearchBefore').value = s.search.before || '';
-      if (s.search.inChannels && selectors.searchInMS) selectors.searchInMS.setSelected(s.search.inChannels);
+      const termsEl = document.getElementById('spSearchTerms');
+      if (termsEl) termsEl.value = s.search.terms || '';
+      
+      const fromEl = document.getElementById('spSearchFrom');
+      if (fromEl) fromEl.value = s.search.from || '';
+      
+      const afterEl = document.getElementById('spSearchAfter');
+      if (afterEl) afterEl.value = s.search.after || '';
+      
+      const beforeEl = document.getElementById('spSearchBefore');
+      if (beforeEl) beforeEl.value = s.search.before || '';
+      
+      if (s.search.inChannels && selectors.searchInMS) {
+        selectors.searchInMS.setSelected(s.search.inChannels);
+      }
     }
     
     if (s.mentions) {
-      if (document.getElementById('spMentionHours')) document.getElementById('spMentionHours').value = s.mentions.hours || '24';
-      if (document.getElementById('spMentionDirect') !== null) document.getElementById('spMentionDirect').checked = s.mentions.direct;
-      if (document.getElementById('spMentionHere') !== null) document.getElementById('spMentionHere').checked = s.mentions.here;
-      if (document.getElementById('spMentionChannel') !== null) document.getElementById('spMentionChannel').checked = s.mentions.channel;
-      if (s.mentions.channels && selectors.mentionChannelMS) selectors.mentionChannelMS.setSelected(s.mentions.channels);
+      const hoursEl = document.getElementById('spMentionHours');
+      if (hoursEl) hoursEl.value = s.mentions.hours || '24';
+      
+      const directEl = document.getElementById('spMentionDirect');
+      if (directEl) directEl.checked = s.mentions.direct;
+      
+      const hereEl = document.getElementById('spMentionHere');
+      if (hereEl) hereEl.checked = s.mentions.here;
+      
+      const channelEl = document.getElementById('spMentionChannel');
+      if (channelEl) channelEl.checked = s.mentions.channel;
+      
+      if (s.mentions.channels && selectors.mentionChannelMS) {
+        selectors.mentionChannelMS.setSelected(s.mentions.channels);
+      }
     }
     
     if (s.leave) {
-      if (document.getElementById('spLeaveUser')) document.getElementById('spLeaveUser').value = s.leave.user || '';
-      if (document.getElementById('spLeaveFrom')) document.getElementById('spLeaveFrom').value = s.leave.from || '';
-      if (document.getElementById('spLeaveTo')) document.getElementById('spLeaveTo').value = s.leave.to || '';
-      if (s.leave.channels && selectors.leaveChannelMS) selectors.leaveChannelMS.setSelected(s.leave.channels);
+      const userEl = document.getElementById('spLeaveUser');
+      if (userEl) userEl.value = s.leave.user || '';
+      
+      const fromEl = document.getElementById('spLeaveFrom');
+      if (fromEl) fromEl.value = s.leave.from || '';
+      
+      const toEl = document.getElementById('spLeaveTo');
+      if (toEl) toEl.value = s.leave.to || '';
+      
+      if (s.leave.channels && selectors.leaveChannelMS) {
+        selectors.leaveChannelMS.setSelected(s.leave.channels);
+      }
     }
   });
 }
 
 /**
- * Setup auto-save listeners
+ * Sets up automatic saving on any input change
+ * @param {Object} selectors - Tab selectors
  */
 export function setupAutoSave(selectors) {
   const handler = () => saveState(selectors);

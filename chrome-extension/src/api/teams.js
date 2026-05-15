@@ -1,27 +1,19 @@
 /**
- * ChatOps Teams API — Chrome Extension
- * Port 1:1 từ src/chatops/api/teams.ts
+ * Teams API Module
  */
 
-import { apiGet } from './client.js';
+import { request } from './client.js';
 
 /**
- * Get team information by its URL name (slug).
+ * Get all teams current user is a member of
  */
-export function getTeamByName(teamName) {
-  return apiGet(`/teams/name/${teamName}`);
+export async function getMyTeams() {
+  return request('/users/me/teams');
 }
 
 /**
- * Get team information by its unique ID.
+ * Get team details by name (slug)
  */
-export function getTeamById(teamId) {
-  return apiGet(`/teams/${teamId}`);
-}
-
-/**
- * Get list of teams that the current user is a member of.
- */
-export function getMyTeams() {
-  return apiGet('/users/me/teams');
+export async function getTeamByName(name) {
+  return request(`/teams/name/${name}`);
 }
