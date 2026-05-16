@@ -7,6 +7,7 @@ export const STORAGE_KEYS = {
   STATE: 'spState',
   CURRENT_TEAM: 'spCurrentTeamId',
   MEMOS: 'memos',
+  SETTINGS: 'chatops_settings',
   BTN_POSITION: 'chatops_ext_btn_pos',
   SIDEPANEL_TAB: 'sidePanelTab',
 };

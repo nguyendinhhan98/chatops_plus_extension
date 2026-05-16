@@ -23,13 +23,17 @@ export function setup(state) {
     const text = quickInput.value.trim();
     if (!text) return;
 
-    const id = `note_${Date.now()}`;
+    const categorySelect = document.getElementById('quickNoteCategory');
+    const category = categorySelect ? categorySelect.value : 'general';
+
+    const id = `memo_${Date.now()}`;
     const item = {
       id,
-      type: 'note',
+      type: 'memo',
       postId: null,
       postText: null,
       note: text,
+      category: category,
       createdAt: Date.now(),
       done: false,
       reminder: null,
@@ -73,6 +77,9 @@ export function setup(state) {
     }
   });
 
+  // Category filter
+  document.getElementById('noteCategoryFilter')?.addEventListener('change', loadMemos);
+
   // Reload when tab is clicked
   document.querySelectorAll('.tab-btn').forEach(btn => {
     if (btn.dataset.tab === TABS.MEMO) btn.addEventListener('click', loadMemos);
@@ -90,11 +97,20 @@ export async function loadMemos() {
 
   const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
   const allItems = res[STORAGE_KEYS.MEMOS] || [];
-  const notes = allItems.filter(m => m.type === 'note');
+  let notes = allItems.filter(m => m.type === 'memo');
+
+  // Filter by category
+  const filter = document.getElementById('noteCategoryFilter')?.value || 'all';
+  if (filter !== 'all') {
+    notes = notes.filter(n => (n.category || 'general') === filter);
+  }
 
   // Update badge
   const noteBadge = document.getElementById('noteTabBadge');
-  if (noteBadge) noteBadge.textContent = notes.length > 0 ? notes.length : '';
+  if (noteBadge) {
+    const totalNotes = allItems.filter(m => m.type === 'memo').length;
+    noteBadge.textContent = totalNotes > 0 ? totalNotes : '';
+  }
 
   if (notes.length === 0) {
     noteList.innerHTML = `<div class="empty-state"><div style="font-size:36px;margin-bottom:12px">📝</div>${language.memoNotesEmpty}<br><span style="font-size:12px;color:var(--text-3)">${language.memoClickHint}</span></div>`;
@@ -116,13 +132,20 @@ function renderNoteCard(note) {
 
   const escapedText = escapeHtml(note.note || language.memoEmptyNote);
   const rawText = note.note || '';
-  // Only show postText (the original message) if it's different from the note body
   const hasOriginalPost = note.postId && note.postText && note.postText !== note.note;
+  
+  const categoryMap = {
+    general: 'Chung',
+    work: 'Công việc',
+    personal: 'Cá nhân',
+    ideas: 'Ý tưởng'
+  };
+  const categoryLabel = categoryMap[note.category || 'general'] || 'Chung';
 
   return `
     <div class="memo-item note-item" id="item_${note.id}">
-      <div class="note-content-row">
-        <div class="memo-note-text note-body">${escapedText}</div>
+      <div class="note-content-row" style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+        <div class="memo-note-text note-body" style="flex:1;">${escapedText}</div>
         <button class="btn-copy-note" data-text="${rawText.replace(/"/g, '&quot;')}" title="${language.memoCopyNote}">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
             <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
@@ -130,14 +153,22 @@ function renderNoteCard(note) {
           </svg>
         </button>
       </div>
-      ${hasOriginalPost ? `<div class="memo-post-preview">📌 ${escapeHtml(note.postText)}</div>` : ''}
+      <div style="margin-top:4px; display:flex; align-items:center; gap:6px;">
+        <span style="font-size:10px; padding:2px 6px; background:var(--bg-2); border:1px solid var(--border); border-radius:10px; color:var(--text-3); font-weight:600;">📁 ${categoryLabel}</span>
+      </div>
+      ${hasOriginalPost ? `<div class="memo-post-preview" style="margin-top:8px;">📌 ${escapeHtml(note.postText)}</div>` : ''}
       <div class="memo-footer">
         <div class="memo-meta">
           <span>📅 ${formatRelativeTime(note.createdAt)}</span>
         </div>
         <div class="memo-actions">
           ${permalink ? `<a href="${permalink}" class="post-jump-link" title="${language.memoViewOriginal}">↗</a>` : ''}
-          <button class="btn-delete-memo" data-id="${note.id}" title="${language.memoDelete}">×</button>
+          <button class="btn-delete-memo" data-id="${note.id}" title="${language.memoDelete}">
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" style="pointer-events:none;">
+              <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+              <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4L4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+            </svg>
+          </button>
         </div>
       </div>
     </div>

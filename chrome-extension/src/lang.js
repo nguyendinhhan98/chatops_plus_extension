@@ -61,7 +61,7 @@ export const language = {
   taskDelete: 'Xóa',
   taskViewOriginal: 'Xem tin nhắn gốc',
   taskReminderLabel: 'Nhắc lúc:',
-  taskReminderHint: 'Hệ thống sẽ nhắc lại mỗi 5 phút cho đến khi hoàn thành',
+  taskReminderHint: 'Hệ thống sẽ nhắc lại mỗi {minutes} phút cho đến khi hoàn thành',
   taskAddBtn: 'Thêm việc',
 
   // Sidepanel Memo (Notes) Tab
@@ -102,13 +102,28 @@ export const language = {
   memeError: 'Lỗi tải meme.',
 
   // Content Script - Quick Task Popover
-  quickTaskCreate: 'Tạo việc cần làm nhanh',
+  quickTaskCreate: 'Tạo việc làm nhanh',
+  quickTaskTitle: 'Tạo việc làm nhanh',
   quickTaskNotePlaceholder: 'Thêm ghi chú (tùy chọn)...',
   quickTaskRemindAt: 'Nhắc lúc:',
-  quickTaskHint: 'Hệ thống sẽ nhắc lại mỗi 5 phút cho đến khi hoàn thành',
+  quickTaskHint: 'Hệ thống sẽ nhắc lại mỗi {minutes} phút cho đến khi hoàn thành',
   quickTaskSave: 'Lưu',
   quickTaskCancel: 'Hủy',
-  quickTaskSaveSuccess: 'Đã lưu thành công',
+  save: 'Lưu',
+  cancel: 'Hủy',
+  quickTaskSaveSuccess: 'Đã lưu việc cần làm',
+  quickNoteTitle: 'Thêm ghi chú nhanh',
+  quickNoteCreate: 'Thêm ghi chú nhanh',
+  quickNoteSaveSuccess: 'Đã lưu ghi chú',
   reminderTaskDefault: 'Bạn có một việc cần làm chưa hoàn thành.',
   directMessage: 'Tin nhắn trực tiếp',
+  includeDirectMessage: 'Bao gồm Direct Message',
+
+  // Categories
+  categoryAll: 'Tất cả danh mục',
+  categoryGeneral: 'Chung',
+  categoryWork: 'Công việc',
+  categoryPersonal: 'Cá nhân',
+  categoryIdeas: 'Ý tưởng',
+  categorySelect: 'Chọn danh mục...',
 };

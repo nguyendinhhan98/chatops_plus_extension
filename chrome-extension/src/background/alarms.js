@@ -60,9 +60,15 @@ export async function handleTaskAlarm(taskId) {
         type: MESSAGE_TYPES.SHOW_REMINDER,
         message,
         taskId,
+        postId: task.postId,
+        teamName: task.teamName,
         isTask: true
       }).catch(() => {});
     }
+
+    // Set extension badge so user sees it in any tab
+    chrome.action.setBadgeText({ text: '!' });
+    chrome.action.setBadgeBackgroundColor({ color: '#d0454c' });
 
     // Reschedule alarm for every 5 minutes until done
     chrome.alarms.create(taskId, { delayInMinutes: UI_CONFIG.TASK_SNOOZE_MINUTES });

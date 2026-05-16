@@ -2,20 +2,43 @@
  * Content Script for ChatOps domain
  */
 
-import { MESSAGE_TYPES, UI_CONFIG, SELECTORS, STORAGE_KEYS, ALARMS } from '/src/constants.js';
-import { language } from '/src/lang.js';
+import { MESSAGE_TYPES, UI_CONFIG, SELECTORS, STORAGE_KEYS, ALARMS } from '../src/constants.js';
+import { language } from '../src/lang.js';
 
 // --- Listen for reminder notifications from the background script ---
 chrome.runtime.onMessage.addListener((message) => {
   if (message.type === MESSAGE_TYPES.SHOW_REMINDER) {
-    showReminderBanner(message.message, message.taskId, message.isTask);
+    showReminderBanner(message.message, message.taskId, message.isTask, message.postId, message.teamName);
   }
 });
 
 /**
  * Displays a reminder banner at the top of the page
  */
-function showReminderBanner(text, taskId, isTask = false) {
+async function showReminderBanner(text, taskId, isTask = false, postId = null, taskTeamName = null) {
+  // Fetch settings to get theme color
+  const res = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS]);
+  const settings = res[STORAGE_KEYS.SETTINGS] || { themeColor: '#1c58d9' };
+  
+  // Inject/Update dynamic theme style for content script
+  let styleEl = document.getElementById('chatops-dynamic-theme');
+  if (!styleEl) {
+    styleEl = document.createElement('style');
+    styleEl.id = 'chatops-dynamic-theme';
+    document.head.appendChild(styleEl);
+  }
+  styleEl.textContent = `
+    :root {
+      --chatops-accent: ${settings.themeColor};
+    }
+    .chatops-reminder-banner { border-top-color: var(--chatops-accent) !important; }
+    .crb-title { color: var(--chatops-accent) !important; }
+    .crb-progress { background: var(--chatops-accent) !important; }
+    .cqn-btn-primary { background: var(--chatops-accent) !important; }
+    .cqn-mode-btn.active { color: var(--chatops-accent) !important; border-color: var(--chatops-accent) !important; background: rgba(0,0,0,0.05) !important; }
+    .cqn-preview { border-left-color: var(--chatops-accent) !important; }
+  `;
+
   document.querySelectorAll('.chatops-reminder-banner').forEach(el => el.remove());
 
   const banner = document.createElement('div');
@@ -32,6 +55,7 @@ function showReminderBanner(text, taskId, isTask = false) {
     ${isTask ? `
       <div class="crb-task-actions">
         <button class="crb-done-btn" data-task-id="${taskId}">${language.reminderDoneBtn}</button>
+        ${postId ? `<button class="crb-jump-btn" data-post-id="${postId}">Đi tới tin nhắn</button>` : ''}
       </div>
     ` : ''}
     <div class="crb-progress"></div>
@@ -63,6 +87,15 @@ function showReminderBanner(text, taskId, isTask = false) {
       setTimeout(() => banner.remove(), 400);
       showToast(language.reminderTaskCompleted);
     });
+
+    const jumpBtn = banner.querySelector('.crb-jump-btn');
+    if (jumpBtn) {
+      jumpBtn.addEventListener('click', () => {
+        clearTimeout(closeTimer);
+        const teamName = taskTeamName || window.location.pathname.split('/')[1] || CHATOPS_CONFIG.DEFAULT_TEAM;
+        window.location.href = `/${teamName}/pl/${postId}`;
+      });
+    }
   }
 }
 
@@ -308,52 +341,136 @@ function showToast(msg) {
 
   // --- Quick Task on Messages ---
   let quickNotePopover = null;
+  let quickNoteBackdrop = null;
+
   function getOrCreatePopover() {
     if (quickNotePopover) return quickNotePopover;
+
+    quickNoteBackdrop = document.createElement('div');
+    quickNoteBackdrop.id = 'chatops-quick-note-backdrop';
+    document.body.appendChild(quickNoteBackdrop);
+
     quickNotePopover = document.createElement('div');
     quickNotePopover.id = 'chatops-quick-note-popover';
     quickNotePopover.innerHTML = `
-      <div class="cqn-header"><span>${language.quickTaskCreate}</span><button id="cqn-close" title="${language.memoDelete}">×</button></div>
-      <div id="cqn-msg-preview" class="cqn-preview"></div>
-      <textarea id="cqn-note-text" placeholder="${language.quickTaskNotePlaceholder}"></textarea>
-      <div id="cqn-task-section">
-        <div class="cqn-reminder-row"><label for="cqn-reminder-time">${language.quickTaskRemindAt}</label><input type="datetime-local" id="cqn-reminder-time"></div>
-        <div class="cqn-task-hint">${language.quickTaskHint}</div>
+      <div class="cqn-header">
+        <span class="cqn-title">${language.quickTaskTitle}</span>
+        <button id="cqn-close" title="${language.memoDelete}">×</button>
       </div>
+      <div id="cqn-msg-preview" class="cqn-preview" style="max-height:80px; -webkit-line-clamp:5;"></div>
+      <textarea id="cqn-note-text" placeholder="${language.quickTaskNotePlaceholder}"></textarea>
+      
+      <div id="cqn-note-section" style="padding: 0 13px 8px;">
+        <div style="font-size:11px; font-weight:600; color:var(--text-3); text-transform:uppercase; margin-bottom:4px;">Danh mục:</div>
+        <select id="cqn-category" style="width:100%; padding:6px; border:1px solid #e0e0e5; border-radius:4px; font-size:12px; font-family:inherit; background:#fff; outline:none; cursor:pointer;">
+          <option value="general">📁 Chung</option>
+          <option value="work">📁 Công việc</option>
+          <option value="personal">📁 Cá nhân</option>
+          <option value="ideas">📁 Ý tưởng</option>
+        </select>
+      </div>
+
+      <div id="cqn-task-section">
+        <div style="padding: 0 13px 8px;">
+          <div style="font-size:12px; font-weight:600; color:#4a4a4c; margin-bottom:6px; display:flex; align-items:center; gap:4px;">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" style="opacity:0.7"><path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/></svg>
+            Nhắc lúc:
+          </div>
+          <div class="cqn-presets">
+            <button type="button" class="cqn-preset-btn" data-min="15">15ph</button>
+            <button type="button" class="cqn-preset-btn" data-min="30">30ph</button>
+            <button type="button" class="cqn-preset-btn" data-min="60">1h</button>
+            <button type="button" class="cqn-preset-btn" data-min="120">2h</button>
+            <button type="button" class="cqn-preset-btn" data-min="240">4h</button>
+          </div>
+          <div class="cqn-reminder-row" style="background:#fff; border:1px solid #e0e0e5; border-radius:4px; padding:2px 8px;">
+            <input type="datetime-local" id="cqn-reminder-time" style="cursor:pointer; background:transparent; border:none; outline:none; box-shadow:none; flex:1;">
+          </div>
+          <div class="cqn-task-hint" style="margin-top:8px;"></div>
+        </div>
+      </div>
+
       <div class="cqn-actions">
-        <button id="cqn-save-note" class="cqn-btn cqn-btn-primary">${language.quickTaskSave}</button>
-        <button id="cqn-cancel" class="cqn-btn cqn-btn-secondary">${language.quickTaskCancel}</button>
+        <button id="cqn-save-note" class="cqn-btn cqn-btn-primary">${language.save}</button>
+        <button id="cqn-cancel" class="cqn-btn cqn-btn-secondary">${language.cancel}</button>
       </div>
     `;
     document.body.appendChild(quickNotePopover);
-    document.getElementById('cqn-close').addEventListener('click', () => quickNotePopover.classList.remove('visible'));
-    document.getElementById('cqn-cancel').addEventListener('click', () => quickNotePopover.classList.remove('visible'));
-    document.addEventListener('mousedown', (e) => {
-      if (quickNotePopover && !quickNotePopover.contains(e.target) && !e.target.closest('.chatops-quick-note-btn')) {
-        quickNotePopover.classList.remove('visible');
-      }
+    
+    const closePopover = () => {
+      quickNotePopover.classList.remove('visible');
+      quickNoteBackdrop.classList.remove('visible');
+    };
+
+    document.getElementById('cqn-close').addEventListener('click', closePopover);
+    document.getElementById('cqn-cancel').addEventListener('click', closePopover);
+    quickNoteBackdrop.addEventListener('mousedown', closePopover);
+
+    const timeInput = document.getElementById('cqn-reminder-time');
+    const presetBtns = document.querySelectorAll('.cqn-preset-btn');
+    
+    timeInput.addEventListener('input', () => {
+      presetBtns.forEach(b => b.classList.remove('active'));
     });
+
+    presetBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        presetBtns.forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        const mins = parseInt(e.target.dataset.min, 10);
+        const targetTime = new Date(Date.now() + mins * 60000);
+        const tzOffset = targetTime.getTimezoneOffset() * 60000;
+        const localISOTime = (new Date(targetTime - tzOffset)).toISOString().slice(0,16);
+        timeInput.value = localISOTime;
+      });
+    });
+
     return quickNotePopover;
   }
 
-  function openQuickNote(postEl, anchorBtn) {
+  async function openQuickNote(postEl, anchorBtn, mode = 'task') {
     const popover = getOrCreatePopover();
+    popover.dataset.mode = mode;
     const msgBodyEl = postEl.querySelector('.post-message__text, .post__body p, [class*="post-message"]');
-    const msgText = msgBodyEl ? msgBodyEl.innerText.trim().slice(0, 120) : '(Content not accessible)';
+    let msgTextFull = msgBodyEl ? msgBodyEl.innerText.trim() : '';
+    if (!msgTextFull) {
+      const imgEl = postEl.querySelector('img.attachment__image, img.markdown-inline-img, .post-image__column img');
+      if (imgEl) {
+        msgTextFull = '[Hình ảnh] Vui lòng xem trực tiếp trên ChatOps';
+      } else {
+        msgTextFull = '(Content not accessible)';
+      }
+    }
     const postId = postEl.id ? postEl.id.replace(SELECTORS.POST_ID_PREFIX, '') : '';
-    document.getElementById('cqn-msg-preview').textContent = msgText + (msgText.length >= 120 ? '...' : '');
+    document.getElementById('cqn-msg-preview').textContent = msgTextFull.length > 200 ? msgTextFull.slice(0, 200) + '...' : msgTextFull;
     document.getElementById('cqn-note-text').value = '';
     document.getElementById('cqn-reminder-time').value = '';
+    document.querySelectorAll('.cqn-preset-btn').forEach(b => b.classList.remove('active'));
     popover.dataset.postId = postId;
-    popover.dataset.postText = msgText;
-    const rect = anchorBtn.getBoundingClientRect();
-    const popoverWidth = 310;
-    let left = rect.left - popoverWidth - 8;
-    if (left < 8) left = rect.right + 8;
-    let top = Math.min(rect.top, window.innerHeight - 300);
-    popover.style.left = `${left}px`;
-    popover.style.top = `${Math.max(8, top)}px`;
+    popover.dataset.postText = msgTextFull;
+    
+    quickNoteBackdrop.classList.add('visible');
     popover.classList.add('visible');
+
+    const taskSection = popover.querySelector('#cqn-task-section');
+    const noteSection = popover.querySelector('#cqn-note-section');
+    const hintEl = popover.querySelector('.cqn-task-hint');
+    
+    if (popover.dataset.mode === 'note') {
+      if (taskSection) taskSection.style.display = 'none';
+      if (noteSection) noteSection.style.display = 'block';
+      popover.querySelector('.cqn-title').textContent = language.quickNoteTitle || 'Thêm ghi chú nhanh';
+    } else {
+      if (taskSection) taskSection.style.display = 'block';
+      if (noteSection) noteSection.style.display = 'none';
+      popover.querySelector('.cqn-title').textContent = language.quickTaskTitle || 'Tạo việc làm nhanh';
+      if (hintEl) {
+        const res = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS]);
+        const settings = res[STORAGE_KEYS.SETTINGS] || { snoozeMinutes: 5 };
+        hintEl.textContent = language.quickTaskHint.replace('{minutes}', settings.snoozeMinutes);
+      }
+    }
+
     const saveBtn = document.getElementById('cqn-save-note');
     const newSaveBtn = saveBtn.cloneNode(true);
     saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
@@ -362,20 +479,42 @@ function showToast(msg) {
   }
 
   async function saveTask(popover) {
-    const { postId, postText } = popover.dataset;
+    const { postId, postText, mode } = popover.dataset;
     const noteText = document.getElementById('cqn-note-text').value.trim();
     const reminderTime = document.getElementById('cqn-reminder-time').value;
-    const id = `${ALARMS.TASK_PREFIX}${Date.now()}`;
-    const item = { id, type: 'task', postId, postText, note: noteText || postText, createdAt: Date.now(), done: false, reminder: reminderTime || null, status: 'pending' };
-    const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
+    const category = document.getElementById('cqn-category').value;
+    const id = `${mode === 'note' ? 'memo_' : ALARMS.TASK_PREFIX}${Date.now()}`;
+    const teamName = window.location.pathname.split('/')[1] || '';
+    
+    const item = { 
+      id, 
+      type: mode === 'note' ? 'memo' : 'task', 
+      postId, 
+      postText, 
+      note: noteText || postText, 
+      category: mode === 'note' ? category : 'general',
+      createdAt: Date.now(), 
+      done: false, 
+      reminder: (mode === 'note') ? null : (reminderTime || null), 
+      status: 'pending', 
+      teamName 
+    };
+
+    const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS, STORAGE_KEYS.SETTINGS]);
     const memos = res[STORAGE_KEYS.MEMOS] || [];
+    const settings = res[STORAGE_KEYS.SETTINGS] || { snoozeMinutes: 5 };
     memos.unshift(item);
     await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
     chrome.runtime.sendMessage({ type: MESSAGE_TYPES.MEMO_UPDATED });
-    const startTime = reminderTime ? new Date(reminderTime).getTime() : Date.now() + UI_CONFIG.TASK_SNOOZE_MINUTES * 60 * 1000;
-    chrome.runtime.sendMessage({ type: MESSAGE_TYPES.SET_TASK_ALARM, taskId: id, time: startTime });
+    
+    if (mode === 'task') {
+      const startTime = reminderTime ? new Date(reminderTime).getTime() : Date.now() + settings.snoozeMinutes * 60 * 1000;
+      chrome.runtime.sendMessage({ type: MESSAGE_TYPES.SET_TASK_ALARM, taskId: id, time: startTime });
+    }
+    
     popover.classList.remove('visible');
-    showToast(language.quickTaskSaveSuccess);
+    quickNoteBackdrop.classList.remove('visible');
+    showToast(mode === 'note' ? (language.quickNoteSaveSuccess || 'Đã lưu ghi chú') : language.quickTaskSaveSuccess);
   }
 
   function injectQuickNoteButtons() {
@@ -391,19 +530,28 @@ function showToast(msg) {
       const actionArea = postEl.querySelector('.post-menu, .post__actions, .dot-menu__container, [class*="post-menu"], .post-action-menu');
       if (!actionArea) return;
 
-      // 4. Create and inject our custom button
+      // 4. Create and inject Task button (📌)
+      const taskBtn = document.createElement('button');
+      taskBtn.className = 'chatops-quick-note-btn task-btn';
+      taskBtn.innerHTML = '📌';
+      taskBtn.title = language.quickTaskCreate || 'Tạo việc cần làm';
+      taskBtn.addEventListener('click', (e) => {
+        e.preventDefault(); e.stopPropagation();
+        openQuickNote(postEl, taskBtn, 'task');
+      });
+
+      // 4b. Create and inject Note button (📝)
       const noteBtn = document.createElement('button');
-      noteBtn.className = 'chatops-quick-note-btn';
-      noteBtn.innerHTML = '📌';
-      noteBtn.title = language.quickTaskCreate || 'Quick Task / Reminder';
-      
+      noteBtn.className = 'chatops-quick-note-btn note-btn';
+      noteBtn.innerHTML = '📝';
+      noteBtn.title = language.quickNoteCreate || 'Thêm ghi chú nhanh';
       noteBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation(); // Critical to avoid ChatOps native actions
-        openQuickNote(postEl, noteBtn);
+        e.preventDefault(); e.stopPropagation();
+        openQuickNote(postEl, noteBtn, 'note');
       });
 
       // 5. Append to the action bar
+      actionArea.appendChild(taskBtn);
       actionArea.appendChild(noteBtn);
     });
   }

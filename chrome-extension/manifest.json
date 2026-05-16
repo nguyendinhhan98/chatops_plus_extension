@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ChatOps++",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Truy cập nhanh ChatOps: tìm kiếm, kiểm tra mention — trực tiếp từ trình duyệt.",
   "permissions": [
     "storage",

@@ -56,27 +56,38 @@
 }
 
 /* ─── Quick Note Popover ─── */
+#chatops-quick-note-backdrop {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 999998;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+#chatops-quick-note-backdrop.visible {
+  opacity: 1; pointer-events: auto;
+}
+
 #chatops-quick-note-popover {
   position: fixed;
-  width: 296px;
+  top: 50% !important; left: 50% !important;
+  width: 380px;
   background: #ffffff;
-  border: 1px solid #e0e0e5;
   border-radius: 8px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0,0,0,0.08);
   z-index: 999999;
   font-family: 'Inter', -apple-system, sans-serif;
-  color: #3d3c40;
+  color: #1a1a1c;
   opacity: 0;
-  transform: scale(0.97) translateY(-6px);
+  transform: translate(-50%, -50%) scale(0.97) !important;
   pointer-events: none;
-  transition: opacity 0.16s ease, transform 0.16s ease;
-  overflow: hidden;
+  transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 #chatops-quick-note-popover.visible {
   opacity: 1;
-  transform: scale(1) translateY(0);
-  pointer-events: all;
+  transform: translate(-50%, -50%) scale(1) !important;
+  pointer-events: auto;
 }
 
 .cqn-header {
@@ -96,11 +107,11 @@
 
 .cqn-header button {
   background: none; border: none;
-  color: #6e7280; cursor: pointer;
+  color: #ffffff; cursor: pointer;
   font-size: 18px; line-height: 1;
   transition: color 0.14s; padding: 0;
 }
-.cqn-header button:hover { color: #d0454c; }
+.cqn-header button:hover { color: #fca5a5; }
 
 .cqn-preview {
   margin: 10px 13px 6px;
@@ -108,7 +119,7 @@
   background: #f5f5f7;
   border-left: 2px solid #1c58d9;
   border-radius: 0 4px 4px 0;
-  font-size: 11px; color: #717274;
+  font-size: 11px; color: #4a4a4c;
   line-height: 1.4; font-style: italic;
   max-height: 50px; overflow: hidden;
   display: -webkit-box;
@@ -125,7 +136,7 @@
   background: #f5f5f7;
   border: 1px solid #e0e0e5;
   border-radius: 4px;
-  color: #717274;
+  color: #4a4a4c;
   font-size: 12px; font-weight: 600;
   cursor: pointer; font-family: inherit;
   transition: all 0.14s;
@@ -138,7 +149,7 @@
 }
 
 .cqn-mode-btn:hover:not(.active) {
-  background: #ebebed; color: #3d3c40;
+  background: #ebebed; color: #1a1a1c;
 }
 
 /* Textarea */
@@ -150,7 +161,7 @@
   background: #f5f5f7;
   border: 1px solid #e0e0e5;
   border-radius: 4px;
-  color: #3d3c40;
+  color: #1a1a1c;
   font-size: 13px; font-family: inherit;
   resize: none; height: 64px;
   outline: none; transition: border-color 0.14s;
@@ -162,34 +173,52 @@
   box-shadow: 0 0 0 2px rgba(28, 88, 217, 0.12);
 }
 
-#chatops-quick-note-popover textarea::placeholder { color: #a0a0a8; }
+#chatops-quick-note-popover textarea::placeholder { color: #6a6a6c; }
 
 /* Task section */
 #cqn-task-section { padding: 0 13px 4px; }
 
+.cqn-presets {
+  display: flex; gap: 4px; margin-bottom: 8px;
+}
+.cqn-preset-btn {
+  flex: 1;
+  background: #f5f5f7; border: 1px solid #e0e0e5; border-radius: 4px;
+  color: #4a4a4c; font-size: 11px; padding: 4px 0; cursor: pointer;
+  transition: all 0.14s; font-family: inherit;
+}
+.cqn-preset-btn:hover { background: #ebebed; color: #1a1a1c; }
+.cqn-preset-btn.active { background: #e0e7ff; border-color: #1c58d9; color: #1c58d9; font-weight: 600; }
+
 .cqn-reminder-row {
   display: flex; align-items: center; gap: 8px;
-  font-size: 12px; color: #717274;
+  font-size: 12px; color: #4a4a4c;
 }
 
 .cqn-reminder-row label { white-space: nowrap; font-weight: 500; }
 
 .cqn-reminder-row input[type="datetime-local"] {
   flex: 1; padding: 6px 9px;
-  background: #f5f5f7;
-  border: 1px solid #e0e0e5;
-  border-radius: 4px;
-  color: #3d3c40; font-size: 12px; font-family: inherit;
+  background: transparent;
+  border: none;
+  color: #1a1a1c; font-size: 12px; font-family: inherit;
   outline: none; min-width: 0;
+  position: relative;
 }
 .cqn-reminder-row input:focus {
-  border-color: #1c58d9;
-  box-shadow: 0 0 0 2px rgba(28, 88, 217, 0.12);
+  outline: none;
+}
+.cqn-reminder-row input::-webkit-calendar-picker-indicator {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  width: auto; height: auto;
+  color: transparent; background: transparent;
+  cursor: pointer;
 }
 
 .cqn-task-hint {
   margin-top: 5px;
-  font-size: 10px; color: #a0a0a8; font-style: italic;
+  font-size: 10px; color: #6a6a6c; font-style: italic;
 }
 
 /* Buttons */
@@ -209,14 +238,14 @@
 .cqn-btn-primary:hover { background: #1648b8; }
 .cqn-btn-primary:active { transform: scale(0.98); }
 
-.cqn-btn-secondary { background: #f5f5f7; color: #717274; border: 1px solid #e0e0e5; }
-.cqn-btn-secondary:hover { background: #ebebed; color: #3d3c40; }
+.cqn-btn-secondary { background: #f5f5f7; color: #4a4a4c; border: 1px solid #e0e0e5; }
+.cqn-btn-secondary:hover { background: #ebebed; color: #1a1a1c; }
 .cqn-btn, .cqn-mode-btn, .cqn-header button, #chatops-ext-floating-btn, .crb-close, .crb-done-btn { cursor: pointer !important; }
 
 /* ─── Reminder Banner ─── */
 .chatops-reminder-banner {
   position: fixed;
-  bottom: 24px; right: 20px; width: 310px;
+  top: 24px; right: 20px; width: 310px;
   background: #ffffff;
   border: 1px solid #e0e0e5;
   border-top: 3px solid #1c58d9;
@@ -225,7 +254,7 @@
   z-index: 9999999;
   font-family: 'Inter', -apple-system, sans-serif;
   opacity: 0;
-  transform: translateY(10px);
+  transform: translateY(-10px);
   transition: opacity 0.25s ease, transform 0.25s ease;
   overflow: hidden;
 }
@@ -259,11 +288,11 @@
   margin-bottom: 3px;
 }
 
-.crb-text { font-size: 13px; color: #3d3c40; line-height: 1.4; word-break: break-word; }
+.crb-text { font-size: 13px; color: #1a1a1c; line-height: 1.4; word-break: break-word; }
 
 .crb-close {
   background: none; border: none;
-  color: #a0a0a8; cursor: pointer;
+  color: #6a6a6c; cursor: pointer;
   font-size: 18px; line-height: 1; padding: 0; flex-shrink: 0;
   transition: color 0.14s;
 }
@@ -281,6 +310,13 @@
   transition: background 0.14s;
 }
 .crb-done-btn:hover { background: rgba(61, 184, 135, 0.18); }
+
+.crb-jump-btn {
+  width: 100%; padding: 8px; margin-top: 6px;
+  background: #f5f5f7; border: 1px solid #e0e0e5; border-radius: 4px;
+  color: #1a1a1c; font-size: 12px; font-weight: 600; cursor: pointer; transition: background 0.14s;
+}
+.crb-jump-btn:hover { background: #ebebed; }
 
 .crb-progress {
   height: 2px; background: #1c58d9;
@@ -321,7 +357,7 @@
   box-shadow: 0 8px 24px rgba(0,0,0,0.12);
   display: flex; flex-direction: column;
   z-index: 20000; overflow: hidden;
-  font-family: 'Inter', sans-serif; color: #3d3c40;
+  font-family: 'Inter', sans-serif; color: #1a1a1c;
 }
 .chatops-meme-picker-header {
   padding: 10px 12px;

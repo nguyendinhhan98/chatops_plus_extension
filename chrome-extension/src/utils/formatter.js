@@ -50,6 +50,12 @@ export function renderPostList(posts, usersMap, baseUrl, teamName, channelsMap, 
     const permalink = makePermalinkSync(post.id, baseUrl, teamName);
 
     let contentHtml = escapeHtml(post.message);
+    
+    // Parse Markdown links [text](url)
+    contentHtml = contentHtml.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2" target="_blank" class="post-link" style="color:var(--accent);text-decoration:underline;">$1</a>');
+    // Parse raw URLs (not immediately preceded by " or ')
+    contentHtml = contentHtml.replace(/(^|[^"'])(https?:\/\/[^\s<]+)/g, '$1<a href="$2" target="_blank" class="post-link" style="color:var(--accent);text-decoration:underline;">$2</a>');
+
     if (keyword && keyword.length >= 2) {
       const regex = new RegExp(`(${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
       contentHtml = contentHtml.replace(regex, '<mark class="highlight">$1</mark>');

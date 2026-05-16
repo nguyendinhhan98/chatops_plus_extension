@@ -17,6 +17,7 @@
     </div>
 
     <!-- ─── Tab Navigation (5 tabs) ─── -->
+    <!-- ─── Tab Navigation ─── -->
     <nav class="tab-nav">
       <button class="tab-btn active" data-tab="search" title="Tìm kiếm">
         <span class="tab-icon">
@@ -28,19 +29,23 @@
       </button>
       <button class="tab-btn" data-tab="tasks" title="Việc cần làm">
         <span class="tab-icon">✅</span>
-        <span class="tab-label">Cần làm <span id="taskTabBadge" class="tab-badge"></span></span>
+        <span class="tab-label">Việc cần làm <span id="taskTabBadge" class="tab-badge"></span></span>
       </button>
       <button class="tab-btn" data-tab="memo" title="Ghi chú">
         <span class="tab-icon">📝</span>
         <span class="tab-label">Ghi chú <span id="noteTabBadge" class="tab-badge"></span></span>
       </button>
-      <button class="tab-btn" data-tab="mentions" title="Thông báo bị bỏ lỡ">
+      <button class="tab-btn" data-tab="mentions" title="Bỏ lỡ">
         <span class="tab-icon">🔔</span>
         <span class="tab-label">Bỏ lỡ</span>
       </button>
-      <button class="tab-btn" data-tab="leave" title="Xin nghỉ / Đi trễ">
+      <button class="tab-btn" data-tab="leave" title="Xin nghỉ">
         <span class="tab-icon">📋</span>
         <span class="tab-label">Xin nghỉ</span>
+      </button>
+      <button class="tab-btn" data-tab="settings" title="Cài đặt">
+        <span class="tab-icon">⚙️</span>
+        <span class="tab-label">Cài đặt</span>
       </button>
     </nav>
 
@@ -94,21 +99,30 @@
     <div class="tab-content" id="tab-tasks">
       <!-- Quick Add Task Bar -->
       <div class="task-quick-bar">
-        <div class="task-quick-input-row">
-          <input type="text" id="quickTaskInput" placeholder="Nhập việc cần làm (Enter để lưu)..." class="quick-note-input" autocomplete="off">
+        <div class="input-helper" style="margin-top:12px; margin-bottom:10px; font-size:13px; color:var(--text-2); font-weight:500;">
+          ✍️ Nhấn 📌 trên tin nhắn ở ChatOps hoặc nhập vào bên dưới để tạo việc cần làm.
+        </div>
+        <div class="task-quick-input-row" style="align-items:center;">
+          <textarea id="quickTaskInput" placeholder="Nhập việc cần làm (Shift+Enter để lưu)..." class="quick-note-input" style="resize:none; padding:10px; min-height:80px; border-radius:var(--radius-sm); border:1px solid var(--border); background:#fff; font-family:inherit;"></textarea>
           <button id="btnQuickTaskSave" class="quick-note-btn" title="Thêm việc">+</button>
         </div>
-        <div class="task-reminder-row" onclick="document.getElementById('quickTaskReminderDt').showPicker?.()">
-          <label class="task-reminder-label" for="quickTaskReminderDt">
+        <div class="task-reminder-row" id="quickTaskReminderRow" style="margin-bottom:8px; background:#fff; padding:6px 10px; border-radius:var(--radius-sm); border:1px solid var(--border); cursor:pointer; display:flex; align-items:center;">
+          <label class="task-reminder-label" for="quickTaskReminderDt" style="margin-right:8px; cursor:pointer;">
             <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" style="margin-right:4px;opacity:0.7">
               <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
               <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
             </svg>
             Nhắc lúc:
           </label>
-          <input type="datetime-local" id="quickTaskReminderDt" class="quick-task-datetime" style="flex:1; cursor:pointer;">
+          <input type="datetime-local" id="quickTaskReminderDt" class="quick-task-datetime" style="flex:1; cursor:pointer; background:transparent; border:none; outline:none;">
         </div>
-        <div class="input-helper">⏰ Bắt đầu nhắc từ thời điểm chọn — cứ 5 phút nhắc lại cho đến khi bạn đánh dấu xong</div>
+        <div class="input-helper" id="snoozeHintText" style="margin-top:8px;">⏰ Bắt đầu nhắc từ thời điểm chọn — cứ 5 phút nhắc lại cho đến khi bạn đánh dấu xong</div>
+      </div>
+
+      <!-- Sub-tabs for Tasks -->
+      <div class="memo-sub-tabs" id="taskSubTabs">
+        <button class="memo-sub-tab active" data-filter="pending">ĐANG THỰC HIỆN</button>
+        <button class="memo-sub-tab" data-filter="done">ĐÃ HOÀN THÀNH</button>
       </div>
 
       <!-- Task list -->
@@ -118,12 +132,29 @@
     <!-- ─── Tab: Ghi chú / Notes ─── -->
     <div class="tab-content" id="tab-memo">
       <!-- Quick Note Bar -->
-      <div class="quick-note-bar">
+      <div class="quick-note-bar" style="border-bottom: 1px solid var(--border);">
         <div class="quick-note-row">
           <span class="quick-note-icon">📝</span>
-          <input type="text" id="quickNoteInput" placeholder="Ghi chú nhanh... (Enter để lưu)" class="quick-note-input" autocomplete="off">
+          <input type="text" id="quickNoteInput" placeholder="Ghi chú nhanh... (Enter để lưu)" class="quick-note-input" autocomplete="off" style="flex:1">
+          <select id="quickNoteCategory" class="quick-note-category-select" style="width:100px; font-size:11px; border:none; background:none; color:var(--text-2); outline:none; cursor:pointer;">
+             <option value="general">📁 Chung</option>
+             <option value="work">📁 Công việc</option>
+             <option value="personal">📁 Cá nhân</option>
+             <option value="ideas">📁 Ý tưởng</option>
+          </select>
           <button id="btnQuickNoteSave" class="quick-note-btn" title="Lưu">+</button>
         </div>
+      </div>
+
+      <div class="memo-sub-tabs" style="border-bottom: 1px solid var(--border); background: var(--bg-2); padding: 8px 12px; display: flex; align-items: center; gap: 8px;">
+        <span style="font-size:11px; font-weight:700; color:var(--text-3); text-transform:uppercase; letter-spacing:0.5px;">Lọc:</span>
+        <select id="noteCategoryFilter" style="flex:1; font-size:12px; padding:4px 8px; border:1px solid var(--border); border-radius:4px; background:#fff; outline:none; font-family:inherit;">
+          <option value="all">Tất cả danh mục</option>
+          <option value="general">Chung</option>
+          <option value="work">Công việc</option>
+          <option value="personal">Cá nhân</option>
+          <option value="ideas">Ý tưởng</option>
+        </select>
       </div>
 
       <!-- Note list -->
@@ -135,27 +166,36 @@
       <div class="panel-section">
         <h2 class="section-title">Thông báo bị bỏ lỡ</h2>
         <div class="search-form">
-          <select id="spMentionHours">
-            <option value="24" selected>24 giờ qua</option>
-            <option value="48">48 giờ qua</option>
-            <option value="168">7 ngày qua</option>
-            <option value="336">14 ngày qua</option>
-          </select>
-          <div style="display:flex; flex-direction:column; gap:6px;">
+          <div class="search-filters-row">
+            <select id="spMentionHours" style="flex:1">
+              <option value="24" selected>24 giờ qua</option>
+              <option value="48">48 giờ qua</option>
+              <option value="168">7 ngày qua</option>
+              <option value="336">14 ngày qua</option>
+            </select>
+            <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
+              <div id="spMentionChannelsMS" data-placeholder="Lọc theo kênh cụ thể"></div>
+              <label class="checkbox-label" style="margin-left:2px">
+                <input type="checkbox" id="spMentionIncludeDM">
+                <span style="font-size:11px">Bao gồm Direct Message</span>
+              </label>
+            </div>
+          </div>
+          
+          <div style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
             <label class="checkbox-label">
               <input type="checkbox" id="spMentionDirect" checked>
               <span>Nhắc đến trực tiếp (@tên bạn)</span>
             </label>
             <label class="checkbox-label">
               <input type="checkbox" id="spMentionHere">
-              <span>Nhắc cả nhóm @here (đang online)</span>
+              <span>Nhắc cả nhóm @here</span>
             </label>
             <label class="checkbox-label">
               <input type="checkbox" id="spMentionChannel">
               <span>Nhắc toàn kênh @channel / @all</span>
             </label>
           </div>
-          <div id="spMentionChannelsMS" data-placeholder="Lọc theo kênh cụ thể (để trống = quét tất cả)"></div>
           <button class="btn btn-primary btn-full" id="btnSpScanMentions">
             <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style="margin-right:6px;">
               <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
@@ -196,6 +236,93 @@
       <div class="panel-section" id="spLeaveResults" style="flex:1; overflow-y:auto; padding:16px;">
         <div class="empty-state">Nhập thông tin và nhấn tra cứu</div>
       </div>
+    </div>
+
+    <!-- ─── Tab: Cài đặt / Settings ─── -->
+    <div id="tab-settings" class="tab-content" style="padding: 16px; overflow-y: auto;">
+      <h2 style="font-size: 16px; font-weight: 600; color: var(--text-1); margin-bottom: 24px;">Cài đặt chung</h2>
+
+      <div class="settings-group">
+        <h3 class="settings-title">Thời gian báo lại mặc định</h3>
+        <p class="settings-desc">Khoảng thời gian (phút) hệ thống sẽ báo thức kể từ lúc tạo, nếu bạn không chọn giờ.</p>
+        <div class="settings-row">
+          <input type="number" id="settingSnoozeMinutes" class="settings-input-num" min="1" max="1440" value="5">
+          <span style="font-size: 13px; color: var(--text-2);">phút</span>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <h3 class="settings-title">Màu sắc giao diện</h3>
+        <p class="settings-desc">Tùy chỉnh màu sắc cho từng khối thành phần.</p>
+        
+        <div class="settings-color-grid">
+          <div class="settings-color-item">
+            <span>Khối Header (Phía trên)</span>
+            <div class="color-presets-row" data-key="headerColor">
+              <button class="color-preset active" data-color="#1c58d9" style="background: #1c58d9;"></button>
+              <button class="color-preset" data-color="#3db887" style="background: #3db887;"></button>
+              <button class="color-preset" data-color="#e8384f" style="background: #e8384f;"></button>
+              <button class="color-preset" data-color="#805bfa" style="background: #805bfa;"></button>
+              <button class="color-preset" data-color="#1153ab" style="background: #1153ab;"></button>
+            </div>
+          </div>
+          
+          <div class="settings-color-item">
+            <span>Thanh điều hướng (Tab)</span>
+            <div class="color-presets-row" data-key="navColor">
+              <button class="color-preset active" data-color="#1c58d9" style="background: #1c58d9;"></button>
+              <button class="color-preset" data-color="#3db887" style="background: #3db887;"></button>
+              <button class="color-preset" data-color="#e8384f" style="background: #e8384f;"></button>
+              <button class="color-preset" data-color="#805bfa" style="background: #805bfa;"></button>
+              <button class="color-preset" data-color="#1153ab" style="background: #1153ab;"></button>
+            </div>
+          </div>
+
+          <div class="settings-color-item">
+            <span>Nút bấm & Nổi bật</span>
+            <div class="color-presets-row" data-key="accentColor">
+              <button class="color-preset active" data-color="#1c58d9" style="background: #1c58d9;"></button>
+              <button class="color-preset" data-color="#3db887" style="background: #3db887;"></button>
+              <button class="color-preset" data-color="#e8384f" style="background: #e8384f;"></button>
+              <button class="color-preset" data-color="#805bfa" style="background: #805bfa;"></button>
+              <button class="color-preset" data-color="#f5a623" style="background: #f5a623;"></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <h3 class="settings-title">Hiển thị Menu Tab</h3>
+        <p class="settings-desc">Chọn các tab bạn muốn hiển thị trên thanh công cụ.</p>
+        <div class="settings-toggle-list">
+          <label class="settings-toggle-row">
+            <span>Tìm kiếm</span>
+            <input type="checkbox" id="settingShowSearch" class="settings-toggle" checked>
+            <span class="toggle-slider"></span>
+          </label>
+          <div class="settings-toggle-row" style="opacity: 0.8; background: #f9f9fb;">
+            <span>Việc cần làm (Mặc định)</span>
+            <span style="font-size: 11px; color: var(--text-3); font-weight: 500;">LUÔN HIỆN</span>
+          </div>
+          <label class="settings-toggle-row">
+            <span>Ghi chú</span>
+            <input type="checkbox" id="settingShowNotes" class="settings-toggle" checked>
+            <span class="toggle-slider"></span>
+          </label>
+          <label class="settings-toggle-row">
+            <span>Bỏ lỡ</span>
+            <input type="checkbox" id="settingShowMissed" class="settings-toggle" checked>
+            <span class="toggle-slider"></span>
+          </label>
+          <label class="settings-toggle-row">
+            <span>Xin nghỉ</span>
+            <input type="checkbox" id="settingShowLeave" class="settings-toggle" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <div id="settingsStatus" class="settings-status" style="display: none; margin-top: 20px; color: var(--success); font-weight: 600; text-align: center;">Đã tự động lưu</div>
     </div>
   </div>
 

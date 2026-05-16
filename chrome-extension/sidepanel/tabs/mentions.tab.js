@@ -17,6 +17,8 @@ import {
   renderChannelCard, 
   renderMentionItem, 
   makePermalinkSync, 
+  enrichChannels,
+  filterChannels,
   escapeHtml,
   showLoading, 
   showError 
@@ -26,6 +28,7 @@ import { language } from '../../src/lang.js';
 
 let _state = null;
 let mentionChannelMS = null;
+let _joinedChannelsCache = null;
 
 /**
  * Initializes the Mentions Tab
@@ -35,20 +38,44 @@ export function setup(state) {
   _state = state;
   document.getElementById('btnSpScanMentions').addEventListener('click', scanMentionsDeep);
 
+  // Include DM toggle - Clear cache to force re-fetch with new filter
+  document.getElementById('spMentionIncludeDM').addEventListener('change', () => {
+    _joinedChannelsCache = null;
+    if (mentionChannelMS) mentionChannelMS.reset();
+  });
+
   const getTeamId = () => _state.getTeam()?.id;
 
   mentionChannelMS = setupMultiSelect(
     'spMentionChannelsMS',
     {
       defaultFetch: async (page, perPage) => {
-        const channels = await getMyChannels(getTeamId());
-        return channels.slice(page * perPage, (page + 1) * perPage);
+        const includeDM = document.getElementById('spMentionIncludeDM').checked;
+        if (!_joinedChannelsCache) {
+          _joinedChannelsCache = await getMyChannels(getTeamId());
+        }
+        let filtered = filterChannels(_joinedChannelsCache, includeDM);
+        const paginated = filtered.slice(page * perPage, (page + 1) * perPage);
+        return enrichChannels(paginated, _state.getUser());
       },
-      searchFetch: async (term) => searchChannels(getTeamId(), term)
+      searchFetch: async (term) => {
+        const includeDM = document.getElementById('spMentionIncludeDM').checked;
+        if (!_joinedChannelsCache) {
+          _joinedChannelsCache = await getMyChannels(getTeamId());
+        }
+        const termLower = term.toLowerCase();
+        let filtered = filterChannels(_joinedChannelsCache, includeDM);
+        
+        const enriched = await enrichChannels(filtered, _state.getUser());
+        return enriched.filter(c => 
+          (c.display_name && c.display_name.toLowerCase().includes(termLower)) || 
+          (c.name && c.name.toLowerCase().includes(termLower))
+        );
+      }
     },
     (channel) => renderChannelCard(channel),
     (channel) => channel.id,
-    (channel) => channel.name
+    (channel) => channel.display_name || channel.name
   );
 }
 
@@ -82,6 +109,7 @@ async function scanMentionsDeep() {
   const direct = document.getElementById('spMentionDirect').checked;
   const here = document.getElementById('spMentionHere').checked;
   const channelFlag = document.getElementById('spMentionChannel').checked;
+  const includeDM = document.getElementById('spMentionIncludeDM').checked;
   const mentionChannels = mentionChannelMS ? mentionChannelMS.getSelected() : [];
   
   const sinceMs = Date.now() - hours * 60 * 60 * 1000;
@@ -96,7 +124,12 @@ async function scanMentionsDeep() {
     if (mentionChannels.length > 0) {
       targetChannels = mentionChannels.map(c => ({ channel_id: c.id }));
     } else {
-      targetChannels = await getMyChannelMembers(currentTeam.id);
+      const allMemberships = await getMyChannelMembers(currentTeam.id);
+      if (includeDM) {
+        targetChannels = allMemberships;
+      } else {
+        targetChannels = allMemberships.filter(m => !m.channel_name || !m.channel_name.startsWith('@'));
+      }
     }
 
     const results = [];

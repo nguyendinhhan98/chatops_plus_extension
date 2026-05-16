@@ -8,6 +8,7 @@ import { CHATOPS_CONFIG, MESSAGE_TYPES, UI_CONFIG, STORAGE_KEYS, TABS } from '..
 import { language } from '../../src/lang.js';
 
 let _state = null;
+let currentFilter = 'pending';
 
 /**
  * Initializes the Tasks Tab
@@ -34,11 +35,13 @@ export function setup(state) {
       createdAt: Date.now(),
       done: false,
       reminder: reminderInput?.value || null,
-      status: 'pending'
+      status: 'pending',
+      teamName: _state.getTeam()?.name || CHATOPS_CONFIG.DEFAULT_TEAM
     };
 
-    const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
+    const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS, STORAGE_KEYS.SETTINGS]);
     const memos = res[STORAGE_KEYS.MEMOS] || [];
+    const settings = res[STORAGE_KEYS.SETTINGS] || { snoozeMinutes: 5 };
     memos.unshift(item);
     await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
 
@@ -47,14 +50,53 @@ export function setup(state) {
 
     const startTime = item.reminder
       ? new Date(item.reminder).getTime()
-      : Date.now() + UI_CONFIG.TASK_SNOOZE_MINUTES * 60 * 1000;
+      : Date.now() + settings.snoozeMinutes * 60 * 1000;
     chrome.runtime.sendMessage({ type: MESSAGE_TYPES.SET_TASK_ALARM, taskId: id, time: startTime });
-
+    
     loadTasks();
   };
 
-  quickInput.addEventListener('keydown', e => { if (e.key === 'Enter') saveTask(); });
+  quickInput.addEventListener('keydown', e => { 
+    if (e.key === 'Enter' && e.shiftKey) {
+      e.preventDefault();
+      saveTask(); 
+    }
+  });
   quickSaveBtn.addEventListener('click', saveTask);
+
+  // Removed JS showPicker hack, using pure CSS overlay instead.
+
+  // Handle task updates (reminder time changes)
+  document.getElementById('taskList').addEventListener('change', async (e) => {
+    if (e.target.classList.contains('task-update-reminder')) {
+      const id = e.target.dataset.id;
+      const newTime = e.target.value;
+      const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
+      const memos = res[STORAGE_KEYS.MEMOS] || [];
+      const taskIndex = memos.findIndex(m => m.id === id);
+      
+      if (taskIndex !== -1) {
+        memos[taskIndex].reminder = newTime || null;
+        await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
+        
+        chrome.alarms.clear(id);
+        if (newTime && !memos[taskIndex].done) {
+          const startTime = new Date(newTime).getTime();
+          chrome.runtime.sendMessage({ type: MESSAGE_TYPES.SET_TASK_ALARM, taskId: id, time: startTime });
+        }
+      }
+    }
+  });
+
+  // Sub-tabs
+  document.querySelectorAll('#taskSubTabs .memo-sub-tab').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      document.querySelectorAll('#taskSubTabs .memo-sub-tab').forEach(b => b.classList.remove('active'));
+      e.target.classList.add('active');
+      currentFilter = e.target.dataset.filter;
+      loadTasks();
+    });
+  });
 
   // Event delegation for task list
   document.getElementById('taskList').addEventListener('click', async (e) => {
@@ -113,24 +155,23 @@ export async function loadTasks() {
   if (taskBadge) taskBadge.textContent = pendingCount > 0 ? pendingCount : '';
 
   const now = Date.now();
-
-  if (tasks.length === 0) {
-    taskList.innerHTML = `<div class="empty-state"><div style="font-size:36px;margin-bottom:12px">✅</div>${language.taskEmpty}<br><span style="font-size:12px;color:var(--text-3)">${language.taskClickHint}</span></div>`;
-    return;
-  }
-
   const pending = tasks.filter(t => !t.done);
   const done = tasks.filter(t => t.done);
   let html = '';
 
-  if (pending.length > 0) {
-    html += `<div class="memo-list-header">${language.taskPending} (${pending.length})</div>`;
-    html += pending.map(task => renderTaskCard(task, now)).join('');
-  }
-
-  if (done.length > 0) {
-    html += `<div class="memo-list-header done-header">${language.taskCompleted} (${done.length}) <button class="memo-clear-done-btn" id="btnClearDoneTasks">${language.taskClearAll}</button></div>`;
-    html += done.map(task => renderTaskCard(task, now)).join('');
+  if (currentFilter === 'pending') {
+    if (pending.length === 0) {
+      html = `<div class="empty-state">${language.taskEmpty}</div>`;
+    } else {
+      html += pending.map(task => renderTaskCard(task, now)).join('');
+    }
+  } else {
+    if (done.length === 0) {
+      html = `<div class="empty-state">Chưa có việc nào đã hoàn thành</div>`;
+    } else {
+      html += `<div style="text-align:right;margin-bottom:8px;"><button class="memo-clear-done-btn" id="btnClearDoneTasks">${language.taskClearAll}</button></div>`;
+      html += done.map(task => renderTaskCard(task, now)).join('');
+    }
   }
 
   taskList.innerHTML = html;
@@ -155,7 +196,7 @@ function renderTaskCard(task, now) {
   const cachedConfig = _state.getConfig();
   const currentTeam = _state.getTeam();
   const permalink = task.postId && cachedConfig
-    ? makePermalinkSync(task.postId, cachedConfig.chatopsUrl, currentTeam?.name || CHATOPS_CONFIG.DEFAULT_TEAM)
+    ? makePermalinkSync(task.postId, cachedConfig.chatopsUrl, task.teamName || currentTeam?.name || CHATOPS_CONFIG.DEFAULT_TEAM)
     : null;
 
   // Only show postText if it's different from the note (to avoid duplication)
@@ -174,14 +215,23 @@ function renderTaskCard(task, now) {
         </div>
       </div>
       <div class="memo-footer">
-        <div class="memo-meta">
-          ${isOverdue ? `<span class="memo-overdue-badge">⚠️ ${language.taskOverdue}</span>` : ''}
-          ${reminderStr && !task.done ? `<span class="reminder-active">⏰ ${reminderStr}</span>` : ''}
-          ${task.done ? `<span>✅ ${formatRelativeTime(task.doneAt || task.createdAt)}</span>` : ''}
+        <div class="memo-meta" style="display:flex; align-items:center; gap:8px;">
+          <span>📅 ${formatRelativeTime(task.createdAt)}</span>
+          ${!task.done ? `
+            <div style="display:flex; align-items:center; background:#fff; border:1px solid var(--border); border-radius:4px; padding:2px 6px;">
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style="opacity:0.7; margin-right:4px;"><path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/></svg>
+              <input type="datetime-local" class="task-update-reminder" data-id="${task.id}" value="${task.reminder || ''}" style="border:none; outline:none; font-size:11px; background:transparent; cursor:pointer;" title="Đổi giờ nhắc" />
+            </div>
+          ` : ''}
         </div>
         <div class="memo-actions">
-          ${permalink ? `<a href="${permalink}" class="post-jump-link" title="${language.taskViewOriginal}">↗</a>` : ''}
-          <button class="btn-delete-task btn-delete-memo" data-id="${task.id}" title="${language.taskDelete}">×</button>
+          ${permalink ? `<a href="${permalink}" class="post-jump-link" title="${language.memoViewOriginal}">↗</a>` : ''}
+          <button class="btn-delete-memo btn-delete-task" data-id="${task.id}" title="${language.memoDelete}">
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" style="pointer-events:none;">
+              <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+              <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4L4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+            </svg>
+          </button>
         </div>
       </div>
     </div>

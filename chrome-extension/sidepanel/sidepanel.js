@@ -8,6 +8,7 @@ import { setup as setupMentions, reset as resetMentions, getSelects as getMentio
 import { setup as setupLeave, reset as resetLeave, getSelects as getLeaveSelects } from './tabs/leave.tab.js';
 import { setup as setupMemo, loadMemos } from './tabs/memo.tab.js';
 import { setup as setupTasks, loadTasks } from './tabs/tasks.tab.js';
+import { setup as setupSettings, getSettings, applyThemeToDOM, applyTabVisibilityToDOM } from './tabs/settings.tab.js';
 import { getMyProfile, getMyTeams, getConfig } from '../src/api/index.js';
 import { escapeHtml } from '../src/utils/index.js';
 import { STORAGE_KEYS, MESSAGE_TYPES, CHATOPS_CONFIG, TABS } from '../src/constants.js';
@@ -21,6 +22,14 @@ document.addEventListener('DOMContentLoaded', init);
  */
 async function init() {
   const selectEl = document.getElementById('spWorkspaceSelect');
+  try {
+    const settings = await getSettings();
+    applyThemeToDOM(settings);
+    applyTabVisibilityToDOM(settings.showTabs);
+  } catch (settingsErr) {
+    console.error('[ChatOps Ext] Failed to load settings:', settingsErr);
+  }
+
   try {
     const [config, user, teams] = await Promise.all([getConfig(), getMyProfile(), getMyTeams()]);
     state.setConfig(config);
@@ -36,6 +45,7 @@ async function init() {
   setupLeave(state);
   setupMemo(state);
   setupTasks(state);
+  setupSettings(state);
   setupTabs();
   
   const selectors = { ...getSearchSelects(), ...getMentionsSelects(), ...getLeaveSelects() };
@@ -74,7 +84,7 @@ async function setupWorkspaceSelector(teams, select) {
  */
 function setupTabs() {
   const switchTab = (id) => {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === id));
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === id));
     document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === `tab-${id}`));
   };
   document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
@@ -108,6 +118,12 @@ function setupStateHandlers() {
   window.addEventListener('beforeunload', () => 
     chrome.runtime.sendMessage({ type: MESSAGE_TYPES.SIDE_PANEL_STATE, state: 'CLOSED' })
   );
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      chrome.runtime.sendMessage({ type: MESSAGE_TYPES.RESET_BADGE });
+    }
+  });
   
   document.addEventListener('click', (e) => {
     const link = e.target.closest('.post-jump-link');
@@ -133,3 +149,5 @@ function setupStateHandlers() {
     });
   });
 }
+
+

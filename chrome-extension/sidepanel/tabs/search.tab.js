@@ -18,6 +18,8 @@ import {
   renderUserCard, 
   renderChannelCard, 
   getChannelLabel,
+  enrichChannels,
+  filterChannels,
   escapeHtml,
   showLoading, 
   showError 
@@ -84,40 +86,7 @@ export function setup(state) {
     delete e.target.dataset.username;
   });
 
-  const enrichChannels = async (channels) => {
-    const me = _state.getUser();
-    if (!me || !channels?.length) return channels;
 
-    const dmChannels = channels.filter(c => c.type === 'D' || (c.name && c.name.includes('__')));
-    if (!dmChannels.length) return channels;
-
-    const otherUserIds = new Set();
-    dmChannels.forEach(c => {
-      const parts = c.name.split('__');
-      const otherId = parts.find(id => id !== me.id);
-      if (otherId) otherUserIds.add(otherId);
-    });
-
-    if (otherUserIds.size > 0) {
-      try {
-        const users = await getUsersByIds([...otherUserIds]);
-        const usersMap = Object.fromEntries(users.map(u => [u.id, u]));
-        dmChannels.forEach(c => {
-          const parts = c.name.split('__');
-          const otherId = parts.find(id => id !== me.id);
-          const user = usersMap[otherId];
-          if (user) {
-            c.display_name = (user.first_name || user.last_name) 
-              ? `${user.first_name} ${user.last_name}`.trim() 
-              : user.username;
-          }
-        });
-      } catch (err) {
-        console.warn('Failed to fetch DM usernames:', err);
-      }
-    }
-    return channels;
-  };
 
   searchInMS = setupMultiSelect(
     'spSearchIn',
@@ -127,12 +96,9 @@ export function setup(state) {
         if (!_joinedChannelsCache) {
           _joinedChannelsCache = await getMyChannels(getTeamId());
         }
-        let filtered = _joinedChannelsCache;
-        if (!includeDM) {
-          filtered = filtered.filter(c => c.type !== 'D' && !(c.name && c.name.includes('__')));
-        }
+        let filtered = filterChannels(_joinedChannelsCache, includeDM);
         const paginated = filtered.slice(page * perPage, (page + 1) * perPage);
-        return enrichChannels(paginated);
+        return enrichChannels(paginated, _state.getUser());
       },
       searchFetch: async (term) => {
         const includeDM = document.getElementById('chkSearchIncludeDM').checked;
@@ -140,17 +106,13 @@ export function setup(state) {
           _joinedChannelsCache = await getMyChannels(getTeamId());
         }
         const termLower = term.toLowerCase();
-        let filtered = _joinedChannelsCache;
-        if (!includeDM) {
-          filtered = filtered.filter(c => c.type !== 'D' && !(c.name && c.name.includes('__')));
-        }
+        let filtered = filterChannels(_joinedChannelsCache, includeDM);
         
-        const enriched = await enrichChannels(filtered);
-        const searched = enriched.filter(c => 
+        const enriched = await enrichChannels(filtered, _state.getUser());
+        return enriched.filter(c => 
           (c.display_name && c.display_name.toLowerCase().includes(termLower)) || 
           (c.name && c.name.toLowerCase().includes(termLower))
         );
-        return searched;
       }
     },
     (channel) => renderChannelCard(channel),
