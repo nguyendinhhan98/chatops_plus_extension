@@ -102,8 +102,8 @@ export const language = {
   memeError: 'Lỗi tải meme.',
 
   // Content Script - Quick Task Popover
-  quickTaskCreate: 'Tạo việc làm nhanh',
-  quickTaskTitle: 'Tạo việc làm nhanh',
+  quickTaskCreate: 'Tạo việc cần làm',
+  quickTaskTitle: 'Tạo việc cần làm',
   quickTaskNotePlaceholder: 'Thêm ghi chú (tùy chọn)...',
   quickTaskRemindAt: 'Nhắc lúc:',
   quickTaskHint: 'Hệ thống sẽ nhắc lại mỗi {minutes} phút cho đến khi hoàn thành',

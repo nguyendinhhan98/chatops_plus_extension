@@ -14,6 +14,13 @@ export function setupAutocomplete(inputId, fetchOptions, renderFn, onSelectFn) {
 
   const wrapper = inputEl.parentElement;
   
+  const clearBtn = document.createElement('span');
+  clearBtn.innerHTML = '✕';
+  clearBtn.className = 'autocomplete-clear';
+  clearBtn.style.display = inputEl.value ? 'flex' : 'none';
+  clearBtn.title = 'Xóa';
+  wrapper.appendChild(clearBtn);
+  
   const dropdown = document.createElement('div');
   dropdown.className = 'autocomplete-dropdown';
   wrapper.appendChild(dropdown);
@@ -105,8 +112,13 @@ export function setupAutocomplete(inputId, fetchOptions, renderFn, onSelectFn) {
     }
   });
 
+  const updateClearBtn = () => {
+    clearBtn.style.display = inputEl.value ? 'flex' : 'none';
+  };
+  
   inputEl.addEventListener('input', (e) => {
     const value = e.target.value.trim();
+    updateClearBtn();
     if (value === currentSearch && value !== '') return;
     
     currentSearch = value;
@@ -130,6 +142,22 @@ export function setupAutocomplete(inputId, fetchOptions, renderFn, onSelectFn) {
     dropdown.style.display = 'none';
   });
 
+  inputEl.addEventListener('change', updateClearBtn);
+  
+  // Need to observe value changes if changed programmatically (like on restore)
+  setTimeout(updateClearBtn, 100);
+
+  clearBtn.addEventListener('mousedown', (e) => {
+    e.preventDefault(); // Prevent input blur
+    inputEl.value = '';
+    if (inputEl.dataset.username) delete inputEl.dataset.username;
+    currentSearch = '';
+    clearBtn.style.display = 'none';
+    dropdown.style.display = 'none';
+    inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+    inputEl.focus();
+  });
+
   return {
     reset: () => {
       inputEl.value = '';
@@ -137,6 +165,7 @@ export function setupAutocomplete(inputId, fetchOptions, renderFn, onSelectFn) {
       currentPage = 0;
       hasMore = true;
       dropdown.innerHTML = '';
+      clearBtn.style.display = 'none';
     }
   };
 }

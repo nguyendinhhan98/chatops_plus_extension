@@ -12,15 +12,10 @@ chrome.runtime.onMessage.addListener((message) => {
   }
 });
 
-/**
- * Displays a reminder banner at the top of the page
- */
-async function showReminderBanner(text, taskId, isTask = false, postId = null, taskTeamName = null) {
-  // Fetch settings to get theme color
+async function injectDynamicTheme() {
   const res = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS]);
   const settings = res[STORAGE_KEYS.SETTINGS] || { themeColor: '#1c58d9' };
   
-  // Inject/Update dynamic theme style for content script
   let styleEl = document.getElementById('chatops-dynamic-theme');
   if (!styleEl) {
     styleEl = document.createElement('style');
@@ -34,10 +29,18 @@ async function showReminderBanner(text, taskId, isTask = false, postId = null, t
     .chatops-reminder-banner { border-top-color: var(--chatops-accent) !important; }
     .crb-title { color: var(--chatops-accent) !important; }
     .crb-progress { background: var(--chatops-accent) !important; }
+    .cqn-header { background: var(--chatops-accent) !important; }
     .cqn-btn-primary { background: var(--chatops-accent) !important; }
     .cqn-mode-btn.active { color: var(--chatops-accent) !important; border-color: var(--chatops-accent) !important; background: rgba(0,0,0,0.05) !important; }
     .cqn-preview { border-left-color: var(--chatops-accent) !important; }
   `;
+}
+
+/**
+ * Displays a reminder banner at the top of the page
+ */
+async function showReminderBanner(text, taskId, isTask = false, postId = null, taskTeamName = null) {
+  await injectDynamicTheme();
 
   document.querySelectorAll('.chatops-reminder-banner').forEach(el => el.remove());
 
@@ -131,6 +134,7 @@ function showToast(msg) {
 }
 
 (function () {
+  injectDynamicTheme();
   // Prevent duplicate injections
   if (document.getElementById('chatops-ext-floating-btn')) return;
 
@@ -374,14 +378,17 @@ function showToast(msg) {
         <div style="padding: 0 13px 8px;">
           <div style="font-size:12px; font-weight:600; color:#4a4a4c; margin-bottom:6px; display:flex; align-items:center; gap:4px;">
             <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" style="opacity:0.7"><path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/></svg>
-            Nhắc lúc:
+            Nhắc sau:
           </div>
           <div class="cqn-presets">
-            <button type="button" class="cqn-preset-btn" data-min="15">15ph</button>
-            <button type="button" class="cqn-preset-btn" data-min="30">30ph</button>
-            <button type="button" class="cqn-preset-btn" data-min="60">1h</button>
-            <button type="button" class="cqn-preset-btn" data-min="120">2h</button>
-            <button type="button" class="cqn-preset-btn" data-min="240">4h</button>
+            <button type="button" class="cqn-preset-btn" data-min="15">+15ph</button>
+            <button type="button" class="cqn-preset-btn" data-min="30">+30ph</button>
+            <button type="button" class="cqn-preset-btn" data-min="60">+1h</button>
+            <button type="button" class="cqn-preset-btn" data-min="120">+2h</button>
+            <button type="button" class="cqn-preset-btn" data-min="240">+4h</button>
+          </div>
+          <div style="font-size:12px; font-weight:600; color:#4a4a4c; margin:8px 0 6px 0; display:flex; align-items:center; gap:4px;">
+            Nhắc lúc:
           </div>
           <div class="cqn-reminder-row" style="background:#fff; border:1px solid #e0e0e5; border-radius:4px; padding:2px 8px;">
             <input type="datetime-local" id="cqn-reminder-time" style="cursor:pointer; background:transparent; border:none; outline:none; box-shadow:none; flex:1;">
@@ -463,7 +470,7 @@ function showToast(msg) {
     } else {
       if (taskSection) taskSection.style.display = 'block';
       if (noteSection) noteSection.style.display = 'none';
-      popover.querySelector('.cqn-title').textContent = language.quickTaskTitle || 'Tạo việc làm nhanh';
+      popover.querySelector('.cqn-title').textContent = language.quickTaskTitle || 'Tạo việc cần làm';
       if (hintEl) {
         const res = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS]);
         const settings = res[STORAGE_KEYS.SETTINGS] || { snoozeMinutes: 5 };
@@ -530,10 +537,10 @@ function showToast(msg) {
       const actionArea = postEl.querySelector('.post-menu, .post__actions, .dot-menu__container, [class*="post-menu"], .post-action-menu');
       if (!actionArea) return;
 
-      // 4. Create and inject Task button (📌)
+      // 4. Create and inject Task button (🎯)
       const taskBtn = document.createElement('button');
       taskBtn.className = 'chatops-quick-note-btn task-btn';
-      taskBtn.innerHTML = '📌';
+      taskBtn.innerHTML = '🎯';
       taskBtn.title = language.quickTaskCreate || 'Tạo việc cần làm';
       taskBtn.addEventListener('click', (e) => {
         e.preventDefault(); e.stopPropagation();

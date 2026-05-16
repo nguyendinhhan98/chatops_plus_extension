@@ -64,7 +64,15 @@ export function setup(state) {
   });
   quickSaveBtn.addEventListener('click', saveTask);
 
-  // Removed JS showPicker hack, using pure CSS overlay instead.
+  // Handle toggle collapse
+  const btnToggle = document.getElementById('btnToggleTasks');
+  const tasksForm = document.getElementById('spTasksForm');
+  if (btnToggle && tasksForm) {
+    btnToggle.addEventListener('click', () => {
+      tasksForm.classList.toggle('collapsed');
+      btnToggle.classList.toggle('collapsed');
+    });
+  }
 
   // Handle task updates (reminder time changes)
   document.getElementById('taskList').addEventListener('change', async (e) => {

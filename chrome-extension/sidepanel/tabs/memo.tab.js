@@ -19,12 +19,24 @@ export function setup(state) {
   const quickInput = document.getElementById('quickNoteInput');
   const quickSaveBtn = document.getElementById('btnQuickNoteSave');
 
+  renderCategories();
+
+  // Handle toggle collapse
+  const btnToggle = document.getElementById('btnToggleMemo');
+  const memoForm = document.getElementById('spMemoForm');
+  if (btnToggle && memoForm) {
+    btnToggle.addEventListener('click', () => {
+      memoForm.classList.toggle('collapsed');
+      btnToggle.classList.toggle('collapsed');
+    });
+  }
+
   const saveNote = async () => {
     const text = quickInput.value.trim();
     if (!text) return;
 
     const categorySelect = document.getElementById('quickNoteCategory');
-    const category = categorySelect ? categorySelect.value : 'general';
+    const category = categorySelect ? categorySelect.value : 'Chung';
 
     const id = `memo_${Date.now()}`;
     const item = {
@@ -77,15 +89,50 @@ export function setup(state) {
     }
   });
 
-  // Category filter
-  document.getElementById('noteCategoryFilter')?.addEventListener('change', loadMemos);
+  // Category filter delegation
+  document.getElementById('memoCategoryTabs')?.addEventListener('click', (e) => {
+    if (e.target.classList.contains('memo-sub-tab')) {
+      document.querySelectorAll('#memoCategoryTabs .memo-sub-tab').forEach(b => b.classList.remove('active'));
+      e.target.classList.add('active');
+      loadMemos();
+    }
+  });
 
-  // Reload when tab is clicked
   document.querySelectorAll('.tab-btn').forEach(btn => {
     if (btn.dataset.tab === TABS.MEMO) btn.addEventListener('click', loadMemos);
   });
 
+  chrome.runtime.onMessage.addListener((message) => {
+    if (message.type === 'MEMO_CATEGORIES_UPDATED') {
+      renderCategories();
+    }
+  });
+
   loadMemos();
+}
+
+/**
+ * Renders categories to the selects
+ */
+async function renderCategories() {
+  const res = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS]);
+  const categories = res[STORAGE_KEYS.SETTINGS]?.memoCategories || ['Chung', 'Công việc', 'Cá nhân', 'Ý tưởng'];
+  
+  const quickSelect = document.getElementById('quickNoteCategory');
+  const tabsContainer = document.getElementById('memoCategoryTabs');
+  
+  if (quickSelect) {
+    quickSelect.innerHTML = categories.map(c => `<option value="${c}">📁 ${c}</option>`).join('');
+  }
+  
+  if (tabsContainer) {
+    const currentActive = tabsContainer.querySelector('.memo-sub-tab.active')?.dataset.category || 'all';
+    let html = `<button class="memo-sub-tab ${currentActive === 'all' ? 'active' : ''}" data-category="all">TẤT CẢ</button>`;
+    html += categories.map(c => `
+      <button class="memo-sub-tab ${currentActive === c ? 'active' : ''}" data-category="${c}">${c.toUpperCase()}</button>
+    `).join('');
+    tabsContainer.innerHTML = html;
+  }
 }
 
 /**
@@ -100,9 +147,10 @@ export async function loadMemos() {
   let notes = allItems.filter(m => m.type === 'memo');
 
   // Filter by category
-  const filter = document.getElementById('noteCategoryFilter')?.value || 'all';
+  const activeTab = document.querySelector('#memoCategoryTabs .memo-sub-tab.active');
+  const filter = activeTab ? activeTab.dataset.category : 'all';
   if (filter !== 'all') {
-    notes = notes.filter(n => (n.category || 'general') === filter);
+    notes = notes.filter(n => (n.category || 'Chung') === filter);
   }
 
   // Update badge
@@ -134,13 +182,7 @@ function renderNoteCard(note) {
   const rawText = note.note || '';
   const hasOriginalPost = note.postId && note.postText && note.postText !== note.note;
   
-  const categoryMap = {
-    general: 'Chung',
-    work: 'Công việc',
-    personal: 'Cá nhân',
-    ideas: 'Ý tưởng'
-  };
-  const categoryLabel = categoryMap[note.category || 'general'] || 'Chung';
+  const categoryLabel = note.category || 'Chung';
 
   return `
     <div class="memo-item note-item" id="item_${note.id}">

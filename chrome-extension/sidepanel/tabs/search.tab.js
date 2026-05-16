@@ -143,13 +143,17 @@ export function clearResults() {
   const fromInput = document.getElementById('spSearchFrom');
   fromInput.value = '';
   delete fromInput.dataset.username;
-  document.getElementById('spSearchTerms').value = '';
+  const termsInput = document.getElementById('spSearchTerms');
+  termsInput.value = '';
   document.getElementById('spSearchAfter').value = '';
   document.getElementById('spSearchBefore').value = '';
   document.getElementById('chkSearchIncludeDM').checked = false;
   
   // Reset multi-select for channels
   if (searchInMS) searchInMS.reset();
+
+  // Trigger auto-save
+  termsInput.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
 /**

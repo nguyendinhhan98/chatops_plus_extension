@@ -59,6 +59,16 @@ export function setup(state) {
   // Event Listeners
   document.getElementById('btnSpSearchLeave').addEventListener('click', () => searchLeave(false));
 
+  // Toggle Collapse
+  const btnToggle = document.getElementById('btnToggleLeave');
+  const leaveForm = document.getElementById('spLeaveForm');
+  if (btnToggle && leaveForm) {
+    btnToggle.addEventListener('click', () => {
+      leaveForm.classList.toggle('collapsed');
+      btnToggle.classList.toggle('collapsed');
+    });
+  }
+
   // Quick Date Presets
   const setDatesAndSearch = (daysBack) => {
     const to = new Date();

@@ -14,7 +14,8 @@ const DEFAULT_SETTINGS = {
     notes: true,
     missed: true,
     leave: true
-  }
+  },
+  memoCategories: ['Chung', 'Công việc', 'Cá nhân', 'Ý tưởng']
 };
 
 /**
@@ -54,6 +55,12 @@ async function loadAndApplySettings() {
   document.getElementById('settingShowNotes').checked = settings.showTabs.notes;
   document.getElementById('settingShowMissed').checked = settings.showTabs.missed;
   document.getElementById('settingShowLeave').checked = settings.showTabs.leave;
+
+  // Apply categories
+  const categoriesTextarea = document.getElementById('settingMemoCategories');
+  if (categoriesTextarea) {
+    categoriesTextarea.value = (settings.memoCategories || []).join('\n');
+  }
 
   applyThemeToDOM(settings);
   applyTabVisibilityToDOM(settings.showTabs);
@@ -109,6 +116,41 @@ function setupEventListeners() {
       applyTabVisibilityToDOM(settings.showTabs);
       showAutoSaveFeedback();
     });
+  });
+
+  const categoriesTextarea = document.getElementById('settingMemoCategories');
+  if (categoriesTextarea) {
+    categoriesTextarea.addEventListener('change', async (e) => {
+      const lines = e.target.value.split('\n').map(l => l.trim()).filter(l => l !== '');
+      await updateSettings({ memoCategories: lines });
+      showAutoSaveFeedback();
+      
+      // Update memo tab if active
+      chrome.runtime.sendMessage({ type: 'MEMO_CATEGORIES_UPDATED' });
+    });
+  }
+
+  // Settings sub-tabs
+  document.getElementById('settingsSubTabs')?.addEventListener('click', (e) => {
+    if (e.target.classList.contains('memo-sub-tab')) {
+      const sectionId = e.target.dataset.section;
+      if (!sectionId) return;
+
+      // Update tabs
+      document.querySelectorAll('#settingsSubTabs .memo-sub-tab').forEach(b => b.classList.remove('active'));
+      e.target.classList.add('active');
+
+      // Update panels
+      document.querySelectorAll('.settings-tab-panel').forEach(p => {
+        p.style.display = 'none';
+        p.classList.remove('active');
+      });
+      const targetPanel = document.getElementById(`settings-section-${sectionId}`);
+      if (targetPanel) {
+        targetPanel.style.display = 'block';
+        targetPanel.classList.add('active');
+      }
+    }
   });
 }
 

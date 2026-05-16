@@ -17,6 +17,7 @@ import {
   renderChannelCard, 
   renderMentionItem, 
   makePermalinkSync, 
+  getChannelLabel,
   enrichChannels,
   filterChannels,
   escapeHtml,
@@ -37,6 +38,16 @@ let _joinedChannelsCache = null;
 export function setup(state) {
   _state = state;
   document.getElementById('btnSpScanMentions').addEventListener('click', scanMentionsDeep);
+
+  // Toggle Collapse
+  const btnToggle = document.getElementById('btnToggleMentions');
+  const mentionsForm = document.getElementById('spMentionsForm');
+  if (btnToggle && mentionsForm) {
+    btnToggle.addEventListener('click', () => {
+      mentionsForm.classList.toggle('collapsed');
+      btnToggle.classList.toggle('collapsed');
+    });
+  }
 
   // Include DM toggle - Clear cache to force re-fetch with new filter
   document.getElementById('spMentionIncludeDM').addEventListener('change', () => {
@@ -75,7 +86,7 @@ export function setup(state) {
     },
     (channel) => renderChannelCard(channel),
     (channel) => channel.id,
-    (channel) => channel.display_name || channel.name
+    (channel) => getChannelLabel(channel)
   );
 }
 

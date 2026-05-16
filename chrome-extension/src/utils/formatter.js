@@ -150,7 +150,7 @@ export function renderLeaveItem(post, user, permalink) {
       </div>
       <div class="leave-message">${escapeHtml(post.message).replace(/\n/g, '<br>')}</div>
       <div class="post-actions">
-         <a href="${permalink}" class="post-link">🔗 ${language.viewMessage}</a>
+         <a href="${permalink}" class="post-jump-link" title="${language.viewMessage}">↗</a>
       </div>
     </div>
   `;
@@ -169,7 +169,7 @@ export function renderMentionItem(post, author, permalink) {
       </div>
       <div class="post-body">${escapeHtml(post.message).replace(/\n/g, '<br>')}</div>
       <div class="post-actions">
-        <a href="${permalink}" target="_blank" class="post-link">🔗 ${language.openInChatOps}</a>
+        <a href="${permalink}" target="_blank" class="post-jump-link" title="${language.openInChatOps}">↗</a>
       </div>
     </div>
   `;
