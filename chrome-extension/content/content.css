@@ -70,7 +70,7 @@
 
 #chatops-quick-note-popover {
   position: fixed;
-  top: 50% !important; left: 50% !important;
+  top: 100px !important; left: 50% !important;
   width: 380px;
   background: #ffffff;
   border-radius: 8px;
@@ -79,14 +79,14 @@
   font-family: 'Inter', -apple-system, sans-serif;
   color: #1a1a1c;
   opacity: 0;
-  transform: translate(-50%, -50%) scale(0.97) !important;
+  transform: translateX(-50%) scale(0.97) !important;
   pointer-events: none;
   transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 #chatops-quick-note-popover.visible {
   opacity: 1;
-  transform: translate(-50%, -50%) scale(1) !important;
+  transform: translateX(-50%) scale(1) !important;
   pointer-events: auto;
 }
 
@@ -100,18 +100,28 @@
 }
 
 .cqn-header span {
-  font-size: 11px; font-weight: 700;
+  font-size: 13px; font-weight: 700;
   color: #ffffff;
   text-transform: uppercase; letter-spacing: 0.7px;
 }
 
 .cqn-header button {
-  background: none; border: none;
-  color: #ffffff; cursor: pointer;
-  font-size: 18px; line-height: 1;
-  transition: color 0.14s; padding: 0;
+  background: transparent !important;
+  border: none !important;
+  color: #ffffff !important;
+  cursor: pointer !important;
+  font-size: 18px !important;
+  line-height: 1 !important;
+  transition: color 0.14s !important;
+  padding: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
 }
-.cqn-header button:hover { color: #fca5a5; }
+.cqn-header button:hover {
+  color: #ef4444 !important;
+  background: transparent !important;
+  border: none !important;
+}
 
 .cqn-preview {
   margin: 10px 13px 6px;
@@ -162,7 +172,7 @@
   border: 1px solid #e0e0e5;
   border-radius: 4px;
   color: #1a1a1c;
-  font-size: 13px; font-family: inherit;
+  font-size: 14px; font-family: inherit;
   resize: none; height: 64px;
   outline: none; transition: border-color 0.14s;
 }
@@ -184,7 +194,7 @@
 .cqn-preset-btn {
   flex: 1;
   background: #f5f5f7; border: 1px solid #e0e0e5; border-radius: 4px;
-  color: #4a4a4c; font-size: 11px; padding: 4px 0; cursor: pointer;
+  color: #4a4a4c; font-size: 12px; padding: 4px 0; cursor: pointer;
   transition: all 0.14s; font-family: inherit;
 }
 .cqn-preset-btn:hover { background: #ebebed; color: #1a1a1c; }
@@ -218,7 +228,7 @@
 
 .cqn-task-hint {
   margin-top: 5px;
-  font-size: 10px; color: #6a6a6c; font-style: italic;
+  font-size: 12px; color: #6a6a6c; font-style: italic;
 }
 
 /* Buttons */
@@ -244,8 +254,9 @@
 
 /* ─── Reminder Banner ─── */
 .chatops-reminder-banner {
-  position: fixed;
-  top: 24px; right: 20px; width: 310px;
+  position: relative;
+  width: 100%;
+  pointer-events: auto;
   background: #ffffff;
   border: 1px solid #e0e0e5;
   border-top: 3px solid #1c58d9;
@@ -379,3 +390,78 @@
 }
 .chatops-meme-item:hover { opacity: 0.8; }
 .chatops-meme-picker.hidden { display: none !important; }
+
+/* Injected Meme Button matching other borderless icons in ChatOps toolbar */
+#chatops-ext-meme-btn {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 4px !important;
+  width: 28px !important;
+  height: 28px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 15px !important;
+  cursor: pointer !important;
+  margin-left: 6px !important;
+  box-sizing: border-box !important;
+  transition: all 0.2s ease !important;
+  padding: 0 !important;
+  outline: none !important;
+}
+#chatops-ext-meme-btn:hover {
+  background: rgba(0, 0, 0, 0.05) !important;
+  transform: scale(1.05) !important;
+}
+#chatops-ext-meme-btn:active {
+  transform: scale(0.95) !important;
+}
+
+/* Custom Scrollbar for Horizontal Meme Grid */
+#chatops-custom-memes-grid::-webkit-scrollbar {
+  height: 4px;
+}
+#chatops-custom-memes-grid::-webkit-scrollbar-track {
+  background: transparent;
+}
+#chatops-custom-memes-grid::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+#chatops-custom-memes-grid::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Circular Badge Button for Reminder Banner */
+.crb-collapse-btn {
+  background: #f3f4f6 !important;
+  border: 1px solid #d1d5db !important;
+  border-radius: 50% !important;
+  width: 16px !important;
+  height: 16px !important;
+  font-size: 7px !important;
+  padding: 0 !important;
+  cursor: pointer !important;
+  color: #4b5563 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  outline: none !important;
+  flex-shrink: 0 !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04) !important;
+  transition: all 0.2s ease !important;
+  line-height: 1 !important;
+}
+
+.crb-collapse-btn:hover {
+  background: #1c58d9 !important;
+  color: #ffffff !important;
+  border-color: #1c58d9 !important;
+  transform: scale(1.1) !important;
+}
+
+.crb-collapse-btn.expanded {
+  background: rgba(28, 88, 217, 0.08) !important;
+  color: #1c58d9 !important;
+  border-color: rgba(28, 88, 217, 0.2) !important;
+}

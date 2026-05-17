@@ -42,9 +42,51 @@ export function setup(state) {
   const btnSearch = document.getElementById('btnSpSearch');
   const termsInput = document.getElementById('spSearchTerms');
 
-  btnSearch.addEventListener('click', () => performSpSearch(false));
+  const updateSearchButtonState = () => {
+    const hasText = termsInput.value.trim().length > 0;
+    if (hasText) {
+      btnSearch.disabled = false;
+      btnSearch.style.opacity = '1';
+      btnSearch.style.cursor = 'pointer';
+    } else {
+      btnSearch.disabled = true;
+      btnSearch.style.opacity = '0.5';
+      btnSearch.style.cursor = 'not-allowed';
+    }
+  };
+
+  const btnClearSearch = document.getElementById('btnSpClearSearch');
+  if (btnClearSearch) {
+    btnClearSearch.addEventListener('click', () => {
+      termsInput.value = '';
+      btnClearSearch.style.display = 'none';
+      updateSearchButtonState();
+      termsInput.focus();
+      const resultsEl = document.getElementById('spSearchResults');
+      if (resultsEl) resultsEl.innerHTML = `<div class="empty-state">Nhập từ khóa và nhấn tìm kiếm</div>`;
+      searchState.terms = '';
+    });
+  }
+
+  termsInput.addEventListener('input', () => {
+    if (btnClearSearch) {
+      btnClearSearch.style.display = termsInput.value.length > 0 ? 'block' : 'none';
+    }
+    updateSearchButtonState();
+  });
+
+  // Set initial state
+  updateSearchButtonState();
+
+  btnSearch.addEventListener('click', () => {
+    if (termsInput.value.trim().length > 0) {
+      performSpSearch(false);
+    }
+  });
   termsInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') performSpSearch(false);
+    if (e.key === 'Enter' && termsInput.value.trim().length > 0) {
+      performSpSearch(false);
+    }
   });
 
   // Toggle Collapse
@@ -148,6 +190,8 @@ export function clearResults() {
   document.getElementById('spSearchAfter').value = '';
   document.getElementById('spSearchBefore').value = '';
   document.getElementById('chkSearchIncludeDM').checked = false;
+  const btnClearSearch = document.getElementById('btnSpClearSearch');
+  if (btnClearSearch) btnClearSearch.style.display = 'none';
   
   // Reset multi-select for channels
   if (searchInMS) searchInMS.reset();
@@ -294,5 +338,9 @@ export async function performSpSearch(isLoadMore = false) {
         <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
       </svg>
     `;
+    const termsInput = document.getElementById('spSearchTerms');
+    if (termsInput) {
+      termsInput.dispatchEvent(new Event('input'));
+    }
   }
 }

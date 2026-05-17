@@ -17,7 +17,7 @@ export const CHATOPS_CONFIG = {
   DOMAIN: 'chat.runsystem.vn',
   EMAIL_DOMAIN: 'runsystem.net',
   DEFAULT_TEAM: 'dn',
-  LEAVE_CHANNEL: 'check.off.later',
+  LEAVE_CHANNEL: 'checkoff-later',
 };
 
 export const COOKIE_NAMES = {
@@ -39,6 +39,8 @@ export const MESSAGE_TYPES = {
   SYNC_COOKIES_NOW: 'SYNC_COOKIES_NOW',
   MEMO_UPDATED: 'MEMO_UPDATED',
   SHOW_REMINDER: 'SHOW_REMINDER',
+  SPAM_POST_REACTIONS: 'SPAM_POST_REACTIONS',
+  RETRACT_POST_REACTIONS: 'RETRACT_POST_REACTIONS',
 };
 
 export const ALARMS = {

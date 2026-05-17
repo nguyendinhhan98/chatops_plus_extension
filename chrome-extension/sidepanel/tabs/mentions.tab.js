@@ -48,7 +48,6 @@ export function setup(state) {
       btnToggle.classList.toggle('collapsed');
     });
   }
-
   // Include DM toggle - Clear cache to force re-fetch with new filter
   document.getElementById('spMentionIncludeDM').addEventListener('change', () => {
     _joinedChannelsCache = null;

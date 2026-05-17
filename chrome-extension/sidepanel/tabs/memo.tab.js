@@ -31,9 +31,30 @@ export function setup(state) {
     });
   }
 
+  const updateSaveButtonState = () => {
+    const hasText = quickInput.value.trim().length > 0;
+    if (hasText) {
+      quickSaveBtn.style.opacity = '1';
+      quickSaveBtn.style.cursor = 'pointer';
+    } else {
+      quickSaveBtn.style.opacity = '0.5';
+      quickSaveBtn.style.cursor = 'not-allowed';
+    }
+  };
+  quickInput.addEventListener('input', updateSaveButtonState);
+  updateSaveButtonState();
+
   const saveNote = async () => {
     const text = quickInput.value.trim();
-    if (!text) return;
+    if (!text) {
+      quickInput.style.borderColor = 'var(--danger)';
+      quickInput.style.boxShadow = '0 0 0 2px rgba(231, 76, 60, 0.2)';
+      setTimeout(() => {
+        quickInput.style.borderColor = '';
+        quickInput.style.boxShadow = '';
+      }, 1500);
+      return;
+    }
 
     const categorySelect = document.getElementById('quickNoteCategory');
     const category = categorySelect ? categorySelect.value : 'Chung';
@@ -58,10 +79,16 @@ export function setup(state) {
     await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
 
     quickInput.value = '';
+    updateSaveButtonState();
     loadMemos();
   };
 
-  quickInput.addEventListener('keydown', e => { if (e.key === 'Enter') saveNote(); });
+  quickInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && e.shiftKey) {
+      e.preventDefault();
+      saveNote();
+    }
+  });
   quickSaveBtn.addEventListener('click', saveNote);
 
   // Event delegation for note list
@@ -89,6 +116,22 @@ export function setup(state) {
     }
   });
 
+  // Handle note category inline editing
+  document.getElementById('memoNoteList').addEventListener('change', async (e) => {
+    if (e.target.classList.contains('note-edit-category')) {
+      const id = e.target.dataset.id;
+      const newCategory = e.target.value;
+      const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
+      const memos = res[STORAGE_KEYS.MEMOS] || [];
+      const note = memos.find(m => m.id === id);
+      if (note) {
+        note.category = newCategory;
+        await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
+        loadMemos();
+      }
+    }
+  });
+
   // Category filter delegation
   document.getElementById('memoCategoryTabs')?.addEventListener('click', (e) => {
     if (e.target.classList.contains('memo-sub-tab')) {
@@ -102,8 +145,8 @@ export function setup(state) {
     if (btn.dataset.tab === TABS.MEMO) btn.addEventListener('click', loadMemos);
   });
 
-  chrome.runtime.onMessage.addListener((message) => {
-    if (message.type === 'MEMO_CATEGORIES_UPDATED') {
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName === 'local' && changes[STORAGE_KEYS.SETTINGS]) {
       renderCategories();
     }
   });
@@ -161,17 +204,20 @@ export async function loadMemos() {
   }
 
   if (notes.length === 0) {
-    noteList.innerHTML = `<div class="empty-state"><div style="font-size:36px;margin-bottom:12px">📝</div>${language.memoNotesEmpty}<br><span style="font-size:12px;color:var(--text-3)">${language.memoClickHint}</span></div>`;
+    noteList.innerHTML = `<div class="empty-state">${language.memoNotesEmpty}</div>`;
     return;
   }
 
-  noteList.innerHTML = notes.map(note => renderNoteCard(note)).join('');
+  const settingsRes = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS]);
+  const categories = settingsRes[STORAGE_KEYS.SETTINGS]?.memoCategories || ['Chung', 'Công việc', 'Cá nhân', 'Ý tưởng'];
+
+  noteList.innerHTML = notes.map(note => renderNoteCard(note, categories)).join('');
 }
 
 /**
  * Renders a note card component
  */
-function renderNoteCard(note) {
+function renderNoteCard(note, categories = ['Chung', 'Công việc', 'Cá nhân', 'Ý tưởng']) {
   const cachedConfig = _state.getConfig();
   const currentTeam = _state.getTeam();
   const permalink = note.postId && cachedConfig
@@ -183,12 +229,16 @@ function renderNoteCard(note) {
   const hasOriginalPost = note.postId && note.postText && note.postText !== note.note;
   
   const categoryLabel = note.category || 'Chung';
+  const categoryOptions = categories.map(c => `
+    <option value="${c}" ${c === categoryLabel ? 'selected' : ''}>${c}</option>
+  `).join('');
 
   return `
     <div class="memo-item note-item" id="item_${note.id}">
-      <div class="note-content-row" style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
-        <div class="memo-note-text note-body" style="flex:1;">${escapedText}</div>
-        <button class="btn-copy-note" data-text="${rawText.replace(/"/g, '&quot;')}" title="${language.memoCopyNote}">
+      <div class="note-content-row" style="display:flex; align-items:flex-start;">
+        <button class="collapse-btn" data-id="${note.id}" style="margin-right: 4px;" title="Mở rộng/Thu gọn">▶</button>
+        <div class="memo-note-text note-body collapsible-body collapsed" style="flex:1; min-width:0; margin-top:2px;">${escapedText}</div>
+        <button class="btn-copy-note" data-text="${rawText.replace(/"/g, '&quot;')}" title="${language.memoCopyNote}" style="flex-shrink:0; margin-left:8px;">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
             <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
             <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
@@ -196,9 +246,12 @@ function renderNoteCard(note) {
         </button>
       </div>
       <div style="margin-top:4px; display:flex; align-items:center; gap:6px;">
-        <span style="font-size:10px; padding:2px 6px; background:var(--bg-2); border:1px solid var(--border); border-radius:10px; color:var(--text-3); font-weight:600;">📁 ${categoryLabel}</span>
+        <span style="font-size:10px; color:var(--text-3); font-weight:600; display:flex; align-items:center; gap:2px;">📁 Danh mục:</span>
+        <select class="note-edit-category" data-id="${note.id}" style="font-size:10px; padding:1px 4px; background:var(--bg-2); border:1px solid var(--border); border-radius:10px; color:var(--text-2); font-weight:600; outline:none; cursor:pointer;">
+          ${categoryOptions}
+        </select>
       </div>
-      ${hasOriginalPost ? `<div class="memo-post-preview" style="margin-top:8px;">📌 ${escapeHtml(note.postText)}</div>` : ''}
+      ${hasOriginalPost ? `<div class="memo-post-preview post-preview" style="display:none; margin-top:8px;">📌 ${escapeHtml(note.postText)}</div>` : ''}
       <div class="memo-footer">
         <div class="memo-meta">
           <span>📅 ${formatRelativeTime(note.createdAt)}</span>

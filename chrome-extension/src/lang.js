@@ -61,7 +61,7 @@ export const language = {
   taskDelete: 'Xóa',
   taskViewOriginal: 'Xem tin nhắn gốc',
   taskReminderLabel: 'Nhắc lúc:',
-  taskReminderHint: 'Hệ thống sẽ nhắc lại mỗi {minutes} phút cho đến khi hoàn thành',
+  taskReminderHint: 'Hệ thống sẽ nhắc lại mỗi {minutes} phút cho đến khi hoàn thành (có thể thay đổi ở phần Cài đặt)',
   taskAddBtn: 'Thêm việc',
 
   // Sidepanel Memo (Notes) Tab
@@ -106,7 +106,7 @@ export const language = {
   quickTaskTitle: 'Tạo việc cần làm',
   quickTaskNotePlaceholder: 'Thêm ghi chú (tùy chọn)...',
   quickTaskRemindAt: 'Nhắc lúc:',
-  quickTaskHint: 'Hệ thống sẽ nhắc lại mỗi {minutes} phút cho đến khi hoàn thành',
+  quickTaskHint: 'Hệ thống sẽ nhắc lại mỗi {minutes} phút cho đến khi hoàn thành (có thể thay đổi ở phần Cài đặt)',
   quickTaskSave: 'Lưu',
   quickTaskCancel: 'Hủy',
   save: 'Lưu',

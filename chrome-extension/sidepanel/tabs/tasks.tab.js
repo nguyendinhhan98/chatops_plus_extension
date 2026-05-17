@@ -20,10 +20,66 @@ export function setup(state) {
   const quickInput = document.getElementById('quickTaskInput');
   const quickSaveBtn = document.getElementById('btnQuickTaskSave');
   const reminderInput = document.getElementById('quickTaskReminderDt');
+  const reminderRow = document.getElementById('quickTaskReminderRow');
+
+  if (reminderRow && reminderInput) {
+    reminderRow.addEventListener('click', (e) => {
+      // Prevent infinite loop if clicking the input itself
+      if (e.target !== reminderInput) {
+        try {
+          reminderInput.showPicker();
+        } catch (err) {
+          reminderInput.focus();
+          reminderInput.click();
+        }
+      }
+    });
+  }
+
+  const presetSelect = document.getElementById('quickTaskReminderSelect');
+  if (presetSelect && reminderInput) {
+    presetSelect.addEventListener('change', () => {
+      const val = presetSelect.value;
+      if (!val) {
+        reminderInput.value = '';
+        return;
+      }
+      const mins = parseInt(val, 10);
+      const targetTime = new Date(Date.now() + mins * 60000);
+      const tzOffset = targetTime.getTimezoneOffset() * 60000;
+      const localISOTime = (new Date(targetTime - tzOffset)).toISOString().slice(0, 16);
+      reminderInput.value = localISOTime;
+    });
+
+    reminderInput.addEventListener('input', () => {
+      presetSelect.value = '';
+    });
+  }
+
+  const updateSaveButtonState = () => {
+    const hasText = quickInput.value.trim().length > 0;
+    if (hasText) {
+      quickSaveBtn.style.opacity = '1';
+      quickSaveBtn.style.cursor = 'pointer';
+    } else {
+      quickSaveBtn.style.opacity = '0.5';
+      quickSaveBtn.style.cursor = 'not-allowed';
+    }
+  };
+  quickInput.addEventListener('input', updateSaveButtonState);
+  updateSaveButtonState();
 
   const saveTask = async () => {
     const text = quickInput.value.trim();
-    if (!text) return;
+    if (!text) {
+      quickInput.style.borderColor = 'var(--danger)';
+      quickInput.style.boxShadow = '0 0 0 2px rgba(231, 76, 60, 0.2)';
+      setTimeout(() => {
+        quickInput.style.borderColor = '';
+        quickInput.style.boxShadow = '';
+      }, 1500);
+      return;
+    }
 
     const id = `task_${Date.now()}`;
     const item = {
@@ -47,6 +103,8 @@ export function setup(state) {
 
     quickInput.value = '';
     if (reminderInput) reminderInput.value = '';
+    if (presetSelect) presetSelect.value = '';
+    updateSaveButtonState();
 
     const startTime = item.reminder
       ? new Date(item.reminder).getTime()
@@ -212,14 +270,15 @@ function renderTaskCard(task, now) {
 
   return `
     <div class="memo-item ${task.done ? 'memo-done' : ''} ${isOverdue ? 'memo-overdue' : ''}" id="item_${task.id}">
-      <div class="memo-item-header">
-        <label class="memo-checkbox-container" title="${task.done ? language.taskMarkIncomplete : language.taskMarkDone}">
+      <div class="memo-item-header" style="display:flex; align-items:flex-start;">
+        <label class="memo-checkbox-container" title="${task.done ? language.taskMarkIncomplete : language.taskMarkDone}" style="flex-shrink:0;">
           <input type="checkbox" class="task-checkbox" data-id="${task.id}" ${task.done ? 'checked' : ''}>
           <span class="memo-checkmark-custom"></span>
         </label>
-        <div class="memo-content">
-          ${hasOriginalPost ? `<div class="memo-post-preview">📌 ${escapeHtml(task.postText)}</div>` : ''}
-          <div class="memo-note-text task-text">${escapeHtml(task.note || language.taskNoContent)}</div>
+        <button class="collapse-btn" data-id="${task.id}" style="margin-right: 4px;" title="Mở rộng/Thu gọn">▶</button>
+        <div class="memo-content" style="flex:1; min-width:0;">
+          ${hasOriginalPost ? `<div class="memo-post-preview post-preview" style="display:none; margin-bottom:4px;">📌 ${escapeHtml(task.postText)}</div>` : ''}
+          <div class="memo-note-text task-text collapsible-body collapsed" style="margin-top: 2px;">${escapeHtml(task.note || language.taskNoContent)}</div>
         </div>
       </div>
       <div class="memo-footer">

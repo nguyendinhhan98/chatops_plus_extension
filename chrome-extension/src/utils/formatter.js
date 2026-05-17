@@ -60,18 +60,18 @@ export function renderPostList(posts, usersMap, baseUrl, teamName, channelsMap, 
       const regex = new RegExp(`(${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
       contentHtml = contentHtml.replace(regex, '<mark class="highlight">$1</mark>');
     }
-    contentHtml = contentHtml.replace(/\n/g, '<br>');
 
     return `
-      <div class="post-item">
-        <div class="post-header">
-          <div class="post-header-left">
-            <span class="post-author">${escapeHtml(author)}</span>
-            <span class="post-channel">${language.in} ${escapeHtml(channelName)}</span>
+      <div class="post-item" id="item_${post.id}">
+        <div class="post-header" style="display:flex; align-items:center;">
+          <button class="collapse-btn" data-id="${post.id}" style="margin-right: 4px;" title="Mở rộng/Thu gọn">▶</button>
+          <div class="post-header-left" style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:flex; gap:8px; align-items:center;">
+            <span class="post-author" style="font-weight:600;">${escapeHtml(author)}</span>
+            <span class="post-channel" style="color:var(--text-3); font-size:11px;">${language.in} ${escapeHtml(channelName)}</span>
           </div>
-          <span class="post-time">${formatUnixMsToVN(post.create_at)}</span>
+          <span class="post-time" style="font-size:11px; color:var(--text-3); flex-shrink:0; margin-left:8px;">${formatUnixMsToVN(post.create_at)}</span>
         </div>
-        <div class="post-body">${contentHtml}</div>
+        <div class="post-body collapsible-body collapsed" style="margin-top:4px;">${contentHtml}</div>
         <div class="post-actions">
            <a href="${permalink}" class="post-jump-link" title="${language.viewMessage}">↗</a>
         </div>
@@ -161,13 +161,16 @@ export function renderLeaveItem(post, user, permalink) {
  */
 export function renderMentionItem(post, author, permalink) {
   const authorName = author ? formatUserDisplayName(author) : '(Unknown)';
+  const escapedText = escapeHtml(post.message);
+  
   return `
-    <div class="post-item">
-      <div class="post-header">
-        <span class="post-author">${escapeHtml(authorName)}</span>
-        <span class="post-time" title="${formatUnixMsToVN(post.create_at)}">${formatRelativeTime(post.create_at)}</span>
+    <div class="post-item missed-mention-item" id="item_${post.id}">
+      <div class="post-header" style="display:flex; align-items:center;">
+        <button class="collapse-btn" data-id="${post.id}" style="margin-right: 4px;" title="Mở rộng/Thu gọn">▶</button>
+        <span class="post-author" style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight:600;">${escapeHtml(authorName)}</span>
+        <span class="post-time" title="${formatUnixMsToVN(post.create_at)}" style="flex-shrink: 0; margin-left: 8px; font-size:11px; color:var(--text-3);">${formatRelativeTime(post.create_at)}</span>
       </div>
-      <div class="post-body">${escapeHtml(post.message).replace(/\n/g, '<br>')}</div>
+      <div class="post-body collapsible-body collapsed" style="margin-top:4px;">${escapedText}</div>
       <div class="post-actions">
         <a href="${permalink}" target="_blank" class="post-jump-link" title="${language.openInChatOps}">↗</a>
       </div>

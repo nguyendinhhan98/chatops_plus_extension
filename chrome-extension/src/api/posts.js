@@ -35,3 +35,26 @@ export async function getPostThread(postId) {
 export async function getPostReactions(postId) {
   return request(`/posts/${postId}/reactions`);
 }
+
+/**
+ * Add a reaction to a specific post
+ */
+export async function addPostReaction(userId, postId, emojiName) {
+  return request('/reactions', {
+    method: 'POST',
+    body: JSON.stringify({
+      user_id: userId,
+      post_id: postId,
+      emoji_name: emojiName
+    })
+  });
+}
+
+/**
+ * Delete a reaction from a specific post
+ */
+export async function deletePostReaction(userId, postId, emojiName) {
+  return request(`/users/${userId}/posts/${postId}/reactions/${emojiName}`, {
+    method: 'DELETE'
+  });
+}

@@ -2,7 +2,7 @@
  * Background Service Worker — ChatOps Chrome Extension
  */
 
-import { getConfig } from './api/index.js';
+import { getConfig, getMyProfile, addPostReaction, deletePostReaction } from './api/index.js';
 import { syncCookies, setupCookieSync } from './background/cookie-sync.js';
 import { 
   handleMentionCheck, 
@@ -111,6 +111,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       syncCookies().then(() => sendResponse({ ok: true }));
       return true;
 
+    case MESSAGE_TYPES.SPAM_POST_REACTIONS:
+      handleSpamReactions(message.postId, sendResponse);
+      return true;
+
+    case MESSAGE_TYPES.RETRACT_POST_REACTIONS:
+      handleRetractReactions(message.postId, sendResponse);
+      return true;
+
     default:
       sendResponse({ error: 'Unknown message type' });
   }
@@ -132,6 +140,90 @@ function handleMarkTaskDone(taskId, sendResponse) {
       sendResponse({ ok: false, error: 'Task not found' });
     }
   });
+}
+
+/**
+ * Triggers sequential reaction spamming on a specific post
+ */
+async function handleSpamReactions(postId, sendResponse) {
+  try {
+    const res = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS]);
+    const settings = res[STORAGE_KEYS.SETTINGS] || {};
+    
+    // Support both array and comma-separated string for compatibility
+    let emojis = [];
+    if (Array.isArray(settings.spamEmojis)) {
+      emojis = settings.spamEmojis;
+    } else if (typeof settings.spamEmojis === 'string') {
+      emojis = settings.spamEmojis.split(',').map(e => e.trim()).filter(Boolean);
+    } else {
+      emojis = ['thumbsup', 'heart', 'fire', 'rocket', 'laughing'];
+    }
+
+    if (emojis.length === 0) {
+      sendResponse({ ok: false, error: 'No emojis configured' });
+      return;
+    }
+
+    const me = await getMyProfile();
+    if (!me || !me.id) {
+      sendResponse({ ok: false, error: 'User profile not found' });
+      return;
+    }
+
+    // Call reaction API sequentially to avoid mattermost rate limiting
+    for (const emoji of emojis) {
+      await addPostReaction(me.id, postId, emoji);
+      await new Promise(r => setTimeout(r, 150)); // 150ms gap
+    }
+
+    sendResponse({ ok: true });
+  } catch (err) {
+    console.error('[ChatOps Ext] handleSpamReactions error:', err);
+    sendResponse({ ok: false, error: err.message });
+  }
+}
+
+/**
+ * Triggers sequential reaction retraction on a specific post
+ */
+async function handleRetractReactions(postId, sendResponse) {
+  try {
+    const res = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS]);
+    const settings = res[STORAGE_KEYS.SETTINGS] || {};
+    
+    // Support both array and comma-separated string for compatibility
+    let emojis = [];
+    if (Array.isArray(settings.spamEmojis)) {
+      emojis = settings.spamEmojis;
+    } else if (typeof settings.spamEmojis === 'string') {
+      emojis = settings.spamEmojis.split(',').map(e => e.trim()).filter(Boolean);
+    } else {
+      emojis = ['thumbsup', 'heart', 'fire', 'rocket', 'laughing'];
+    }
+
+    if (emojis.length === 0) {
+      sendResponse({ ok: false, error: 'No emojis configured' });
+      return;
+    }
+
+    const me = await getMyProfile();
+    if (!me || !me.id) {
+      sendResponse({ ok: false, error: 'User profile not found' });
+      return;
+    }
+
+    // Call delete API sequentially to avoid rate limiting
+    for (const emoji of emojis) {
+      await deletePostReaction(me.id, postId, emoji);
+      await new Promise(r => setTimeout(r, 150)); // 150ms gap
+    }
+
+    sendResponse({ ok: true });
+  } catch (err) {
+    console.error('[ChatOps Ext] handleRetractReactions error:', err);
+    sendResponse({ ok: false, error: err.message });
+  }
 }
 
 console.log('[ChatOps Extension] Background service worker initialized');

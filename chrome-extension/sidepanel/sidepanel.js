@@ -5,7 +5,7 @@
 import { state } from './state.js';
 import { setup as setupSearch, reset as resetSearch, getSelects as getSearchSelects } from './tabs/search.tab.js';
 import { setup as setupMentions, reset as resetMentions, getSelects as getMentionsSelects } from './tabs/mentions.tab.js';
-import { setup as setupLeave, reset as resetLeave, getSelects as getLeaveSelects } from './tabs/leave.tab.js';
+
 import { setup as setupMemo, loadMemos } from './tabs/memo.tab.js';
 import { setup as setupTasks, loadTasks } from './tabs/tasks.tab.js';
 import { setup as setupSettings, getSettings, applyThemeToDOM, applyTabVisibilityToDOM } from './tabs/settings.tab.js';
@@ -42,13 +42,13 @@ async function init() {
 
   setupSearch(state);
   setupMentions(state);
-  setupLeave(state);
+
   setupMemo(state);
   setupTasks(state);
   setupSettings(state);
   setupTabs();
   
-  const selectors = { ...getSearchSelects(), ...getMentionsSelects(), ...getLeaveSelects() };
+  const selectors = { ...getSearchSelects(), ...getMentionsSelects() };
   restoreState(selectors);
   setupAutoSave(selectors);
   setupStateHandlers();
@@ -100,7 +100,6 @@ function setupTabs() {
 function resetAllTabs() {
   resetSearch();
   resetMentions();
-  resetLeave();
 }
 
 /**
@@ -125,6 +124,54 @@ function setupStateHandlers() {
     }
   });
   
+  // Donate modal listeners
+  const coffeeBtn = document.getElementById('btnHeaderCoffee');
+  const donateModal = document.getElementById('donateModal');
+  const donateClose = document.getElementById('btnDonateModalClose');
+
+  if (coffeeBtn && donateModal) {
+    coffeeBtn.addEventListener('click', () => {
+      donateModal.style.display = 'flex';
+    });
+  }
+
+  if (donateClose && donateModal) {
+    donateClose.addEventListener('click', () => {
+      donateModal.style.display = 'none';
+    });
+  }
+
+  if (donateModal) {
+    donateModal.addEventListener('click', (e) => {
+      if (e.target === donateModal) {
+        donateModal.style.display = 'none';
+      }
+    });
+  }
+  // Global delegated click listener for collapsible items
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.collapse-btn');
+    if (btn) {
+      const id = btn.dataset.id;
+      const cardEl = document.getElementById(`item_${id}`);
+      if (cardEl) {
+        const bodyEl = cardEl.querySelector('.collapsible-body');
+        const postPreviewEl = cardEl.querySelector('.post-preview');
+        
+        btn.classList.toggle('expanded');
+        if (btn.classList.contains('expanded')) {
+          btn.innerHTML = '▼';
+          if (bodyEl) bodyEl.classList.remove('collapsed');
+          if (postPreviewEl) postPreviewEl.style.display = 'block';
+        } else {
+          btn.innerHTML = '▶';
+          if (bodyEl) bodyEl.classList.add('collapsed');
+          if (postPreviewEl) postPreviewEl.style.display = 'none';
+        }
+      }
+    }
+  });
+
   document.addEventListener('click', (e) => {
     const link = e.target.closest('.post-jump-link');
     if (!link) return;
