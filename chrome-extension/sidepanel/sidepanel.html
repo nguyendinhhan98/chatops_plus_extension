@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ChatOps Helper — Panel</title>
+  <title>ChatOps++ — Panel</title>
   <link rel="stylesheet" href="sidepanel.css">
 </head>
 
@@ -19,8 +19,7 @@
         </select>
       </div>
       <!-- Coffee Icon Button to open Donate Modal -->
-      <button id="btnHeaderCoffee" title="Ủng hộ AI Vibecoding ☕"
-        style="background: rgba(243, 156, 18, 0.15); border: none; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 15px; cursor: pointer; transition: all 0.2s ease; outline: none; flex-shrink: 0; box-shadow: 0 2px 5px rgba(243,156,18,0.15); margin-left: 4px;">
+      <button id="btnHeaderCoffee" title="Ủng hộ AI Vibecoding ☕">
         ☕
       </button>
     </div>
@@ -37,9 +36,9 @@
         </span>
         <span class="tab-label">Tìm kiếm</span>
       </button>
-      <button class="tab-btn" data-tab="tasks" title="Việc cần làm">
+      <button class="tab-btn" data-tab="tasks" title="Việc làm">
         <span class="tab-icon">🎯</span>
-        <span class="tab-label">Việc cần làm <span id="taskTabBadge" class="tab-badge"></span></span>
+        <span class="tab-label">Việc làm <span id="taskTabBadge" class="tab-badge"></span></span>
       </button>
       <button class="tab-btn" data-tab="memo" title="Ghi chú">
         <span class="tab-icon">📝</span>
@@ -99,7 +98,7 @@
               <div id="spSearchIn" data-placeholder="Tìm kiếm channel..."></div>
               <label class="checkbox-label" style="margin-left: 2px;">
                 <input type="checkbox" id="chkSearchIncludeDM">
-                <span style="font-size: 11px;">Bao gồm Direct Message</span>
+                <span style="font-size: 12.5px;">Bao gồm Direct Message</span>
               </label>
             </div>
           </div>
@@ -118,8 +117,14 @@
     <!-- ─── Tab: Việc cần làm / Tasks ─── -->
     <div class="tab-content" id="tab-tasks">
       <div class="panel-section">
-        <div class="search-form-header">
-          <h2 class="section-title">Thêm việc cần làm</h2>
+        <div class="search-form-header" style="align-items: center;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <h2 class="section-title" style="margin: 0;">Việc làm</h2>
+            <button id="syncBadgeTasks" class="sync-badge-btn"
+              title="Nhấp để sao lưu hoặc khôi phục dữ liệu qua tài khoản Google của bạn">
+              ☁️ Đồng bộ dữ liệu
+            </button>
+          </div>
           <button class="search-toggle-btn" id="btnToggleTasks" title="Thu gọn/Mở rộng">
             <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
               <path fill-rule="evenodd"
@@ -128,41 +133,42 @@
           </button>
         </div>
         <p class="hint-text"
-          style="font-size:12px; color:var(--text-3); margin-top:4px; margin-bottom:12px; font-weight: 500;">💡 Nhấn
-          biểu tượng 🎯 trên tin nhắn ở ChatOps hoặc nhập vào bên dưới để tạo việc cần làm.</p>
+          style="font-size:12px; color:var(--text-3); margin-top:4px; margin-bottom:12px; font-weight: 500; display:block;">
+          💡 Nhấn biểu tượng 🎯 trên tin nhắn ở ChatOps hoặc nhập vào bên dưới để tạo việc làm.
+        </p>
       </div>
       <!-- Quick Add Task Bar -->
       <div class="task-quick-bar" id="spTasksForm"
         style="padding: 12px 16px 16px 16px; background: white; transition: padding 0.3s ease;">
 
         <div class="task-quick-input-row" style="align-items:center;">
-          <textarea id="quickTaskInput" placeholder="Nhập việc cần làm..." class="quick-note-input"
+          <textarea id="quickTaskInput"
+            placeholder="Nhập việc làm...&#10;(Nhấn Shift + Enter để lưu nhanh, Enter để xuống dòng)"
+            class="quick-note-input"
             style="resize:none; padding:10px; min-height:80px; border-radius:var(--radius-sm); border:1px solid var(--border); background:#fff; font-family:inherit; transition: all 0.3s ease;"></textarea>
           <button id="btnQuickTaskSave" class="quick-note-btn" title="Thêm việc"
             style="transition: all 0.2s ease;">+</button>
         </div>
-        <div class="input-helper" style="margin-top: 4px; margin-bottom: 8px;">Nhấn <strong>Shift + Enter</strong> để
-          lưu nhanh, <strong>Enter</strong> để xuống dòng.</div>
 
         <div class="task-reminder-wrapper"
           style="margin-bottom:8px; display:flex; align-items:center; gap:6px; width:100%;">
           <div class="task-reminder-row" id="quickTaskReminderRow"
-            style="flex:1; background:#fff; padding:6px 10px; border-radius:var(--radius-sm); border:1px solid var(--border); cursor:pointer; display:flex; align-items:center; min-width:0; height:34px; box-sizing:border-box;">
+            style="flex:1; background:#fff; padding:0 10px; border-radius:6px; border:1px solid var(--border); cursor:pointer; display:flex; align-items:center; min-width:0; height:34px; box-sizing:border-box;">
             <label class="task-reminder-label" for="quickTaskReminderDt"
-              style="margin-right:6px; cursor:pointer; display:flex; align-items:center; white-space:nowrap; font-size:11px;">
+              style="margin-right:6px; cursor:pointer; display:inline-flex; align-items:center; white-space:nowrap; font-size:12.5px; line-height:1; height:100%;">
               <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"
-                style="margin-right:4px;opacity:0.7;flex-shrink:0;">
+                style="margin-right:4px; opacity:0.7; flex-shrink:0; display:inline-block; vertical-align:middle; position:relative; top:-0.5px;">
                 <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z" />
                 <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z" />
               </svg>
               Nhắc lúc:
             </label>
             <input type="datetime-local" id="quickTaskReminderDt" class="quick-task-datetime"
-              style="flex:1; cursor:pointer; background:transparent; border:none; outline:none; font-size:11px; width:100%; min-width:0; padding:0;">
+              style="flex:1; cursor:pointer; background:transparent; border:none; outline:none; font-size:12.5px; width:100%; min-width:0; padding:0; margin:0; display:inline-flex; align-items:center; line-height:1; height:100%;">
           </div>
 
-          <select id="quickTaskReminderSelect" class="quick-task-select"
-            style="width: 100px; padding:0 8px; font-size: 11px; font-weight:600; background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-2); cursor: pointer; outline:none; height:34px; box-sizing:border-box; flex-shrink:0; transition: all 0.2s;">
+          <select id="quickTaskReminderSelect" class="custom-select"
+            style="width: 115px; padding:0 24px 0 10px; font-size: 12.5px; font-weight:700; background-color: #ffffff; border: 1px solid var(--border); border-radius: 6px; color: var(--text-2); cursor: pointer; outline:none; height:34px; box-sizing:border-box; flex-shrink:0; transition: all 0.2s;">
             <option value="">Nhắc sau...</option>
             <option value="15">+15 ph</option>
             <option value="30">+30 ph</option>
@@ -191,8 +197,14 @@
     <!-- ─── Tab: Ghi chú / Notes ─── -->
     <div class="tab-content" id="tab-memo">
       <div class="panel-section">
-        <div class="search-form-header">
-          <h2 class="section-title">Ghi chú nhanh</h2>
+        <div class="search-form-header" style="align-items: center;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <h2 class="section-title" style="margin: 0;">Ghi chú nhanh</h2>
+            <button id="syncBadgeNotes" class="sync-badge-btn"
+              title="Nhấp để sao lưu hoặc khôi phục dữ liệu qua tài khoản Google của bạn">
+              ☁️ Đồng bộ dữ liệu
+            </button>
+          </div>
           <button class="search-toggle-btn" id="btnToggleMemo" title="Thu gọn/Mở rộng">
             <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
               <path fill-rule="evenodd"
@@ -201,20 +213,21 @@
           </button>
         </div>
         <p class="hint-text"
-          style="font-size:12px; color:var(--text-3); margin-top:4px; margin-bottom:12px; font-weight: 500;">💡 Nhập vào
-          bên dưới để tạo ghi chú nhanh.</p>
+          style="font-size:12px; color:var(--text-3); margin-top:4px; margin-bottom:12px; font-weight: 500; display:block;">
+          💡 Nhập vào bên dưới để tạo ghi chú nhanh.
+        </p>
       </div>
       <!-- Quick Note Bar -->
       <div class="quick-note-bar" id="spMemoForm"
         style="padding: 12px 14px; border-bottom: 1px solid var(--border); transition: padding 0.3s ease;">
         <div class="quick-note-row" style="display: flex; flex-direction: column; gap: 8px;">
-          <textarea id="quickNoteInput" placeholder="Nhập ghi chú nhanh..." class="quick-note-input" autocomplete="off"
+          <textarea id="quickNoteInput"
+            placeholder="Nhập ghi chú nhanh...&#10;(Nhấn Shift + Enter để lưu nhanh, Enter để xuống dòng)"
+            class="quick-note-input" autocomplete="off"
             style="width: 100%; resize: none; padding: 10px; min-height: 80px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: #fff; font-family: inherit; font-size: 13px; box-sizing: border-box; transition: all 0.3s ease;"></textarea>
-          <div class="input-helper" style="margin-top: 2px; margin-bottom: 4px;">Nhấn <strong>Shift + Enter</strong> để
-            lưu nhanh, <strong>Enter</strong> để xuống dòng.</div>
           <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
-            <select id="quickNoteCategory" class="quick-note-category-select"
-              style="width: 120px; font-size: 12px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 4px; background: #fff; color: var(--text-2); outline: none; cursor: pointer;">
+            <select id="quickNoteCategory" class="custom-select quick-note-category-select"
+              style="width: 120px; font-size: 12px;">
               <!-- Categories rendered dynamically -->
             </select>
             <button id="btnQuickNoteSave" class="btn btn-primary" title="Lưu ghi chú"
@@ -238,7 +251,7 @@
     <div class="tab-content" id="tab-mentions">
       <div class="panel-section">
         <div class="search-form-header">
-          <h2 class="section-title">Tin nhắn bỏ lỡ</h2>
+          <h2 class="section-title">Tin nhắn bị bỏ lỡ</h2>
           <button class="search-toggle-btn" id="btnToggleMentions" title="Thu gọn/Mở rộng">
             <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
               <path fill-rule="evenodd"
@@ -253,7 +266,7 @@
         </p>
         <div class="search-form" id="spMentionsForm">
           <div class="search-filters-row">
-            <select id="spMentionHours" style="flex:1">
+            <select id="spMentionHours" class="custom-select" style="flex:1">
               <option value="24" selected>24 giờ qua</option>
               <option value="48">48 giờ qua</option>
               <option value="168">7 ngày qua</option>
@@ -308,6 +321,7 @@
         <button class="memo-sub-tab" data-section="theme">GIAO DIỆN</button>
         <button class="memo-sub-tab" data-section="categories">DANH MỤC</button>
         <button class="memo-sub-tab" data-section="reactions">BIỂU CẢM</button>
+        <button class="memo-sub-tab" data-section="sync">DỮ LIỆU</button>
       </div>
 
       <div style="flex:1; overflow-y: auto; padding: 16px;">
@@ -323,7 +337,7 @@
               <h2 style="font-size: 15px; font-weight: 700; color: #ffffff; margin: 0; letter-spacing: 0.2px;">ChatOps++
                 Utility</h2>
               <p style="font-size: 10px; color: rgba(255,255,255,0.85); margin: 2px 0 0 0; font-weight: 500;">Phiên bản
-                v1.1.1 — Kiến tạo trải nghiệm đỉnh cao</p>
+                v1.1.3 — Kiến tạo trải nghiệm đỉnh cao</p>
             </div>
           </div>
 
@@ -346,7 +360,7 @@
                 style="display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: var(--text-2); line-height: 1.4;">
                 <span
                   style="font-size: 14px; flex-shrink: 0; background: rgba(231, 76, 60, 0.08); width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #e74c3c;">🎯</span>
-                <div style="padding-top: 2px;"><strong>Việc cần làm:</strong> Quản lý tác vụ thông minh kèm nhắc nhở.
+                <div style="padding-top: 2px;"><strong>Việc làm:</strong> Quản lý tác vụ thông minh kèm nhắc nhở.
                 </div>
               </div>
               <div
@@ -360,7 +374,8 @@
                 style="display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: var(--text-2); line-height: 1.4;">
                 <span
                   style="font-size: 14px; flex-shrink: 0; background: rgba(155, 89, 182, 0.08); width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #9b59b6;">🔔</span>
-                <div style="padding-top: 2px;"><strong>Nhắc nhở bỏ lỡ:</strong> Theo dõi tin nhắn đề cập chưa đọc kịp
+                <div style="padding-top: 2px;"><strong>Tìm tin nhắn bị bỏ lỡ:</strong> Theo dõi tin nhắn chưa đọc
+                  kịp
                   thời.</div>
               </div>
               <div
@@ -372,6 +387,8 @@
               </div>
             </div>
           </div>
+
+
 
           <!-- Security & Privacy Commitment -->
           <div class="settings-group"
@@ -390,6 +407,8 @@
               </p>
             </div>
           </div>
+
+
 
           <!-- Donate for AI Credit & Vibecoding -->
           <div class="settings-group"
@@ -410,58 +429,132 @@
               <div
                 style="background: #ffffff; border-radius: 12px; padding: 10px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); border: 1px solid rgba(0,0,0,0.03); display: inline-block;">
                 <img src="../icons/donate_qr.png" alt="Donate QR"
-                  style="width: 200px; height: auto; display: block; border-radius: 6px; image-rendering: -webkit-optimize-contrast; image-rendering: crisp-edges;">
+                  style="width: 200px; height: auto; display: block; border-radius: 6px;">
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Section: Features -->
+        <!-- Section: Features (Chức năng) -->
         <div id="settings-section-features" class="settings-tab-panel" style="display:none">
           <h2 style="font-size: 15px; font-weight: 600; color: var(--text-1); margin-bottom: 20px;">Cài đặt chức năng
           </h2>
 
-          <div class="settings-group"
-            style="padding: 16px; background: var(--bg-1); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); margin-bottom: 16px;">
-            <h3 class="settings-title" style="margin-top:0;">Cài đặt bật tắt chức năng</h3>
-            <p class="settings-desc">Chọn các chức năng bạn muốn kích hoạt và hiển thị trên tiện ích mở rộng.</p>
-            <div class="settings-toggle-list" style="margin-top: 12px;">
-              <label class="settings-toggle-row">
-                <span>Tìm kiếm</span>
-                <input type="checkbox" id="settingShowSearch" class="settings-toggle" checked>
-                <span class="toggle-slider"></span>
-              </label>
-              <label class="settings-toggle-row">
-                <span>Việc cần làm</span>
-                <input type="checkbox" id="settingShowTasks" class="settings-toggle" checked>
-                <span class="toggle-slider"></span>
-              </label>
-              <label class="settings-toggle-row">
-                <span>Ghi chú</span>
-                <input type="checkbox" id="settingShowNotes" class="settings-toggle" checked>
-                <span class="toggle-slider"></span>
-              </label>
-              <label class="settings-toggle-row">
-                <span>Bỏ lỡ</span>
-                <input type="checkbox" id="settingShowMissed" class="settings-toggle" checked>
-                <span class="toggle-slider"></span>
-              </label>
-              <label class="settings-toggle-row">
-                <span>Spam Biểu cảm</span>
-                <input type="checkbox" id="settingSpamEnabled" class="settings-toggle" checked>
-                <span class="toggle-slider"></span>
-              </label>
+          <!-- Sub-tab Bar for Features -->
+          <div class="settings-subtab-bar" style="margin-bottom: 16px;">
+            <button type="button" class="settings-subtab-btn active" data-subtab="features-toggle">
+              ⚙️ Bật tắt
+            </button>
+            <button type="button" class="settings-subtab-btn" data-subtab="features-snooze">
+              ⏳ Báo lại
+            </button>
+            <button type="button" class="settings-subtab-btn" data-subtab="features-notifications">
+              🔔 Thông báo
+            </button>
+          </div>
+
+          <!-- Sub-tab Content: Toggles -->
+          <div id="subtab-content-features-toggle" class="settings-subtab-content">
+            <div class="settings-group"
+              style="padding: 16px; background: var(--bg-1); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+              <h3 class="settings-title" style="margin-top:0;">Cài đặt bật tắt chức năng</h3>
+              <p class="settings-desc">Chọn các chức năng bạn muốn kích hoạt và hiển thị trên tiện ích mở rộng.</p>
+              <div class="settings-toggle-list" style="margin-top: 12px;">
+                <label class="settings-toggle-row">
+                  <span>Tìm kiếm</span>
+                  <input type="checkbox" id="settingShowSearch" class="settings-toggle" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+                <label class="settings-toggle-row">
+                  <span>Việc làm</span>
+                  <input type="checkbox" id="settingShowTasks" class="settings-toggle" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+                <label class="settings-toggle-row">
+                  <span>Ghi chú</span>
+                  <input type="checkbox" id="settingShowNotes" class="settings-toggle" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+                <label class="settings-toggle-row">
+                  <span>Bỏ lỡ</span>
+                  <input type="checkbox" id="settingShowMissed" class="settings-toggle" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+                <label class="settings-toggle-row">
+                  <span>Spam Biểu cảm</span>
+                  <input type="checkbox" id="settingSpamEnabled" class="settings-toggle" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
             </div>
           </div>
 
-          <div class="settings-group"
-            style="padding: 16px; background: var(--bg-1); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
-            <h3 class="settings-title" style="margin-top:0;">Thời gian báo lại mặc định</h3>
-            <p class="settings-desc">Khoảng thời gian (phút) hệ thống sẽ báo thức kể từ lúc tạo, nếu bạn không chọn giờ.
-            </p>
-            <div class="settings-row" style="margin-top: 12px;">
-              <input type="number" id="settingSnoozeMinutes" class="settings-input-num" min="1" max="1440" value="5">
-              <span style="font-size: 13px; color: var(--text-2); font-weight: 500;">phút</span>
+          <!-- Sub-tab Content: Snooze -->
+          <div id="subtab-content-features-snooze" class="settings-subtab-content" style="display:none">
+            <div class="settings-group"
+              style="padding: 16px; background: var(--bg-1); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+              <h3 class="settings-title" style="margin-top:0;">Thời gian báo lại mặc định</h3>
+              <p class="settings-desc">Khoảng thời gian (phút) hệ thống sẽ báo thức kể từ lúc tạo, nếu bạn không chọn
+                giờ.
+              </p>
+              <div class="settings-row" style="margin-top: 12px;">
+                <input type="number" id="settingSnoozeMinutes" class="settings-input-num" min="1" max="1440" value="5">
+                <span style="font-size: 13px; color: var(--text-2); font-weight: 500;">phút</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sub-tab Content: Notifications -->
+          <div id="subtab-content-features-notifications" class="settings-subtab-content" style="display:none">
+            <div class="settings-group"
+              style="padding: 16px; background: var(--bg-1); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+              <h3 class="settings-title" style="margin-top:0;">Hình thức hiển thị nhắc nhở</h3>
+              <p class="settings-desc">Chọn hình thức bạn muốn nhận thông báo khi có việc làm hoặc ghi chú đến giờ nhắc.
+              </p>
+              <div class="settings-row"
+                style="margin-top: 12px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <select id="settingNotificationType" class="custom-select" style="width:100%; max-width:220px;">
+                  <option value="both">🔔 Cả hai (Khuyên dùng)</option>
+                  <option value="system">🖥️ Chỉ thông báo hệ thống (OS)</option>
+                  <option value="in-page">💬 Chỉ banner trong trang ChatOps</option>
+                </select>
+                <button type="button" id="btnTestNotification"
+                  style="padding: 8px 14px; background: var(--accent); color: #fff; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.2s; white-space: nowrap; height: 34px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 4px rgba(28, 88, 217, 0.15);">
+                  🔔 Kiểm tra thông báo
+                </button>
+              </div>
+
+              <!-- Guidance Box -->
+              <div
+                style="margin-top: 16px; padding: 14px 16px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 8px; font-size: 13.5px; line-height: 1.6; color: var(--text-2);">
+                <div
+                  style="font-weight: 700; color: var(--text-1); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; font-size: 14px; border-bottom: 1px solid var(--border); padding-bottom: 6px;">
+                  ℹ️ HƯỚNG DẪN BẬT THÔNG BÁO HỆ THỐNG (OS)
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                  <div>
+                    🍏 <strong>macOS:</strong> Vào <em>System Settings (Cài đặt hệ thống)</em> → <em>Notifications
+                      (Thông báo)</em> → <strong>Google Chrome</strong> → Bật <strong>Allow Notifications</strong> và
+                    chọn kiểu <strong>Banners</strong> hoặc <strong>Alerts</strong>.
+                  </div>
+                  <div>
+                    🪟 <strong>Windows:</strong> Vào <em>Settings</em> → <em>System</em> → <em>Notifications</em> → Đảm
+                    bảo đã bật thông báo chung và cho phép ứng dụng <strong>Google Chrome</strong> đẩy thông báo.
+                  </div>
+                  <div>
+                    🐧 <strong>Ubuntu (Linux):</strong> Vào <em>Settings (Cài đặt)</em> → <em>Notifications (Thông
+                      báo)</em> → <strong>Google Chrome</strong> → Đảm bảo công tắc thông báo được <strong>Bật
+                      (ON)</strong>.
+                  </div>
+                  <div
+                    style="border-top: 1px dashed var(--border); margin-top: 6px; padding-top: 8px; font-style: italic; color: var(--accent); font-weight: 500;">
+                    💡 Mẹo quan trọng: Sau khi bật quyền thông báo hệ thống, nếu bạn nhấn "Kiểm tra thông báo" mà vẫn
+                    không thấy banner hiện lên góc màn hình, hãy tắt hoàn toàn Google Chrome (nhấn tổ hợp phím
+                    <strong>Cmd + Q</strong> trên macOS, hoặc đóng tất cả cửa sổ Chrome trên Windows và Ubuntu) rồi mở
+                    lại trình duyệt để hệ điều hành đồng bộ quyền ngay lập tức nhé!
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -469,41 +562,67 @@
         <!-- Section: Theme -->
         <div id="settings-section-theme" class="settings-tab-panel" style="display:none">
           <h2 style="font-size: 15px; font-weight: 600; color: var(--text-1); margin-bottom: 20px;">Giao diện</h2>
-          <div class="settings-group">
+          <div class="settings-group" style="padding: 16px;">
             <h3 class="settings-title">Màu sắc giao diện</h3>
-            <p class="settings-desc">Tùy chỉnh màu sắc cho từng khối thành phần.</p>
+            <p class="settings-desc" style="margin-bottom: 20px;">Tùy chỉnh màu sắc cho từng khối thành phần.</p>
 
-            <div class="settings-color-grid">
-              <div class="settings-color-item">
-                <span>Khối Header (Phía trên)</span>
-                <div class="color-presets-row" data-key="headerColor">
-                  <button class="color-preset active" data-color="#1c58d9" style="background: #1c58d9;"></button>
-                  <button class="color-preset" data-color="#3db887" style="background: #3db887;"></button>
-                  <button class="color-preset" data-color="#e8384f" style="background: #e8384f;"></button>
-                  <button class="color-preset" data-color="#805bfa" style="background: #805bfa;"></button>
-                  <button class="color-preset" data-color="#1153ab" style="background: #1153ab;"></button>
+            <!-- Color Preset Selectors -->
+            <div class="settings-color-grid"
+              style="display: flex; flex-direction: column; gap: 16px; margin: 0; max-width: 480px;">
+              <div class="settings-color-item"
+                style="border: 1px solid var(--border); padding: 12px; border-radius: 10px; background: var(--bg-1); box-shadow: 0 2px 4px rgba(0,0,0,0.01);">
+                <span
+                  style="font-weight: 600; font-size: 13px; color: var(--text-1); display: block; margin-bottom: 10px;">Khối
+                  Header (Phía trên)</span>
+                <div class="color-presets-row" data-key="headerColor" style="display: flex; gap: 8px;">
+                  <button class="color-preset active" data-color="#1c58d9"
+                    style="background: #1c58d9; width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
+                  <button class="color-preset" data-color="#3db887"
+                    style="background: #3db887; width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
+                  <button class="color-preset" data-color="#e8384f"
+                    style="background: #e8384f; width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
+                  <button class="color-preset" data-color="#805bfa"
+                    style="background: #805bfa; width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
+                  <button class="color-preset" data-color="#1153ab"
+                    style="background: #1153ab; width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
                 </div>
               </div>
 
-              <div class="settings-color-item">
-                <span>Thanh điều hướng (Tab)</span>
-                <div class="color-presets-row" data-key="navColor">
-                  <button class="color-preset active" data-color="#1c58d9" style="background: #1c58d9;"></button>
-                  <button class="color-preset" data-color="#3db887" style="background: #3db887;"></button>
-                  <button class="color-preset" data-color="#e8384f" style="background: #e8384f;"></button>
-                  <button class="color-preset" data-color="#805bfa" style="background: #805bfa;"></button>
-                  <button class="color-preset" data-color="#1153ab" style="background: #1153ab;"></button>
+              <div class="settings-color-item"
+                style="border: 1px solid var(--border); padding: 12px; border-radius: 10px; background: var(--bg-1); box-shadow: 0 2px 4px rgba(0,0,0,0.01);">
+                <span
+                  style="font-weight: 600; font-size: 13px; color: var(--text-1); display: block; margin-bottom: 10px;">Thanh
+                  điều hướng (Tab)</span>
+                <div class="color-presets-row" data-key="navColor" style="display: flex; gap: 8px;">
+                  <button class="color-preset active" data-color="#1c58d9"
+                    style="background: #1c58d9; width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
+                  <button class="color-preset" data-color="#3db887"
+                    style="background: #3db887; width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
+                  <button class="color-preset" data-color="#e8384f"
+                    style="background: #e8384f; width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
+                  <button class="color-preset" data-color="#805bfa"
+                    style="background: #805bfa; width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
+                  <button class="color-preset" data-color="#1153ab"
+                    style="background: #1153ab; width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
                 </div>
               </div>
 
-              <div class="settings-color-item">
-                <span>Nút bấm & Nổi bật</span>
-                <div class="color-presets-row" data-key="accentColor">
-                  <button class="color-preset active" data-color="#1c58d9" style="background: #1c58d9;"></button>
-                  <button class="color-preset" data-color="#3db887" style="background: #3db887;"></button>
-                  <button class="color-preset" data-color="#e8384f" style="background: #e8384f;"></button>
-                  <button class="color-preset" data-color="#805bfa" style="background: #805bfa;"></button>
-                  <button class="color-preset" data-color="#f5a623" style="background: #f5a623;"></button>
+              <div class="settings-color-item"
+                style="border: 1px solid var(--border); padding: 12px; border-radius: 10px; background: var(--bg-1); box-shadow: 0 2px 4px rgba(0,0,0,0.01);">
+                <span
+                  style="font-weight: 600; font-size: 13px; color: var(--text-1); display: block; margin-bottom: 10px;">Nút
+                  bấm & Nổi bật</span>
+                <div class="color-presets-row" data-key="accentColor" style="display: flex; gap: 8px;">
+                  <button class="color-preset active" data-color="#1c58d9"
+                    style="background: #1c58d9; width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
+                  <button class="color-preset" data-color="#3db887"
+                    style="background: #3db887; width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
+                  <button class="color-preset" data-color="#e8384f"
+                    style="background: #e8384f; width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
+                  <button class="color-preset" data-color="#805bfa"
+                    style="background: #805bfa; width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
+                  <button class="color-preset" data-color="#f5a623"
+                    style="background: #f5a623; width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
                 </div>
               </div>
             </div>
@@ -516,7 +635,7 @@
           </h2>
           <div class="settings-group">
             <h3 class="settings-title">Quản lý danh mục</h3>
-            <p class="settings-desc">Thêm hoặc xóa các danh mục cho tab Ghi chú và Modal tạo nhanh.</p>
+            <p class="settings-desc">Thêm hoặc xóa các danh mục cho phần ghi chú (Tối đa 5)</p>
 
             <div class="category-add-row" style="display:flex; gap:8px; margin-bottom:12px;">
               <input type="text" id="settingNewCategory" placeholder="Nhập tên danh mục mới... (Enter để lưu)"
@@ -526,7 +645,7 @@
             </div>
 
             <ul id="settingCategoryList"
-              style="list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:8px; max-height:200px; overflow-y:auto; scrollbar-width:thin;">
+              style="list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:8px;">
               <!-- Category items rendered here -->
             </ul>
           </div>
@@ -534,70 +653,228 @@
 
         <!-- Section: Reactions -->
         <div id="settings-section-reactions" class="settings-tab-panel" style="display:none">
-          <h2 style="font-size: 15px; font-weight: 600; color: var(--text-1); margin-bottom: 20px;">Spam Biểu cảm & Meme
-          </h2>
+          <h2 style="font-size: 15px; font-weight: 600; color: var(--text-1); margin-bottom: 20px;">Thiết lập biểu cảm &
+            hình ảnh</h2>
 
-          <!-- New Personal Memes Management Area -->
-          <div class="settings-group" id="personalMemesConfigArea"
-            style="margin-bottom: 20px; border-bottom: 1px dashed var(--border); padding-bottom: 16px;">
-            <h3 class="settings-title"
-              style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px;">
-              <span>Meme Cá Nhân</span>
-              <label for="sidepanel-meme-upload"
-                style="font-size: 11px; font-weight: 700; color: var(--accent); cursor: pointer; display: inline-flex; align-items: center; gap: 4px; background: rgba(28, 88, 217, 0.08); padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(28, 88, 217, 0.15); transition: all 0.2s;">
-                ➕ Tải ảnh lên
-              </label>
-              <input type="file" id="sidepanel-meme-upload" accept="image/*" style="display:none;" />
-            </h3>
-            <p class="settings-desc">Tải lên hoặc xóa ảnh Meme cá nhân để sử dụng nhanh trong khung chat.</p>
-            <div id="sidepanel-memes-grid"
-              style="display:grid; grid-template-columns: repeat(5, 1fr); gap:8px; padding:12px; background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius-sm); min-height:48px; max-height:120px; overflow-y:auto; margin-top:8px;">
-              <!-- Personal memes rendered here dynamically -->
+          <!-- Sub-tab Bar for Reactions -->
+          <div class="settings-subtab-bar">
+            <button type="button" class="settings-subtab-btn active" data-subtab="reactions-meme">
+              🖼️ Kho Ảnh
+            </button>
+            <button type="button" class="settings-subtab-btn" data-subtab="reactions-picker">
+              🎯 Spam Biểu Cảm
+            </button>
+          </div>
+
+          <!-- Sub-tab Content: Meme management -->
+          <div id="subtab-content-reactions-meme" class="settings-subtab-content">
+            <!-- New Personal Memes Management Area -->
+            <div class="settings-group" id="personalMemesConfigArea" style="padding-bottom: 16px;">
+              <h3 class="settings-title"
+                style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px;">
+                <span>Thiết lập hình ảnh</span>
+                <label for="sidepanel-meme-upload" class="btn-upload-premium">
+                  + Tải ảnh lên
+                </label>
+                <input type="file" id="sidepanel-meme-upload" accept="image/*" style="display:none;" />
+              </h3>
+              <p class="settings-desc">Tải lên hoặc xóa hình ảnh để sử dụng nhanh ở icon 🖼️ trong khung chat</p>
+              <div id="sidepanel-memes-storage-container"
+                style="margin-top: 6px; padding: 6px 10px; background: var(--bg-1); border: 1px solid var(--border); border-radius: 6px; display: flex; flex-direction: column; gap: 4px;">
+                <div
+                  style="display: flex; justify-content: space-between; align-items: center; font-size: 12.5px; font-weight: 600; color: var(--text-2);">
+                  <span style="display:inline-flex; align-items:center; gap:5px;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                      stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent); flex-shrink:0;">
+                      <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                      <path d="M3 5V19A9 3 0 0 0 21 19V5"></path>
+                      <path d="M3 12A9 3 0 0 0 21 12"></path>
+                    </svg>
+                    Dung lượng hình ảnh đã dùng
+                  </span>
+                  <span id="sidepanel-memes-storage-text" style="color: var(--accent);">0 KB / 5 MB</span>
+                </div>
+                <div
+                  style="width: 100%; height: 5px; background: var(--bg-2); border-radius: 10px; overflow: hidden; border: 1px solid rgba(0,0,0,0.03);">
+                  <div id="sidepanel-memes-storage-bar"
+                    style="width: 0%; height: 100%; background: var(--accent); border-radius: 10px; transition: width 0.3s ease;">
+                  </div>
+                </div>
+              </div>
+              <div id="sidepanel-memes-grid"
+                style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; padding:12px; background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius-sm); min-height:140px; max-height:280px; overflow-y:auto; margin-top:8px;">
+                <!-- Personal memes rendered here dynamically -->
+              </div>
             </div>
           </div>
 
-          <div class="settings-group" id="reactionsConfigArea">
-            <h3 class="settings-title">Danh sách Spam hiện tại (Tối đa 20)</h3>
-            <p class="settings-desc">Nhấp vào icon trong ô bên dưới để xóa nhanh emoji khỏi danh sách spam.</p>
-            <div id="selectedEmojisContainer"
-              style="display:flex; flex-wrap:wrap; gap:8px; padding:12px; background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius-sm); min-height:48px; margin-top:8px; margin-bottom:16px;">
-              <!-- Selected Emojis rendered here dynamically -->
-            </div>
-
-            <h3 class="settings-title">Bảng chọn Biểu cảm</h3>
-            <p class="settings-desc" style="margin-bottom: 12px;">Chọn biểu cảm bên dưới để thêm vào danh sách thả cảm
-              xúc.</p>
-
-            <div class="settings-emoji-tabs" style="margin-bottom:12px;">
-              <button type="button" class="emoji-tab-btn active" id="emojiTabStandard">MẶC ĐỊNH</button>
-              <button type="button" class="emoji-tab-btn" id="emojiTabCustom">TỰ CHẾ (WORKSPACE)</button>
-            </div>
-
-            <!-- Emoji Search Input -->
-            <div class="emoji-search-wrapper"
-              style="position:relative; margin-bottom:12px; display:flex; align-items:center; width: 100%;">
-              <input type="text" id="emojiSearchInput" placeholder="Tìm kiếm biểu cảm bằng tên (ví dụ: fire, heart)..."
-                style="flex:1; padding:8px 32px 8px 12px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:13px; outline:none; background:var(--bg-1); color:var(--text-1); font-family:inherit; width: 100%;">
-              <span class="emoji-search-icon"
-                style="position:absolute; right:10px; color:var(--text-3); font-size:13px; pointer-events:none;">🔍</span>
-            </div>
-
-            <!-- Standard grid -->
-            <div id="standardEmojiGrid" class="emoji-picker-grid"
-              style="display:grid; grid-template-columns: repeat(6, 1fr); gap:8px; max-height:480px; overflow-y:auto; padding:4px; justify-items: center;">
-              <!-- Standard emojis rendered dynamically -->
-            </div>
-
-            <!-- Custom grid -->
-            <div id="customEmojiGrid" class="emoji-picker-grid"
-              style="display:none; flex-direction:column; max-height:480px; overflow-y:auto; padding:4px; gap:8px;">
-              <div id="customEmojiGridItems"
-                style="display:grid; grid-template-columns: repeat(5, 1fr); gap:8px; justify-items: center; width: 100%;">
-                <!-- Custom emojis rendered dynamically -->
+          <!-- Sub-tab Content: Emoji Picker -->
+          <div id="subtab-content-reactions-picker" class="settings-subtab-content" style="display:none">
+            <div class="settings-group" id="reactionsConfigArea">
+              <h3 class="settings-title">Biểu cảm đã chọn để spam (Tối đa 20)</h3>
+              <p class="settings-desc">Nhấp vào biểu cảm trong ô bên dưới để xóa nhanh khỏi danh sách.</p>
+              <div id="selectedEmojisContainer"
+                style="display:flex; flex-wrap:wrap; gap:8px; padding:12px; background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius-sm); min-height:48px; margin-top:8px; margin-bottom:16px;">
+                <!-- Selected Emojis rendered here dynamically -->
               </div>
-              <div id="customEmojiLoading"
-                style="text-align:center; padding:10px; color:var(--text-3); font-size:12px; display:none;">Đang tải
-                thêm biểu cảm...</div>
+
+              <h3 class="settings-title">Chọn thêm biểu cảm</h3>
+              <p class="settings-desc" style="margin-bottom: 12px;">Nhấp vào biểu cảm bên dưới để thêm vào bộ biểu cảm
+                spam.</p>
+
+              <div class="settings-emoji-tabs" style="margin-bottom:12px;">
+                <button type="button" class="emoji-tab-btn active" id="emojiTabStandard">MẶC ĐỊNH</button>
+                <button type="button" class="emoji-tab-btn" id="emojiTabCustom">WORKSPACE</button>
+              </div>
+
+              <!-- Emoji Search Input -->
+              <div class="emoji-search-wrapper"
+                style="position:relative; margin-bottom:12px; display:flex; align-items:center; width: 100%;">
+                <input type="text" id="emojiSearchInput"
+                  placeholder="Tìm kiếm biểu cảm bằng tên (ví dụ: fire, heart)..."
+                  style="flex:1; padding:8px 32px 8px 12px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:13px; outline:none; background:var(--bg-1); color:var(--text-1); font-family:inherit; width: 100%;">
+                <span class="emoji-search-icon"
+                  style="position:absolute; right:10px; color:var(--text-3); font-size:13px; pointer-events:none;">🔍</span>
+              </div>
+
+              <!-- Standard grid -->
+              <div id="standardEmojiGrid" class="emoji-picker-grid"
+                style="display:grid; grid-template-columns: repeat(6, 1fr); gap:8px; max-height:400px; overflow-y:auto; padding:4px; justify-items: center;">
+                <!-- Standard emojis rendered dynamically -->
+              </div>
+
+              <!-- Custom grid -->
+              <div id="customEmojiGrid" class="emoji-picker-grid"
+                style="display:none; flex-direction:column; max-height:400px; overflow-y:auto; padding:4px; gap:8px;">
+                <div id="customEmojiGridItems"
+                  style="display:grid; grid-template-columns: repeat(5, 1fr); gap:8px; justify-items: center; width: 100%;">
+                  <!-- Custom emojis rendered dynamically -->
+                </div>
+                <div id="customEmojiLoading"
+                  style="text-align:center; padding:10px; color:var(--text-3); font-size:12px; display:none;">Đang tải
+                  thêm biểu cảm...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section: Sync -->
+        <div id="settings-section-sync" class="settings-tab-panel" style="display:none">
+          <h2 style="font-size: 15px; font-weight: 600; color: var(--text-1); margin-bottom: 20px;">Xử lý dữ liệu</h2>
+
+          <!-- Sub-tab Bar for Sync -->
+          <div class="settings-subtab-bar">
+            <button type="button" class="settings-subtab-btn active" data-subtab="sync-cloud">
+              ☁️ Đồng bộ Đám mây
+            </button>
+            <button type="button" class="settings-subtab-btn" data-subtab="sync-cleanup">
+              🧹 Dọn dẹp & Tối ưu
+            </button>
+          </div>
+
+          <!-- Sub-tab Content: Cloud Sync -->
+          <div id="subtab-content-sync-cloud" class="settings-subtab-content">
+            <!-- Cloud Sync Management Card -->
+            <div class="settings-group" id="cloudSyncConfigArea"
+              style="padding: 16px; background: var(--bg-1); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); margin-bottom: 16px;">
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                <span style="font-size: 20px; line-height: 1;">☁️</span>
+                <h3 class="settings-title"
+                  style="margin: 0; font-size: 15.5px; font-weight: 700; color: var(--text-1);">
+                  Đồng bộ Đám mây (Google Account)</h3>
+              </div>
+              <p class="settings-desc"
+                style="color: var(--text-2); font-size: 13.5px; line-height: 1.5; margin: 0 0 14px 0;">
+                Sao lưu thủ công danh sách việc làm và ghi chú của bạn lên mây để chuyển đổi hoặc khôi phục dữ liệu giữa
+                các máy tính (công ty & nhà) qua tài khoản Google Chrome.
+              </p>
+              <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
+                <button id="btnSyncCloudBackup" class="btn btn-secondary"
+                  style="flex:1; display:flex; align-items:center; justify-content:center; gap:6px; font-size:13.5px; font-weight:700; padding:10px; border-radius:8px; transition:all 0.2s; height:38px; cursor:pointer;">
+                  📤 Sao lưu lên Cloud
+                </button>
+                <button id="btnSyncCloudRestore" class="btn btn-primary"
+                  style="flex:1; display:flex; align-items:center; justify-content:center; gap:6px; font-size:13.5px; font-weight:700; padding:10px; border-radius:8px; transition:all 0.2s; height:38px; cursor:pointer;">
+                  📥 Khôi phục từ Cloud
+                </button>
+              </div>
+              <div id="syncStatusMessage"
+                style="font-size: 12.5px; color: var(--text-3); font-weight: 500; display:flex; align-items:center; gap:4px; transition: all 0.3s ease;">
+                ⏳ Chưa từng sao lưu hoặc khôi phục trên máy này.
+              </div>
+            </div>
+
+            <!-- Cloud Sync Explainer Note -->
+            <div class="settings-group"
+              style="padding: 14px; background: rgba(28, 88, 217, 0.04); border: 1px dashed var(--accent); border-radius: 12px; display: flex; gap: 8px; align-items: flex-start;">
+              <div style="font-size: 18px; color: var(--accent); line-height: 1; margin-top: 2px;">💡</div>
+              <div>
+                <h4 class="settings-title"
+                  style="color: var(--accent); font-size: 13px; font-weight: 700; margin: 0 0 4px 0;">Tại sao cần đồng
+                  bộ thủ công?</h4>
+                <p class="settings-desc" style="color: var(--text-2); font-size: 12px; line-height: 1.5; margin: 0;">
+                  Để bảo vệ quyền riêng tư tuyệt đối, tốc độ lưu trữ tức thì và không làm gián đoạn trải nghiệm của bạn,
+                  toàn bộ dữ liệu mặc định được lưu ngoại tuyến trên máy tính này. Việc sao lưu thủ công giúp bạn hoàn
+                  toàn chủ động kiểm soát thời điểm truyền tải dữ liệu của mình.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sub-tab Content: Cleanup & Storage -->
+          <div id="subtab-content-sync-cleanup" class="settings-subtab-content" style="display:none">
+            <!-- Cleanup & Storage Optimization Card -->
+            <div class="settings-group" id="autoCleanupConfigArea"
+              style="padding: 16px; background: var(--bg-1); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                <h3 class="settings-title"
+                  style="margin: 0; font-size: 15.5px; font-weight: 700; color: var(--text-1);">
+                  Dọn dẹp & Tối ưu dung lượng</h3>
+              </div>
+              <p class="settings-desc"
+                style="color: var(--text-2); font-size: 13.5px; line-height: 1.5; margin: 0 0 12px 0;">
+                Tự động xóa các việc làm hoặc ghi chú **đã hoàn thành** sau một số ngày nhất định để giữ cho dữ liệu nhẹ
+                nhàng và đồng bộ nhanh hơn.
+              </p>
+              <div
+                style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; background:var(--bg-2); padding:8px 12px; border-radius:8px; border:1px solid var(--border); flex-wrap:wrap; gap:6px;">
+                <span
+                  style="font-size:13.5px; font-weight:600; color:var(--text-2); display:inline-flex; align-items:center; gap:6px;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent); flex-shrink:0;">
+                    <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                    <path d="M3 5V19A9 3 0 0 0 21 19V5"></path>
+                    <path d="M3 12A9 3 0 0 0 21 12"></path>
+                  </svg>
+                  Dung lượng sử dụng:
+                </span>
+                <span id="storageUsageDisplay" style="font-size:13px; font-weight:600; color:var(--text-1);">Đang tính
+                  toán...</span>
+              </div>
+              <div
+                style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; flex-wrap:wrap;">
+                <div style="display:flex; flex-direction:column; gap:4px; flex:1; min-width:180px;">
+                  <span style="font-size:14.5px; font-weight:600; color:var(--text-1);">Thời gian tự động dọn
+                    dẹp:</span>
+                  <span style="font-size:13px; color:var(--text-3); font-weight:500;">Chỉ áp dụng với các mục đã được
+                    đánh dấu xong.</span>
+                </div>
+                <select id="settingsAutoCleanupDays" class="custom-select" style="width:170px; font-size:13.5px;">
+                  <option value="0">Không bao giờ</option>
+                  <option value="-1">Ngay khi mở Extension</option>
+                  <option value="1">Sau 1 ngày</option>
+                  <option value="7">Sau 7 ngày</option>
+                  <option value="30">Sau 30 ngày</option>
+                  <option value="90">Sau 90 ngày</option>
+                </select>
+              </div>
+              <div
+                style="display:flex; margin-top:14px; border-top:1px solid var(--border); padding-top:12px; width:100%;">
+                <button id="btnManualCleanupNow" class="btn btn-secondary"
+                  style="display:inline-flex; align-items:center; justify-content:center; gap:6px; font-size:12.5px; font-weight:700; padding:8px 14px; border-radius:8px; transition:all 0.2s; height:36px; cursor:pointer; border:1px solid var(--border); background:#fff; width:100%;">
+                  Dọn dẹp ngay bây giờ
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -614,7 +891,7 @@
   <div id="donateModal" class="memo-modal"
     style="display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px); align-items: center; justify-content: center;">
     <div
-      style="background: #111827; border-radius: 16px; width: 310px; max-width: 95%; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.15); overflow: hidden; animation: modalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; align-items: center; padding: 24px 20px; position: relative;">
+      style="background: #111827; border-radius: 16px; width: 350px; max-width: 95%; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.15); overflow: hidden; animation: modalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; align-items: center; padding: 26px 24px; position: relative;">
 
       <!-- Close Button -->
       <button id="btnDonateModalClose"
@@ -622,21 +899,35 @@
 
       <!-- Content -->
       <h3
-        style="color: #ffffff; font-size: 16.5px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; justify-content: center; margin-bottom: 8px; margin-top: 10px; width: 100%;">
+        style="color: #ffffff; font-size: 18px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; justify-content: center; margin-bottom: 8px; margin-top: 10px; width: 100%;">
         ☕ Ủng hộ tác giả để Vibecoding!
       </h3>
       <p
-        style="color: #94a3b8; font-size: 13.5px; line-height: 1.5; text-align: center; margin: 0 0 18px 0; font-weight: 500;">
+        style="color: #94a3b8; font-size: 14px; line-height: 1.55; text-align: center; margin: 0 0 20px 0; font-weight: 500;">
         Hãy mời nhà phát triển một cốc cà phê để duy trì chi phí mua AI credit tiếp tục "vibecoding" cực bốc nhé! 🚀
       </p>
 
       <!-- Large QR Code Card -->
       <div
-        style="background: #ffffff; border-radius: 12px; padding: 12px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); border: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: center; width: 100%; box-sizing: border-box; margin-bottom: 4px;">
+        style="background: #ffffff; border-radius: 12px; padding: 14px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); border: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: center; width: 100%; box-sizing: border-box; margin-bottom: 4px;">
         <img src="../icons/donate_qr.png" alt="Donate QR"
-          style="width: 250px; height: auto; display: block; border-radius: 6px; image-rendering: -webkit-optimize-contrast; image-rendering: crisp-edges;">
+          style="width: 280px; height: auto; display: block; border-radius: 6px;">
       </div>
 
+    </div>
+  </div>
+
+  <!-- ─── Image Preview Modal ─── -->
+  <div id="imagePreviewModal" class="memo-modal"
+    style="display: none; position: fixed; z-index: 10001; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.85); backdrop-filter: blur(10px); align-items: center; justify-content: center; animation: modalFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);">
+    <div
+      style="position: relative; max-width: 90%; max-height: 90%; display: flex; flex-direction: column; align-items: center;">
+      <!-- Close Button -->
+      <button id="btnImagePreviewClose"
+        style="position: absolute; top: -36px; right: 0; background: rgba(255, 255, 255, 0.2); border: none; font-size: 22px; font-weight: bold; color: #ffffff; cursor: pointer; outline: none; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">&times;</button>
+      <!-- Preview Image -->
+      <img id="imgPreviewTarget" src="" alt="Meme Preview"
+        style="max-width: 100%; max-height: 80vh; object-fit: contain; border-radius: 12px; border: 2px solid rgba(255, 255, 255, 0.2); box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5); display: block;" />
     </div>
   </div>
 
@@ -654,7 +945,7 @@
     }
 
     #btnHeaderCoffee {
-      background: rgba(243, 156, 18, 0.15);
+      background: #ffffff;
       border: none;
       border-radius: 50%;
       width: 28px;
@@ -664,16 +955,17 @@
       justify-content: center;
       font-size: 15px;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       outline: none;
       flex-shrink: 0;
-      box-shadow: 0 2px 5px rgba(243, 156, 18, 0.15);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
       margin-left: 4px;
     }
 
     #btnHeaderCoffee:hover {
-      background: rgba(243, 156, 18, 0.25) !important;
-      transform: scale(1.1);
+      background: #ffffff !important;
+      transform: scale(1.18) rotate(12deg);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
 
     #btnHeaderCoffee:active {

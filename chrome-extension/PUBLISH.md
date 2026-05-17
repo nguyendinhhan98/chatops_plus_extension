@@ -1,24 +1,47 @@
-# Hướng dẫn nộp ChatOps Helper lên Chrome Web Store
+# Hướng dẫn nộp ChatOps++ lên Chrome Web Store
 
 Dưới đây là các thông tin bạn cần chuẩn bị để điền vào trang quản trị [Chrome Web Store Developer Console](https://chrome.google.com/webstore/devconsole).
 
 ## 1. Thông tin cơ bản (Store Listing)
 
-- **Tên Extension:** ChatOps Helper
-- **Tóm tắt (Summary):** Truy cập nhanh ChatOps: tìm kiếm, gửi tin nhắn, theo dõi mention và xin nghỉ — ngay từ Side Panel trình duyệt.
+- **Tên Extension:** ChatOps++
+- **Tóm tắt (Summary):** Truy cập nhanh ChatOps (Mattermost) từ Side Panel: Tìm kiếm thông minh, nhắc nhở công việc, quản lý task, note và kho meme vui nhộn.
 - **Mô tả chi tiết (Description):**
   ```text
-  ChatOps Helper là công cụ hỗ trợ toàn diện cho người dùng ChatOps (Mattermost), giúp tối ưu hóa quy trình làm việc ngay trong trình duyệt.
+  ChatOps++ là tiện ích mở rộng tối ưu hóa hiệu suất toàn diện cho người dùng ChatOps (Mattermost) trực tiếp từ Side Panel trình duyệt.
 
-  Các tính năng chính:
-  - Side Panel Tiện Lợi: Mở bảng điều khiển bên phải mà không làm gián đoạn công việc ở tab hiện tại.
-  - Chat Theo Luồng (Threaded Chat): Trải nghiệm chat chuyên nghiệp với tính năng gom nhóm tin nhắn, trả lời (reply) theo luồng y hệt ứng dụng gốc.
-  - Tìm Kiếm Thông Minh: Tìm nhanh tin nhắn, người dùng hoặc channel trên toàn hệ thống ChatOps.
-  - Kiểm Tra Mention: Tự động quét và thông báo các mention bạn lỡ bỏ qua trong 7 ngày gần nhất.
-  - Quản Lý Nghỉ Phép: Tra cứu nhanh lịch sử xin đi muộn, về sớm hoặc xin nghỉ của đồng nghiệp.
-  - Kho Memes Vui Nhộn: Chèn nhanh các meme hài hước vào cuộc hội thoại chỉ với một cú click.
+  🌟 CÁC TÍNH NĂNG NỔI BẬT:
 
-  Tiện ích được thiết kế để bảo mật, tự động đồng bộ tài khoản từ trang ChatOps hiện tại, giúp bạn bắt đầu làm việc ngay lập tức mà không cần cấu hình phức tạp.
+  ⚡ Tìm Kiếm Thông Minh
+  • Tìm kiếm tin nhắn, tài liệu và liên kết trên toàn bộ các kênh theo từ khóa cực nhanh.
+  • Bộ lọc nâng cao (người gửi, kênh chat, thời gian) và giao diện kết quả Thu gọn/Mở rộng tối ưu không gian hiển thị.
+
+  📅 Quản Lý Tác Vụ & Nhắc Nhở (Tasks)
+  • Tạo nhanh việc cần làm thủ công hoặc trực tiếp từ tin nhắn ChatOps (lưu kèm liên kết gốc).
+  • Hẹn giờ nhắc nhở nhanh bằng 1-click (+15 phút, +30 phút, +1 giờ...).
+  • Chế độ báo lại thông minh (Snooze) lặp lại liên tục cho đến khi hoàn thành công việc.
+
+  📝 Ghi Chú Cá Nhân (Notes)
+  • Lưu trữ ý tưởng, snippet code và các thông tin quan trọng một cách nhanh gọn.
+  • Hỗ trợ tạo, chỉnh sửa danh mục và phân loại ghi chú trực quan ngay trên Side Panel.
+
+  🔔 Kiểm Tra Mention Bỏ Lỡ
+  • Quét sâu và tổng hợp toàn bộ các @mentions chưa đọc hoặc chưa xử lý từ các kênh và tin nhắn riêng (DM).
+  • Xem nhanh tin nhắn gốc chỉ với một cú click chuột.
+
+  😂 Tiện Ích Meme & Emoji
+  • Upload meme cá nhân trực tiếp từ thiết bị, tự động nén dung lượng và lưu trữ cục bộ để gửi nhanh trong khung chat.
+  • Cấu hình danh sách tối đa 20 emoji/reaction yêu thích (bao gồm cả emoji tùy chỉnh của Workspace).
+  • Hỗ trợ spam reaction hàng loạt bằng phím tắt siêu tốc.
+
+  🔒 Bảo Mật & Tiện Lợi
+  • Tự động đồng bộ phiên đăng nhập từ tab ChatOps hiện tại mà không cần cấu hình phức tạp.
+  • Toàn bộ dữ liệu cá nhân được lưu trữ cục bộ (Local Storage) trên trình duyệt, cam kết bảo mật 100% quyền riêng tư của bạn.
+
+  🛠️ HƯỚNG DẪN SỬ DỤNG NHANH:
+  1. Thêm ChatOps++ vào Chrome và ghim (Pin) tiện ích lên thanh công cụ.
+  2. Click biểu tượng ChatOps++ để mở Side Panel ở cạnh phải màn hình.
+  3. Chọn Workspace ChatOps/Mattermost của bạn tại menu thả xuống ở đầu tiện ích và bắt đầu trải nghiệm!
   ```
 - **Thể loại (Category):** Productivity (Năng suất)
 - **Ngôn ngữ chính:** Vietnamese
@@ -39,11 +62,12 @@ Dưới đây là các thông tin bạn cần chuẩn bị để điền vào tr
 
 Khi Google hỏi về lý do sử dụng các quyền (Permissions Justification), bạn hãy điền như sau:
 
-- **storage:** Dùng để lưu trữ cấu hình cá nhân như Workspace mặc định và các tùy chỉnh giao diện của người dùng.
-- **cookies:** Dùng để đọc `MMAUTHTOKEN` và `MMCSRF` từ trang `chat.runsystem.vn`. Việc này giúp người dùng tự động đăng nhập vào Extension mà không cần nhập lại mật khẩu, đảm bảo trải nghiệm liền mạch.
-- **sidePanel:** Cung cấp không gian hiển thị chính cho các tính năng của extension, giúp người dùng vừa làm việc vừa chat/tra cứu được.
-- **alarms:** Dùng để chạy tác vụ kiểm tra mention bị bỏ lỡ định kỳ (mỗi 5-10 phút) ngay cả khi không mở Extension.
-- **activeTab / host_permissions:** Cần thiết để tương tác với trang ChatOps, nhúng nút mở nhanh và thực hiện các yêu cầu API v4 tới server ChatOps.
+- **storage:** Dùng để lưu trữ cục bộ cấu hình cá nhân, các tùy chỉnh giao diện, danh sách việc cần làm (Tasks), ghi chú cá nhân (Notes) và dữ liệu hình ảnh meme tự tải lên của người dùng.
+- **cookies:** Dùng để đọc an toàn token đăng nhập `MMAUTHTOKEN` và `MMCSRF` từ trang `chat.runsystem.vn`. Việc này giúp tự động hóa quá trình xác thực và đăng nhập liền mạch (SSO) vào Extension mà không yêu cầu nhập mật khẩu.
+- **sidePanel:** Cung cấp không gian hiển thị giao diện chính ở thanh cạnh phải màn hình, hỗ trợ người dùng thao tác đa nhiệm mượt mà song song với việc lướt web.
+- **alarms:** Chạy định kỳ các tác vụ nền như kiểm tra/đổ chuông nhắc nhở công việc (Tasks) và tự động cập nhật số lượng mentions bị bỏ lỡ lên biểu tượng Extension.
+- **activeTab / host_permissions:** Cho phép tích hợp các nút thao tác nhanh (như biểu tượng chèn meme/emoji và phím tắt tạo task nhanh) vào giao diện trang ChatOps gốc, cũng như thực hiện các cuộc gọi API an toàn đến máy chủ ChatOps.
+- **notifications:** Dùng để hiển thị thông báo đẩy trên hệ điều hành (OS Notifications) nhắc nhở việc cần làm đúng thời gian người dùng thiết lập, ngay cả khi không mở bảng điều khiển Side Panel.
 
 ## 4. Dữ liệu người dùng (User Data Privacy)
 

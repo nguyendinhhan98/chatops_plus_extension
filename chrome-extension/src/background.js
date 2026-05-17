@@ -119,6 +119,54 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       handleRetractReactions(message.postId, sendResponse);
       return true;
 
+    case MESSAGE_TYPES.TEST_NOTIFICATION:
+      const testType = message.notificationType || 'both';
+      let triggeredSystem = false;
+      let triggeredInPage = false;
+
+      // 1. Send in-page banner test
+      if (testType === 'both' || testType === 'in-page') {
+        triggeredInPage = true;
+        chrome.tabs.query({ url: `${CHATOPS_CONFIG.DEFAULT_URL}/*` }).then((tabs) => {
+          for (const tab of tabs) {
+            chrome.tabs.sendMessage(tab.id, {
+              type: MESSAGE_TYPES.SHOW_REMINDER,
+              message: '🔔 Đây là thông báo thử nghiệm từ ChatOps++!',
+              taskId: 'test_task',
+              postId: null,
+              teamName: null,
+              isTask: true
+            }).catch(() => {});
+          }
+        });
+      }
+
+      // 2. Trigger OS notification test
+      if (testType === 'both' || testType === 'system') {
+        triggeredSystem = true;
+        chrome.notifications.create('test_notification_' + Date.now(), {
+          type: 'basic',
+          iconUrl: chrome.runtime.getURL('icons/icon128.png'),
+          title: '🎯 Thông báo thử nghiệm ChatOps++',
+          message: 'Hệ thống thông báo đẩy OS đang hoạt động hoàn hảo!',
+          priority: 2,
+          requireInteraction: true
+        }, (notificationId) => {
+          if (chrome.runtime.lastError) {
+            console.error('[ChatOps Ext] Test notification error:', chrome.runtime.lastError.message);
+            sendResponse({ ok: false, error: chrome.runtime.lastError.message, system: true, inPage: triggeredInPage });
+          } else {
+            console.log('[ChatOps Ext] Test notification success:', notificationId);
+            sendResponse({ ok: true, system: true, inPage: triggeredInPage });
+          }
+        });
+        return true;
+      }
+
+      // If only in-page was triggered
+      sendResponse({ ok: true, system: false, inPage: true });
+      return true;
+
     default:
       sendResponse({ error: 'Unknown message type' });
   }
@@ -225,5 +273,38 @@ async function handleRetractReactions(postId, sendResponse) {
     sendResponse({ ok: false, error: err.message });
   }
 }
+
+// Handle native OS notification clicks
+chrome.notifications.onClicked.addListener(async (notificationId) => {
+  if (!notificationId) return;
+  
+  try {
+    const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
+    const memos = res[STORAGE_KEYS.MEMOS] || [];
+    const task = memos.find(m => m.id === notificationId);
+    
+    if (task) {
+      // Build permalink deep link or fallback to chatops base URL
+      let targetUrl = CHATOPS_CONFIG.DEFAULT_URL;
+      if (task.postId && task.teamName) {
+        targetUrl = `${CHATOPS_CONFIG.DEFAULT_URL}/${task.teamName}/pl/${task.postId}`;
+      }
+      
+      // Query if we already have an open ChatOps tab
+      const tabs = await chrome.tabs.query({ url: `${CHATOPS_CONFIG.DEFAULT_URL}/*` });
+      if (tabs.length > 0) {
+        // Focus the existing tab and update its URL
+        await chrome.tabs.update(tabs[0].id, { active: true, url: targetUrl });
+        const windowId = tabs[0].windowId;
+        await chrome.windows.update(windowId, { focused: true });
+      } else {
+        // Create new tab if none exists
+        await chrome.tabs.create({ url: targetUrl });
+      }
+    }
+  } catch (err) {
+    console.error('[ChatOps Ext] Failed to handle notification click:', err);
+  }
+});
 
 console.log('[ChatOps Extension] Background service worker initialized');

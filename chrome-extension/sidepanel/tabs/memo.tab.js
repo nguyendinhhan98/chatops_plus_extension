@@ -114,6 +114,62 @@ export function setup(state) {
         setTimeout(() => { btn.innerHTML = original; btn.style.color = ''; }, 1500);
       } catch {}
     }
+
+    // Inline edit trigger
+    const btnEdit = e.target.closest('.btn-edit-memo');
+    if (btnEdit && !btnEdit.classList.contains('btn-edit-task')) {
+      const id = btnEdit.dataset.id;
+      const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
+      const memos = res[STORAGE_KEYS.MEMOS] || [];
+      const note = memos.find(m => m.id === id);
+      if (note) {
+        const card = document.getElementById('item_' + id);
+        const contentEl = card.querySelector('.note-content-row');
+        if (contentEl) {
+          const actionsEl = card.querySelector('.memo-actions');
+          if (actionsEl) actionsEl.style.display = 'none';
+          
+          contentEl.innerHTML = `
+            <div class="inline-edit-form" style="width:100%; display: flex; flex-direction: column; gap: 8px;">
+              <textarea class="inline-edit-textarea" style="width: 100%; min-height: 60px; padding: 8px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 13px; outline: none; background: #fff; resize: vertical; color: var(--text-1);">${escapeHtml(note.note)}</textarea>
+              <div style="display: flex; gap: 6px; justify-content: flex-end;">
+                <button class="btn btn-secondary inline-edit-cancel" data-id="${id}" style="padding: 4px 10px; font-size: 11.5px; height: 26px; border-radius: 6px; cursor:pointer;">Hủy</button>
+                <button class="btn btn-primary inline-edit-save" data-id="${id}" style="padding: 4px 10px; font-size: 11.5px; height: 26px; border-radius: 6px; cursor:pointer; color:#fff;">Lưu</button>
+              </div>
+            </div>
+          `;
+        }
+      }
+    }
+
+    // Cancel edit
+    if (e.target.classList.contains('inline-edit-cancel')) {
+      loadMemos();
+    }
+
+    // Save edit
+    if (e.target.classList.contains('inline-edit-save')) {
+      const id = e.target.dataset.id;
+      const card = document.getElementById('item_' + id);
+      const textarea = card.querySelector('.inline-edit-textarea');
+      if (textarea) {
+        const newText = textarea.value.trim();
+        if (!newText) {
+          alert('Nội dung ghi chú không được để trống.');
+          return;
+        }
+        
+        const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
+        const memos = res[STORAGE_KEYS.MEMOS] || [];
+        const noteIndex = memos.findIndex(m => m.id === id);
+        if (noteIndex !== -1) {
+          memos[noteIndex].note = newText;
+          memos[noteIndex].updatedAt = Date.now();
+          await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
+        }
+        loadMemos();
+      }
+    }
   });
 
   // Handle note category inline editing
@@ -258,6 +314,12 @@ function renderNoteCard(note, categories = ['Chung', 'Công việc', 'Cá nhân'
         </div>
         <div class="memo-actions">
           ${permalink ? `<a href="${permalink}" class="post-jump-link" title="${language.memoViewOriginal}">↗</a>` : ''}
+          <button class="btn-edit-memo" data-id="${note.id}" title="Chỉnh sửa ghi chú">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none; opacity:0.85;">
+              <path d="M12 20h9"></path>
+              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+            </svg>
+          </button>
           <button class="btn-delete-memo" data-id="${note.id}" title="${language.memoDelete}">
             <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" style="pointer-events:none;">
               <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>

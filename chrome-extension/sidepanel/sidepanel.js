@@ -8,7 +8,7 @@ import { setup as setupMentions, reset as resetMentions, getSelects as getMentio
 
 import { setup as setupMemo, loadMemos } from './tabs/memo.tab.js';
 import { setup as setupTasks, loadTasks } from './tabs/tasks.tab.js';
-import { setup as setupSettings, getSettings, applyThemeToDOM, applyTabVisibilityToDOM } from './tabs/settings.tab.js';
+import { setup as setupSettings, getSettings, applyThemeToDOM, applyTabVisibilityToDOM, runAutoCleanup } from './tabs/settings.tab.js';
 import { getMyProfile, getMyTeams, getConfig } from '../src/api/index.js';
 import { escapeHtml } from '../src/utils/index.js';
 import { STORAGE_KEYS, MESSAGE_TYPES, CHATOPS_CONFIG, TABS } from '../src/constants.js';
@@ -47,6 +47,9 @@ async function init() {
   setupTasks(state);
   setupSettings(state);
   setupTabs();
+  
+  // Background silent auto cleanup
+  runAutoCleanup().catch(e => console.error('[ChatOps Ext] Auto cleanup error:', e));
   
   const selectors = { ...getSearchSelects(), ...getMentionsSelects() };
   restoreState(selectors);
@@ -88,6 +91,33 @@ function setupTabs() {
     document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === `tab-${id}`));
   };
   document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
+  
+  // Handle sync badge clicks to navigate to settings sync section
+  ['syncBadgeTasks', 'syncBadgeNotes'].forEach(badgeId => {
+    document.getElementById(badgeId)?.addEventListener('click', () => {
+      switchTab('settings');
+      
+      // Select the sync sub-tab in Cài đặt
+      const syncSubTabBtn = document.querySelector(`#settingsSubTabs .memo-sub-tab[data-section="sync"]`);
+      if (syncSubTabBtn) {
+        syncSubTabBtn.click();
+      }
+      
+      setTimeout(() => {
+        const syncSection = document.getElementById('cloudSyncConfigArea');
+        if (syncSection) {
+          syncSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          syncSection.style.transition = 'all 0.4s ease';
+          syncSection.style.boxShadow = '0 0 16px var(--accent)';
+          syncSection.style.transform = 'scale(1.02)';
+          setTimeout(() => {
+            syncSection.style.boxShadow = '';
+            syncSection.style.transform = '';
+          }, 1200);
+        }
+      }, 150);
+    });
+  });
   
   chrome.storage.local.get([STORAGE_KEYS.SIDEPANEL_TAB], (res) => { 
     if (res[STORAGE_KEYS.SIDEPANEL_TAB]) { 

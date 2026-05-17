@@ -47,13 +47,13 @@ export const language = {
   foundMessages: 'Tìm thấy {count} tin nhắn',
 
   // Sidepanel Tasks Tab
-  taskTabLabel: 'Việc cần làm',
-  taskEmpty: 'Chưa có việc cần làm nào.',
+  taskTabLabel: 'Việc làm',
+  taskEmpty: 'Chưa có việc làm nào.',
   taskClickHint: 'Nhấn 📌 trên tin nhắn hoặc nhập ở trên.',
   taskPending: 'Đang thực hiện',
   taskCompleted: 'Đã hoàn thành',
   taskClearAll: 'Xóa tất cả',
-  taskPlaceholder: 'Nhập tên việc cần làm...',
+  taskPlaceholder: 'Nhập tên việc làm...',
   taskMarkIncomplete: 'Đánh dấu chưa xong',
   taskMarkDone: 'Đánh dấu đã xong',
   taskNoContent: '(Không có nội dung)',
@@ -65,13 +65,13 @@ export const language = {
   taskAddBtn: 'Thêm việc',
 
   // Sidepanel Memo (Notes) Tab
-  memoTasksEmpty: 'Chưa có việc cần làm nào.',
+  memoTasksEmpty: 'Chưa có việc làm nào.',
   memoNotesEmpty: 'Chưa có ghi chú nào.',
   memoClickHint: 'Nhấn 📌 trên tin nhắn hoặc nhập ở trên.',
   memoPending: 'Đang thực hiện',
   memoCompleted: 'Đã hoàn thành',
   memoClearAll: 'Xóa tất cả',
-  memoTaskPlaceholder: 'Nhập tên việc cần làm...',
+  memoTaskPlaceholder: 'Nhập tên việc làm...',
   memoNotePlaceholder: 'Nội dung ghi chú... (Enter để lưu)',
   memoMarkIncomplete: 'Đánh dấu chưa xong',
   memoMarkDone: 'Đánh dấu đã xong',
@@ -86,24 +86,24 @@ export const language = {
   noWorkspaces: 'Không tìm thấy Workspace nào',
 
   // Content Script - Reminder Banner
-  reminderTaskTitle: 'Việc cần làm chưa xong',
+  reminderTaskTitle: 'Việc làm chưa xong',
   reminderTitle: 'ChatOps Nhắc nhở',
   reminderDoneBtn: '✅ Xong — Dừng nhắc',
   reminderTaskCompleted: '✅ Đã hoàn thành!',
   
   // Content Script - Floating Button
-  floatingBtnTitle: 'Mở ChatOps Helper',
+  floatingBtnTitle: 'Mở ChatOps++',
   floatingBtnHide: 'Ẩn nút này',
-  extensionUpdated: 'ChatOps Helper đã được cập nhật! Vui lòng tải lại trang (F5) để tiếp tục.',
+  extensionUpdated: 'ChatOps++ đã được cập nhật! Vui lòng tải lại trang (F5) để tiếp tục.',
 
   // Content Script - Meme Picker
-  memeLibrary: '😂 Thư viện Meme',
+  memeLibrary: 'Thư viện ảnh',
   memeLoading: 'Đang tải...',
   memeError: 'Lỗi tải meme.',
 
   // Content Script - Quick Task Popover
-  quickTaskCreate: 'Tạo việc cần làm',
-  quickTaskTitle: 'Tạo việc cần làm',
+  quickTaskCreate: 'Tạo việc làm',
+  quickTaskTitle: 'Tạo việc làm',
   quickTaskNotePlaceholder: 'Thêm ghi chú (tùy chọn)...',
   quickTaskRemindAt: 'Nhắc lúc:',
   quickTaskHint: 'Hệ thống sẽ nhắc lại mỗi {minutes} phút cho đến khi hoàn thành (có thể thay đổi ở phần Cài đặt)',
@@ -111,11 +111,11 @@ export const language = {
   quickTaskCancel: 'Hủy',
   save: 'Lưu',
   cancel: 'Hủy',
-  quickTaskSaveSuccess: 'Đã lưu việc cần làm',
+  quickTaskSaveSuccess: 'Đã lưu việc làm',
   quickNoteTitle: 'Thêm ghi chú nhanh',
   quickNoteCreate: 'Thêm ghi chú nhanh',
   quickNoteSaveSuccess: 'Đã lưu ghi chú',
-  reminderTaskDefault: 'Bạn có một việc cần làm chưa hoàn thành.',
+  reminderTaskDefault: 'Bạn có một việc làm chưa hoàn thành.',
   directMessage: 'Tin nhắn trực tiếp',
   includeDirectMessage: 'Bao gồm Direct Message',
 

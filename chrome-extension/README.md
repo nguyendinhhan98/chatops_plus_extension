@@ -1,4 +1,4 @@
-# ChatOps Helper — Chrome Extension
+# ChatOps++ — Chrome Extension
 
 > Extension Chrome kế thừa chức năng [ChatOps MCP Server](../README.md), gọi API trực tiếp mà không cần thông qua AI.
 

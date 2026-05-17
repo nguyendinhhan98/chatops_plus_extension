@@ -1,4 +1,4 @@
-import { STORAGE_KEYS, CHATOPS_CONFIG } from '../../src/constants.js';
+import { STORAGE_KEYS, CHATOPS_CONFIG, MESSAGE_TYPES } from '../../src/constants.js';
 import { language } from '../../src/lang.js';
 import { getCustomEmojis, getConfig } from '../../src/api/index.js';
 
@@ -231,7 +231,9 @@ const DEFAULT_SETTINGS = {
   },
   memoCategories: ['Chung', 'Công việc', 'Cá nhân', 'Ý tưởng'],
   spamEnabled: true,
-  spamEmojis: ['thumbsup', 'heart', 'fire', 'rocket', 'laughing']
+  spamEmojis: ['thumbsup', 'heart', 'fire', 'rocket', 'laughing'],
+  autoCleanupDays: 30,
+  notificationType: 'both'
 };
 
 /**
@@ -254,6 +256,16 @@ async function loadAndApplySettings() {
 
   // Apply inputs
   document.getElementById('settingSnoozeMinutes').value = settings.snoozeMinutes;
+  
+  const autoCleanupSelect = document.getElementById('settingsAutoCleanupDays');
+  if (autoCleanupSelect) {
+    autoCleanupSelect.value = settings.autoCleanupDays !== undefined ? settings.autoCleanupDays : 30;
+  }
+
+  const notificationTypeSelect = document.getElementById('settingNotificationType');
+  if (notificationTypeSelect) {
+    notificationTypeSelect.value = settings.notificationType || 'both';
+  }
   
   // Apply colors to pickers
   const colorKeys = ['headerColor', 'navColor', 'accentColor'];
@@ -303,6 +315,9 @@ async function loadAndApplySettings() {
   if (snoozeHint) {
     snoozeHint.textContent = language.taskReminderHint.replace('{minutes}', settings.snoozeMinutes);
   }
+
+  // Update cloud sync status
+  updateSyncStatusText();
 }
 
 function setupEventListeners() {
@@ -335,6 +350,32 @@ function setupEventListeners() {
         customMemes.splice(idx, 1);
         await chrome.storage.local.set({ custom_memes: customMemes });
         renderSidepanelMemes();
+        return;
+      }
+
+      // Preview image when clicking the image
+      const clickedImg = e.target.closest('img');
+      if (clickedImg) {
+        const modal = document.getElementById('imagePreviewModal');
+        const previewImg = document.getElementById('imgPreviewTarget');
+        if (modal && previewImg) {
+          previewImg.src = clickedImg.src;
+          modal.style.display = 'flex';
+        }
+      }
+    });
+  }
+
+  // Close image preview modal handlers
+  const btnImgPreviewClose = document.getElementById('btnImagePreviewClose');
+  const imgPreviewModal = document.getElementById('imagePreviewModal');
+  if (btnImgPreviewClose && imgPreviewModal) {
+    btnImgPreviewClose.addEventListener('click', () => {
+      imgPreviewModal.style.display = 'none';
+    });
+    imgPreviewModal.addEventListener('click', (e) => {
+      if (e.target === imgPreviewModal) {
+        imgPreviewModal.style.display = 'none';
       }
     });
   }
@@ -352,6 +393,39 @@ function setupEventListeners() {
     }
     showAutoSaveFeedback();
   });
+
+  const notificationTypeSelect = document.getElementById('settingNotificationType');
+  if (notificationTypeSelect) {
+    notificationTypeSelect.addEventListener('change', async (e) => {
+      await updateSettings({ notificationType: e.target.value });
+      showAutoSaveFeedback();
+    });
+  }
+
+  const btnTestNotification = document.getElementById('btnTestNotification');
+  if (btnTestNotification) {
+    btnTestNotification.addEventListener('click', () => {
+      const typeVal = document.getElementById('settingNotificationType')?.value || 'both';
+      chrome.runtime.sendMessage({ 
+        type: MESSAGE_TYPES.TEST_NOTIFICATION, 
+        notificationType: typeVal 
+      }, (response) => {
+        if (response && response.ok) {
+          if (typeVal === 'in-page') {
+            alert('🟢 Đã gửi banner thử nghiệm thành công!\nVui lòng chuyển sang tab ChatOps đang mở để kiểm tra banner thông báo hiển thị ở đầu trang nhé.');
+          } else if (typeVal === 'system') {
+            alert('🟢 Chrome đã gửi thông báo đến hệ thống (OS) thành công!\nNếu vẫn không thấy banner hiện lên bên góc màn hình, bạn hãy kiểm tra xem có đang bật chế độ Tập trung (Focus/DND) hoặc bị kẹt thông báo trong Notification Center của máy không nhé.');
+          } else {
+            alert('🟢 Đã gửi thử nghiệm cả 2 hình thức thành công!\n1. Banner thông báo đã gửi đến tab ChatOps của bạn.\n2. Lệnh đẩy thông báo đã gửi đến hệ điều hành (OS) của máy tính.');
+          }
+        } else if (response && !response.ok) {
+          alert('🔴 Lỗi gửi thông báo từ background: ' + response.error);
+        } else if (!response) {
+          alert('🔴 Không thể kết nối đến Background Service Worker. Vui lòng Reload lại Extension ở trang chrome://extensions.');
+        }
+      });
+    });
+  }
 
   document.querySelectorAll('.color-preset').forEach(btn => {
     btn.addEventListener('click', (e) => {
@@ -506,19 +580,24 @@ function setupEventListeners() {
     const settings = await getSettings();
     if (!settings.memoCategories) settings.memoCategories = [];
     
+    // Check duplicate case-insensitively
+    const isDuplicate = settings.memoCategories.some(cat => cat.toLowerCase() === val.toLowerCase());
+    if (isDuplicate) {
+      showErrorFeedback("Danh mục này đã tồn tại!");
+      return;
+    }
+
     // Check maximum 5 categories
     if (settings.memoCategories.length >= 5) {
       showErrorFeedback("Tối đa chỉ được tạo 5 danh mục!");
       return;
     }
     
-    if (!settings.memoCategories.includes(val)) {
-      settings.memoCategories.push(val);
-      await updateSettings({ memoCategories: settings.memoCategories });
-      renderCategoryList(settings.memoCategories);
-      showAutoSaveFeedback();
-      chrome.runtime.sendMessage({ type: 'MEMO_CATEGORIES_UPDATED' });
-    }
+    settings.memoCategories.push(val);
+    await updateSettings({ memoCategories: settings.memoCategories });
+    renderCategoryList(settings.memoCategories);
+    showAutoSaveFeedback();
+    chrome.runtime.sendMessage({ type: 'MEMO_CATEGORIES_UPDATED' });
     inputCat.value = '';
   };
 
@@ -573,6 +652,226 @@ function setupEventListeners() {
       }
     }
   });
+
+  // Handle click on sub-tabs inside panels (Reactions & Sync)
+  document.querySelectorAll('.settings-subtab-bar').forEach(bar => {
+    bar.addEventListener('click', (e) => {
+      const btn = e.target.closest('.settings-subtab-btn');
+      if (!btn) return;
+
+      const subtabName = btn.dataset.subtab;
+      if (!subtabName) return;
+
+      // Deactivate all sibling buttons in this bar
+      bar.querySelectorAll('.settings-subtab-btn').forEach(b => {
+        b.classList.remove('active');
+      });
+
+      // Activate clicked button
+      btn.classList.add('active');
+
+      // Find the parent panel (e.g. #settings-section-reactions or #settings-section-sync)
+      const panel = bar.closest('.settings-tab-panel');
+      if (panel) {
+        // Hide all subtab content divs inside this panel
+        panel.querySelectorAll('.settings-subtab-content').forEach(content => {
+          content.style.display = 'none';
+        });
+
+        // Show target subtab content div
+        const targetContent = panel.querySelector(`#subtab-content-${subtabName}`);
+        if (targetContent) {
+          targetContent.style.display = 'block';
+        }
+      }
+    });
+  });
+
+  // Cloud Sync click listeners
+  const btnBackup = document.getElementById('btnSyncCloudBackup');
+  const btnRestore = document.getElementById('btnSyncCloudRestore');
+  
+  if (btnBackup) {
+    btnBackup.addEventListener('click', async () => {
+      try {
+        btnBackup.disabled = true;
+        btnBackup.textContent = '⏳ Đang sao lưu...';
+        
+        // Get memos from local
+        const localRes = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
+        const memos = localRes[STORAGE_KEYS.MEMOS] || [];
+        
+        // Fetch all current keys in sync to clean up older sync_memo_ keys
+        const allSyncData = await chrome.storage.sync.get(null);
+        const oldKeys = Object.keys(allSyncData).filter(k => k.startsWith('sync_memo_') || k === STORAGE_KEYS.MEMOS);
+        
+        if (oldKeys.length > 0) {
+          await chrome.storage.sync.remove(oldKeys);
+        }
+        
+        // Save each memo as an individual key to bypass the 8KB limit per item
+        const syncObj = {};
+        memos.forEach(m => {
+          try {
+            if (m && typeof m === 'object' && m.id) {
+              syncObj[`sync_memo_${m.id}`] = m;
+            }
+          } catch (e) {
+            console.warn('[ChatOps Ext] Ignoring invalid memo item:', m, e);
+          }
+        });
+        
+        if (Object.keys(syncObj).length > 0) {
+          await chrome.storage.sync.set(syncObj);
+        }
+        
+        // Save last sync time
+        await chrome.storage.local.set({ last_cloud_sync_time: Date.now() });
+        
+        await updateSyncStatusText();
+        showAutoSaveFeedback();
+        
+        alert('🎉 Đã sao lưu dữ liệu lên tài khoản Google thành công!');
+      } catch (err) {
+        console.error('[ChatOps Ext] Cloud backup error:', err);
+        alert('❌ Sao lưu thất bại. Vui lòng thử lại.');
+      } finally {
+        btnBackup.disabled = false;
+        btnBackup.textContent = '📤 Sao lưu lên Cloud';
+      }
+    });
+  }
+  
+  if (btnRestore) {
+    btnRestore.addEventListener('click', async () => {
+      try {
+        const confirmRestore = confirm('⚠️ Bạn có chắc chắn muốn khôi phục dữ liệu từ Cloud?\nDữ liệu ghi chú & việc làm trên máy này sẽ bị GHI ĐÈ hoàn toàn bởi dữ liệu từ tài khoản Google của bạn.');
+        if (!confirmRestore) return;
+        
+        btnRestore.disabled = true;
+        btnRestore.textContent = '⏳ Đang khôi phục...';
+        
+        // Get all keys from sync
+        const allSyncData = await chrome.storage.sync.get(null);
+        
+        // Support both monolithic old layout and new split-key layout
+        let memos = [];
+        if (allSyncData[STORAGE_KEYS.MEMOS] && Array.isArray(allSyncData[STORAGE_KEYS.MEMOS])) {
+          memos = allSyncData[STORAGE_KEYS.MEMOS];
+        } else {
+          memos = Object.keys(allSyncData)
+            .filter(k => k.startsWith('sync_memo_'))
+            .map(k => allSyncData[k]);
+        }
+        
+        // Sort memos by createdAt in descending order (newest first) to maintain consistent order
+        memos.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        
+        // Save to local
+        await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
+        
+        // Save sync time
+        await chrome.storage.local.set({ last_cloud_sync_time: Date.now() });
+        
+        await updateSyncStatusText();
+        showAutoSaveFeedback();
+        
+        // Force reload all UI tabs
+        chrome.runtime.sendMessage({ type: MESSAGE_TYPES.MEMO_UPDATED });
+        
+        alert('🎉 Đã khôi phục dữ liệu từ tài khoản Google thành công!');
+      } catch (err) {
+        console.error('[ChatOps Ext] Cloud restore error:', err);
+        alert('❌ Khôi phục thất bại. Vui lòng thử lại.');
+      } finally {
+        btnRestore.disabled = false;
+        btnRestore.textContent = '📥 Khôi phục từ Cloud';
+      }
+    });
+  }
+
+  // Auto-Cleanup settings change listener
+  const cleanupSelect = document.getElementById('settingsAutoCleanupDays');
+  if (cleanupSelect) {
+    cleanupSelect.addEventListener('change', async (e) => {
+      const days = parseInt(e.target.value, 10);
+      await updateSettings({ autoCleanupDays: days });
+      showAutoSaveFeedback();
+      
+      // Instantly run cleanup if days is changed to a positive number
+      if (days > 0) {
+        runAutoCleanup();
+      }
+    });
+  }
+
+  // Manual cleanup trigger
+  const btnManualCleanup = document.getElementById('btnManualCleanupNow');
+  if (btnManualCleanup) {
+    btnManualCleanup.addEventListener('click', async () => {
+      const confirmCleanup = confirm('🧹 Bạn có chắc chắn muốn dọn dẹp các ghi chú & việc làm đã hoàn thành cũ hơn thời gian thiết lập ngay bây giờ không?');
+      if (!confirmCleanup) return;
+      
+      btnManualCleanup.disabled = true;
+      btnManualCleanup.textContent = '⏳ Đang dọn dẹp...';
+      
+      try {
+        const deletedCount = await runAutoCleanupForce();
+        await updateStorageUsageDisplay();
+        alert(`🎉 Đã dọn dẹp thành công! Đã xóa ${deletedCount} mục cũ khỏi bộ nhớ máy.`);
+      } catch (err) {
+        console.error('[ChatOps Ext] Manual cleanup error:', err);
+        alert('❌ Dọn dẹp thất bại. Vui lòng thử lại.');
+      } finally {
+        btnManualCleanup.disabled = false;
+        btnManualCleanup.textContent = '🧹 Dọn dẹp ngay bây giờ';
+      }
+    });
+  }
+}
+
+async function updateSyncStatusText() {
+  const syncStatusEl = document.getElementById('syncStatusMessage');
+  if (!syncStatusEl) return;
+  
+  const res = await chrome.storage.local.get(['last_cloud_sync_time']);
+  const lastSync = res.last_cloud_sync_time;
+  
+  if (lastSync) {
+    const date = new Date(lastSync);
+    const hrs = String(date.getHours()).padStart(2, '0');
+    const mins = String(date.getMinutes()).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    syncStatusEl.innerHTML = `☁️ Đồng bộ lần cuối: <strong style="color:var(--success); font-weight:700;">${hrs}:${mins} - ${day}/${month}</strong>`;
+  } else {
+    syncStatusEl.innerHTML = `⏳ Chưa từng sao lưu hoặc khôi phục trên máy này.`;
+  }
+
+  // Update storage usage display
+  updateStorageUsageDisplay();
+}
+
+function formatBytes(bytes) {
+  if (bytes === 0) return '0 B';
+  if (bytes < 1024) return `${bytes} B`;
+  const kb = (bytes / 1024).toFixed(1);
+  return `${kb} KB`;
+}
+
+async function updateStorageUsageDisplay() {
+  const displayEl = document.getElementById('storageUsageDisplay');
+  if (!displayEl) return;
+  
+  try {
+    const localBytes = await chrome.storage.local.getBytesInUse(null);
+    const syncBytes = await chrome.storage.sync.getBytesInUse(null);
+    
+    displayEl.innerHTML = `💻 Máy này: <strong style="color:var(--accent);">${formatBytes(localBytes)}</strong> | ☁️ Đám mây: <strong style="color:var(--success);">${formatBytes(syncBytes)}</strong> / 100KB`;
+  } catch (err) {
+    console.error('[ChatOps Ext] Failed to get storage usage:', err);
+    displayEl.textContent = 'Không khả dụng';
+  }
 }
 
 function showAutoSaveFeedback() {
@@ -747,7 +1046,7 @@ function renderCustomEmojiGrid(settings, filterQuery = '') {
 
   if (filtered.length === 0) {
     if (customEmojiPage <= 1) {
-      gridItems.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--text-3); font-size:12px;">Không tìm thấy biểu cảm tự chế nào phù hợp.</div>`;
+      gridItems.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--text-3); font-size:12px;">Không tìm thấy hình ảnh nào phù hợp.</div>`;
     }
     return;
   }
@@ -806,10 +1105,10 @@ function renderCategoryList(categories) {
   const listEl = document.getElementById('settingCategoryList');
   if (!listEl) return;
   listEl.innerHTML = categories.map(cat => `
-    <li style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; background:var(--bg-2); border-radius:4px; border:1px solid var(--border);">
-      <span style="font-size:13px; font-weight:500; color:var(--text-1);">${escapeHtml(cat)}</span>
-      <button class="btn-delete-cat" data-cat="${escapeHtml(cat)}" title="Xóa" style="background:none; border:none; cursor:pointer; color:#ef4444; display:flex; align-items:center; justify-content:center; padding:4px;">
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>
+    <li style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:var(--bg-2); border-radius:6px; border:1px solid var(--border);">
+      <span style="font-size:14.5px; font-weight:600; color:var(--text-1);">${escapeHtml(cat)}</span>
+      <button class="btn-delete-cat btn-delete-memo" data-cat="${escapeHtml(cat)}" title="Xóa">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style="pointer-events:none;"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>
       </button>
     </li>
   `).join('');
@@ -831,13 +1130,26 @@ export function applyThemeToDOM(settings) {
   const root = document.documentElement;
   
   // Header Block
-  root.style.setProperty('--header-bg', settings.headerColor || '#1c58d9');
+  const headerColor = settings.headerColor || '#1c58d9';
+  root.style.setProperty('--header-bg', headerColor);
   
   // Nav Block
-  root.style.setProperty('--nav-bg', settings.navColor || '#1153ab');
+  const navColor = settings.navColor || '#1153ab';
+  root.style.setProperty('--nav-bg', navColor);
   
   // Accent Block (Primary color for buttons, etc)
-  root.style.setProperty('--accent', settings.accentColor || '#1c58d9');
+  const accentColor = settings.accentColor || '#1c58d9';
+  root.style.setProperty('--accent', accentColor);
+
+  // Dynamic Live Preview Mockup Update
+  const mockHeader = document.getElementById('mockupHeader');
+  if (mockHeader) mockHeader.style.background = headerColor;
+
+  const mockNav = document.getElementById('mockupNav');
+  if (mockNav) mockNav.style.background = navColor;
+
+  const mockAccentBtn = document.getElementById('mockupAccentBtn');
+  if (mockAccentBtn) mockAccentBtn.style.background = accentColor;
 }
 
 export function applyTabVisibilityToDOM(showTabs) {
@@ -879,17 +1191,66 @@ export async function renderSidepanelMemes() {
   const container = document.getElementById('sidepanel-memes-grid');
   if (!container) return;
 
+  // Helper functions for size calculation
+  const getBase64Size = (dataURL) => {
+    if (!dataURL) return 0;
+    const base64Part = dataURL.split(',')[1];
+    if (!base64Part) return dataURL.length;
+    const padding = base64Part.endsWith('==') ? 2 : (base64Part.endsWith('=') ? 1 : 0);
+    return (base64Part.length * 3 / 4) - padding;
+  };
+
+  const formatSize = (bytes) => {
+    if (bytes === 0) return '0 KB';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  };
+
+  // Calculate total size and individual sizes
+  let totalBytes = 0;
+  const memeSizes = customMemes.map(url => {
+    const bytes = getBase64Size(url);
+    totalBytes += bytes;
+    return bytes;
+  });
+
+  // Update dynamic storage indicators
+  const storageText = document.getElementById('sidepanel-memes-storage-text');
+  const storageBar = document.getElementById('sidepanel-memes-storage-bar');
+  const maxStorageBytes = 5 * 1024 * 1024; // 5MB limit
+
+  if (storageText && storageBar) {
+    const totalFormatted = formatSize(totalBytes);
+    storageText.textContent = `${totalFormatted} / 5 MB`;
+    const percent = Math.min((totalBytes / maxStorageBytes) * 100, 100);
+    storageBar.style.width = `${percent}%`;
+    
+    if (percent > 85) {
+      storageBar.style.background = 'var(--danger)';
+    } else if (percent > 60) {
+      storageBar.style.background = 'var(--warning)';
+    } else {
+      storageBar.style.background = 'var(--accent)';
+    }
+  }
+
   if (customMemes.length === 0) {
-    container.innerHTML = `<span style="font-size:12px; color:var(--text-3); grid-column: 1/-1; text-align: center; margin: auto; padding: 10px;">Chưa có meme tự thêm. Tải lên để sử dụng!</span>`;
+    container.innerHTML = `<span style="font-size:12px; color:var(--text-3); grid-column: 1/-1; text-align: center; margin: auto; padding: 10px;">Chưa có ảnh tự thêm. Tải lên để sử dụng!</span>`;
     return;
   }
 
-  container.innerHTML = customMemes.map((url, idx) => `
-    <div style="position:relative; width: 100%; padding-top: 100%; border-radius: 4px; overflow: hidden; border: 1px solid var(--border); background: var(--bg-1);">
-      <img src="${url}" style="position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover;" />
-      <button class="sidepanel-meme-delete" data-idx="${idx}" style="position:absolute; top:2px; right:2px; background:rgba(0,0,0,0.6); color:white; border:none; border-radius:50%; width:16px; height:16px; font-size:10px; display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0; line-height:1; font-weight:bold; z-index: 10;">&times;</button>
-    </div>
-  `).join('');
+  container.innerHTML = customMemes.map((url, idx) => {
+    const formattedSize = formatSize(memeSizes[idx]);
+    return `
+      <div class="sidepanel-meme-card">
+        <img class="sidepanel-meme-img" src="${url}" />
+        <span class="sidepanel-meme-size">${formattedSize}</span>
+        <button class="sidepanel-meme-delete" data-idx="${idx}">&times;</button>
+      </div>
+    `;
+  }).join('');
 }
 
 export function compressSidepanelImage(file, maxWidth, maxHeight, quality, callback) {
@@ -931,4 +1292,62 @@ export function compressSidepanelImage(file, maxWidth, maxHeight, quality, callb
     img.src = e.target.result;
   };
   reader.readAsDataURL(file);
+}
+
+export async function runAutoCleanup() {
+  const settings = await getSettings();
+  const days = settings.autoCleanupDays;
+  if (days === 0) return 0; // 0 means Never
+  
+  const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
+  const memos = res[STORAGE_KEYS.MEMOS] || [];
+  
+  let cutoffTime;
+  if (days === -1) {
+    cutoffTime = Date.now() + 10000; // Ngay lập tức (cộng thêm 10s sai lệch hệ thống)
+  } else {
+    cutoffTime = Date.now() - (days * 24 * 60 * 60 * 1000);
+  }
+  
+  let deletedCount = 0;
+  const cleanMemos = memos.filter(m => {
+    if (m && m.done) {
+      const completedTime = m.doneAt || m.createdAt || 0;
+      if (completedTime < cutoffTime) {
+        deletedCount++;
+        if (m.id) chrome.alarms.clear(m.id);
+        return false;
+      }
+    }
+    return true;
+  });
+  
+  if (deletedCount > 0) {
+    await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: cleanMemos });
+    console.log(`[ChatOps Ext] Auto-cleaned ${deletedCount} completed items (mode: ${days} days).`);
+    chrome.runtime.sendMessage({ type: MESSAGE_TYPES.MEMO_UPDATED });
+  }
+  return deletedCount;
+}
+
+export async function runAutoCleanupForce() {
+  // Đối với nút bấm thủ công "Dọn dẹp ngay", dọn sạch TOÀN BỘ các mục đã hoàn thành ngay lập tức không cần lọc ngày
+  const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
+  const memos = res[STORAGE_KEYS.MEMOS] || [];
+  
+  let deletedCount = 0;
+  const cleanMemos = memos.filter(m => {
+    if (m && m.done) {
+      deletedCount++;
+      if (m.id) chrome.alarms.clear(m.id);
+      return false;
+    }
+    return true;
+  });
+  
+  if (deletedCount > 0) {
+    await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: cleanMemos });
+    chrome.runtime.sendMessage({ type: MESSAGE_TYPES.MEMO_UPDATED });
+  }
+  return deletedCount;
 }

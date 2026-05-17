@@ -53,17 +53,43 @@ export async function handleTaskAlarm(taskId) {
     if (task.note) message += (message ? ' — ' : '') + task.note;
     if (!message) message = language.reminderTaskDefault;
 
-    // Send banner to all ChatOps tabs
-    const tabs = await chrome.tabs.query({ url: `${CHATOPS_CONFIG.DEFAULT_URL}/*` });
-    for (const tab of tabs) {
-      chrome.tabs.sendMessage(tab.id, {
-        type: MESSAGE_TYPES.SHOW_REMINDER,
-        message,
-        taskId,
-        postId: task.postId,
-        teamName: task.teamName,
-        isTask: true
-      }).catch(() => {});
+    // Get notification settings
+    const settingsRes = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS]);
+    const settings = settingsRes[STORAGE_KEYS.SETTINGS] || {};
+    const notificationType = settings.notificationType || 'both';
+
+    // 1. Send banner to all ChatOps tabs if configured
+    if (notificationType === 'both' || notificationType === 'in-page') {
+      const tabs = await chrome.tabs.query({ url: `${CHATOPS_CONFIG.DEFAULT_URL}/*` });
+      for (const tab of tabs) {
+        chrome.tabs.sendMessage(tab.id, {
+          type: MESSAGE_TYPES.SHOW_REMINDER,
+          message,
+          taskId,
+          postId: task.postId,
+          teamName: task.teamName,
+          isTask: true
+        }).catch(() => {});
+      }
+    }
+
+    // 2. Trigger native OS notification if configured
+    if (notificationType === 'both' || notificationType === 'system') {
+      console.log('[ChatOps Ext] Attempting to trigger OS notification for task:', taskId);
+      chrome.notifications.create(taskId, {
+        type: 'basic',
+        iconUrl: chrome.runtime.getURL('icons/icon128.png'),
+        title: '🎯 Nhắc nhở ChatOps++',
+        message: message,
+        priority: 2,
+        requireInteraction: true
+      }, (notificationId) => {
+        if (chrome.runtime.lastError) {
+          console.error('[ChatOps Ext] Failed to create OS notification:', chrome.runtime.lastError.message);
+        } else {
+          console.log('[ChatOps Ext] OS notification created successfully with ID:', notificationId);
+        }
+      });
     }
 
     // Set extension badge so user sees it in any tab

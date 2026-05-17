@@ -108,19 +108,30 @@ async function showReminderBanner(text, taskId, isTask = false, postId = null, t
           textEl.style.overflow = 'hidden';
           textEl.style.textOverflow = 'ellipsis';
           textEl.style.maxWidth = '220px';
+          textEl.style.maxHeight = 'none';
+
+          // Reschedule a short auto-close timer (3 seconds) when collapsed back
+          if (closeTimer) clearTimeout(closeTimer);
+          closeTimer = setTimeout(() => {
+            banner.classList.remove('visible');
+            setTimeout(() => banner.remove(), 400);
+          }, 3000);
         } else {
           collBtn.innerHTML = '▼';
           collBtn.classList.add('expanded');
           textEl.style.whiteSpace = 'pre-wrap';
-          textEl.style.overflow = 'visible';
+          textEl.style.overflowY = 'auto';
+          textEl.style.maxHeight = '120px';
           textEl.style.textOverflow = 'clip';
           textEl.style.maxWidth = 'none';
           
-          // Stop auto-close when user expands to read
-          if (closeTimer) {
-            clearTimeout(closeTimer);
-            closeTimer = null;
-          }
+          // Reset the close timer to a generous 15 seconds when expanded so it eventually closes
+          if (closeTimer) clearTimeout(closeTimer);
+          closeTimer = setTimeout(() => {
+            banner.classList.remove('visible');
+            setTimeout(() => banner.remove(), 400);
+          }, 15000);
+          
           if (progressEl) {
             progressEl.style.animationPlayState = 'paused';
             progressEl.style.opacity = '0';
@@ -332,11 +343,26 @@ function showToast(msg) {
     }
 
     container.innerHTML = customMemes.map((url, idx) => `
-      <div style="position:relative; flex-shrink:0; display:inline-block; width:48px; height:48px;">
-        <img src="${url}" class="chatops-custom-meme-item" style="width: 48px; height: 48px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 1px solid #e0e0e5;" />
-        <button class="chatops-custom-meme-delete" data-idx="${idx}" style="position:absolute; top:-2px; right:-2px; background:rgba(0,0,0,0.6); color:white; border:none; border-radius:50%; width:14px; height:14px; font-size:8px; display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0; line-height:1; font-weight:bold; outline:none; transition:background 0.2s;">&times;</button>
+      <div class="chatops-custom-meme-cell">
+        <img src="${url}" class="chatops-custom-meme-item" title="Nhấn để gửi" />
+        <button class="chatops-custom-meme-delete" data-idx="${idx}" title="Xóa ảnh">&times;</button>
       </div>
     `).join('');
+  }
+
+  // ─── Meme Preview (hover/click) ───
+  function openMemePreview(src) {
+    let overlay = document.getElementById('chatops-meme-preview-overlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'chatops-meme-preview-overlay';
+      overlay.className = 'chatops-meme-preview-overlay';
+      overlay.innerHTML = `<img id="chatops-meme-preview-img" src="" alt="preview" />`;
+      overlay.addEventListener('click', () => overlay.classList.add('hidden'));
+      document.body.appendChild(overlay);
+    }
+    overlay.querySelector('#chatops-meme-preview-img').src = src;
+    overlay.classList.remove('hidden');
   }
 
   function compressImage(file, maxWidth, maxHeight, quality, callback) {
@@ -429,36 +455,25 @@ function showToast(msg) {
       memePickerEl.innerHTML = `
         <div class="chatops-meme-picker-header">
           <span>${language.memeLibrary}</span>
-          <button type="button" id="chatops-meme-close" style="background:none; border:none; cursor:pointer;">✖</button>
+          <button type="button" id="chatops-meme-close" class="chatops-meme-close-btn">✕</button>
         </div>
-        <div class="chatops-meme-upload-area" style="padding: 8px 12px; border-bottom: 1px solid #e0e0e5; background: #fafafa; display: flex; flex-direction: column; gap: 6px;">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-size:11px; font-weight:700; color:#555; text-transform:uppercase;">Meme của bạn</span>
-            <label for="chatops-meme-upload-input" style="font-size: 11px; font-weight: 700; color: #1c58d9; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; background: rgba(28, 88, 217, 0.08); padding: 4px 8px; border-radius: 4px; border: 1px solid rgba(28, 88, 217, 0.15); transition: all 0.2s;">
-              ➕ Thêm ảnh
+        <div class="chatops-meme-upload-area">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
+            <span style="font-size:11px; font-weight:700; color:#555; text-transform:uppercase; letter-spacing:0.5px;">Ảnh của bạn</span>
+            <label for="chatops-meme-upload-input" class="chatops-meme-upload-btn">
+              + Tải ảnh lên
             </label>
             <input type="file" id="chatops-meme-upload-input" accept="image/*" style="display:none;" />
           </div>
-          <div id="chatops-custom-memes-grid" style="display: flex; gap: 8px; overflow-x: auto; padding: 4px 0; min-height: 48px; max-height: 70px; align-items: center;">
-            <span style="font-size:11px; color:#999; margin: auto;">Chưa có meme tự thêm</span>
+          <div id="chatops-custom-memes-grid" class="chatops-custom-memes-grid-container">
+            <span class="chatops-meme-empty">Chưa có ảnh. Nhấn "Tải ảnh lên" để thêm!</span>
           </div>
-        </div>
-        <div id="chatops-meme-grid" class="chatops-meme-picker-grid">
-          <div style="grid-column: 1/-1; text-align:center; padding: 20px;">${language.memeLoading}</div>
         </div>
       `;
       document.body.appendChild(memePickerEl);
       document.getElementById('chatops-meme-close').addEventListener('click', () => {
         memePickerEl.classList.add('hidden');
       });
-      document.getElementById('chatops-meme-grid').addEventListener('click', (e) => {
-        const img = e.target.closest('.chatops-meme-item');
-        if (img) {
-          insertMemeToChat(img.src);
-          memePickerEl.classList.add('hidden');
-        }
-      });
-      loadMemesToMainUI();
       loadCustomMemes();
       registerCustomMemeEvents();
     }
@@ -665,7 +680,7 @@ function showToast(msg) {
       if (imgEl) {
         msgTextFull = '[Hình ảnh] Vui lòng xem trực tiếp trên ChatOps';
       } else {
-        msgTextFull = '(Content not accessible)';
+        msgTextFull = '[Không có nội dung chữ]';
       }
     }
     const postId = postEl.id ? postEl.id.replace(SELECTORS.POST_ID_PREFIX, '') : '';
@@ -690,7 +705,7 @@ function showToast(msg) {
     } else {
       if (taskSection) taskSection.style.display = 'block';
       if (noteSection) noteSection.style.display = 'none';
-      popover.querySelector('.cqn-title').textContent = language.quickTaskTitle || 'Tạo việc cần làm';
+      popover.querySelector('.cqn-title').textContent = language.quickTaskTitle || 'Tạo việc làm';
       if (hintEl) {
         const res = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS]);
         const settings = res[STORAGE_KEYS.SETTINGS] || { snoozeMinutes: 5 };
@@ -801,7 +816,7 @@ function showToast(msg) {
           const taskBtn = document.createElement('button');
           taskBtn.className = 'chatops-quick-note-btn task-btn';
           taskBtn.innerHTML = '🎯';
-          taskBtn.title = language.quickTaskCreate || 'Tạo việc cần làm';
+          taskBtn.title = language.quickTaskCreate || 'Tạo việc làm';
           taskBtn.addEventListener('click', (e) => {
             e.preventDefault(); e.stopPropagation();
             openQuickNote(postEl, taskBtn, 'task');
