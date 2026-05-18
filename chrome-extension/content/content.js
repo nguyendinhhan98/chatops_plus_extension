@@ -3,8 +3,13 @@
  */
 
 import { MESSAGE_TYPES, UI_CONFIG, SELECTORS, STORAGE_KEYS, ALARMS } from '../src/constants.js';
-import { language } from '../src/lang.js';
+import { language, loadLanguage } from '../src/lang.js';
 import { formatRichText } from '../src/utils/formatter.js';
+
+// Global UI elements shared between the message listeners and page DOM
+let quickNotePopover = null;
+let quickNoteBackdrop = null;
+let imagePickerEl = null;
 function initCommonFlatpickr(el, options = {}) {
   if (typeof flatpickr !== 'function') {
     console.warn('[ChatOps Ext] Flatpickr is not available globally.');
@@ -21,9 +26,30 @@ function initCommonFlatpickr(el, options = {}) {
 }
 
 // --- Listen for reminder notifications from the background script ---
-chrome.runtime.onMessage.addListener((message) => {
+chrome.runtime.onMessage.addListener(async (message) => {
   if (message.type === MESSAGE_TYPES.SHOW_REMINDER) {
     showReminderBanner(message.message, message.taskId, message.isTask, message.postId, message.teamName);
+  } else if (message.type === 'APP_LANG_CHANGED') {
+    await loadLanguage();
+    const btn = document.getElementById('chatops-ext-floating-btn');
+    if (btn) {
+      btn.title = language.floatingBtnTitle;
+      const closeBtn = document.getElementById('chatops-ext-close-btn');
+      if (closeBtn) closeBtn.title = language.floatingBtnHide;
+    }
+    // Clear cached popover elements so they are rebuilt in the new language
+    if (quickNotePopover) {
+      quickNotePopover.remove();
+      quickNotePopover = null;
+    }
+    if (quickNoteBackdrop) {
+      quickNoteBackdrop.remove();
+      quickNoteBackdrop = null;
+    }
+    if (imagePickerEl) {
+      imagePickerEl.remove();
+      imagePickerEl = null;
+    }
   }
 });
 
@@ -118,7 +144,7 @@ async function showReminderBanner(text, taskId, isTask = false, postId = null, t
     ${isTask ? `
       <div class="crb-task-actions">
         <button class="crb-done-btn" data-task-id="${taskId}">${language.reminderDoneBtn}</button>
-        ${postId ? `<button class="crb-jump-btn" data-post-id="${postId}">${language.viewMessage || 'Go to message'}</button>` : ''}
+        ${postId ? `<button class="crb-jump-btn" data-post-id="${postId}">${language.viewMessage}</button>` : ''}
       </div>
     ` : ''}
     <div class="crb-progress"></div>
@@ -258,7 +284,8 @@ function showToast(msg) {
   }, UI_CONFIG.TOAST_DURATION);
 }
 
-(function () {
+(async function () {
+  await loadLanguage();
   injectDynamicTheme();
   // Prevent duplicate injections
   if (document.getElementById('chatops-ext-floating-btn')) return;
@@ -269,7 +296,7 @@ function showToast(msg) {
   btn.style.cursor = 'pointer';
 
   const BUBBLE_SVG = `
-    <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" style="width:32px; height:32px; display:block;">
+    <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" style="width:38px; height:38px; display:block;">
       <circle cx="256" cy="240" r="210" fill="#43a047"/>
       <path d="M160 400 L120 480 L260 420" fill="#43a047"/>
       <circle cx="165" cy="240" r="32" fill="white"/>
@@ -398,7 +425,7 @@ function showToast(msg) {
     });
   }
 
-  let imagePickerEl = null;
+  imagePickerEl = null;
 
   function getBase64Size(dataURL) {
     if (!dataURL) return 0;
@@ -436,14 +463,14 @@ function showToast(msg) {
     }
 
     if (customMemes.length === 0) {
-      container.innerHTML = `<span style="font-size:11.5px; color:#999; text-align:center; width:100%; display:block; padding: 24px 0; grid-column: 1 / -1;">${language.noCustomImages || 'No custom images yet'}</span>`;
+      container.innerHTML = `<span style="font-size:11.5px; color:#999; text-align:center; width:100%; display:block; padding: 24px 0; grid-column: 1 / -1;">${language.noCustomImages}</span>`;
       return;
     }
 
     container.innerHTML = customMemes.map((url, idx) => `
       <div class="chatops-custom-image-cell">
-        <img src="${url}" class="chatops-custom-image-item" loading="lazy" title="${language.clickToSend || 'Click to send'}" />
-        <button class="chatops-custom-image-delete" data-idx="${idx}" title="${language.deleteImage || 'Delete image'}">&times;</button>
+        <img src="${url}" class="chatops-custom-image-item" loading="lazy" title="${language.clickToSend}" />
+        <button class="chatops-custom-image-delete" data-idx="${idx}" title="${language.deleteImage}">&times;</button>
       </div>
     `).join('');
   }
@@ -512,7 +539,7 @@ function showToast(msg) {
         if (files.length === 0) return;
 
         if (files.length > 10) {
-          alert(language.maxUploadLimitError || 'You can only upload up to 10 images at once.');
+          alert(language.maxUploadLimitError);
         }
 
         const filesToProcess = files.slice(0, 10);
@@ -544,7 +571,7 @@ function showToast(msg) {
           });
           
           if (totalBytes + newBytes > 10 * 1024 * 1024) {
-            alert(language.storageLimitExceeded || 'Storage limit reached (10 MB). Please delete some images before uploading.');
+            alert(language.storageLimitExceeded);
             fileInput.value = '';
             return;
           }
@@ -594,16 +621,16 @@ function showToast(msg) {
         <div class="chatops-image-upload-area">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
             <div style="display:flex; flex-direction:column; line-height: 1.2;">
-              <span id="chatops-your-images-header" style="font-size:11px; font-weight:700; color:#555; text-transform:uppercase; letter-spacing:0.5px;">${language.yourImages || 'Your images'}</span>
+              <span id="chatops-your-images-header" style="font-size:11px; font-weight:700; color:#555; text-transform:uppercase; letter-spacing:0.5px;">${language.yourImages}</span>
               <span id="chatops-your-images-size" style="font-size:10px; color:#888; margin-top:2px;">(0 KB / 10 MB)</span>
             </div>
             <label for="chatops-image-upload-input" class="chatops-image-upload-btn">
-              ${language.uploadImageBtn || '+ Upload image'}
+              ${language.uploadImageBtn}
             </label>
             <input type="file" id="chatops-image-upload-input" accept="image/*" style="display:none;" multiple />
           </div>
           <div id="chatops-custom-images-grid" class="chatops-custom-images-grid-container">
-            <span class="chatops-image-empty">${language.noImagesHint || 'No images yet. Click "Upload image" to add!'}</span>
+            <span class="chatops-image-empty">${language.noImagesHint}</span>
           </div>
         </div>
       `;
@@ -683,8 +710,8 @@ function showToast(msg) {
   }
 
   // --- Quick Task on Messages ---
-  let quickNotePopover = null;
-  let quickNoteBackdrop = null;
+  quickNotePopover = null;
+  quickNoteBackdrop = null;
 
   function convertToCustomDropdown(nativeSelect, width = null) {
     if (!nativeSelect) return;
@@ -784,11 +811,11 @@ function showToast(msg) {
 
   function getCategoryDisplayName(cat) {
     switch (cat.toLowerCase()) {
-      case 'all': return language.categoryAll || 'ALL';
-      case 'general': return language.categoryGeneral || 'General';
-      case 'work': return language.categoryWork || 'Work';
-      case 'personal': return language.categoryPersonal || 'Personal';
-      case 'ideas': return language.categoryIdeas || 'Ideas';
+      case 'all': return language.categoryAll;
+      case 'general': return language.categoryGeneral;
+      case 'work': return language.categoryWork;
+      case 'personal': return language.categoryPersonal;
+      case 'ideas': return language.categoryIdeas;
       default: return cat;
     }
   }
@@ -804,25 +831,25 @@ function showToast(msg) {
     quickNotePopover.id = 'chatops-quick-note-popover';
     quickNotePopover.innerHTML = `
       <div class="sp-modal-header" style="border-top-left-radius: 11px; border-top-right-radius: 11px; border-bottom: 1px solid #cbd5e1;">
-        <h3 class="sp-modal-title cqn-title" style="margin: 0; font-size: 13px; font-weight: 700; text-transform: uppercase;">ADD NEW TASK</h3>
-        <button id="cqn-close" class="sp-modal-close-btn" title="Close">&times;</button>
+        <h3 class="sp-modal-title cqn-title" style="margin: 0; font-size: 13px; font-weight: 700; text-transform: uppercase;">${language.modalAddTaskTitle.toUpperCase()}</h3>
+        <button id="cqn-close" class="sp-modal-close-btn" title="${language.cancel}">&times;</button>
       </div>
       
       <div class="sp-modal-body" style="padding: 14px 16px; box-sizing: border-box; background: #ffffff; border-bottom-left-radius: 11px; border-bottom-right-radius: 11px;">
         <div class="cqn-title-row" style="margin-bottom: 8px; width: 100%;">
-          <input type="text" id="cqn-note-title" placeholder="Title (optional)" style="width: 50%; height: 28px; font-size: 12px; font-weight: 600; padding: 4px 8px; border-radius: 6px; border: 1px solid #cbd5e1; outline: none; box-sizing: border-box; font-family: inherit;" autocomplete="off">
+          <input type="text" id="cqn-note-title" placeholder="${language.titleOptional}" style="width: 50%; height: 28px; font-size: 12px; font-weight: 600; padding: 4px 8px; border-radius: 6px; border: 1px solid #cbd5e1; outline: none; box-sizing: border-box; font-family: inherit;" autocomplete="off">
         </div>
         <div class="task-quick-input-row" style="margin-bottom: 12px; width: 100%;">
-          <textarea id="cqn-note-text" placeholder="Add new task... (Shift + Enter to save)" class="quick-note-textarea" style="width: 100%; min-height: 110px; resize: vertical; box-sizing: border-box;"></textarea>
+          <textarea id="cqn-note-text" placeholder="${language.taskTextareaPlaceholder}" class="quick-note-textarea" style="width: 100%; min-height: 110px; resize: vertical; box-sizing: border-box;"></textarea>
         </div>
         
         <div id="cqn-note-section" style="margin-bottom: 12px; width: 100%; display: none;">
-          <div style="font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase; margin-bottom:4px;">${language.categoryLabel || 'Category:'}</div>
+          <div style="font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase; margin-bottom:4px;">${language.categoryLabel}</div>
           <select id="cqn-category" class="custom-select" style="width:100%; height: 34px; font-size: 12.5px; border-radius: 6px; border:1px solid #cbd5e1; background:#fff; outline:none; cursor:pointer; box-sizing: border-box;">
-            <option value="general">📁 ${language.categoryGeneral || 'General'}</option>
-            <option value="work">📁 ${language.categoryWork || 'Work'}</option>
-            <option value="personal">📁 ${language.categoryPersonal || 'Personal'}</option>
-            <option value="ideas">📁 ${language.categoryIdeas || 'Ideas'}</option>
+            <option value="general">📁 ${language.categoryGeneral}</option>
+            <option value="work">📁 ${language.categoryWork}</option>
+            <option value="personal">📁 ${language.categoryPersonal}</option>
+            <option value="ideas">📁 ${language.categoryIdeas}</option>
           </select>
         </div>
 
@@ -837,17 +864,17 @@ function showToast(msg) {
                   <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z" />
                   <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z" />
                 </svg>
-                Remind at:
+                ${language.taskReminderLabel}
               </label>
-              <input type="text" id="cqn-reminder-time" class="quick-task-datetime" placeholder="Choose date..."
+              <input type="text" id="cqn-reminder-time" class="quick-task-datetime" placeholder="${language.chooseDatePlaceholder}"
                 style="flex:1; cursor:pointer; background:transparent; border:none; outline:none; font-size:12.5px; width:100%; min-width:0; padding:0; margin:0; display:inline-flex; align-items:center; line-height:1; height:100%; box-shadow:none;">
             </div>
 
-            <span style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin: 0 4px; flex-shrink: 0; user-select: none; background: #f1f5f9; padding: 4px 6px; border-radius: 4px; border: 1px solid #e2e8f0; line-height: 1;">OR</span>
+            <span style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin: 0 4px; flex-shrink: 0; user-select: none; background: #f1f5f9; padding: 4px 6px; border-radius: 4px; border: 1px solid #e2e8f0; line-height: 1;">${language.orLabel}</span>
 
             <select id="cqnReminderSelect" class="custom-select"
               style="width: 115px; height: 34px; font-size: 12.5px; border-radius: 6px; cursor: pointer; outline: none; box-sizing: border-box; flex-shrink: 0; line-height: 1; padding: 0 24px 0 10px;">
-              <option value="">Remind in...</option>
+              <option value="">${language.remindInPreset}</option>
               <option value="15">+15m</option>
               <option value="30">+30m</option>
               <option value="60">+1h</option>
@@ -861,7 +888,7 @@ function showToast(msg) {
         </div>
 
         <div style="display: flex; gap: 8px; margin-top: 16px; justify-content: flex-end; width: 100%; border-top: 1px solid #cbd5e1; padding-top: 12px; box-sizing: border-box;">
-          <button type="button" id="cqn-cancel" class="btn btn-secondary" style="padding: 0 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid #cbd5e1; background: transparent; height: 36px; color: #475569; display: inline-flex; align-items: center; justify-content: center; margin: 0; box-sizing: border-box;">Cancel</button>
+          <button type="button" id="cqn-cancel" class="btn btn-secondary" style="padding: 0 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid #cbd5e1; background: transparent; height: 36px; color: #475569; display: inline-flex; align-items: center; justify-content: center; margin: 0; box-sizing: border-box;">${language.cancel}</button>
           <button type="button" id="cqn-save-note" class="btn btn-primary" style="padding: 0 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; background: #1c58d9; color: #fff; border: none; height: 36px; min-width: 90px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 4px rgba(28, 88, 217, 0.2); margin: 0; box-sizing: border-box;">🎯 Add Task</button>
         </div>
       </div>
@@ -1013,9 +1040,9 @@ function showToast(msg) {
     if (!msgTextFull) {
       const imgEl = postEl.querySelector('img.attachment__image, img.markdown-inline-img, .post-image__column img');
       if (imgEl) {
-        msgTextFull = language.msgPreviewImage || '[Image] Please view directly on ChatOps';
+        msgTextFull = language.msgPreviewImage;
       } else {
-        msgTextFull = language.msgPreviewNoText || '[No text content]';
+        msgTextFull = language.msgPreviewNoText;
       }
     }
     const postId = postEl.id ? postEl.id.replace(SELECTORS.POST_ID_PREFIX, '') : '';
@@ -1051,17 +1078,17 @@ function showToast(msg) {
     if (popover.dataset.mode === 'note') {
       if (taskSection) taskSection.style.display = 'none';
       if (noteSection) noteSection.style.display = 'block';
-      popover.querySelector('.cqn-title').textContent = language.quickNoteTitle || 'Add Quick Note';
-      saveBtn.innerHTML = '📝 Add Note';
+      popover.querySelector('.cqn-title').textContent = language.quickNoteTitle;
+      saveBtn.innerHTML = language.memoAddBtn;
     } else {
       if (taskSection) taskSection.style.display = 'block';
       if (noteSection) noteSection.style.display = 'none';
-      popover.querySelector('.cqn-title').textContent = language.quickTaskTitle || 'ADD NEW TASK';
-      saveBtn.innerHTML = '🎯 Add Task';
+      popover.querySelector('.cqn-title').textContent = language.quickTaskTitle;
+      saveBtn.innerHTML = '🎯 ' + language.taskAddBtn;
       if (hintEl) {
         const res = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS]);
         const settings = res[STORAGE_KEYS.SETTINGS] || { snoozeMinutes: 5 };
-        hintEl.innerHTML = `⏰ Starts at selected time — snoozes every ${settings.snoozeMinutes} mins until completed (<a href="#" class="settings-subtab-link" data-subtab="features-snooze" style="color:var(--chatops-accent); font-weight:700; text-decoration:underline;">change in Settings</a>)`;
+        hintEl.innerHTML = language.taskReminderHint.replace('{minutes}', settings.snoozeMinutes);
       }
     }
 
@@ -1113,7 +1140,7 @@ function showToast(msg) {
     
     popover.classList.remove('visible');
     quickNoteBackdrop.classList.remove('visible');
-    showToast(mode === 'note' ? (language.quickNoteSaveSuccess || 'Note saved successfully') : language.quickTaskSaveSuccess);
+    showToast(mode === 'note' ? language.quickNoteSaveSuccess : language.quickTaskSaveSuccess);
   }
 
   let cachedSettings = { spamEnabled: true, memeEnabled: true, showTabs: { search: true, tasks: true, notes: true, missed: true } };
@@ -1183,7 +1210,7 @@ function showToast(msg) {
           const taskBtn = document.createElement('button');
           taskBtn.className = 'chatops-quick-note-btn task-btn';
           taskBtn.innerHTML = '🎯';
-          taskBtn.title = language.quickTaskCreate || 'Quick Task';
+          taskBtn.title = language.quickTaskCreate;
           taskBtn.addEventListener('click', (e) => {
             e.preventDefault(); e.stopPropagation();
             openQuickNote(postEl, taskBtn, 'task');
@@ -1200,7 +1227,7 @@ function showToast(msg) {
           const noteBtn = document.createElement('button');
           noteBtn.className = 'chatops-quick-note-btn note-btn';
           noteBtn.innerHTML = '📝';
-          noteBtn.title = language.quickNoteCreate || 'Add Quick Note';
+          noteBtn.title = language.quickNoteCreate;
           noteBtn.addEventListener('click', (e) => {
             e.preventDefault(); e.stopPropagation();
             openQuickNote(postEl, noteBtn, 'note');
@@ -1218,7 +1245,7 @@ function showToast(msg) {
           const spamBtn = document.createElement('button');
           spamBtn.className = 'chatops-quick-note-btn spam-btn';
           spamBtn.innerHTML = '🔥';
-          spamBtn.title = language.spamReactionsTitle || 'Spam Reactions';
+          spamBtn.title = language.spamReactionsTitle;
           spamBtn.addEventListener('click', (e) => {
             e.preventDefault(); e.stopPropagation();
             const postId = postEl.id ? postEl.id.replace(SELECTORS.POST_ID_PREFIX, '') : '';
@@ -1238,9 +1265,9 @@ function showToast(msg) {
               spamBtn.disabled = false;
 
               if (res && res.ok) {
-                showToast(language.spamSuccess || 'Spam reactions added successfully! 🔥');
+                showToast(language.spamSuccess);
               } else {
-                showToast((language.spamErrorPrefix || 'Spam reactions error: ') + (res?.error || 'Unknown'));
+                showToast(language.spamErrorPrefix + (res?.error || language.unknown));
               }
             });
           });
@@ -1252,7 +1279,7 @@ function showToast(msg) {
           const retractBtn = document.createElement('button');
           retractBtn.className = 'chatops-quick-note-btn retract-btn';
           retractBtn.innerHTML = '↩️';
-          retractBtn.title = language.undoSpamTitle || 'Undo Spam Reactions';
+          retractBtn.title = language.undoSpamTitle;
           retractBtn.addEventListener('click', (e) => {
             e.preventDefault(); e.stopPropagation();
             const postId = postEl.id ? postEl.id.replace(SELECTORS.POST_ID_PREFIX, '') : '';
@@ -1272,9 +1299,9 @@ function showToast(msg) {
               retractBtn.disabled = false;
 
               if (res && res.ok) {
-                showToast(language.undoSpamSuccess || 'Spam reactions removed successfully! ↩️');
+                showToast(language.undoSpamSuccess);
               } else {
-                showToast((language.undoSpamErrorPrefix || 'Undo reactions error: ') + (res?.error || 'Unknown'));
+                showToast(language.undoSpamErrorPrefix + (res?.error || language.unknown));
               }
             });
           });

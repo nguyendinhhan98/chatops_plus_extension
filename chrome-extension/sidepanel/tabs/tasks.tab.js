@@ -297,8 +297,8 @@ export function setup(state) {
               <input type="text" class="inline-edit-title" placeholder="Title (optional)" value="${escapeHtml(task.title || '')}" style="width: 100%; height: 28px; font-size: 13px; font-weight: 600; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); outline: none; box-sizing: border-box; font-family: inherit;" autocomplete="off">
               <textarea class="inline-edit-textarea" style="width: 100%; min-height: 60px; padding: 8px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 13px; outline: none; background: #fff; resize: vertical; color: var(--text-1);">${escapeHtml(task.note)}</textarea>
               <div style="display: flex; gap: 6px; justify-content: flex-end;">
-                <button class="btn btn-secondary inline-edit-cancel" data-id="${id}" style="padding: 4px 10px; font-size: 11.5px; height: 26px; border-radius: 6px; cursor:pointer;">${language.cancel || 'Cancel'}</button>
-                <button class="btn btn-primary inline-edit-save" data-id="${id}" style="padding: 4px 10px; font-size: 11.5px; height: 26px; border-radius: 6px; cursor:pointer; color:#fff;">${language.save || 'Save'}</button>
+                <button class="btn btn-secondary inline-edit-cancel" data-id="${id}" style="padding: 4px 10px; font-size: 11.5px; height: 26px; border-radius: 6px; cursor:pointer;">${language.cancel}</button>
+                <button class="btn btn-primary inline-edit-save" data-id="${id}" style="padding: 4px 10px; font-size: 11.5px; height: 26px; border-radius: 6px; cursor:pointer; color:#fff;">${language.save}</button>
               </div>
             </div>
           `;
@@ -321,7 +321,7 @@ export function setup(state) {
       if (textarea) {
           const newText = textarea.value.trim();
           if (!newText) {
-            alert(language.taskEmptyError || 'Task content cannot be empty.');
+            alert(language.taskEmptyError);
             return;
           }
           
@@ -383,7 +383,7 @@ export async function loadTasks() {
     }
   } else {
     if (done.length === 0) {
-      html = `<div class="empty-state">${language.noCompletedTasks || 'No completed tasks yet.'}</div>`;
+      html = `<div class="empty-state">${language.noCompletedTasks}</div>`;
     } else {
       html += `<div style="text-align:right;margin-bottom:8px;"><button class="memo-clear-done-btn" id="btnClearDoneTasks">${language.taskClearAll}</button></div>`;
       html += done.map(task => renderTaskCard(task, now)).join('');
@@ -440,7 +440,7 @@ export async function loadTasks() {
   const clearBtn = document.getElementById('btnClearDoneTasks');
   if (clearBtn) {
     clearBtn.addEventListener('click', async () => {
-      const confirmClear = confirm(language.taskConfirmClear || 'Are you sure you want to clear all completed tasks?');
+      const confirmClear = confirm(language.taskConfirmClear);
       if (confirmClear) {
         const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
         const memos = (res[STORAGE_KEYS.MEMOS] || []).filter(m => !(m.type === 'task' && m.done));
@@ -475,7 +475,7 @@ function renderTaskCard(task, now) {
           ${hasOriginalPost ? `<div class="memo-post-preview post-preview" style="display:none; margin-bottom:4px;">📌 ${escapeHtml(task.postText)}</div>` : ''}
           <div class="memo-note-text task-text collapsible-body collapsed" style="margin-top:0;">${formatRichText(task.note || language.taskNoContent)}</div>
         </div>
-        <button class="collapse-btn" data-id="${task.id}" style="flex-shrink:0; margin:0;" title="${language.expandCollapseBtn || 'Expand/Collapse'}">▶</button>
+        <button class="collapse-btn" data-id="${task.id}" style="flex-shrink:0; margin:0;" title="${language.expandCollapseBtn}">▶</button>
       </div>
       <div class="memo-footer">
         <div class="memo-meta" style="display:flex; align-items:center; gap:8px;">
@@ -487,13 +487,13 @@ function renderTaskCard(task, now) {
           ${!task.done ? `
             <div class="task-update-reminder-wrapper ${task.reminder ? 'has-reminder' : ''}">
               <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor" class="reminder-clock-icon"><path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/></svg>
-              <input type="text" class="task-update-reminder" data-id="${task.id}" value="${task.reminder || ''}" placeholder="yyyy-mm-dd hh:mm" title="${language.changeReminderTime || 'Change reminder time'}" />
+              <input type="text" class="task-update-reminder" data-id="${task.id}" value="${task.reminder || ''}" placeholder="yyyy-mm-dd hh:mm" title="${language.changeReminderTime}" />
             </div>
           ` : ''}
         </div>
         <div class="memo-actions">
           ${permalink ? `<a href="${permalink}" class="post-jump-link" title="${language.memoViewOriginal}">↗</a>` : ''}
-          <button class="btn-edit-memo btn-edit-task" data-id="${task.id}" title="${language.editTask || 'Edit Task'}">
+          <button class="btn-edit-memo btn-edit-task" data-id="${task.id}" title="${language.editTask}">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none; opacity:0.85;">
               <path d="M12 20h9"></path>
               <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>

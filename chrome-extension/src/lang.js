@@ -1,26 +1,13 @@
 /**
- * English Language Strings — ChatOps Chrome Extension
- * Centralized dictionary for all UI text.
- * 
- * ──────────────────────────────────────────────────────────
- * 🛠️ LOCALIZATION RULES FOR DEVELOPERS:
- * ──────────────────────────────────────────────────────────
- * 1. NO HARDCODED TEXT: Never hardcode user-facing strings in the components or HTML.
- *    Always define a descriptive key here and use `language.yourKey` in the code.
- * 
- * 2. ADDING TEXT: When introducing a new string, add it to this file first. Make sure
- *    the key is in camelCase and grouped in its respective feature category.
- * 
- * 3. DELETING TEXT: When removing a feature or refactoring text out, search the codebase
- *    for its key. If it is no longer used anywhere, DELETE the key from this file
- *    immediately to keep the bundle clean and prevent dead weight.
- * 
- * 4. REUSE STRINGS: Check this file first to see if an identical string or helper key
- *    (e.g., `loading`, `save`, `cancel`, `error`) already exists before adding a duplicate.
- * ──────────────────────────────────────────────────────────
+ * Bilingual Language Strings — ChatOps Chrome Extension
+ * Centralized dictionary for English and Vietnamese UI text.
  */
 
-export const language = {
+// Initialize an empty language object that will be mutated in-place
+export const language = {};
+
+// English Dictionary
+const en = {
   // Common
   loading: 'Loading...',
   loadingMore: 'Loading more...',
@@ -37,6 +24,10 @@ export const language = {
   cancel: 'Cancel',
   save: 'Save',
   expandCollapseBtn: 'Expand/Collapse',
+  modalSearchTitle: 'Search Messages',
+  modalAddTaskTitle: 'Add New Task',
+  modalAddNoteTitle: 'Add New Note',
+  modalScannerFiltersTitle: 'Scanner Filters',
 
   // Sidepanel Search Tab
   search: 'Search',
@@ -81,7 +72,7 @@ export const language = {
   taskOverdue: 'Overdue',
   taskDelete: 'Delete',
   taskViewOriginal: 'View original message',
-  taskReminderLabel: 'Remind at:',
+  taskReminderLabel: 'Remind:',
   taskReminderHint: '⏰ Starts at selected time — snoozes every {minutes} mins until completed (<a href="#" class="settings-subtab-link" data-subtab="features-snooze" style="color: var(--accent); font-weight: 700; text-decoration: underline;">change in Settings</a>)',
   taskAddBtn: 'Add Task',
   taskEmptyError: 'Task content cannot be empty.',
@@ -133,6 +124,7 @@ export const language = {
   noImagesHint: 'No images yet. Click "Upload image" to add!',
   maxUploadLimitError: 'You can only upload up to 10 images at once.',
   storageLimitExceeded: 'Storage limit reached (10 MB). Please delete some images before uploading.',
+  imageLibraryEmptyState: '<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; min-height: 200px; padding: 24px 0; text-align: center; color: var(--text-3); font-size: 13px; font-weight: 500; grid-column: 1 / -1;"><p style="margin: 0; line-height: 1.5; max-width: 240px;">No custom images yet. Upload some images using the button above to start!</p></div>',
 
   // Content Script - Quick Task Popover
   quickTaskCreate: 'Quick Task',
@@ -150,6 +142,7 @@ export const language = {
   directMessage: 'Direct Message',
   includeDirectMessage: 'Include Direct Messages',
   categoryLabel: 'Category:',
+  orLabel: 'OR',
   quickTaskRemindAfter: 'Remind after:',
   msgPreviewImage: '[Image] Please view directly on ChatOps',
   msgPreviewNoText: '[No text content]',
@@ -183,6 +176,9 @@ export const language = {
   testBothSuccess: '🟢 Both notification types sent successfully!\n1. In-page banner sent to active ChatOps tab.\n2. System notification sent to your OS.',
   testErrorPrefix: '🔴 Background notification error: ',
   testBgWorkerError: '🔴 Cannot connect to Background Service Worker. Please reload the extension at chrome://extensions.',
+  testInPageBannerMsg: '🔔 This is a test notification from ChatOps++!',
+  testSystemTitle: '🎯 ChatOps++ Test Notification',
+  testSystemMsg: 'OS push notification system is working perfectly!',
   backupSuccess: '🎉 Successfully backed up data to your Google account!',
   backupFailed: '❌ Backup failed. Please try again.',
   restoreSuccess: '🎉 Successfully restored data from your Google account!',
@@ -193,4 +189,522 @@ export const language = {
   lastSyncText: '☁️ Last sync: <strong style="color:var(--success); font-weight:700;">{time}</strong>',
   neverSyncedText: '⏳ Never backed up or restored on this device.',
   storageUsageText: '💻 Local: <strong style="color:var(--accent);">{local}</strong> | ☁️ Cloud: <strong style="color:var(--success);">{sync}</strong> / 100KB',
+
+  // HTML Static Texts
+  workspaceLabel: 'WORKSPACE:',
+  supportVibecodingTitle: '☕ Support Vibecoding!',
+  supportVibecodingDesc: 'If this extension makes your work more enjoyable and productive, feel free to support the developer with a coffee to fuel more AI vibecoding! 🚀',
+  memoNotesLabel: 'Notes',
+  missedTabLabel: 'Missed',
+  reactionsTabLabel: 'Reactions',
+  settingsTabLabel: 'Settings',
+  searchTermsPlaceholder: 'Search keyword... (Enter to search)',
+  searchUserPlaceholder: 'Search user...',
+  searchAfterPlaceholder: 'After date',
+  searchBeforePlaceholder: 'Before date',
+  searchNewBtn: 'New Search',
+  syncTooltip: 'Click to backup or restore data via Google account',
+  syncText: 'Sync',
+  langToggleTooltip: 'Switch to Vietnamese 🇻🇳',
+  titleOptional: 'Title (optional)',
+  chooseDatePlaceholder: 'Choose...',
+  taskTextareaPlaceholder: 'Add new task... (Shift + Enter to save)',
+  remindInPreset: 'Remind in...',
+  noteTextareaPlaceholder: 'Write a note... (Shift + Enter to save)',
+  categoryLabelPrefix: '📁 Category:',
+  customizeCategories: '⚙️ Customize List',
+  memoAddBtn: '📝 Add Note',
+  last24Hours: 'Last 24 hours',
+  last48Hours: 'Last 48 hours',
+  last14Days: 'Last 14 Days',
+  mentionDirect: 'Direct mention (@you)',
+  mentionHere: 'Group mention (@here)',
+  mentionChannel: 'Channel mention (@channel / @all)',
+  mentionDMs: 'Direct Messages (DM / GM)',
+  imageLibraryTab: 'IMAGE LIBRARY',
+  reactionSpammerTab: 'REACTION SPAMMER',
+  imageLibraryDesc: 'Click the image icon 🖼️ in the chatbox toolbar to open the picker.',
+  usedStorageSpace: 'Used Storage Space',
+  howToUseTitle: 'How to use?',
+  reactionSpammerDesc: 'Hover over any message on ChatOps, then click the <strong>Fire button (🔥)</strong> in the hover actions menu to instantly spam your selected emojis, or click the <strong>Return button (↩️)</strong> to retract them!',
+  selectedEmojisTitle: 'Selected Emojis (Max 20)',
+  selectedEmojisDesc: 'Click on an emoji below to remove it from your quick-spam list.',
+  addEmojisTitle: 'Add Emojis',
+  addEmojisDesc: 'Click on an emoji below to add it to your quick-spam list.',
+  emojiTabStandard: 'STANDARD',
+  emojiTabCustom: 'WORKSPACE',
+  searchEmojiPlaceholder: 'Search emoji by name (e.g. fire, heart)...',
+  loadingMoreEmojis: 'Loading more emojis...',
+  settingsOverviewTab: 'OVERVIEW',
+  settingsFeaturesTab: 'FEATURES',
+  settingsThemeTab: 'THEME',
+  settingsCategoriesTab: 'CATEGORIES',
+  settingsSyncTab: 'SYNC DATA',
+  settingsOverviewWelcome: 'Welcome to <strong style="color: var(--accent); font-weight: 700;">ChatOps++</strong>! Your productivity toolkit:',
+  overviewSearchDesc: '<strong>Search Messages:</strong> Instant chat history query.',
+  overviewTasksDesc: '<strong>Tasks:</strong> Smart task manager with snooze alerts.',
+  overviewNotesDesc: '<strong>Notes:</strong> Category-based quick note-taking.',
+  overviewMissedDesc: '<strong>Missed Mentions:</strong> Track missed channel messages.',
+  overviewSpamDesc: '<strong>Spam Reactions:</strong> Express multiple emojis instantly and retract them easily.',
+  overviewImageDesc: '<strong>Image Library:</strong> Upload and quick-send your favorite personal images.',
+  overviewPrivacyTitle: 'Privacy & Security Commitment',
+  overviewPrivacyDesc: '<strong>ChatOps++</strong> does not collect, store, or transmit your personal data. All data is stored 100% locally in your browser (Local Storage) under your full control.',
+  overviewSupportTitle: 'Support & Feedback',
+  overviewSupportDesc: 'For any questions, suggestions, or bug reports, please contact <a href="https://chat.runsystem.vn/runsystem/messages/@hannd-runsystem.net" class="support-chatops-link" style="color: #3498db; font-weight: 700; text-decoration: underline;">hannd@runsystem.net</a> via ChatOps.',
+  featureSettingsTitle: 'Feature Settings',
+  featuresToggleTab: '⚙️ Toggles',
+  featuresSnoozeTab: '⏳ Snooze',
+  featuresAlertsTab: '🔔 Alerts',
+  featuresToggleTitle: 'Enable/Disable Features',
+  featuresToggleDesc: 'Select which modules you want to display in the sidepanel.',
+  snoozeTitle: 'Default Snooze Time',
+  snoozeDesc: 'Default snooze duration (minutes) for new task reminders.',
+  minutesLabel: 'minutes',
+  alertsTitle: 'Alert Delivery Type',
+  alertsDesc: 'Select how you want to be notified when a task reminder is triggered.',
+  alertsOptionBoth: '🔔 Both (Recommended)',
+  alertsOptionSystem: '🖥️ OS System Notification only',
+  alertsOptionInPage: '💬 In-page Banner only',
+  testNotificationBtn: '🔔 Test Notification',
+  alertsHelpTitle: 'ℹ️ HOW TO ENABLE SYSTEM NOTIFICATIONS',
+  alertsHelpDesc: `
+    <div>
+      🍏 <strong>macOS:</strong> Go to <em>System Settings</em> → <em>Notifications</em> → <strong>Google
+        Chrome</strong> → Enable <strong>Allow Notifications</strong> and select <strong>Banners</strong>
+      or <strong>Alerts</strong>.
+    </div>
+    <div>
+      🪟 <strong>Windows:</strong> Go to <em>Settings</em> → <em>System</em> → <em>Notifications</em> →
+        Ensure general alerts are ON and allow <strong>Google Chrome</strong>.
+    </div>
+    <div>
+      🐧 <strong>Ubuntu (Linux):</strong> Go to <em>Settings</em> → <em>Notifications</em> →
+        <strong>Google Chrome</strong> → Ensure notifications are enabled.
+    </div>
+    <div
+      style="border-top: 1px dashed var(--border); margin-top: 6px; padding-top: 8px; font-style: italic; color: var(--accent); font-weight: 500;">
+      💡 Tip: If notifications do not appear after enabling, restart Google Chrome completely (Cmd+Q on
+      macOS, or close all windows) for the OS to apply permissions.
+    </div>
+  `,
+  themeSettingsTitle: 'Theme Settings',
+  themeHeaderTitle: 'Header Component',
+  themeNavTitle: 'Navigation Bar (Tabs)',
+  themeAccentTitle: 'Accent Buttons & Highlights',
+  themePaddingTitle: 'Layout Spacing (Padding)',
+  themePaddingDesc: 'Fine-tune the density and spacing of lists, cards, and panels across the extension.',
+  paddingCompact: 'Compact (10px)',
+  paddingDefault: 'Default (12px)',
+  paddingComfortable: 'Comfortable (16px)',
+  paddingSpacious: 'Spacious (20px)',
+  categoriesTitle: 'Note Categories (Max 5)',
+  newCategoryPlaceholder: 'Enter new category... (Enter to save)',
+  addBtn: 'Add',
+  dataManagementTitle: 'Data Management',
+  syncCloudTab: '☁️ Cloud Sync',
+  syncCleanupTab: '🧹 Cleanup & Space',
+  cloudSyncTitle: 'Cloud Sync (Google Account)',
+  cloudSyncDesc: 'Backup or restore your tasks and notes to the cloud via your Google account to sync data across computers.',
+  backupToCloudBtn: 'Backup to Cloud',
+  restoreFromCloudBtn: 'Restore from Cloud',
+  noBackupsFound: 'No backups found on this computer.',
+  whySyncTitle: 'Why use manual sync?',
+  whySyncDesc: 'To ensure maximum privacy and instant speed, all data is stored offline by default. Manual sync lets you decide exactly when to backup or transfer your data.',
+  cleanupTitle: 'Cleanup & Storage Optimization',
+  cleanupDesc: 'Automatically delete completed tasks or notes after a certain period of time to keep your data synchronized quickly.',
+  storageUsedLabel: 'Storage Used:',
+  autoCleanupLabel: 'Auto Cleanup Period:',
+  autoCleanupSublabel: 'Only applies to completed tasks and notes.',
+  cleanupNever: 'Never',
+  cleanupOnOpen: 'Upon opening Extension',
+  cleanup1Day: 'After 1 day',
+  cleanup7Days: 'After 7 days',
+  cleanup30Days: 'After 30 days',
+  cleanup90Days: 'After 90 days',
+  cleanupNowBtn: 'Cleanup Now',
 };
+
+// Vietnamese Dictionary
+const vi = {
+  // Common
+  loading: 'Đang tải...',
+  loadingMore: 'Đang tải thêm...',
+  searching: 'Đang tìm kiếm...',
+  errorLoading: 'Lỗi khi tải dữ liệu',
+  noResults: 'Không tìm thấy kết quả',
+  noResultsFriendly: 'Không tìm thấy kết quả phù hợp. Vui lòng kiểm tra không gian làm việc hoặc bộ lọc tìm kiếm.',
+  viewMessage: 'Xem tin nhắn',
+  openInChatOps: 'Mở trong ChatOps',
+  unknown: 'Không xác định',
+  channel: 'kênh',
+  in: 'trong',
+  copied: 'Đã sao chép!',
+  cancel: 'Hủy',
+  save: 'Lưu',
+  expandCollapseBtn: 'Mở rộng/Thu gọn',
+  modalSearchTitle: 'Tìm kiếm tin nhắn',
+  modalAddTaskTitle: 'Thêm công việc mới',
+  modalAddNoteTitle: 'Thêm ghi chú mới',
+  modalScannerFiltersTitle: 'Bộ lọc quét tin nhắn',
+
+  // Sidepanel Search Tab
+  search: 'Tìm kiếm',
+  searchEmptyState: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">Hướng dẫn sử dụng</h4><p class="card-desc">Nhấp vào nút tìm kiếm (🔍) ở góc dưới cùng bên phải để tùy chỉnh bộ lọc và tìm kiếm tin nhắn!</p></div></div>',
+  searchCriteriaRequired: 'Vui lòng nhập ít nhất 1 tiêu chí tìm kiếm',
+  searchHelpTooltip: 'Tìm kiếm tin nhắn theo từ khóa, người gửi, kênh và khoảng thời gian.',
+  searchKeywordHelper: 'Từ khóa phải có từ 2 ký tự trở lên.',
+  searchIncludeDM: 'Bao gồm Tin nhắn Trực tiếp (DM)',
+  resultsFor: 'Kết quả cho',
+  today: 'Hôm nay',
+  last7Days: '7 ngày qua',
+  last30Days: '30 ngày qua',
+  clearResults: 'Xóa kết quả',
+
+  // Sidepanel Mentions Tab
+  scanMentions: 'Quét ngay',
+  scanMentionsStart: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">Hướng dẫn sử dụng</h4><p class="card-desc">Nhấp vào nút (🔔) ở phía dưới để cấu hình bộ lọc và quét. Hệ thống sẽ quét các bài viết bạn được nhắc đến nhưng chưa phản hồi hoặc phản ứng.</p></div></div>',
+  scanningChannels: 'Đang quét các kênh...',
+  noMissedMentions: 'Không có nhắc nhở bị bỏ lỡ trong {hours}h qua! 🎉',
+  mentionsFound: 'Phát hiện {count} nhắc nhở đang chờ xử lý trong {channels} kênh',
+  notConnected: 'Chưa kết nối. Vui lòng kiểm tra <a href="#" class="settings-subtab-link" data-subtab="features-toggle" style="color: var(--accent); font-weight: 700; text-decoration: underline;">Cài đặt</a>.',
+
+  // Sidepanel Leave Tab
+  leaveEmptyState: 'Nhập thông tin và nhấn Tìm kiếm',
+  selectChannelRequired: 'Vui lòng chọn ít nhất 1 kênh (ví dụ: CHECK.OFF.LATER)',
+  userNotFound: 'Không tìm thấy người dùng với email: {email}',
+  invalidDate: 'Định dạng ngày không hợp lệ',
+  noLeaveRequests: 'Không tìm thấy yêu cầu nghỉ phép nào',
+  foundMessages: 'Tìm thấy {count} tin nhắn',
+
+  // Sidepanel Tasks Tab
+  taskTabLabel: 'Công việc',
+  taskEmpty: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">Hướng dẫn sử dụng</h4><p class="card-desc">Nhấp vào nút (🎯) ở góc dưới cùng bên phải để thêm công việc, hoặc di chuột qua bất kỳ tin nhắn nào trong ChatOps và nhấp vào biểu tượng 🎯 để ghim thành công việc!</p></div></div>',
+  taskClickHint: '📌 Ghim tin nhắn trong ChatOps hoặc nhấp vào nút "🎯" ở góc dưới cùng bên phải.',
+  taskPending: 'Chờ xử lý',
+  taskCompleted: 'Đã hoàn thành',
+  taskClearAll: 'Xóa tất cả',
+  taskPlaceholder: 'Nhập tên công việc...',
+  taskMarkIncomplete: 'Đánh dấu chưa hoàn thành',
+  taskMarkDone: 'Đánh dấu đã hoàn thành',
+  taskNoContent: '(Không có nội dung)',
+  taskOverdue: 'Quá hạn',
+  taskDelete: 'Xóa',
+  taskViewOriginal: 'Xem tin nhắn gốc',
+  taskReminderLabel: 'Nhắc:',
+  taskReminderHint: '⏰ Bắt đầu lúc thời gian đã chọn — nhắc lại mỗi {minutes} phút cho đến khi hoàn thành (<a href="#" class="settings-subtab-link" data-subtab="features-snooze" style="color: var(--accent); font-weight: 700; text-decoration: underline;">thay đổi trong Cài đặt</a>)',
+  taskAddBtn: 'Thêm công việc',
+  taskEmptyError: 'Nội dung công việc không được để trống.',
+  noCompletedTasks: 'Chưa có công việc hoàn thành nào.',
+  changeReminderTime: 'Thay đổi thời gian nhắc nhở',
+  editTask: 'Sửa công việc',
+
+  // Sidepanel Memo (Notes) Tab
+  memoTasksEmpty: 'Chưa có công việc nào.',
+  memoNotesEmpty: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">Hướng dẫn sử dụng</h4><p class="card-desc">Nhấp vào nút (📝) ở góc dưới cùng bên phải để thêm ghi chú, hoặc di chuột qua bất kỳ tin nhắn nào trong ChatOps và nhấp vào biểu tượng 📝 để ghim thành ghi chú!</p></div></div>',
+  memoClickHint: '📝 Ghim ghi chú trong ChatOps hoặc nhấp vào nút "📝" ở góc dưới cùng bên phải.',
+  memoPending: 'Chờ xử lý',
+  memoCompleted: 'Đã hoàn thành',
+  memoClearAll: 'Xóa tất cả',
+  memoTaskPlaceholder: 'Nhập tên công việc...',
+  memoNotePlaceholder: 'Nhập ghi chú... (Shift+Enter để lưu)',
+  memoMarkIncomplete: 'Đánh dấu chưa hoàn thành',
+  memoMarkDone: 'Đánh dấu đã hoàn thành',
+  memoNoContent: '(Không có nội dung)',
+  memoEmptyNote: 'Ghi chú trống',
+  memoOverdue: 'Quá hạn',
+  memoDelete: 'Xóa',
+  memoViewOriginal: 'Xem tin nhắn gốc',
+  memoCopyNote: 'Sao chép nội dung',
+  memoEmptyNoteError: 'Nội dung ghi chú không được để trống.',
+  editNote: 'Sửa ghi chú',
+
+  // Workspace Selector
+  noWorkspaces: 'Không tìm thấy không gian làm việc nào',
+
+  // Content Script - Reminder Banner
+  reminderTaskTitle: 'Công việc chưa hoàn thành',
+  reminderTitle: 'Nhắc nhở ChatOps',
+  reminderDoneBtn: '✅ Đã xong — Dừng nhắc nhở',
+  reminderTaskCompleted: '✅ Đã hoàn thành!',
+  
+  // Content Script - Floating Button
+  floatingBtnTitle: 'Mở ChatOps++',
+  floatingBtnHide: 'Ẩn nút này',
+  extensionUpdated: 'ChatOps++ đã được cập nhật! Vui lòng tải lại trang (F5) để tiếp tục.',
+
+  // Content Script - Image Picker
+  imageLibrary: 'Thư viện ảnh',
+  noCustomImages: 'Chưa có ảnh tải lên',
+  clickToSend: 'Nhấp để gửi',
+  deleteImage: 'Xóa ảnh',
+  yourImages: 'Ảnh của bạn',
+  uploadImageBtn: '+ Tải ảnh lên',
+  noImagesHint: 'Chưa có ảnh nào. Nhấp "Tải ảnh lên" để thêm!',
+  maxUploadLimitError: 'Bạn chỉ có thể tải lên tối đa 10 ảnh cùng lúc.',
+  storageLimitExceeded: 'Đạt giới hạn dung lượng lưu trữ (10 MB). Vui lòng xóa bớt ảnh trước khi tải lên.',
+  imageLibraryEmptyState: '<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; min-height: 200px; padding: 24px 0; text-align: center; color: var(--text-3); font-size: 13px; font-weight: 500; grid-column: 1 / -1;"><p style="margin: 0; line-height: 1.5; max-width: 240px;">Chưa có ảnh tải lên. Nhấp vào nút tải ảnh phía trên để bắt đầu!</p></div>',
+
+  // Content Script - Quick Task Popover
+  quickTaskCreate: 'Tạo nhanh công việc',
+  quickTaskTitle: 'Tạo nhanh công việc',
+  quickTaskNotePlaceholder: 'Thêm ghi chú (tùy chọn)...',
+  quickTaskRemindAt: 'Nhắc nhở lúc:',
+  quickTaskHint: '⏰ Bắt đầu lúc thời gian đã chọn — nhắc lại mỗi {minutes} phút cho đến khi hoàn thành (<a href="#" class="settings-subtab-link" data-subtab="features-snooze" style="color: var(--accent); font-weight: 700; text-decoration: underline;">thay đổi trong Cài đặt</a>)',
+  quickTaskSave: 'Lưu',
+  quickTaskCancel: 'Hủy',
+  quickTaskSaveSuccess: 'Đã lưu công việc',
+  quickNoteTitle: 'Tạo nhanh ghi chú',
+  quickNoteCreate: 'Tạo nhanh ghi chú',
+  quickNoteSaveSuccess: 'Đã lưu ghi chú',
+  reminderTaskDefault: 'Bạn có một công việc đang chờ xử lý.',
+  directMessage: 'Tin nhắn Trực tiếp',
+  includeDirectMessage: 'Bao gồm Tin nhắn Trực tiếp',
+  categoryLabel: 'Danh mục:',
+  orLabel: 'HOẶC',
+  quickTaskRemindAfter: 'Nhắc nhở sau:',
+  msgPreviewImage: '[Hình ảnh] Vui lòng xem trực tiếp trên ChatOps',
+  msgPreviewNoText: '[Không có nội dung văn bản]',
+
+  // Content Script - Reaction spam/retraction
+  spamReactionsTitle: 'Spam cảm xúc',
+  spamSuccess: 'Thêm spam cảm xúc thành công! 🔥',
+  spamErrorPrefix: 'Lỗi spam cảm xúc: ',
+  undoSpamTitle: 'Hoàn tác spam cảm xúc',
+  undoSpamSuccess: 'Xóa spam cảm xúc thành công! ↩️',
+  undoSpamErrorPrefix: 'Lỗi hoàn tác cảm xúc: ',
+
+  // Categories
+  categoryAll: 'Tất cả danh mục',
+  categoryGeneral: 'Chung',
+  categoryWork: 'Công việc',
+  categoryPersonal: 'Cá nhân',
+  categoryIdeas: 'Ý tưởng',
+  categorySelect: 'Chọn danh mục...',
+
+  // Settings Tab & Sync
+  backupToCloud: 'Sao lưu lên Đám mây',
+  restoring: 'Đang khôi phục...',
+  restoreFromCloud: 'Khôi phục từ Đám mây',
+  cleaningUp: 'Đang dọn dẹp...',
+  cleanUpNow: 'Dọn dẹp ngay',
+  confirmRestore: '⚠️ Bạn có chắc chắn muốn khôi phục dữ liệu từ Đám mây?\nToàn bộ ghi chú và công việc hiện tại trên máy này sẽ bị GHI ĐÈ hoàn toàn bởi dữ liệu từ tài khoản Google của bạn.',
+  confirmCleanup: '🧹 Bạn có chắc chắn muốn dọn dẹp các ghi chú & công việc đã hoàn thành cũ hơn thời gian đã đặt?',
+  testBannerSuccess: '🟢 Đã gửi thông báo biểu ngữ thử nghiệm thành công!\nVui lòng chuyển sang tab ChatOps đang hoạt động để kiểm tra.',
+  testSystemSuccess: '🟢 Đã gửi thông báo hệ thống (OS) thử nghiệm thành công!\nNếu không thấy thông báo, vui lòng kiểm tra xem chế độ Không làm phiền (DND) có đang bật hoặc ứng dụng có bị chặn thông báo trong Cài đặt hệ thống không.',
+  testBothSuccess: '🟢 Đã gửi cả hai loại thông báo thử nghiệm thành công!\n1. Biểu ngữ trong trang được gửi đến tab ChatOps hoạt động.\n2. Thông báo hệ thống được gửi đến hệ điều hành.',
+  testErrorPrefix: '🔴 Lỗi thông báo chạy ngầm: ',
+  testBgWorkerError: '🔴 Không thể kết nối với Background Service Worker. Vui lòng tải lại tiện ích mở rộng tại chrome://extensions.',
+  testInPageBannerMsg: '🔔 Đây là thông báo thử nghiệm từ ChatOps++!',
+  testSystemTitle: '🎯 Thông báo thử nghiệm ChatOps++',
+  testSystemMsg: 'Hệ thống thông báo đẩy trên hệ điều hành đang hoạt động hoàn hảo!',
+  backupSuccess: '🎉 Đã sao lưu dữ liệu lên tài khoản Google của bạn thành công!',
+  backupFailed: '❌ Sao lưu thất bại. Vui lòng thử lại.',
+  restoreSuccess: '🎉 Đã khôi phục dữ liệu từ tài khoản Google của bạn thành công!',
+  restoreFailed: '❌ Khôi phục thất bại. Vui lòng thử lại.',
+  cleanupSuccess: '🎉 Dọn dẹp hoàn tất thành công! Đã xóa {count} mục cũ khỏi bộ nhớ cục bộ.',
+  cleanupFailed: '❌ Dọn dẹp thất bại. Vui lòng thử lại.',
+  autoSaved: 'Đã tự động lưu',
+  lastSyncText: '☁️ Đồng bộ gần nhất: <strong style="color:var(--success); font-weight:700;">{time}</strong>',
+  neverSyncedText: '⏳ Chưa từng sao lưu hoặc khôi phục trên thiết bị này.',
+  storageUsageText: '💻 Máy cục bộ: <strong style="color:var(--accent);">{local}</strong> | ☁️ Đám mây: <strong style="color:var(--success);">{sync}</strong> / 100KB',
+
+  // HTML Static Texts
+  workspaceLabel: 'KHÔNG GIAN:',
+  supportVibecodingTitle: '☕ Hỗ trợ Vibecoding!',
+  supportVibecodingDesc: 'Nếu tiện ích mở rộng này giúp công việc của bạn hiệu quả và thú vị hơn, hãy mời nhà phát triển một tách cà phê để tiếp thêm năng lượng cho nhiều dự án AI vibecoding hơn nhé! 🚀',
+  memoNotesLabel: 'Ghi chú',
+  missedTabLabel: 'Bỏ lỡ',
+  reactionsTabLabel: 'Cảm xúc',
+  settingsTabLabel: 'Cài đặt',
+  searchTermsPlaceholder: 'Từ khóa tìm kiếm... (Ấn Enter để tìm)',
+  searchUserPlaceholder: 'Tìm kiếm người dùng...',
+  searchAfterPlaceholder: 'Sau ngày',
+  searchBeforePlaceholder: 'Trước ngày',
+  searchNewBtn: 'Tìm kiếm mới',
+  syncTooltip: 'Nhấp để sao lưu hoặc khôi phục dữ liệu qua tài khoản Google',
+  syncText: 'Đồng bộ',
+  langToggleTooltip: 'Chuyển sang Tiếng Anh 🇺🇸',
+  titleOptional: 'Tiêu đề (tùy chọn)',
+  chooseDatePlaceholder: 'Chọn...',
+  taskTextareaPlaceholder: 'Thêm công việc mới... (Shift + Enter để lưu)',
+  remindInPreset: 'Nhắc sau...',
+  noteTextareaPlaceholder: 'Viết ghi chú... (Shift + Enter để lưu)',
+  categoryLabelPrefix: '📁 Danh mục:',
+  customizeCategories: '⚙️ Tùy chỉnh danh sách',
+  memoAddBtn: '📝 Thêm ghi chú',
+  last24Hours: '24 giờ qua',
+  last48Hours: '48 giờ qua',
+  last14Days: '14 ngày qua',
+  mentionDirect: 'Nhắc tên trực tiếp (@bạn)',
+  mentionHere: 'Nhắc tên nhóm (@here)',
+  mentionChannel: 'Nhắc tên kênh (@channel / @all)',
+  mentionDMs: 'Tin nhắn trực tiếp (DM / GM)',
+  imageLibraryTab: 'THƯ VIỆN ẢNH',
+  reactionSpammerTab: 'SPAM CẢM XÚC',
+  imageLibraryDesc: 'Nhấp vào biểu tượng ảnh 🖼️ trong thanh công cụ chatbox để mở thư viện.',
+  usedStorageSpace: 'Dung lượng đã sử dụng',
+  howToUseTitle: 'Hướng dẫn sử dụng',
+  reactionSpammerDesc: 'Di chuột qua bất kỳ tin nhắn nào trên ChatOps, sau đó nhấp vào <strong>nút Ngọn lửa (🔥)</strong> trong thanh công cụ để spam ngay lập tức các biểu tượng cảm xúc đã chọn, hoặc nhấp vào <strong>nút Hoàn tác (↩️)</strong> để thu hồi!',
+  selectedEmojisTitle: 'Cảm xúc đã chọn (Tối đa 20)',
+  selectedEmojisDesc: 'Nhấp vào một biểu tượng cảm xúc bên dưới để xóa khỏi danh sách spam nhanh.',
+  addEmojisTitle: 'Thêm cảm xúc',
+  addEmojisDesc: 'Nhấp vào một biểu tượng cảm xúc bên dưới để thêm vào danh sách spam nhanh.',
+  emojiTabStandard: 'TIÊU CHUẨN',
+  emojiTabCustom: 'WORKSPACE',
+  searchEmojiPlaceholder: 'Tìm kiếm emoji theo tên (ví dụ: fire, heart)...',
+  loadingMoreEmojis: 'Đang tải thêm emoji...',
+  settingsOverviewTab: 'TỔNG QUAN',
+  settingsFeaturesTab: 'TÍNH NĂNG',
+  settingsThemeTab: 'GIAO DIỆN',
+  settingsCategoriesTab: 'DANH MỤC',
+  settingsSyncTab: 'ĐỒNG BỘ DỮ LIỆU',
+  settingsOverviewWelcome: 'Chào mừng bạn đến với <strong style="color: var(--accent); font-weight: 700;">ChatOps++</strong>! Bộ công cụ tăng năng suất của bạn:',
+  overviewSearchDesc: '<strong>Tìm kiếm tin nhắn:</strong> Truy vấn lịch sử trò chuyện tức thì.',
+  overviewTasksDesc: '<strong>Công việc:</strong> Quản lý công việc thông minh với thông báo nhắc lại.',
+  overviewNotesDesc: '<strong>Ghi chú:</strong> Ghi chú nhanh theo phân loại danh mục.',
+  overviewMissedDesc: '<strong>Nhắc nhở bỏ lỡ:</strong> Theo dõi các tin nhắn kênh bị bỏ qua.',
+  overviewSpamDesc: '<strong>Spam cảm xúc:</strong> Bày tỏ nhiều cảm xúc cùng lúc tức thì và thu hồi dễ dàng.',
+  overviewImageDesc: '<strong>Thư viện ảnh:</strong> Tải lên và gửi nhanh các hình ảnh cá nhân yêu thích của bạn.',
+  overviewPrivacyTitle: 'Cam kết Bảo mật & Riêng tư',
+  overviewPrivacyDesc: '<strong>ChatOps++</strong> không thu thập, lưu trữ hoặc truyền tải dữ liệu cá nhân của bạn. Tất cả dữ liệu được lưu trữ 100% cục bộ trong trình duyệt của bạn (Local Storage) dưới toàn quyền kiểm soát của bạn.',
+  overviewSupportTitle: 'Hỗ trợ & Góp ý',
+  overviewSupportDesc: 'Đối với bất kỳ câu hỏi, đề xuất hoặc báo cáo lỗi nào, vui lòng liên hệ <a href="https://chat.runsystem.vn/runsystem/messages/@hannd-runsystem.net" class="support-chatops-link" style="color: #3498db; font-weight: 700; text-decoration: underline;">hannd@runsystem.net</a> qua ChatOps.',
+  featureSettingsTitle: 'Cấu hình Tính năng',
+  featuresToggleTab: '⚙️ Tính năng',
+  featuresSnoozeTab: '⏳ Nhắc lại',
+  featuresAlertsTab: '🔔 Cảnh báo',
+  featuresToggleTitle: 'Bật/Tắt Tính năng',
+  featuresToggleDesc: 'Chọn mô-đun nào bạn muốn hiển thị trên thanh bên.',
+  snoozeTitle: 'Thời gian nhắc lại mặc định',
+  snoozeDesc: 'Thời gian nhắc lại mặc định (phút) cho các nhắc nhở công việc mới.',
+  minutesLabel: 'phút',
+  alertsTitle: 'Phương thức nhận cảnh báo',
+  alertsDesc: 'Chọn cách bạn muốn được thông báo khi nhắc nhở công việc được kích hoạt.',
+  alertsOptionBoth: '🔔 Cả hai (Khuyên dùng)',
+  alertsOptionSystem: '🖥️ Chỉ thông báo hệ thống (OS)',
+  alertsOptionInPage: '💬 Chỉ biểu ngữ trong trang',
+  testNotificationBtn: '🔔 Thử thông báo',
+  alertsHelpTitle: 'ℹ️ CÁCH BẬT THÔNG BÁO HỆ THỐNG',
+  alertsHelpDesc: `
+    <div>
+      🍏 <strong>macOS:</strong> Vào <em>Cài đặt Hệ thống</em> → <em>Thông báo</em> → <strong>Google
+        Chrome</strong> → Bật <strong>Cho phép Thông báo</strong> và chọn dạng <strong>Biểu ngữ</strong>
+      hoặc <strong>Cảnh báo</strong>.
+    </div>
+    <div>
+      🪟 <strong>Windows:</strong> Vào <em>Cài đặt</em> → <em>Hệ thống</em> → <em>Thông báo</em> →
+        Đảm bảo thông báo chung đang BẬT và cho phép <strong>Google Chrome</strong>.
+    </div>
+    <div>
+      🐧 <strong>Ubuntu (Linux):</strong> Vào <em>Cài đặt</em> → <em>Thông báo</em> →
+        <strong>Google Chrome</strong> → Đảm bảo thông báo đã được bật.
+    </div>
+    <div
+      style="border-top: 1px dashed var(--border); margin-top: 6px; padding-top: 8px; font-style: italic; color: var(--accent); font-weight: 500;">
+      💡 Mẹo: Nếu thông báo không xuất hiện sau khi bật, vui lòng khởi động lại Google Chrome hoàn toàn (Cmd+Q trên
+      macOS hoặc đóng tất cả cửa sổ) để hệ điều hành áp dụng quyền.
+    </div>
+  `,
+  themeSettingsTitle: 'Cài đặt Giao diện',
+  themeHeaderTitle: 'Thành phần Header',
+  themeNavTitle: 'Thanh điều hướng (Tab)',
+  themeAccentTitle: 'Nút bật & Điểm nhấn',
+  themePaddingTitle: 'Khoảng cách giao diện (Padding)',
+  themePaddingDesc: 'Tinh chỉnh mật độ và khoảng cách của danh sách, thẻ và bảng trên toàn bộ tiện ích mở rộng.',
+  paddingCompact: 'Nhỏ gọn (10px)',
+  paddingDefault: 'Mặc định (12px)',
+  paddingComfortable: 'Thoải mái (16px)',
+  paddingSpacious: 'Rộng rãi (20px)',
+  categoriesTitle: 'Danh mục ghi chú (Tối đa 5)',
+  newCategoryPlaceholder: 'Nhập danh mục mới... (Ấn Enter để lưu)',
+  addBtn: 'Thêm',
+  dataManagementTitle: 'Quản lý Dữ liệu',
+  syncCloudTab: '☁️ Đồng bộ Đám mây',
+  syncCleanupTab: 'Dọn dẹp & Lưu trữ',
+  cloudSyncTitle: 'Đồng bộ Đám mây (Tài khoản Google)',
+  cloudSyncDesc: 'Sao lưu hoặc khôi phục công việc và ghi chú của bạn lên đám mây thông qua tài khoản Google để đồng bộ dữ liệu giữa các máy tính.',
+  backupToCloudBtn: 'Sao lưu lên Đám mây',
+  restoreFromCloudBtn: 'Khôi phục từ Đám mây',
+  noBackupsFound: 'Không tìm thấy bản sao lưu nào trên máy tính này.',
+  whySyncTitle: 'Tại sao nên đồng bộ thủ công?',
+  whySyncDesc: 'Để đảm bảo tính riêng tư tối đa và tốc độ tức thì, tất cả dữ liệu được lưu trữ ngoại tuyến theo mặc định. Đồng bộ thủ công cho phép bạn quyết định chính xác khi nào cần sao lưu hoặc chuyển dữ liệu.',
+  cleanupTitle: 'Dọn dẹp & Tối ưu hóa Lưu trữ',
+  cleanupDesc: 'Tự động xóa các công việc hoặc ghi chú đã hoàn thành sau một khoảng thời gian nhất định để giữ cho dữ liệu của bạn gọn gàng, đồng bộ nhanh.',
+  storageUsedLabel: 'Dung lượng đã dùng:',
+  autoCleanupLabel: 'Chu kỳ dọn dẹp tự động:',
+  autoCleanupSublabel: 'Chỉ áp dụng cho công việc và ghi chú đã hoàn thành.',
+  cleanupNever: 'Không bao giờ',
+  cleanupOnOpen: 'Khi mở Tiện ích',
+  cleanup1Day: 'Sau 1 ngày',
+  cleanup7Days: 'Sau 7 ngày',
+  cleanup30Days: 'Sau 30 ngày',
+  cleanup90Days: 'Sau 90 days',
+  cleanupNowBtn: 'Dọn dẹp ngay',
+};
+
+// Swaps the active language dictionary key-value pairs in-place
+export function setLanguage(langCode) {
+  const dict = langCode === 'vi' ? vi : en;
+  
+  // Clean all existing keys in case of dictionary hot-swapping
+  for (const key in language) {
+    delete language[key];
+  }
+  
+  // Assign all keys in-place
+  Object.assign(language, dict);
+}
+
+// Function to dynamically retrieve active locale code
+export function getActiveLanguageCode() {
+  return language.loading === 'Đang tải...' ? 'vi' : 'en';
+}
+
+// Initialize with a default locale synchronously
+setLanguage('en');
+
+// Asynchronously load language from chrome.storage.local
+export async function loadLanguage() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(['app_lang'], (res) => {
+      const savedLang = res.app_lang || 'en';
+      setLanguage(savedLang);
+      resolve(savedLang);
+    });
+  });
+}
+
+// Scans container and translates all data-i18n attributes
+export function applyI18n(container = document) {
+  // Translate textContent
+  container.querySelectorAll('[data-i18n]').forEach((el) => {
+    const key = el.getAttribute('data-i18n');
+    if (language[key] !== undefined) {
+      el.textContent = language[key];
+    }
+  });
+
+  // Translate innerHTML (for rich static blocks)
+  container.querySelectorAll('[data-i18n-html]').forEach((el) => {
+    const key = el.getAttribute('data-i18n-html');
+    if (language[key] !== undefined) {
+      el.innerHTML = language[key];
+    }
+  });
+
+  // Translate placeholder
+  container.querySelectorAll('[data-i18n-placeholder]').forEach((el) => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    if (language[key] !== undefined) {
+      el.setAttribute('placeholder', language[key]);
+    }
+  });
+
+  // Translate title
+  container.querySelectorAll('[data-i18n-title]').forEach((el) => {
+    const key = el.getAttribute('data-i18n-title');
+    if (language[key] !== undefined) {
+      el.setAttribute('title', language[key]);
+    }
+  });
+}

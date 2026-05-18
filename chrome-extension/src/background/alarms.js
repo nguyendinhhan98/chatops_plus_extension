@@ -1,6 +1,6 @@
 import { getMyProfile, getMyChannelMembers, getTeamByName, getConfig } from '../api/index.js';
 import { ALARMS, UI_CONFIG, CHATOPS_CONFIG, MESSAGE_TYPES, STORAGE_KEYS } from '../constants.js';
-import { language } from '../lang.js';
+import { language, loadLanguage } from '../lang.js';
 
 /**
  * Handles periodic mention checks
@@ -33,6 +33,7 @@ export async function handleMentionCheck() {
  */
 export async function handleTaskAlarm(taskId) {
   try {
+    await loadLanguage();
     const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
     const memos = res[STORAGE_KEYS.MEMOS] || [];
     const task = memos.find(m => m.id === taskId);
@@ -79,7 +80,7 @@ export async function handleTaskAlarm(taskId) {
       chrome.notifications.create(taskId, {
         type: 'basic',
         iconUrl: chrome.runtime.getURL('icons/icon128.png'),
-        title: '🎯 ChatOps++ Reminder',
+        title: language.reminderTitle,
         message: message,
         priority: 2,
         requireInteraction: true

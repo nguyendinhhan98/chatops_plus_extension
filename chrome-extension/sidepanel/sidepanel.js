@@ -8,11 +8,11 @@ import { setup as setupMentions, reset as resetMentions, getSelects as getMentio
 
 import { setup as setupMemo, loadMemos } from './tabs/memo.tab.js';
 import { setup as setupTasks, loadTasks } from './tabs/tasks.tab.js';
-import { setup as setupSettings, getSettings, applyThemeToDOM, applyTabVisibilityToDOM, runAutoCleanup } from './tabs/settings.tab.js';
+import { setup as setupSettings, getSettings, applyThemeToDOM, applyTabVisibilityToDOM, runAutoCleanup, renderSidepanelMemes } from './tabs/settings.tab.js';
 import { getMyProfile, getMyTeams, getConfig } from '../src/api/index.js';
 import { escapeHtml } from '../src/utils/index.js';
 import { STORAGE_KEYS, MESSAGE_TYPES, CHATOPS_CONFIG, TABS } from '../src/constants.js';
-import { language } from '../src/lang.js';
+import { language, loadLanguage, applyI18n, setLanguage, getActiveLanguageCode } from '../src/lang.js';
 import { restoreState, setupAutoSave } from './persistence.js';
 
 document.addEventListener('DOMContentLoaded', init);
@@ -21,6 +21,10 @@ document.addEventListener('DOMContentLoaded', init);
  * Initializes the side panel by fetching config, profile, and teams
  */
 async function init() {
+  // Load and apply the active language dictionary asynchronously before any tab setup or UI renders
+  await loadLanguage();
+  applyI18n();
+
   const dropdownEl = document.getElementById('spWorkspaceDropdown');
   try {
     const settings = await getSettings();
@@ -41,7 +45,10 @@ async function init() {
       const selectedEl = document.getElementById('spWorkspaceSelected');
       if (selectedEl) {
         const text = selectedEl.querySelector('.selected-text');
-        if (text) text.textContent = `❌ ${err.message}`;
+        if (text) {
+          text.textContent = `❌ ${err.message}`;
+          text.removeAttribute('data-i18n');
+        }
       }
     }
   }
@@ -54,6 +61,7 @@ async function init() {
   setupSettings(state);
   setupTabs();
   setupModalListeners();
+  setupLanguageToggle();
   
   // Background silent auto cleanup
   runAutoCleanup().catch(e => console.error('[ChatOps Ext] Auto cleanup error:', e));
@@ -73,7 +81,10 @@ async function setupWorkspaceSelector(teams, dropdownContainer) {
   const selectedText = selectedEl?.querySelector('.selected-text');
   
   if (!teams?.length) { 
-    if (selectedText) selectedText.textContent = language.noWorkspaces || 'No workspaces'; 
+    if (selectedText) {
+      selectedText.textContent = language.noWorkspaces || 'No workspaces'; 
+      selectedText.removeAttribute('data-i18n');
+    }
     return; 
   }
 
@@ -84,7 +95,10 @@ async function setupWorkspaceSelector(teams, dropdownContainer) {
     || teams[0];
   
   state.setTeam(defaultTeam);
-  if (selectedText) selectedText.textContent = defaultTeam.display_name;
+  if (selectedText) {
+    selectedText.textContent = defaultTeam.display_name;
+    selectedText.removeAttribute('data-i18n');
+  }
 
   // Render options dynamically
   if (optionsEl) {
@@ -114,7 +128,10 @@ async function setupWorkspaceSelector(teams, dropdownContainer) {
     const selectedTeam = teams.find(t => String(t.id) === String(val));
     if (!selectedTeam) return;
 
-    if (selectedText) selectedText.textContent = selectedTeam.display_name;
+    if (selectedText) {
+      selectedText.textContent = selectedTeam.display_name;
+      selectedText.removeAttribute('data-i18n');
+    }
     
     optionsEl.querySelectorAll('.custom-dropdown-option').forEach(item => {
       item.classList.toggle('selected', item.dataset.value === val);
@@ -314,6 +331,12 @@ function setupStateHandlers() {
     else if (msg.type === MESSAGE_TYPES.MEMO_UPDATED) {
       loadMemos();
       loadTasks();
+    } else if (msg.type === 'APP_LANG_CHANGED') {
+      applyI18n();
+      loadMemos();
+      loadTasks();
+      renderSidepanelMemes();
+      sendResponse({ ok: true });
     } else if (msg.type === 'SWITCH_TAB') {
       switchTab(msg.tab);
       sendResponse({ ok: true });
@@ -477,7 +500,7 @@ function setupModalListeners() {
 
   document.getElementById('btnFabSearch')?.addEventListener('click', () => {
     window.ModalManager.open(
-      'Search Messages',
+      language.modalSearchTitle,
       'spSearchForm',
       'spSearchFormPlaceholder'
     );
@@ -485,7 +508,7 @@ function setupModalListeners() {
 
   document.getElementById('btnFabAddTask')?.addEventListener('click', () => {
     window.ModalManager.open(
-      'Add New Task',
+      language.modalAddTaskTitle,
       'spTasksForm',
       'spTaskFormPlaceholder'
     );
@@ -493,7 +516,7 @@ function setupModalListeners() {
 
   document.getElementById('btnFabAddNote')?.addEventListener('click', () => {
     window.ModalManager.open(
-      'Add New Note',
+      language.modalAddNoteTitle,
       'spMemoForm',
       'spMemoFormPlaceholder'
     );
@@ -501,10 +524,69 @@ function setupModalListeners() {
 
   document.getElementById('btnFabScanMentions')?.addEventListener('click', () => {
     window.ModalManager.open(
-      'Scanner Filters',
+      language.modalScannerFiltersTitle,
       'spMentionsForm',
       'spMentionsFormPlaceholder'
     );
+  });
+}
+
+/**
+ * Sets up the dynamic Language Flag Toggle button in the header
+ */
+function setupLanguageToggle() {
+  const btnHeaderLang = document.getElementById('btnHeaderLang');
+  if (!btnHeaderLang) return;
+
+  // Initialize flag display based on active language
+  const currentLang = getActiveLanguageCode();
+  btnHeaderLang.textContent = currentLang === 'en' ? '🇺🇸' : '🇻🇳';
+
+  btnHeaderLang.addEventListener('click', async () => {
+    const activeLang = getActiveLanguageCode();
+    const nextLang = activeLang === 'en' ? 'vi' : 'en';
+
+    // 1. Save language preference to chrome storage
+    await chrome.storage.local.set({ app_lang: nextLang });
+
+    // 2. Hot-swap the mutated language dictionary in-place
+    setLanguage(nextLang);
+
+    // 3. Immediately translate static DOM elements in the side panel
+    applyI18n();
+
+    // 4. Update the flag button display
+    btnHeaderLang.textContent = nextLang === 'en' ? '🇺🇸' : '🇻🇳';
+
+    // 5. Update custom select trigger text if the settings tab is open/rendered
+    document.querySelectorAll('.custom-select-wrapper').forEach(wrapper => {
+      const select = wrapper.querySelector('select');
+      const trigger = wrapper.querySelector('.custom-select-trigger span');
+      if (select && trigger) {
+        const activeOpt = select.querySelector(`option[value="${select.value}"]`);
+        if (activeOpt) {
+          const i18nKey = activeOpt.getAttribute('data-i18n');
+          if (i18nKey && language[i18nKey]) {
+            trigger.textContent = language[i18nKey];
+          }
+        }
+      }
+    });
+
+    // 6. Refresh active views to render correct dynamic translations
+    if (typeof loadMemos === 'function') loadMemos();
+    if (typeof loadTasks === 'function') loadTasks();
+    if (typeof renderSidepanelMemes === 'function') renderSidepanelMemes();
+
+    // 7. Broadcast the change to other contexts (background, active content script tabs)
+    chrome.runtime.sendMessage({ type: 'APP_LANG_CHANGED', lang: nextLang });
+    chrome.tabs.query({}).then((tabs) => {
+      for (const tab of tabs) {
+        chrome.tabs.sendMessage(tab.id, { type: 'APP_LANG_CHANGED', lang: nextLang }).catch(() => {
+          // Ignore tabs where content scripts aren't loaded or supported
+        });
+      }
+    });
   });
 }
 

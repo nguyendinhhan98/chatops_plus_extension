@@ -14,6 +14,7 @@ import {
   sidePanelState 
 } from './background/panel-manager.js';
 import { ALARMS, UI_CONFIG, MESSAGE_TYPES, CHATOPS_CONFIG, STORAGE_KEYS } from './constants.js';
+import { language, loadLanguage } from './lang.js';
 
 /**
  * Initialize extension services
@@ -121,50 +122,52 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     case MESSAGE_TYPES.TEST_NOTIFICATION:
       const testType = message.notificationType || 'both';
-      let triggeredSystem = false;
-      let triggeredInPage = false;
+      loadLanguage().then(() => {
+        let triggeredSystem = false;
+        let triggeredInPage = false;
 
-      // 1. Send in-page banner test
-      if (testType === 'both' || testType === 'in-page') {
-        triggeredInPage = true;
-        chrome.tabs.query({ url: `${CHATOPS_CONFIG.DEFAULT_URL}/*` }).then((tabs) => {
-          for (const tab of tabs) {
-            chrome.tabs.sendMessage(tab.id, {
-              type: MESSAGE_TYPES.SHOW_REMINDER,
-              message: '🔔 This is a test notification from ChatOps++!',
-              taskId: 'test_task',
-              postId: null,
-              teamName: null,
-              isTask: true
-            }).catch(() => {});
-          }
-        });
-      }
+        // 1. Send in-page banner test
+        if (testType === 'both' || testType === 'in-page') {
+          triggeredInPage = true;
+          chrome.tabs.query({ url: `${CHATOPS_CONFIG.DEFAULT_URL}/*` }).then((tabs) => {
+            for (const tab of tabs) {
+              chrome.tabs.sendMessage(tab.id, {
+                type: MESSAGE_TYPES.SHOW_REMINDER,
+                message: language.testInPageBannerMsg,
+                taskId: 'test_task',
+                postId: null,
+                teamName: null,
+                isTask: true
+              }).catch(() => {});
+            }
+          });
+        }
 
-      // 2. Trigger OS notification test
-      if (testType === 'both' || testType === 'system') {
-        triggeredSystem = true;
-        chrome.notifications.create('test_notification_' + Date.now(), {
-          type: 'basic',
-          iconUrl: chrome.runtime.getURL('icons/icon128.png'),
-          title: '🎯 ChatOps++ Test Notification',
-          message: 'OS push notification system is working perfectly!',
-          priority: 2,
-          requireInteraction: true
-        }, (notificationId) => {
-          if (chrome.runtime.lastError) {
-            console.error('[ChatOps Ext] Test notification error:', chrome.runtime.lastError.message);
-            sendResponse({ ok: false, error: chrome.runtime.lastError.message, system: true, inPage: triggeredInPage });
-          } else {
-            console.log('[ChatOps Ext] Test notification success:', notificationId);
-            sendResponse({ ok: true, system: true, inPage: triggeredInPage });
-          }
-        });
-        return true;
-      }
+        // 2. Trigger OS notification test
+        if (testType === 'both' || testType === 'system') {
+          triggeredSystem = true;
+          chrome.notifications.create('test_notification_' + Date.now(), {
+            type: 'basic',
+            iconUrl: chrome.runtime.getURL('icons/icon128.png'),
+            title: language.testSystemTitle,
+            message: language.testSystemMsg,
+            priority: 2,
+            requireInteraction: true
+          }, (notificationId) => {
+            if (chrome.runtime.lastError) {
+              console.error('[ChatOps Ext] Test notification error:', chrome.runtime.lastError.message);
+              sendResponse({ ok: false, error: chrome.runtime.lastError.message, system: true, inPage: triggeredInPage });
+            } else {
+              console.log('[ChatOps Ext] Test notification success:', notificationId);
+              sendResponse({ ok: true, system: true, inPage: triggeredInPage });
+            }
+          });
+          return;
+        }
 
-      // If only in-page was triggered
-      sendResponse({ ok: true, system: false, inPage: true });
+        // If only in-page was triggered
+        sendResponse({ ok: true, system: false, inPage: true });
+      });
       return true;
 
     default:

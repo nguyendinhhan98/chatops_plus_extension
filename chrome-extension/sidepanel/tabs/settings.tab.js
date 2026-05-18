@@ -1,5 +1,5 @@
 import { STORAGE_KEYS, CHATOPS_CONFIG, MESSAGE_TYPES } from '../../src/constants.js';
-import { language } from '../../src/lang.js';
+import { language, setLanguage, applyI18n } from '../../src/lang.js';
 import { getCustomEmojis, getConfig } from '../../src/api/index.js';
 
 let chatopsUrl = CHATOPS_CONFIG.DEFAULT_URL;
@@ -396,7 +396,7 @@ function setupEventListeners() {
         const newBytes = getBase64Size(dataUrl);
 
         if (totalBytes + newBytes > 10 * 1024 * 1024) {
-          alert(language.storageLimitExceeded || 'Storage limit reached (10 MB). Please delete some images before uploading.');
+          alert(language.storageLimitExceeded);
           fileInput.value = '';
           return;
         }
@@ -499,7 +499,7 @@ function setupEventListeners() {
             alert(language.testBothSuccess);
           }
         } else if (response && !response.ok) {
-          alert((language.testErrorPrefix || '🔴 Background notification error: ') + response.error);
+          alert(language.testErrorPrefix + response.error);
         } else if (!response) {
           alert(language.testBgWorkerError);
         }
@@ -887,7 +887,7 @@ function setupEventListeners() {
     btnBackup.addEventListener('click', async () => {
       try {
         btnBackup.disabled = true;
-        btnBackup.textContent = '⏳ ' + (language.backingUp || 'Backing up...');
+        btnBackup.textContent = '⏳ ' + language.backingUp;
         
         // Get memos from local
         const localRes = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
@@ -929,7 +929,7 @@ function setupEventListeners() {
         alert(language.backupFailed);
       } finally {
         btnBackup.disabled = false;
-        btnBackup.textContent = '☁️ ' + (language.backupToCloud || 'Backup to Cloud');
+        btnBackup.textContent = '☁️ ' + language.backupToCloud;
       }
     });
   }
@@ -941,7 +941,7 @@ function setupEventListeners() {
         if (!confirmRestore) return;
         
         btnRestore.disabled = true;
-        btnRestore.textContent = '⏳ ' + (language.restoring || 'Restoring...');
+        btnRestore.textContent = '⏳ ' + language.restoring;
         
         // Get all keys from sync
         const allSyncData = await chrome.storage.sync.get(null);
@@ -977,7 +977,7 @@ function setupEventListeners() {
         alert(language.restoreFailed);
       } finally {
         btnRestore.disabled = false;
-        btnRestore.textContent = '🔄 ' + (language.restoreFromCloud || 'Restore from Cloud');
+        btnRestore.textContent = '🔄 ' + language.restoreFromCloud;
       }
     });
   }
@@ -1005,7 +1005,7 @@ function setupEventListeners() {
       if (!confirmCleanup) return;
       
       btnManualCleanup.disabled = true;
-      btnManualCleanup.textContent = '⏳ ' + (language.cleaningUp || 'Cleaning up...');
+      btnManualCleanup.textContent = '⏳ ' + language.cleaningUp;
       
       try {
         const deletedCount = await runAutoCleanupForce();
@@ -1016,7 +1016,7 @@ function setupEventListeners() {
         alert(language.cleanupFailed);
       } finally {
         btnManualCleanup.disabled = false;
-        btnManualCleanup.textContent = '🧹 ' + (language.cleanUpNow || 'Clean up now');
+        btnManualCleanup.textContent = '🧹 ' + language.cleanUpNow;
       }
     });
   }
@@ -1090,7 +1090,7 @@ function showAutoSaveFeedback() {
     fb.style.marginTop = '0';
     fb.style.boxSizing = 'border-box';
     fb.style.fontFamily = 'inherit';
-    fb.textContent = language.autoSaved || 'Auto-saved';
+    fb.textContent = language.autoSaved;
     setTimeout(() => { fb.style.display = 'none'; }, 2000);
   }
 }
@@ -1504,32 +1504,22 @@ export async function renderSidepanelMemes() {
   }
 
   if (customMemes.length === 0) {
+    container.style.display = 'flex';
     container.style.minHeight = 'auto';
     container.style.background = 'transparent';
     container.style.border = 'none';
     container.style.padding = '16px 0';
-    container.style.display = 'flex';
     container.style.justifyContent = 'stretch';
     container.style.alignItems = 'stretch';
-    container.innerHTML = `
-      <div class="sp-how-to-use-card" style="margin-bottom: 0;">
-        <div class="card-icon">💡</div>
-        <div>
-          <h4 class="card-title">How to use?</h4>
-          <p class="card-desc">No custom images yet. Upload some images using the button above to start, then click the image icon (🖼️) in the ChatOps chatbox toolbar to open the picker!</p>
-        </div>
-      </div>
-    `;
+    container.innerHTML = language.imageLibraryEmptyState;
     return;
   }
 
+  container.style.display = 'grid';
   container.style.minHeight = '300px';
   container.style.background = 'var(--bg-2)';
   container.style.border = '1px solid var(--border)';
   container.style.padding = '12px';
-  container.style.display = 'grid';
-  container.style.justifyContent = 'stretch';
-  container.style.alignItems = 'stretch';
 
   container.innerHTML = customMemes.map((url, idx) => {
     const formattedSize = formatSize(memeSizes[idx]);

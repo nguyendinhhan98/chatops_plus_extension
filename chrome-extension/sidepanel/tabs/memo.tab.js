@@ -9,11 +9,11 @@ import { language } from '../../src/lang.js';
 
 function getCategoryDisplayName(cat) {
   switch (cat.toLowerCase()) {
-    case 'all': return language.categoryAll || 'ALL';
-    case 'general': return language.categoryGeneral || 'General';
-    case 'work': return language.categoryWork || 'Work';
-    case 'personal': return language.categoryPersonal || 'Personal';
-    case 'ideas': return language.categoryIdeas || 'Ideas';
+    case 'all': return language.categoryAll;
+    case 'general': return language.categoryGeneral;
+    case 'work': return language.categoryWork;
+    case 'personal': return language.categoryPersonal;
+    case 'ideas': return language.categoryIdeas;
     default: return cat;
   }
 }
@@ -166,8 +166,8 @@ export function setup(state) {
               <input type="text" class="inline-edit-title" placeholder="Title (optional)" value="${escapeHtml(note.title || '')}" style="width: 100%; height: 28px; font-size: 13px; font-weight: 600; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); outline: none; box-sizing: border-box; font-family: inherit;" autocomplete="off">
               <textarea class="inline-edit-textarea" style="width: 100%; min-height: 60px; padding: 8px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 13px; outline: none; background: #fff; resize: vertical; color: var(--text-1);">${escapeHtml(note.note)}</textarea>
               <div style="display: flex; gap: 6px; justify-content: flex-end;">
-                <button class="btn btn-secondary inline-edit-cancel" data-id="${id}" style="padding: 4px 10px; font-size: 11.5px; height: 26px; border-radius: 6px; cursor:pointer;">${language.cancel || 'Cancel'}</button>
-                <button class="btn btn-primary inline-edit-save" data-id="${id}" style="padding: 4px 10px; font-size: 11.5px; height: 26px; border-radius: 6px; cursor:pointer; color:#fff;">${language.save || 'Save'}</button>
+                <button class="btn btn-secondary inline-edit-cancel" data-id="${id}" style="padding: 4px 10px; font-size: 11.5px; height: 26px; border-radius: 6px; cursor:pointer;">${language.cancel}</button>
+                <button class="btn btn-primary inline-edit-save" data-id="${id}" style="padding: 4px 10px; font-size: 11.5px; height: 26px; border-radius: 6px; cursor:pointer; color:#fff;">${language.save}</button>
               </div>
             </div>
           `;
@@ -190,7 +190,7 @@ export function setup(state) {
       if (textarea) {
         const newText = textarea.value.trim();
         if (!newText) {
-          alert(language.memoEmptyNoteError || 'Note content cannot be empty.');
+          alert(language.memoEmptyNoteError);
           return;
         }
         
@@ -345,7 +345,7 @@ function renderNoteCard(note, categories = ['General', 'Work', 'Personal', 'Idea
           ${note.title ? `<div class="memo-item-title" style="font-weight:700; font-size:13.5px; color:var(--text-1); margin-bottom:2px; letter-spacing:-0.1px;">${escapeHtml(note.title)}</div>` : ''}
           <div class="memo-note-text note-body collapsible-body collapsed" style="margin-top:0;">${escapedText}</div>
         </div>
-        <button class="collapse-btn" data-id="${note.id}" style="flex-shrink:0; margin:0;" title="${language.expandCollapseBtn || 'Expand/Collapse'}">▶</button>
+        <button class="collapse-btn" data-id="${note.id}" style="flex-shrink:0; margin:0;" title="${language.expandCollapseBtn}">▶</button>
         <button class="btn-copy-note" data-text="${rawText.replace(/"/g, '&quot;')}" title="${language.memoCopyNote}" style="flex-shrink:0; margin:0;">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
             <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
@@ -363,7 +363,7 @@ function renderNoteCard(note, categories = ['General', 'Work', 'Personal', 'Idea
         </div>
         <div class="memo-actions">
           ${permalink ? `<a href="${permalink}" class="post-jump-link" title="${language.memoViewOriginal}">↗</a>` : ''}
-          <button class="btn-edit-memo" data-id="${note.id}" title="${language.editNote || 'Edit Note'}">
+          <button class="btn-edit-memo" data-id="${note.id}" title="${language.editNote}">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none; opacity:0.85;">
               <path d="M12 20h9"></path>
               <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
