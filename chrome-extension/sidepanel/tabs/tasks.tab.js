@@ -54,6 +54,10 @@ export function setup(state) {
     reminderInput.addEventListener('input', () => {
       presetSelect.value = '';
     });
+
+    if (typeof window.convertToCustomDropdown === 'function') {
+      window.convertToCustomDropdown('quickTaskReminderSelect', '115px');
+    }
   }
 
   const updateSaveButtonState = () => {
@@ -102,8 +106,14 @@ export function setup(state) {
     await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
 
     quickInput.value = '';
-    if (reminderInput) reminderInput.value = '';
-    if (presetSelect) presetSelect.value = '';
+    if (reminderInput) {
+      reminderInput.value = '';
+      reminderInput.dispatchEvent(new Event('change'));
+    }
+    if (presetSelect) {
+      presetSelect.value = '';
+      presetSelect.dispatchEvent(new Event('change'));
+    }
     updateSaveButtonState();
 
     const startTime = item.reminder
@@ -112,6 +122,11 @@ export function setup(state) {
     chrome.runtime.sendMessage({ type: MESSAGE_TYPES.SET_TASK_ALARM, taskId: id, time: startTime });
     
     loadTasks();
+
+    // Close the Action Modal
+    if (window.ModalManager) {
+      window.ModalManager.close();
+    }
   };
 
   quickInput.addEventListener('keydown', e => { 
@@ -120,7 +135,18 @@ export function setup(state) {
       saveTask(); 
     }
   });
-  quickSaveBtn.addEventListener('click', saveTask);
+  if (quickSaveBtn) {
+    quickSaveBtn.addEventListener('click', saveTask);
+  }
+
+  const cancelBtn = document.getElementById('btnCancelTask');
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', () => {
+      if (window.ModalManager) {
+        window.ModalManager.close();
+      }
+    });
+  }
 
   // Handle toggle collapse
   const btnToggle = document.getElementById('btnToggleTasks');
@@ -335,24 +361,24 @@ function renderTaskCard(task, now) {
 
   return `
     <div class="memo-item ${task.done ? 'memo-done' : ''} ${isOverdue ? 'memo-overdue' : ''}" id="item_${task.id}">
-      <div class="memo-item-header" style="display:flex; align-items:flex-start;">
-        <label class="memo-checkbox-container" title="${task.done ? language.taskMarkIncomplete : language.taskMarkDone}" style="flex-shrink:0;">
+      <div class="memo-item-header" style="display:flex; align-items:center; gap:8px;">
+        <label class="memo-checkbox-container" title="${task.done ? language.taskMarkIncomplete : language.taskMarkDone}" style="flex-shrink:0; margin:0;">
           <input type="checkbox" class="task-checkbox" data-id="${task.id}" ${task.done ? 'checked' : ''}>
           <span class="memo-checkmark-custom"></span>
         </label>
-        <button class="collapse-btn" data-id="${task.id}" style="margin-right: 4px;" title="${language.expandCollapseBtn || 'Expand/Collapse'}">▶</button>
         <div class="memo-content" style="flex:1; min-width:0;">
           ${hasOriginalPost ? `<div class="memo-post-preview post-preview" style="display:none; margin-bottom:4px;">📌 ${escapeHtml(task.postText)}</div>` : ''}
-          <div class="memo-note-text task-text collapsible-body collapsed" style="margin-top: 2px;">${escapeHtml(task.note || language.taskNoContent)}</div>
+          <div class="memo-note-text task-text collapsible-body collapsed" style="margin-top:0; font-size:12.5px; line-height:1.4; font-weight:400; color:var(--text-1);">${escapeHtml(task.note || language.taskNoContent)}</div>
         </div>
+        <button class="collapse-btn" data-id="${task.id}" style="flex-shrink:0; margin:0;" title="${language.expandCollapseBtn || 'Expand/Collapse'}">▶</button>
       </div>
       <div class="memo-footer">
         <div class="memo-meta" style="display:flex; align-items:center; gap:8px;">
           <span>📅 ${formatRelativeTime(task.createdAt)}</span>
           ${!task.done ? `
-            <div style="display:flex; align-items:center; background:#fff; border:1px solid var(--border); border-radius:4px; padding:2px 6px;">
-              <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style="opacity:0.7; margin-right:4px;"><path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/></svg>
-              <input type="datetime-local" class="task-update-reminder" data-id="${task.id}" value="${task.reminder || ''}" style="border:none; outline:none; font-size:11px; background:transparent; cursor:pointer;" title="${language.changeReminderTime || 'Change reminder time'}" />
+            <div class="task-update-reminder-wrapper" style="display:inline-flex; align-items:center; background:#fff; border:1px solid var(--border); border-radius:4px; padding:2px 6px; position:relative; width:135px; height:22px; box-sizing:border-box;">
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style="opacity:0.7; margin-right:4px; position:relative; z-index:2; pointer-events:none; flex-shrink:0;"><path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/></svg>
+              <input type="datetime-local" class="task-update-reminder" data-id="${task.id}" value="${task.reminder || ''}" style="position:absolute; left:0; top:0; width:100%; height:100%; z-index:1; padding-left:22px; border:none; outline:none; font-size:10.5px; background:transparent; cursor:pointer; box-sizing:border-box;" title="${language.changeReminderTime || 'Change reminder time'}" />
             </div>
           ` : ''}
         </div>

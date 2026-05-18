@@ -13,6 +13,16 @@ chrome.runtime.onMessage.addListener((message) => {
 });
 
 async function injectDynamicTheme() {
+  // Inject Google Font Inter so the webpage popover modal has access to the exact same premium font as the sidepanel
+  let fontLink = document.getElementById('chatops-google-font');
+  if (!fontLink) {
+    fontLink = document.createElement('link');
+    fontLink.id = 'chatops-google-font';
+    fontLink.rel = 'stylesheet';
+    fontLink.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap';
+    document.head.appendChild(fontLink);
+  }
+
   const res = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS]);
   const settings = res[STORAGE_KEYS.SETTINGS] || {};
   
@@ -33,8 +43,7 @@ async function injectDynamicTheme() {
     .chatops-reminder-banner { border-top-color: var(--chatops-accent) !important; }
     .crb-title { color: var(--chatops-accent) !important; }
     .crb-progress { background: var(--chatops-accent) !important; }
-    .cqn-header { background: var(--chatops-header) !important; }
-    .cqn-btn-primary { background: var(--chatops-accent) !important; }
+    .btn-primary { background: var(--chatops-accent) !important; color: #ffffff !important; }
     .cqn-mode-btn.active { color: var(--chatops-accent) !important; border-color: var(--chatops-accent) !important; background: rgba(0,0,0,0.05) !important; }
     .cqn-preview { border-left-color: var(--chatops-accent) !important; }
   `;
@@ -653,6 +662,102 @@ function showToast(msg) {
   let quickNotePopover = null;
   let quickNoteBackdrop = null;
 
+  function convertToCustomDropdown(nativeSelect, width = null) {
+    if (!nativeSelect) return;
+    if (nativeSelect.nextElementSibling?.classList.contains('custom-dropdown-container')) {
+      nativeSelect.nextElementSibling.remove();
+    }
+
+    nativeSelect.style.display = 'none';
+
+    const computedStyle = window.getComputedStyle(nativeSelect);
+    const selectWidth = width || computedStyle.width || '100%';
+
+    const container = document.createElement('div');
+    container.className = 'custom-dropdown-container';
+    container.style.width = selectWidth;
+    container.style.flexShrink = '0';
+    container.style.boxSizing = 'border-box';
+    container.style.display = 'inline-block';
+    container.style.verticalAlign = 'middle';
+
+    const options = Array.from(nativeSelect.options);
+    const selectedIndex = nativeSelect.selectedIndex >= 0 ? nativeSelect.selectedIndex : 0;
+    const initialText = options[selectedIndex]?.textContent || 'Select...';
+
+    container.innerHTML = `
+      <div class="custom-dropdown" style="position: relative; width: 100%; box-sizing: border-box; font-family: var(--font);">
+        <button type="button" class="custom-dropdown-toggle"
+          style="width: 100%; height: 34px; font-size: 12.5px; border-radius: 6px; border: 1px solid #cbd5e1; background: #ffffff; color: #1a1a1c; cursor: pointer; outline: none; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; font-weight: 500; transition: all 0.2s ease; box-sizing: border-box;">
+          <span class="custom-dropdown-selected-text">${initialText}</span>
+          <span class="custom-dropdown-arrow" style="font-size: 9px; opacity: 0.6; transition: transform 0.2s ease;">▼</span>
+        </button>
+        <ul class="custom-dropdown-menu"
+          style="position: absolute; top: 100%; right: 0; margin-top: 6px; width: 100%; min-width: 120px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12); padding: 4px 0; list-style: none; display: none; z-index: 1000000; max-height: 220px; overflow-y: auto; box-sizing: border-box;">
+          ${options.map(opt => `
+            <li class="custom-dropdown-item" data-value="${opt.value}" style="padding: 6px 12px; font-size: 12.5px; color: #1a1a1c; cursor: pointer; transition: all 0.2s ease; text-align: left; list-style: none; margin: 0;">${opt.textContent}</li>
+          `).join('')}
+        </ul>
+      </div>
+    `;
+
+    nativeSelect.parentNode.insertBefore(container, nativeSelect.nextSibling);
+
+    const toggleBtn = container.querySelector('.custom-dropdown-toggle');
+    const menuList = container.querySelector('.custom-dropdown-menu');
+    const selectedSpan = container.querySelector('.custom-dropdown-selected-text');
+    const arrowSpan = container.querySelector('.custom-dropdown-arrow');
+
+    if (!toggleBtn || !menuList || !selectedSpan || !arrowSpan) return;
+
+    toggleBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      
+      document.querySelectorAll('.custom-dropdown-menu').forEach(m => {
+        if (m !== menuList) {
+          m.style.display = 'none';
+          const otherArrow = m.previousElementSibling?.querySelector('.custom-dropdown-arrow');
+          if (otherArrow) otherArrow.style.transform = 'rotate(0deg)';
+        }
+      });
+
+      const isVisible = menuList.style.display === 'block';
+      menuList.style.display = isVisible ? 'none' : 'block';
+      arrowSpan.style.transform = isVisible ? 'rotate(0deg)' : 'rotate(180deg)';
+    });
+
+    menuList.querySelectorAll('.custom-dropdown-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const val = item.getAttribute('data-value');
+        const text = item.textContent;
+
+        selectedSpan.textContent = text;
+        nativeSelect.value = val;
+        nativeSelect.dispatchEvent(new Event('change'));
+
+        menuList.style.display = 'none';
+        arrowSpan.style.transform = 'rotate(0deg)';
+      });
+    });
+
+    nativeSelect.addEventListener('change', () => {
+      const activeOption = nativeSelect.options[nativeSelect.selectedIndex];
+      if (activeOption) {
+        selectedSpan.textContent = activeOption.textContent;
+      }
+    });
+  }
+
+  // Globally hide dropdown menus on body click
+  document.addEventListener('click', () => {
+    document.querySelectorAll('.custom-dropdown-menu').forEach(m => {
+      m.style.display = 'none';
+      const otherArrow = m.previousElementSibling?.querySelector('.custom-dropdown-arrow');
+      if (otherArrow) otherArrow.style.transform = 'rotate(0deg)';
+    });
+  });
+
   function getOrCreatePopover() {
     if (quickNotePopover) return quickNotePopover;
 
@@ -663,51 +768,62 @@ function showToast(msg) {
     quickNotePopover = document.createElement('div');
     quickNotePopover.id = 'chatops-quick-note-popover';
     quickNotePopover.innerHTML = `
-      <div class="cqn-header">
-        <span class="cqn-title">${language.quickTaskTitle}</span>
-        <button id="cqn-close" title="${language.memoDelete}">×</button>
+      <div class="sp-modal-header" style="border-top-left-radius: 11px; border-top-right-radius: 11px; border-bottom: 1px solid #cbd5e1;">
+        <h3 class="sp-modal-title cqn-title" style="margin: 0; font-size: 13px; font-weight: 700; text-transform: uppercase;">ADD NEW TASK</h3>
+        <button id="cqn-close" class="sp-modal-close-btn" title="Close">&times;</button>
       </div>
-      <div id="cqn-msg-preview" class="cqn-preview" style="max-height:80px; -webkit-line-clamp:5;"></div>
-      <textarea id="cqn-note-text" placeholder="${language.quickTaskNotePlaceholder}"></textarea>
       
-      <div id="cqn-note-section" style="padding: 0 13px 8px;">
-        <div style="font-size:11px; font-weight:600; color:var(--text-3); text-transform:uppercase; margin-bottom:4px;">${language.categoryLabel || 'Category:'}</div>
-        <select id="cqn-category" style="width:100%; padding:6px; border:1px solid #e0e0e5; border-radius:4px; font-size:12px; font-family:inherit; background:#fff; outline:none; cursor:pointer;">
-          <option value="general">📁 ${language.categoryGeneral || 'General'}</option>
-          <option value="work">📁 ${language.categoryWork || 'Work'}</option>
-          <option value="personal">📁 ${language.categoryPersonal || 'Personal'}</option>
-          <option value="ideas">📁 ${language.categoryIdeas || 'Ideas'}</option>
-        </select>
-      </div>
-
-      <div id="cqn-task-section">
-        <div style="padding: 0 13px 8px;">
-          <div style="font-size:12px; font-weight:600; color:#4a4a4c; margin-bottom:6px; display:flex; align-items:center; gap:4px;">
-            <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" style="opacity:0.7"><path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/></svg>
-            ${language.quickTaskRemindAfter || 'Remind after:'}
-          </div>
-          <div class="cqn-presets" style="flex-wrap:wrap;">
-            <button type="button" class="cqn-preset-btn" style="min-width:40px;" data-min="15">+15m</button>
-            <button type="button" class="cqn-preset-btn" style="min-width:40px;" data-min="30">+30m</button>
-            <button type="button" class="cqn-preset-btn" style="min-width:40px;" data-min="60">+1h</button>
-            <button type="button" class="cqn-preset-btn" style="min-width:40px;" data-min="120">+2h</button>
-            <button type="button" class="cqn-preset-btn" style="min-width:40px;" data-min="240">+4h</button>
-            <button type="button" class="cqn-preset-btn" style="min-width:40px;" data-min="360">+6h</button>
-            <button type="button" class="cqn-preset-btn" style="min-width:40px;" data-min="480">+8h</button>
-          </div>
-          <div style="font-size:12px; font-weight:600; color:#4a4a4c; margin:8px 0 6px 0; display:flex; align-items:center; gap:4px;">
-            ${language.quickTaskRemindAt || 'Remind at:'}
-          </div>
-          <div class="cqn-reminder-row" style="background:#fff; border:1px solid #e0e0e5; border-radius:4px; padding:2px 8px;">
-            <input type="datetime-local" id="cqn-reminder-time" style="cursor:pointer; background:transparent; border:none; outline:none; box-shadow:none; flex:1;">
-          </div>
-          <div class="cqn-task-hint" style="margin-top:8px;"></div>
+      <div class="sp-modal-body" style="padding: 14px 16px; box-sizing: border-box; background: #ffffff; border-bottom-left-radius: 11px; border-bottom-right-radius: 11px;">
+        <div class="task-quick-input-row" style="margin-bottom: 12px; width: 100%;">
+          <textarea id="cqn-note-text" placeholder="Add new task... (Shift + Enter to save)" class="quick-note-textarea" style="width: 100%; min-height: 110px; resize: vertical; box-sizing: border-box;"></textarea>
         </div>
-      </div>
+        
+        <div id="cqn-note-section" style="margin-bottom: 12px; width: 100%; display: none;">
+          <div style="font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase; margin-bottom:4px;">${language.categoryLabel || 'Category:'}</div>
+          <select id="cqn-category" class="custom-select" style="width:100%; height: 34px; font-size: 12.5px; border-radius: 6px; border:1px solid #cbd5e1; background:#fff; outline:none; cursor:pointer; box-sizing: border-box;">
+            <option value="general">📁 ${language.categoryGeneral || 'General'}</option>
+            <option value="work">📁 ${language.categoryWork || 'Work'}</option>
+            <option value="personal">📁 ${language.categoryPersonal || 'Personal'}</option>
+            <option value="ideas">📁 ${language.categoryIdeas || 'Ideas'}</option>
+          </select>
+        </div>
 
-      <div class="cqn-actions">
-        <button id="cqn-save-note" class="cqn-btn cqn-btn-primary">${language.save}</button>
-        <button id="cqn-cancel" class="cqn-btn cqn-btn-secondary">${language.cancel}</button>
+        <div id="cqn-task-section" style="margin-bottom: 12px; width: 100%;">
+          <div class="task-reminder-wrapper" style="display:flex; align-items:center; gap:6px; width:100%; box-sizing: border-box;">
+            <div class="task-reminder-row" id="cqnReminderRow"
+              style="flex:1; background:#fff; padding:0 10px; border-radius:6px; border:1px solid #cbd5e1; cursor:pointer; display:flex; align-items:center; min-width:0; height:34px; box-sizing:border-box;">
+              <label class="task-reminder-label" for="cqn-reminder-time"
+                style="margin-right:6px; cursor:pointer; display:inline-flex; align-items:center; white-space:nowrap; font-size:12.5px; line-height:1; height:100%; margin-bottom:0;">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"
+                  style="margin-right:4px; opacity:0.7; flex-shrink:0; display:inline-block; vertical-align:middle; position:relative; top:-0.5px;">
+                  <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z" />
+                  <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z" />
+                </svg>
+                Remind at:
+              </label>
+              <input type="datetime-local" id="cqn-reminder-time" class="quick-task-datetime"
+                style="flex:1; cursor:pointer; background:transparent; border:none; outline:none; font-size:12.5px; width:100%; min-width:0; padding:0; margin:0; display:inline-flex; align-items:center; line-height:1; height:100%; box-shadow:none;">
+            </div>
+
+            <select id="cqnReminderSelect" class="custom-select"
+              style="width: 115px; height: 34px; font-size: 12.5px; border-radius: 6px; cursor: pointer; outline: none; box-sizing: border-box; flex-shrink: 0; line-height: 1; padding: 0 24px 0 10px;">
+              <option value="">Remind in...</option>
+              <option value="15">+15m</option>
+              <option value="30">+30m</option>
+              <option value="60">+1h</option>
+              <option value="120">+2h</option>
+              <option value="240">+4h</option>
+              <option value="360">+6h</option>
+              <option value="480">+8h</option>
+            </select>
+          </div>
+          <div class="input-helper" id="cqnSnoozeHintText" style="margin-top: 6px; margin-bottom: 12px;"></div>
+        </div>
+
+        <div style="display: flex; gap: 8px; margin-top: 16px; justify-content: flex-end; width: 100%; border-top: 1px solid #cbd5e1; padding-top: 12px; box-sizing: border-box;">
+          <button type="button" id="cqn-cancel" class="btn btn-secondary" style="padding: 0 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid #cbd5e1; background: transparent; height: 36px; color: #475569; display: inline-flex; align-items: center; justify-content: center; margin: 0; box-sizing: border-box;">Cancel</button>
+          <button type="button" id="cqn-save-note" class="btn btn-primary" style="padding: 0 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; background: #1c58d9; color: #fff; border: none; height: 36px; min-width: 90px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 4px rgba(28, 88, 217, 0.2); margin: 0; box-sizing: border-box;">🎯 Add Task</button>
+        </div>
       </div>
     `;
     document.body.appendChild(quickNotePopover);
@@ -722,11 +838,11 @@ function showToast(msg) {
     quickNoteBackdrop.addEventListener('mousedown', closePopover);
 
     const timeInput = document.getElementById('cqn-reminder-time');
-    const presetBtns = document.querySelectorAll('.cqn-preset-btn');
-    const reminderRow = quickNotePopover.querySelector('.cqn-reminder-row');
+    const reminderRow = document.getElementById('cqnReminderRow');
 
     if (reminderRow && timeInput) {
       reminderRow.addEventListener('click', (e) => {
+        e.stopPropagation();
         if (e.target !== timeInput) {
           try {
             timeInput.showPicker();
@@ -737,27 +853,39 @@ function showToast(msg) {
         }
       });
     }
-    
-    timeInput.addEventListener('input', () => {
-      presetBtns.forEach(b => b.classList.remove('active'));
-    });
 
-    presetBtns.forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        if (e.target.classList.contains('active')) {
-          e.target.classList.remove('active');
+    // Convert selects to premium custom dropdowns
+    const cqnCategorySelect = document.getElementById('cqn-category');
+    const cqnReminderSelect = document.getElementById('cqnReminderSelect');
+
+    convertToCustomDropdown(cqnCategorySelect);
+    convertToCustomDropdown(cqnReminderSelect, '115px');
+
+    if (cqnReminderSelect && timeInput) {
+      cqnReminderSelect.addEventListener('change', () => {
+        const val = cqnReminderSelect.value;
+        if (!val) {
           timeInput.value = '';
           return;
         }
-        presetBtns.forEach(b => b.classList.remove('active'));
-        e.target.classList.add('active');
-        const mins = parseInt(e.target.dataset.min, 10);
+        const mins = parseInt(val, 10);
         const targetTime = new Date(Date.now() + mins * 60000);
         const tzOffset = targetTime.getTimezoneOffset() * 60000;
-        const localISOTime = (new Date(targetTime - tzOffset)).toISOString().slice(0,16);
+        const localISOTime = (new Date(targetTime - tzOffset)).toISOString().slice(0, 16);
         timeInput.value = localISOTime;
       });
-    });
+
+      timeInput.addEventListener('input', () => {
+        cqnReminderSelect.value = '';
+        const customSelect = cqnReminderSelect.nextElementSibling;
+        if (customSelect && customSelect.classList.contains('custom-dropdown-container')) {
+          const selectedText = customSelect.querySelector('.custom-dropdown-selected');
+          if (selectedText) {
+            selectedText.textContent = 'Remind in...';
+          }
+        }
+      });
+    }
 
     return quickNotePopover;
   }
@@ -776,10 +904,18 @@ function showToast(msg) {
       }
     }
     const postId = postEl.id ? postEl.id.replace(SELECTORS.POST_ID_PREFIX, '') : '';
-    document.getElementById('cqn-msg-preview').textContent = msgTextFull.length > 200 ? msgTextFull.slice(0, 200) + '...' : msgTextFull;
-    document.getElementById('cqn-note-text').value = '';
+    
+    // Pre-fill the textarea directly
+    document.getElementById('cqn-note-text').value = msgTextFull;
     document.getElementById('cqn-reminder-time').value = '';
-    document.querySelectorAll('.cqn-preset-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('cqn-reminder-time').dispatchEvent(new Event('change'));
+    
+    const presetSelect = document.getElementById('cqnReminderSelect');
+    if (presetSelect) {
+      presetSelect.value = '';
+      presetSelect.dispatchEvent(new Event('change'));
+    }
+
     popover.dataset.postId = postId;
     popover.dataset.postText = msgTextFull;
     
@@ -788,28 +924,34 @@ function showToast(msg) {
 
     const taskSection = popover.querySelector('#cqn-task-section');
     const noteSection = popover.querySelector('#cqn-note-section');
-    const hintEl = popover.querySelector('.cqn-task-hint');
+    const hintEl = popover.querySelector('#cqnSnoozeHintText');
+    const saveBtn = document.getElementById('cqn-save-note');
     
     if (popover.dataset.mode === 'note') {
       if (taskSection) taskSection.style.display = 'none';
       if (noteSection) noteSection.style.display = 'block';
       popover.querySelector('.cqn-title').textContent = language.quickNoteTitle || 'Add Quick Note';
+      saveBtn.innerHTML = '📝 Add Note';
     } else {
       if (taskSection) taskSection.style.display = 'block';
       if (noteSection) noteSection.style.display = 'none';
-      popover.querySelector('.cqn-title').textContent = language.quickTaskTitle || 'Create Task';
+      popover.querySelector('.cqn-title').textContent = language.quickTaskTitle || 'ADD NEW TASK';
+      saveBtn.innerHTML = '🎯 Add Task';
       if (hintEl) {
         const res = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS]);
         const settings = res[STORAGE_KEYS.SETTINGS] || { snoozeMinutes: 5 };
-        hintEl.innerHTML = language.quickTaskHint.replace('{minutes}', settings.snoozeMinutes);
+        hintEl.innerHTML = `⏰ Starts at selected time — snoozes every ${settings.snoozeMinutes} mins until completed (<a href="#" class="settings-subtab-link" data-subtab="features-snooze" style="color:var(--chatops-accent); font-weight:700; text-decoration:underline;">change in Settings</a>)`;
       }
     }
 
-    const saveBtn = document.getElementById('cqn-save-note');
     const newSaveBtn = saveBtn.cloneNode(true);
     saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
     newSaveBtn.addEventListener('click', () => saveTask(popover));
-    setTimeout(() => document.getElementById('cqn-note-text').focus(), 50);
+    
+    // Focus the textarea and put cursor at the end
+    const textarea = document.getElementById('cqn-note-text');
+    textarea.focus();
+    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
   }
 
   async function saveTask(popover) {
@@ -1029,10 +1171,6 @@ function showToast(msg) {
       e.preventDefault();
       const subtabName = link.dataset.subtab;
       if (subtabName) {
-        // Close popover
-        const closeBtn = document.getElementById('cqn-close');
-        if (closeBtn) closeBtn.click();
-
         // Save target tab & sub-tab to local storage so the sidepanel opens directly to it
         await chrome.storage.local.set({ 
           [STORAGE_KEYS.SIDEPANEL_TAB]: 'settings',

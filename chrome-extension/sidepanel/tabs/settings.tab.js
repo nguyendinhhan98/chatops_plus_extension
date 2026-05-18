@@ -355,6 +355,11 @@ async function loadAndApplySettings() {
 
   // Update cloud sync status
   updateSyncStatusText();
+
+  if (typeof window.convertToCustomDropdown === 'function') {
+    window.convertToCustomDropdown('settingsAutoCleanupDays');
+    window.convertToCustomDropdown('settingNotificationType');
+  }
 }
 
 function setupEventListeners() {

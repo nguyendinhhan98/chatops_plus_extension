@@ -39,6 +39,10 @@ export function setup(state) {
   _state = state;
   document.getElementById('btnSpScanMentions').addEventListener('click', scanMentionsDeep);
 
+  if (typeof window.convertToCustomDropdown === 'function') {
+    window.convertToCustomDropdown('spMentionHours');
+  }
+
   // Toggle Collapse
   const btnToggle = document.getElementById('btnToggleMentions');
   const mentionsForm = document.getElementById('spMentionsForm');
@@ -115,30 +119,42 @@ async function scanMentionsDeep() {
     return;
   }
 
+  // Close the Action Modal
+  if (window.ModalManager) {
+    window.ModalManager.close();
+  }
+
   const hours = parseInt(document.getElementById('spMentionHours').value, 10);
   const direct = document.getElementById('spMentionDirect').checked;
   const here = document.getElementById('spMentionHere').checked;
   const channelFlag = document.getElementById('spMentionChannel').checked;
-  const includeDM = document.getElementById('spMentionIncludeDM').checked;
+  const scanDMs = document.getElementById('spMentionDMs').checked;
   const mentionChannels = mentionChannelMS ? mentionChannelMS.getSelected() : [];
   
   const sinceMs = Date.now() - hours * 60 * 60 * 1000;
-
+ 
   resultsEl.innerHTML = `
     <div class="progress-bar"><div class="progress-fill" id="mentionProgress" style="width:0%"></div></div>
     <div class="loading-state"><span class="spinner"></span> ${language.scanningChannels}</div>
   `;
-
+ 
   try {
+    const allChannels = await getMyChannels(currentTeam.id).catch(() => []);
+    const channelsMap = Object.fromEntries(allChannels.map(c => [c.id, c]));
+ 
     let targetChannels = [];
     if (mentionChannels.length > 0) {
       targetChannels = mentionChannels.map(c => ({ channel_id: c.id }));
     } else {
       const allMemberships = await getMyChannelMembers(currentTeam.id);
-      if (includeDM) {
+      if (scanDMs) {
         targetChannels = allMemberships;
       } else {
-        targetChannels = allMemberships.filter(m => !m.channel_name || !m.channel_name.startsWith('@'));
+        targetChannels = allMemberships.filter(m => {
+          const chan = channelsMap[m.channel_id];
+          if (!chan) return true; // Keep if unknown to be safe
+          return chan.type !== 'D' && chan.type !== 'G' && !(chan.name && chan.name.includes('__'));
+        });
       }
     }
 
@@ -156,12 +172,25 @@ async function scanMentionsDeep() {
               per_page: 200,
             });
 
+            let channelInfo = channelsMap[member.channel_id];
+            if (!channelInfo) {
+              channelInfo = await getChannelById(member.channel_id).catch(() => null);
+              if (channelInfo) channelsMap[member.channel_id] = channelInfo;
+            }
+
+            const isDm = channelInfo && channelInfo.type === 'D';
+            const isDmOrGm = channelInfo && (channelInfo.type === 'D' || channelInfo.type === 'G' || (channelInfo.name && channelInfo.name.includes('__')));
+
             const mentionedPosts = postList.order
               .map((id) => postList.posts[id])
               .filter(Boolean)
               .filter((post) => {
                 if (post.user_id === currentUser.id) return false;
                 if (post.type && post.type !== '') return false; // Skip system messages
+                
+                // In a 1-on-1 DM, all messages from the other user are relevant to us!
+                if (isDm) return true;
+                
                 return hasMention(post.message, currentUser.username, direct, here, channelFlag);
               });
 
@@ -169,22 +198,37 @@ async function scanMentionsDeep() {
 
             const trulyMissed = [];
             for (const post of mentionedPosts) {
-              const [thread, reactions] = await Promise.all([
-                getPostThread(post.id).catch(() => ({ posts: {} })),
-                getPostReactions(post.id).catch(() => []),
-              ]);
+              if (isDmOrGm) {
+                // For DMs/GMs, check if reacted or if user sent any message in this channel after
+                const reactions = await getPostReactions(post.id).catch(() => []);
+                const reacted = Array.isArray(reactions) && reactions.some((r) => r.user_id === currentUser.id);
+                
+                const hasRepliedInChannel = Object.values(postList.posts).some(
+                  (p) => p.user_id === currentUser.id && p.create_at > post.create_at
+                );
 
-              // Check if already replied or reacted
-              const replied = Object.values(thread.posts).some(
-                (p) => p.user_id === currentUser.id && p.id !== post.id
-              );
-              const reacted = Array.isArray(reactions) && reactions.some((r) => r.user_id === currentUser.id);
+                if (!reacted && !hasRepliedInChannel) {
+                  trulyMissed.push(post);
+                }
+              } else {
+                // For regular channels, use standard thread/reaction logic
+                const [thread, reactions] = await Promise.all([
+                  getPostThread(post.id).catch(() => ({ posts: {} })),
+                  getPostReactions(post.id).catch(() => []),
+                ]);
 
-              if (!replied && !reacted) trulyMissed.push(post);
+                const replied = Object.values(thread.posts).some(
+                  (p) => p.user_id === currentUser.id && p.id !== post.id
+                );
+                const reacted = Array.isArray(reactions) && reactions.some((r) => r.user_id === currentUser.id);
+
+                if (!replied && !reacted) {
+                  trulyMissed.push(post);
+                }
+              }
             }
 
             if (trulyMissed.length > 0) {
-              const channelInfo = await getChannelById(member.channel_id).catch(() => null);
               const channelLabel = channelInfo ? getChannelLabel(channelInfo) : language.unknown;
               results.push({ channelLabel, posts: trulyMissed });
             }

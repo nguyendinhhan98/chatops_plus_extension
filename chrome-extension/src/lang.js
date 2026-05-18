@@ -40,7 +40,7 @@ export const language = {
 
   // Sidepanel Search Tab
   search: 'Search',
-  searchEmptyState: 'Enter keyword and press search',
+  searchEmptyState: '<span style="opacity: 0.5; filter: grayscale(40%); margin-right: 4px;">💡</span>Click the floating search button (🔍) in the bottom-right to customize filters and search messages!',
   searchCriteriaRequired: 'Please enter at least 1 search criteria',
   searchHelpTooltip: 'Search messages by keyword, sender, channel, and date range.',
   searchKeywordHelper: 'Keyword should be 2 or more characters.',
@@ -53,7 +53,7 @@ export const language = {
 
   // Sidepanel Mentions Tab
   scanMentions: 'Scan Now',
-  scanMentionsStart: 'Click "Scan Now" to scan your channels',
+  scanMentionsStart: '🔔 Click the floating button (🔔) in the bottom-right to configure criteria and scan!',
   scanningChannels: 'Scanning channels...',
   noMissedMentions: 'No missed mentions in the last {hours}h! 🎉',
   mentionsFound: 'Detected {count} pending mentions in {channels} channels',
@@ -69,8 +69,8 @@ export const language = {
 
   // Sidepanel Tasks Tab
   taskTabLabel: 'Tasks',
-  taskEmpty: 'No tasks yet.',
-  taskClickHint: 'Click 📌 on a message or enter above.',
+  taskEmpty: '<span style="opacity: 0.5; filter: grayscale(40%); margin-right: 4px;">💡</span>Click the floating button (🎯) in the bottom-right to add a task, or hover over any message in ChatOps and click the 🎯 button!',
+  taskClickHint: '📌 Pin messages in ChatOps or click the floating "🎯" button in the bottom-right.',
   taskPending: 'Pending',
   taskCompleted: 'Completed',
   taskClearAll: 'Clear All',
@@ -91,8 +91,8 @@ export const language = {
 
   // Sidepanel Memo (Notes) Tab
   memoTasksEmpty: 'No tasks yet.',
-  memoNotesEmpty: 'No notes yet.',
-  memoClickHint: 'Click 📌 on a message or enter above.',
+  memoNotesEmpty: '<span style="opacity: 0.5; filter: grayscale(40%); margin-right: 4px;">💡</span>Click the floating button (📝) in the bottom-right to add a note, or hover over any message in ChatOps and click the 📝 button!',
+  memoClickHint: '📝 Pin notes in ChatOps or click the floating "📝" button in the bottom-right.',
   memoPending: 'Pending',
   memoCompleted: 'Completed',
   memoClearAll: 'Clear All',

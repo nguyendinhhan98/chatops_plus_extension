@@ -53,6 +53,7 @@ async function init() {
   setupTasks(state);
   setupSettings(state);
   setupTabs();
+  setupModalListeners();
   
   // Background silent auto cleanup
   runAutoCleanup().catch(e => console.error('[ChatOps Ext] Auto cleanup error:', e));
@@ -196,6 +197,9 @@ function setupTabs() {
     const link = e.target.closest('.settings-subtab-link');
     if (link) {
       e.preventDefault();
+      if (window.ModalManager) {
+        window.ModalManager.close();
+      }
       const subtabName = link.dataset.subtab;
       if (!subtabName) return;
 
@@ -235,41 +239,60 @@ function setupTabs() {
     }
   });
   
+  function handleStorageRedirect(targetTab, targetSubTab) {
+    if (!targetTab) return;
+    switchTab(targetTab);
+    chrome.storage.local.remove(STORAGE_KEYS.SIDEPANEL_TAB);
+    
+    if (targetSubTab) {
+      chrome.storage.local.remove('sidePanelSubTab');
+      
+      let tabId = targetTab;
+      if (targetSubTab.startsWith('reactions-')) {
+        tabId = 'reactions';
+      }
+      
+      let sectionId = '';
+      if (targetSubTab.startsWith('features-')) {
+        sectionId = 'features';
+      } else if (targetSubTab.startsWith('reactions-')) {
+        sectionId = targetSubTab === 'reactions-picker' ? 'picker' : 'meme';
+      } else if (targetSubTab.startsWith('sync-')) {
+        sectionId = 'sync';
+      } else if (targetSubTab === 'categories') {
+        sectionId = 'categories';
+      }
+
+      if (sectionId) {
+        setTimeout(() => {
+          const selector = tabId === 'settings' ? '#settingsSubTabs' : '#reactionsSubTabs';
+          const tabBtn = document.querySelector(`${selector} .memo-sub-tab[data-section="${sectionId}"]`);
+          if (tabBtn) tabBtn.click();
+          
+          const subtabBtn = document.querySelector(`.settings-subtab-btn[data-subtab="${targetSubTab}"]`);
+          if (subtabBtn) subtabBtn.click();
+        }, 150);
+      }
+    }
+  }
+
+  // 1. Startup redirect handling
   chrome.storage.local.get([STORAGE_KEYS.SIDEPANEL_TAB, 'sidePanelSubTab'], (res) => { 
     if (res[STORAGE_KEYS.SIDEPANEL_TAB]) { 
-      switchTab(res[STORAGE_KEYS.SIDEPANEL_TAB]); 
-      chrome.storage.local.remove(STORAGE_KEYS.SIDEPANEL_TAB); 
-      
-      const subtab = res['sidePanelSubTab'];
-      if (subtab) {
-        chrome.storage.local.remove('sidePanelSubTab');
-        
-        let tabId = 'settings';
-        if (subtab.startsWith('reactions-')) {
-          tabId = 'reactions';
-        }
-        
-        let sectionId = '';
-        if (subtab.startsWith('features-')) {
-          sectionId = 'features';
-        } else if (subtab.startsWith('reactions-')) {
-          sectionId = subtab === 'reactions-picker' ? 'picker' : 'meme';
-        } else if (subtab.startsWith('sync-')) {
-          sectionId = 'sync';
-        }
-
-        if (sectionId) {
-          setTimeout(() => {
-            const selector = tabId === 'settings' ? '#settingsSubTabs' : '#reactionsSubTabs';
-            const tabBtn = document.querySelector(`${selector} .memo-sub-tab[data-section="${sectionId}"]`);
-            if (tabBtn) tabBtn.click();
-            
-            const subtabBtn = document.querySelector(`.settings-subtab-btn[data-subtab="${subtab}"]`);
-            if (subtabBtn) subtabBtn.click();
-          }, 150);
-        }
-      }
+      handleStorageRedirect(res[STORAGE_KEYS.SIDEPANEL_TAB], res['sidePanelSubTab']);
     } 
+  });
+
+  // 2. Reactive redirect handling (when sidepanel is already open)
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName === 'local' && changes[STORAGE_KEYS.SIDEPANEL_TAB]) {
+      const newTab = changes[STORAGE_KEYS.SIDEPANEL_TAB].newValue;
+      if (newTab) {
+        chrome.storage.local.get(['sidePanelSubTab'], (res) => {
+          handleStorageRedirect(newTab, res['sidePanelSubTab']);
+        });
+      }
+    }
   });
 }
 
@@ -373,6 +396,111 @@ function setupStateHandlers() {
         });
       }
     });
+  });
+}
+
+/**
+ * Global Modal Manager for Overlay Action Forms
+ */
+const ModalManager = {
+  activeForm: null,
+  activePlaceholderId: null,
+
+  open(title, formId, placeholderId, onOpen = null) {
+    const modal = document.getElementById('spGlobalModal');
+    const modalTitle = document.getElementById('spGlobalModalTitle');
+    const modalBody = document.getElementById('spGlobalModalBody');
+    const form = document.getElementById(formId);
+
+    if (!modal || !modalTitle || !modalBody || !form) {
+      console.error('[ChatOps Ext] Modal elements or target form not found!', { formId, placeholderId });
+      return;
+    }
+
+    if (this.activeForm) {
+      this.close();
+    }
+
+    this.activeForm = form;
+    this.activePlaceholderId = placeholderId;
+
+    modalTitle.textContent = title;
+    modalBody.appendChild(form);
+    modal.style.display = 'flex';
+
+    if (onOpen) onOpen();
+
+  },
+
+  close() {
+    const modal = document.getElementById('spGlobalModal');
+    const placeholder = document.getElementById(this.activePlaceholderId);
+    const modalBody = document.getElementById('spGlobalModalBody');
+
+    if (this.activeForm && placeholder) {
+      placeholder.appendChild(this.activeForm);
+    }
+
+    if (modal) modal.style.display = 'none';
+    if (modalBody) modalBody.innerHTML = '';
+
+    this.activeForm = null;
+    this.activePlaceholderId = null;
+  }
+};
+
+window.ModalManager = ModalManager;
+
+function setupModalListeners() {
+  const modalClose = document.getElementById('spGlobalModalClose');
+  const modal = document.getElementById('spGlobalModal');
+
+  modalClose?.addEventListener('click', () => {
+    window.ModalManager.close();
+  });
+
+  modal?.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      window.ModalManager.close();
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal && modal.style.display === 'flex') {
+      window.ModalManager.close();
+    }
+  });
+
+  document.getElementById('btnFabSearch')?.addEventListener('click', () => {
+    window.ModalManager.open(
+      'Search Messages',
+      'spSearchForm',
+      'spSearchFormPlaceholder'
+    );
+  });
+
+  document.getElementById('btnFabAddTask')?.addEventListener('click', () => {
+    window.ModalManager.open(
+      'Add New Task',
+      'spTasksForm',
+      'spTaskFormPlaceholder'
+    );
+  });
+
+  document.getElementById('btnFabAddNote')?.addEventListener('click', () => {
+    window.ModalManager.open(
+      'Add New Note',
+      'spMemoForm',
+      'spMemoFormPlaceholder'
+    );
+  });
+
+  document.getElementById('btnFabScanMentions')?.addEventListener('click', () => {
+    window.ModalManager.open(
+      'Scanner Filters',
+      'spMentionsForm',
+      'spMentionsFormPlaceholder'
+    );
   });
 }
 

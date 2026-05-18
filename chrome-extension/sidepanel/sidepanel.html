@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ChatOps++ — Panel</title>
   <link rel="stylesheet" href="sidepanel.css">
+  <script src="polyfill.js"></script>
 </head>
 
 <body>
@@ -33,12 +34,7 @@
     <!-- ─── Tab Navigation (5 tabs) ─── -->
     <nav class="tab-nav">
       <button class="tab-btn active" data-tab="search" title="Search">
-        <span class="tab-icon">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-            <path
-              d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
-          </svg>
-        </span>
+        <span class="tab-icon">🔍</span>
         <span class="tab-label">Search</span>
       </button>
       <button class="tab-btn" data-tab="tasks" title="Tasks">
@@ -67,19 +63,8 @@
 
     <!-- ─── Tab: Search ─── -->
     <div class="tab-content active" id="tab-search">
-      <div class="panel-section">
-        <div class="search-form-header">
-          <h2 class="section-title">Search Messages</h2>
-          <button class="search-toggle-btn" id="btnToggleSearch" title="Collapse/Expand">
-            <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
-              <path fill-rule="evenodd"
-                d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z" />
-            </svg>
-          </button>
-        </div>
-        <p class="hint-text"
-          style="font-size:12px; color:var(--text-3); margin-top:4px; margin-bottom:12px; display: flex; align-items: center; gap: 4px;">
-          💡 Search messages, links, files across channels.</p>
+      <!-- Hidden Search Form Placeholder -->
+      <div id="spSearchFormPlaceholder" style="display: none;">
         <div class="search-form" id="spSearchForm">
           <div class="search-main-row" style="display: flex; gap: 8px; align-items: center;">
             <div style="position: relative; flex: 1; display: flex; align-items: center;">
@@ -117,161 +102,154 @@
           </div>
         </div>
       </div>
+
+      <!-- Results view occupying full height -->
       <div class="panel-section" id="spSearchResults" style="flex:1; overflow-y:auto; padding:16px;">
-        <div class="empty-state">Enter keywords and search</div>
+        <div class="empty-state"><span style="opacity: 0.5; filter: grayscale(40%); margin-right: 4px;">💡</span>Click the floating search button (🔍) in the bottom-right to customize filters and search messages!</div>
       </div>
+      
+      <!-- Floating Action Button for Search -->
+      <button id="btnFabSearch" class="sp-fab" title="New Search">🔍</button>
     </div>
 
     <!-- ─── Tab: Tasks ─── -->
     <div class="tab-content" id="tab-tasks">
-      <div class="panel-section">
-        <div class="search-form-header" style="align-items: center;">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <h2 class="section-title" style="margin: 0;">Tasks</h2>
-            <button id="syncBadgeTasks" class="sync-badge-btn"
-              title="Click to backup or restore data via Google account">
-              ☁️ Cloud Sync
+      <!-- Tasks Control Bar (Sub-tabs & Sync tucked neatly on the right) -->
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 12px; background: var(--bg-2); border-bottom: 1px solid var(--border); flex-shrink: 0;">
+        <div class="memo-sub-tabs" id="taskSubTabs" style="flex: 1; margin: 0 !important; background: #e2e8f0; border-radius: 6px;">
+          <button class="memo-sub-tab active" data-filter="pending">PENDING</button>
+          <button class="memo-sub-tab" data-filter="done">COMPLETED</button>
+        </div>
+        <button id="syncBadgeTasks" class="sync-badge-btn"
+          title="Click to backup or restore data via Google account"
+          style="margin-left: 8px; flex-shrink: 0; font-size: 11px; padding: 4px 8px; height: 26px; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center;">
+          ☁️ Sync
+        </button>
+      </div>
+      
+      <!-- Hidden Quick Add Task Placeholder -->
+      <div id="spTaskFormPlaceholder" style="display: none;">
+        <div class="task-quick-bar" id="spTasksForm"
+          style="padding: 12px 16px 16px 16px; background: white; transition: padding 0.3s ease;">
+
+          <div class="task-quick-input-row" style="margin-bottom: 12px; width: 100%;">
+            <textarea id="quickTaskInput"
+              placeholder="Add new task... (Shift + Enter to save)"
+              class="quick-note-textarea"
+              style="width: 100%; min-height: 110px; resize: vertical; box-sizing: border-box;"></textarea>
+          </div>
+
+          <div class="task-reminder-wrapper"
+            style="margin-bottom: 12px; display:flex; align-items:center; gap:6px; width:100%;">
+            <div class="task-reminder-row" id="quickTaskReminderRow"
+              style="flex:1; background:#fff; padding:0 10px; border-radius:6px; border:1px solid var(--border); cursor:pointer; display:flex; align-items:center; min-width:0; height:34px; box-sizing:border-box; position:relative;">
+              <label class="task-reminder-label" for="quickTaskReminderDt"
+                style="margin-right:6px; cursor:pointer; display:inline-flex; align-items:center; white-space:nowrap; font-size:12.5px; line-height:1; height:100%; position:relative; z-index:2; pointer-events:none;">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"
+                  style="margin-right:4px; opacity:0.7; flex-shrink:0; display:inline-block; vertical-align:middle; position:relative; top:-0.5px;">
+                  <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z" />
+                  <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z" />
+                </svg>
+                Remind at:
+              </label>
+              <input type="datetime-local" id="quickTaskReminderDt" class="quick-task-datetime"
+                style="position:absolute; top:0; left:0; width:100%; height:100%; z-index:1; padding-left:92px; box-sizing:border-box; cursor:pointer; background:transparent; border:none; outline:none; font-size:12.5px; display:inline-flex; align-items:center; line-height:1;">
+            </div>
+
+            <select id="quickTaskReminderSelect" class="custom-select"
+              style="width: 115px; height: 34px; font-size: 12.5px; border-radius: 6px; cursor: pointer; outline: none; box-sizing: border-box; flex-shrink: 0; line-height: 1; padding: 0 24px 0 10px;">
+              <option value="">Remind in...</option>
+              <option value="15">+15m</option>
+              <option value="30">+30m</option>
+              <option value="60">+1h</option>
+              <option value="120">+2h</option>
+              <option value="240">+4h</option>
+              <option value="360">+6h</option>
+              <option value="480">+8h</option>
+            </select>
+          </div>
+
+          <div class="input-helper" id="snoozeHintText" style="margin-top:6px; margin-bottom: 12px;">⏰ Starts at selected time — snoozes every 5 mins until completed (<a href="#" class="settings-subtab-link" data-subtab="features-snooze" style="color: var(--accent); font-weight: 700; text-decoration: underline;">change in Settings</a>)</div>
+
+          <!-- Modal Action Buttons at the Bottom -->
+          <div style="display: flex; gap: 8px; margin-top: 16px; justify-content: flex-end; width: 100%; border-top: 1px solid var(--border); padding-top: 12px;">
+            <button type="button" class="btn btn-secondary" id="btnCancelTask" style="padding: 0 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: transparent; height: 36px; color: var(--text-2); display: inline-flex; align-items: center; justify-content: center;">Cancel</button>
+            <button type="button" class="btn btn-primary" id="btnQuickTaskSave" style="padding: 0 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; background: var(--accent); color: #fff; border: none; height: 36px; min-width: 90px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 4px var(--accent-dim);">
+              🎯 Add Task
             </button>
           </div>
-          <button class="search-toggle-btn" id="btnToggleTasks" title="Collapse/Expand">
-            <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
-              <path fill-rule="evenodd"
-                d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z" />
-            </svg>
-          </button>
         </div>
-        <p class="hint-text"
-          style="font-size:12px; color:var(--text-3); margin-top:4px; margin-bottom:12px; font-weight: 500; display:block;">
-          💡 Pin messages (🎯) in ChatOps or add below.
-        </p>
-      </div>
-      <!-- Quick Add Task Bar -->
-      <div class="task-quick-bar" id="spTasksForm"
-        style="padding: 12px 16px 16px 16px; background: white; transition: padding 0.3s ease;">
-
-        <div class="task-quick-input-row" style="align-items:center;">
-          <textarea id="quickTaskInput"
-            placeholder="Add new task... (Shift + Enter to save)"
-            class="quick-note-textarea"></textarea>
-          <button id="btnQuickTaskSave" class="quick-note-btn" title="Add Task"
-            style="transition: all 0.2s ease;">+</button>
-        </div>
-
-        <div class="task-reminder-wrapper"
-          style="margin-bottom:8px; display:flex; align-items:center; gap:6px; width:100%;">
-          <div class="task-reminder-row" id="quickTaskReminderRow"
-            style="flex:1; background:#fff; padding:0 10px; border-radius:6px; border:1px solid var(--border); cursor:pointer; display:flex; align-items:center; min-width:0; height:34px; box-sizing:border-box;">
-            <label class="task-reminder-label" for="quickTaskReminderDt"
-              style="margin-right:6px; cursor:pointer; display:inline-flex; align-items:center; white-space:nowrap; font-size:12.5px; line-height:1; height:100%;">
-              <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"
-                style="margin-right:4px; opacity:0.7; flex-shrink:0; display:inline-block; vertical-align:middle; position:relative; top:-0.5px;">
-                <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z" />
-                <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z" />
-              </svg>
-              Remind at:
-            </label>
-            <input type="datetime-local" id="quickTaskReminderDt" class="quick-task-datetime"
-              style="flex:1; cursor:pointer; background:transparent; border:none; outline:none; font-size:12.5px; width:100%; min-width:0; padding:0; margin:0; display:inline-flex; align-items:center; line-height:1; height:100%;">
-          </div>
-
-          <select id="quickTaskReminderSelect" class="custom-select"
-            style="width: 115px; padding:0 24px 0 10px; font-size: 12.5px; font-weight:700; background-color: #ffffff; border: 1px solid var(--border); border-radius: 6px; color: var(--text-2); cursor: pointer; outline:none; height:34px; box-sizing:border-box; flex-shrink:0; transition: all 0.2s;">
-            <option value="">Remind in...</option>
-            <option value="15">+15m</option>
-            <option value="30">+30m</option>
-            <option value="60">+1h</option>
-            <option value="120">+2h</option>
-            <option value="240">+4h</option>
-            <option value="360">+6h</option>
-            <option value="480">+8h</option>
-          </select>
-        </div>
-
-        <div class="input-helper" id="snoozeHintText" style="margin-top:6px;">⏰ Starts at selected time — snoozes every 5 mins until completed (<a href="#" class="settings-subtab-link" data-subtab="features-snooze" style="color: var(--accent); font-weight: 700; text-decoration: underline;">change in Settings</a>)</div>
-      </div>
-
-      <!-- Sub-tabs for Tasks -->
-      <div class="memo-sub-tabs" id="taskSubTabs">
-        <button class="memo-sub-tab active" data-filter="pending">PENDING</button>
-        <button class="memo-sub-tab" data-filter="done">COMPLETED</button>
       </div>
 
       <!-- Task list -->
       <div id="taskList" class="memo-panel active" style="flex:1;overflow-y:auto;padding:12px;"></div>
+      
+      <!-- Floating Action Button for Tasks -->
+      <button id="btnFabAddTask" class="sp-fab" title="Add Task">🎯</button>
     </div>
 
     <!-- ─── Tab: Notes ─── -->
     <div class="tab-content" id="tab-memo">
-      <div class="panel-section">
-        <div class="search-form-header" style="align-items: center;">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <h2 class="section-title" style="margin: 0;">Notes</h2>
-            <button id="syncBadgeNotes" class="sync-badge-btn"
-              title="Click to backup or restore data via Google account">
-              ☁️ Cloud Sync
-            </button>
-          </div>
-          <button class="search-toggle-btn" id="btnToggleMemo" title="Collapse/Expand">
-            <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
-              <path fill-rule="evenodd"
-                d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z" />
-            </svg>
+      <div class="panel-section" style="border-bottom: 1px solid var(--border); padding: 10px 16px; background: var(--bg-2); flex-shrink: 0;">
+        <div class="search-form-header" style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; align-items: center; margin-bottom: 0;">
+          <button id="syncBadgeNotes" class="sync-badge-btn"
+            title="Click to backup or restore data via Google account"
+            style="flex-shrink: 0; font-size: 11px; padding: 4px 8px; height: 26px; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center;">
+            ☁️ Sync
           </button>
+          <div class="memo-sub-tabs" id="memoCategoryTabs"
+            style="width: 100%; display: flex !important; background: var(--bg-1) !important; border: 1px solid var(--border) !important; border-radius: 6px !important; padding: 2px !important; margin: 0 !important; box-shadow: none !important; gap: 4px 2px !important; flex-wrap: wrap !important;">
+            <!-- Categories as sub-tabs rendered dynamically -->
+          </div>
         </div>
-        <p class="hint-text"
-          style="font-size:12px; color:var(--text-3); margin-top:4px; margin-bottom:12px; font-weight: 500; display:block;">
-          💡 Pin messages (📝) in ChatOps or write below.
-        </p>
       </div>
-      <!-- Quick Note Bar -->
-      <div class="quick-note-bar" id="spMemoForm"
-        style="padding: 12px 14px; border-bottom: 1px solid var(--border); transition: padding 0.3s ease;">
-        <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
-          <div style="display: flex; gap: 8px; align-items: center;">
+      
+      <!-- Hidden Quick Note Placeholder -->
+      <div id="spMemoFormPlaceholder" style="display: none;">
+        <div class="task-quick-bar" id="spMemoForm"
+          style="padding: 12px 16px 16px 16px; background: white; transition: padding 0.3s ease;">
+
+          <div class="task-quick-input-row" style="margin-bottom: 12px; width: 100%;">
             <textarea id="quickNoteInput"
               placeholder="Write a note... (Shift + Enter to save)"
-              class="quick-note-textarea" autocomplete="off" style="flex: 1; min-height: 80px; margin: 0;"></textarea>
-            <button id="btnQuickNoteSave" class="btn btn-primary" title="Save note"
-              style="padding: 0 14px; font-size: 13px; font-weight: 600; height: 38px; border-radius: 4px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s ease;">
-              Add <span style="font-size: 14px; margin-left: 2px;">+</span>
-            </button>
+              class="quick-note-textarea" autocomplete="off"
+              style="width: 100%; min-height: 110px; resize: vertical; box-sizing: border-box;"></textarea>
           </div>
-          <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
-            <select id="quickNoteCategory" class="custom-select quick-note-category-select"
-              style="width: 120px; font-size: 12px; height: 28px; padding: 2px 6px; border-radius: 4px; margin: 0;">
-              <!-- Categories rendered dynamically -->
-            </select>
-            <span style="font-size: 11px; color: var(--text-3); font-weight: 500;">
-              Manage categories in <a href="#" class="settings-subtab-link" data-subtab="categories" style="color: var(--accent); font-weight: 700; text-decoration: underline;">Settings</a>
-            </span>
+
+          <div style="margin-bottom: 12px; display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:13px; color:var(--text-2); font-weight:600; display:flex; align-items:center; gap:4px; white-space:nowrap;">📁 Category:</span>
+              <select id="quickNoteCategory" class="custom-select quick-note-category-select"
+                style="width: 130px; height: 32px; font-size: 12.5px; border-radius: 6px; cursor: pointer; outline: none; box-sizing: border-box; line-height: 1; padding: 2px 24px 2px 8px; margin: 0;">
+                <!-- Categories rendered dynamically -->
+              </select>
+            </div>
+            <div class="input-helper" style="margin: 0; font-size:11.5px; font-weight: 500;">Manage in <a href="#" class="settings-subtab-link" data-subtab="categories" style="color: var(--accent); font-weight: 700; text-decoration: underline;">Settings</a></div>
+          </div>
+
+          <!-- Modal Action Buttons at the Bottom -->
+          <div style="display: flex; gap: 8px; margin-top: 16px; justify-content: flex-end; width: 100%; border-top: 1px solid var(--border); padding-top: 12px;">
+            <button type="button" class="btn btn-secondary" id="btnCancelNote" style="padding: 0 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: transparent; height: 36px; color: var(--text-2); display: inline-flex; align-items: center; justify-content: center;">Cancel</button>
+            <button type="button" class="btn btn-primary" id="btnQuickNoteSave" style="padding: 0 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; background: var(--accent); color: #fff; border: none; height: 36px; min-width: 90px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 4px var(--accent-dim);">
+              📝 Add Note
+            </button>
           </div>
         </div>
       </div>
 
-      <div class="memo-sub-tabs" id="memoCategoryTabs">
-        <!-- Categories as sub-tabs rendered dynamically -->
-      </div>
 
       <!-- Note list -->
       <div id="memoNoteList" class="memo-panel active" style="flex:1;overflow-y:auto;padding:12px;"></div>
+      
+      <!-- Floating Action Button for Notes -->
+      <button id="btnFabAddNote" class="sp-fab" title="Add Note">📝</button>
     </div>
 
     <!-- ─── Tab: Missed Mentions ─── -->
     <div class="tab-content" id="tab-mentions">
-      <div class="panel-section">
-        <div class="search-form-header">
-          <h2 class="section-title">Missed Mentions</h2>
-          <button class="search-toggle-btn" id="btnToggleMentions" title="Collapse/Expand">
-            <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
-              <path fill-rule="evenodd"
-                d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z" />
-            </svg>
-          </button>
-        </div>
-        <p class="hint-text"
-          style="font-size:12px; color:var(--text-3); margin-top:4px; margin-bottom:12px; font-weight: 500;">
-          💡 Counts messages mentioning you that you haven't replied to or reacted to yet.
-        </p>
+      
+      <!-- Hidden Mentions Form Placeholder -->
+      <div id="spMentionsFormPlaceholder" style="display: none;">
         <div class="search-form" id="spMentionsForm">
           <div class="search-filters-row">
             <select id="spMentionHours" class="custom-select" style="flex:1">
@@ -302,6 +280,10 @@
               <input type="checkbox" id="spMentionChannel">
               <span>Channel mention (@channel / @all)</span>
             </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="spMentionDMs" checked>
+              <span>Direct Messages (DM / GM)</span>
+            </label>
           </div>
           <div class="search-main-row">
             <button class="btn btn-primary btn-full" id="btnSpScanMentions">
@@ -314,9 +296,14 @@
           </div>
         </div>
       </div>
+      
+      <!-- Results view occupying full height -->
       <div class="panel-section" id="spMentionResults" style="flex:1; overflow-y:auto; padding:16px;">
-        <div class="empty-state">Click "Scan Now" to begin</div>
+        <div class="empty-state">🔔 Click the floating button (🔔) in the bottom-right to configure criteria and scan!</div>
       </div>
+
+      <!-- Floating Action Button for Mentions -->
+      <button id="btnFabScanMentions" class="sp-fab" title="Scan Filters & Scan">🔔</button>
     </div>
 
     <!-- ─── Tab: Reactions ─── -->
@@ -932,6 +919,19 @@
       border-color: var(--accent) !important;
     }
   </style>
+
+  <!-- ─── Action Modal Overlay ─── -->
+  <div id="spGlobalModal" class="sp-modal-backdrop" style="display: none;">
+    <div class="sp-modal-content">
+      <div class="sp-modal-header">
+        <h3 id="spGlobalModalTitle" class="sp-modal-title">Action</h3>
+        <button id="spGlobalModalClose" class="sp-modal-close-btn" title="Close modal">&times;</button>
+      </div>
+      <div id="spGlobalModalBody" class="sp-modal-body">
+        <!-- Form elements moved in/out dynamically here -->
+      </div>
+    </div>
+  </div>
 
   <script src="sidepanel.js" type="module"></script>
 </body>

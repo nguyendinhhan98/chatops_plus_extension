@@ -92,6 +92,11 @@ export function setup(state) {
     quickInput.value = '';
     updateSaveButtonState();
     loadMemos();
+
+    // Close the Action Modal
+    if (window.ModalManager) {
+      window.ModalManager.close();
+    }
   };
 
   quickInput.addEventListener('keydown', e => {
@@ -101,6 +106,15 @@ export function setup(state) {
     }
   });
   quickSaveBtn.addEventListener('click', saveNote);
+
+  const cancelBtn = document.getElementById('btnCancelNote');
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', () => {
+      if (window.ModalManager) {
+        window.ModalManager.close();
+      }
+    });
+  }
 
   // Event delegation for note list
   document.getElementById('memoNoteList').addEventListener('click', async (e) => {
@@ -233,6 +247,7 @@ async function renderCategories() {
   
   if (quickSelect) {
     quickSelect.innerHTML = categories.map(c => `<option value="${c}">📁 ${getCategoryDisplayName(c)}</option>`).join('');
+
   }
   
   if (tabsContainer) {
@@ -302,26 +317,26 @@ function renderNoteCard(note, categories = ['General', 'Work', 'Personal', 'Idea
 
   return `
     <div class="memo-item note-item" id="item_${note.id}">
-      <div class="note-content-row" style="display:flex; align-items:flex-start;">
-        <button class="collapse-btn" data-id="${note.id}" style="margin-right: 4px;" title="${language.expandCollapseBtn || 'Expand/Collapse'}">▶</button>
-        <div class="memo-note-text note-body collapsible-body collapsed" style="flex:1; min-width:0; margin-top:2px;">${escapedText}</div>
-        <button class="btn-copy-note" data-text="${rawText.replace(/"/g, '&quot;')}" title="${language.memoCopyNote}" style="flex-shrink:0; margin-left:8px;">
+      <div class="note-content-row" style="display:flex; align-items:center; gap:8px;">
+        <div class="memo-note-text note-body collapsible-body collapsed" style="flex:1; min-width:0; margin-top:0; font-size:12.5px; line-height:1.4; font-weight:400; color:var(--text-1);">${escapedText}</div>
+        <button class="collapse-btn" data-id="${note.id}" style="flex-shrink:0; margin:0;" title="${language.expandCollapseBtn || 'Expand/Collapse'}">▶</button>
+        <button class="btn-copy-note" data-text="${rawText.replace(/"/g, '&quot;')}" title="${language.memoCopyNote}" style="flex-shrink:0; margin:0;">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
             <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
             <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
           </svg>
         </button>
       </div>
-      <div style="margin-top:4px; display:flex; align-items:center; gap:6px;">
-        <span style="font-size:10px; color:var(--text-3); font-weight:600; display:flex; align-items:center; gap:2px;">📁 ${language.categoryLabel || 'Category:'}</span>
-        <select class="note-edit-category" data-id="${note.id}" style="font-size:10px; padding:1px 4px; background:var(--bg-2); border:1px solid var(--border); border-radius:10px; color:var(--text-2); font-weight:600; outline:none; cursor:pointer;">
-          ${categoryOptions}
-        </select>
-      </div>
       ${hasOriginalPost ? `<div class="memo-post-preview post-preview" style="display:none; margin-top:8px;">📌 ${escapeHtml(note.postText)}</div>` : ''}
       <div class="memo-footer">
-        <div class="memo-meta">
+        <div class="memo-meta" style="display:flex; align-items:center; gap:8px;">
           <span>📅 ${formatRelativeTime(note.createdAt)}</span>
+          <div style="display:inline-flex; align-items:center; gap:4px;">
+            <span style="font-size:10px; color:var(--text-3); font-weight:600; display:flex; align-items:center; gap:2px; white-space:nowrap;">📁 ${language.categoryLabel || 'Category:'}</span>
+            <select class="sp-compact-select" data-id="${note.id}">
+              ${categoryOptions}
+            </select>
+          </div>
         </div>
         <div class="memo-actions">
           ${permalink ? `<a href="${permalink}" class="post-jump-link" title="${language.memoViewOriginal}">↗</a>` : ''}

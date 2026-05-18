@@ -92,10 +92,12 @@ export function setup(state) {
   // Toggle Collapse
   const btnToggle = document.getElementById('btnToggleSearch');
   const searchForm = document.getElementById('spSearchForm');
-  btnToggle.addEventListener('click', () => {
-    searchForm.classList.toggle('collapsed');
-    btnToggle.classList.toggle('collapsed');
-  });
+  if (btnToggle && searchForm) {
+    btnToggle.addEventListener('click', () => {
+      searchForm.classList.toggle('collapsed');
+      btnToggle.classList.toggle('collapsed');
+    });
+  }
 
   // Include DM toggle - Clear cache to force re-fetch with new filter
   document.getElementById('chkSearchIncludeDM').addEventListener('change', () => {
@@ -243,6 +245,11 @@ export async function performSpSearch(isLoadMore = false) {
     if (terms && terms.length < 2) {
       resultsEl.innerHTML = `<div class="empty-state">${language.searchKeywordHelper}</div>`;
       return;
+    }
+
+    // Close the Action Modal
+    if (window.ModalManager) {
+      window.ModalManager.close();
     }
 
     // Build the search query string
