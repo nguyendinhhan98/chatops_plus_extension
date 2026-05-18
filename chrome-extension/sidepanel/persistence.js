@@ -23,12 +23,6 @@ export function saveState(selectors) {
       here: document.getElementById('spMentionHere')?.checked || false,
       channel: document.getElementById('spMentionChannel')?.checked || false,
       channels: selectors.mentionChannelMS ? selectors.mentionChannelMS.getSelected() : []
-    },
-    leave: {
-      user: document.getElementById('spLeaveUser')?.value || '',
-      channels: selectors.leaveChannelMS ? selectors.leaveChannelMS.getSelected() : [],
-      from: document.getElementById('spLeaveFrom')?.value || '',
-      to: document.getElementById('spLeaveTo')?.value || '',
     }
   };
   chrome.storage.local.set({ [STORAGE_KEYS.STATE]: state });
@@ -76,21 +70,6 @@ export function restoreState(selectors) {
       
       if (s.mentions.channels && selectors.mentionChannelMS) {
         selectors.mentionChannelMS.setSelected(s.mentions.channels);
-      }
-    }
-    
-    if (s.leave) {
-      const userEl = document.getElementById('spLeaveUser');
-      if (userEl) userEl.value = s.leave.user || '';
-      
-      const fromEl = document.getElementById('spLeaveFrom');
-      if (fromEl) fromEl.value = s.leave.from || '';
-      
-      const toEl = document.getElementById('spLeaveTo');
-      if (toEl) toEl.value = s.leave.to || '';
-      
-      if (s.leave.channels && selectors.leaveChannelMS) {
-        selectors.leaveChannelMS.setSelected(s.leave.channels);
       }
     }
   });

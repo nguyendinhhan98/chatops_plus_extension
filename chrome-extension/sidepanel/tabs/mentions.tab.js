@@ -40,7 +40,7 @@ export function setup(state) {
   document.getElementById('btnSpScanMentions').addEventListener('click', scanMentionsDeep);
 
   if (typeof window.convertToCustomDropdown === 'function') {
-    window.convertToCustomDropdown('spMentionHours');
+    window.convertToCustomDropdown('spMentionHours', null, '42px');
   }
 
   // Toggle Collapse
@@ -266,6 +266,18 @@ async function scanMentionsDeep() {
     }
 
     resultsEl.innerHTML = html;
+
+    // Only show collapse button if the text actually overflows
+    resultsEl.querySelectorAll('.post-item').forEach(card => {
+      const textEl = card.querySelector('.post-body');
+      const collapseBtn = card.querySelector('.collapse-btn');
+      if (textEl && collapseBtn) {
+        const isOverflowing = textEl.scrollHeight > textEl.clientHeight + 1;
+        if (!isOverflowing) {
+          collapseBtn.style.display = 'none';
+        }
+      }
+    });
   } catch (err) {
     showError(resultsEl, err.message);
   }

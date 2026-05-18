@@ -3,7 +3,7 @@
  * Manages personal notes/memos.
  */
 
-import { escapeHtml, makePermalinkSync, formatRelativeTime } from '../../src/utils/index.js';
+import { escapeHtml, makePermalinkSync, formatRelativeTime, formatRichText } from '../../src/utils/index.js';
 import { CHATOPS_CONFIG, STORAGE_KEYS, TABS } from '../../src/constants.js';
 import { language } from '../../src/lang.js';
 
@@ -28,6 +28,7 @@ export function setup(state) {
   _state = state;
 
   const quickInput = document.getElementById('quickNoteInput');
+  const quickTitleInput = document.getElementById('quickNoteTitle');
   const quickSaveBtn = document.getElementById('btnQuickNoteSave');
 
   renderCategories();
@@ -70,12 +71,15 @@ export function setup(state) {
     const categorySelect = document.getElementById('quickNoteCategory');
     const category = categorySelect ? categorySelect.value : 'General';
 
+    const titleText = quickTitleInput ? quickTitleInput.value.trim() : '';
+
     const id = `memo_${Date.now()}`;
     const item = {
       id,
       type: 'memo',
       postId: null,
       postText: null,
+      title: titleText || '',
       note: text,
       category: category,
       createdAt: Date.now(),
@@ -90,6 +94,9 @@ export function setup(state) {
     await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
 
     quickInput.value = '';
+    if (quickTitleInput) {
+      quickTitleInput.value = '';
+    }
     updateSaveButtonState();
     loadMemos();
 
@@ -156,6 +163,7 @@ export function setup(state) {
           
           contentEl.innerHTML = `
             <div class="inline-edit-form" style="width:100%; display: flex; flex-direction: column; gap: 8px;">
+              <input type="text" class="inline-edit-title" placeholder="Title (optional)" value="${escapeHtml(note.title || '')}" style="width: 100%; height: 28px; font-size: 13px; font-weight: 600; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); outline: none; box-sizing: border-box; font-family: inherit;" autocomplete="off">
               <textarea class="inline-edit-textarea" style="width: 100%; min-height: 60px; padding: 8px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 13px; outline: none; background: #fff; resize: vertical; color: var(--text-1);">${escapeHtml(note.note)}</textarea>
               <div style="display: flex; gap: 6px; justify-content: flex-end;">
                 <button class="btn btn-secondary inline-edit-cancel" data-id="${id}" style="padding: 4px 10px; font-size: 11.5px; height: 26px; border-radius: 6px; cursor:pointer;">${language.cancel || 'Cancel'}</button>
@@ -176,7 +184,9 @@ export function setup(state) {
     if (e.target.classList.contains('inline-edit-save')) {
       const id = e.target.dataset.id;
       const card = document.getElementById('item_' + id);
+      const titleInput = card.querySelector('.inline-edit-title');
       const textarea = card.querySelector('.inline-edit-textarea');
+      const newTitle = titleInput ? titleInput.value.trim() : '';
       if (textarea) {
         const newText = textarea.value.trim();
         if (!newText) {
@@ -188,6 +198,7 @@ export function setup(state) {
         const memos = res[STORAGE_KEYS.MEMOS] || [];
         const noteIndex = memos.findIndex(m => m.id === id);
         if (noteIndex !== -1) {
+          memos[noteIndex].title = newTitle;
           memos[noteIndex].note = newText;
           memos[noteIndex].updatedAt = Date.now();
           await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
@@ -294,6 +305,18 @@ export async function loadMemos() {
   const categories = settingsRes[STORAGE_KEYS.SETTINGS]?.memoCategories || ['General', 'Work', 'Personal', 'Ideas'];
 
   noteList.innerHTML = notes.map(note => renderNoteCard(note, categories)).join('');
+
+  // Only show collapse button if the text overflows (more than 2 lines)
+  noteList.querySelectorAll('.memo-item').forEach(card => {
+    const textEl = card.querySelector('.memo-note-text');
+    const collapseBtn = card.querySelector('.collapse-btn');
+    if (textEl && collapseBtn) {
+      const isOverflowing = textEl.scrollHeight > textEl.clientHeight + 1;
+      if (!isOverflowing) {
+        collapseBtn.style.display = 'none';
+      }
+    }
+  });
 }
 
 /**
@@ -306,7 +329,7 @@ function renderNoteCard(note, categories = ['General', 'Work', 'Personal', 'Idea
     ? makePermalinkSync(note.postId, cachedConfig.chatopsUrl, currentTeam?.name || CHATOPS_CONFIG.DEFAULT_TEAM)
     : null;
 
-  const escapedText = escapeHtml(note.note || language.memoEmptyNote);
+  const escapedText = formatRichText(note.note || language.memoEmptyNote);
   const rawText = note.note || '';
   const hasOriginalPost = note.postId && note.postText && note.postText !== note.note;
   
@@ -316,9 +339,12 @@ function renderNoteCard(note, categories = ['General', 'Work', 'Personal', 'Idea
   `).join('');
 
   return `
-    <div class="memo-item note-item" id="item_${note.id}">
-      <div class="note-content-row" style="display:flex; align-items:center; gap:8px;">
-        <div class="memo-note-text note-body collapsible-body collapsed" style="flex:1; min-width:0; margin-top:0; font-size:12.5px; line-height:1.4; font-weight:400; color:var(--text-1);">${escapedText}</div>
+    <div class="memo-item note-item cat-${categoryLabel.toLowerCase()}" id="item_${note.id}">
+      <div class="note-content-row" style="display:flex; align-items:flex-start; gap:8px;">
+        <div class="memo-content" style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;">
+          ${note.title ? `<div class="memo-item-title" style="font-weight:700; font-size:13.5px; color:var(--text-1); margin-bottom:2px; letter-spacing:-0.1px;">${escapeHtml(note.title)}</div>` : ''}
+          <div class="memo-note-text note-body collapsible-body collapsed" style="margin-top:0;">${escapedText}</div>
+        </div>
         <button class="collapse-btn" data-id="${note.id}" style="flex-shrink:0; margin:0;" title="${language.expandCollapseBtn || 'Expand/Collapse'}">▶</button>
         <button class="btn-copy-note" data-text="${rawText.replace(/"/g, '&quot;')}" title="${language.memoCopyNote}" style="flex-shrink:0; margin:0;">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
@@ -329,14 +355,11 @@ function renderNoteCard(note, categories = ['General', 'Work', 'Personal', 'Idea
       </div>
       ${hasOriginalPost ? `<div class="memo-post-preview post-preview" style="display:none; margin-top:8px;">📌 ${escapeHtml(note.postText)}</div>` : ''}
       <div class="memo-footer">
-        <div class="memo-meta" style="display:flex; align-items:center; gap:8px;">
-          <span>📅 ${formatRelativeTime(note.createdAt)}</span>
-          <div style="display:inline-flex; align-items:center; gap:4px;">
-            <span style="font-size:10px; color:var(--text-3); font-weight:600; display:flex; align-items:center; gap:2px; white-space:nowrap;">📁 ${language.categoryLabel || 'Category:'}</span>
-            <select class="sp-compact-select" data-id="${note.id}">
-              ${categoryOptions}
-            </select>
-          </div>
+        <div class="memo-meta" style="display:flex; align-items:center; gap:6px;">
+          <span class="sp-card-date">${formatRelativeTime(note.createdAt)}</span>
+          <select class="sp-compact-select note-edit-category" data-category="${categoryLabel.toLowerCase()}" data-id="${note.id}">
+            ${categoryOptions}
+          </select>
         </div>
         <div class="memo-actions">
           ${permalink ? `<a href="${permalink}" class="post-jump-link" title="${language.memoViewOriginal}">↗</a>` : ''}

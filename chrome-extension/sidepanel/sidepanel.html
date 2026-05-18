@@ -5,7 +5,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ChatOps++ — Panel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="flatpickr.css">
   <link rel="stylesheet" href="sidepanel.css">
+  <script src="flatpickr.js"></script>
   <script src="polyfill.js"></script>
 </head>
 
@@ -89,25 +94,36 @@
             </div>
             <div style="display:flex; flex-direction:column; gap:4px;">
               <div id="spSearchIn" data-placeholder="Search channel..."></div>
-              <label class="checkbox-label" style="margin-left: 2px;">
+              <div class="checkbox-label" style="margin-left: 2px;">
                 <input type="checkbox" id="chkSearchIncludeDM">
                 <span style="font-size: 12.5px;">Include Direct Messages</span>
-              </label>
+              </div>
             </div>
           </div>
 
           <div class="search-filters-row">
-            <input type="date" id="spSearchAfter" title="After date">
-            <input type="date" id="spSearchBefore" title="Before date">
+            <input type="text" id="spSearchAfter" placeholder="After date" title="After date">
+            <input type="text" id="spSearchBefore" placeholder="Before date" title="Before date">
           </div>
         </div>
       </div>
 
       <!-- Results view occupying full height -->
-      <div class="panel-section" id="spSearchResults" style="flex:1; overflow-y:auto; padding:16px;">
-        <div class="empty-state"><span style="opacity: 0.5; filter: grayscale(40%); margin-right: 4px;">💡</span>Click the floating search button (🔍) in the bottom-right to customize filters and search messages!</div>
+      <div class="panel-section" id="spSearchResults"
+        style="flex:1; overflow-y:auto; padding:var(--app-padding, 16px);">
+        <div class="empty-state">
+          <div class="sp-how-to-use-card">
+            <div class="card-icon">💡</div>
+            <div>
+              <h4 class="card-title">How to use?</h4>
+              <p class="card-desc">
+                Click the floating search button (🔍) in the bottom-right to customize filters and search messages!
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
-      
+
       <!-- Floating Action Button for Search -->
       <button id="btnFabSearch" class="sp-fab" title="New Search">🔍</button>
     </div>
@@ -115,26 +131,35 @@
     <!-- ─── Tab: Tasks ─── -->
     <div class="tab-content" id="tab-tasks">
       <!-- Tasks Control Bar (Sub-tabs & Sync tucked neatly on the right) -->
-      <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 12px; background: var(--bg-2); border-bottom: 1px solid var(--border); flex-shrink: 0;">
-        <div class="memo-sub-tabs" id="taskSubTabs" style="flex: 1; margin: 0 !important; background: #e2e8f0; border-radius: 6px;">
+      <div
+        style="display: flex; align-items: center; justify-content: space-between; padding: 6px 12px; background: var(--bg-2); border-bottom: 1px solid var(--border); flex-shrink: 0;">
+        <div class="memo-sub-tabs" id="taskSubTabs"
+          style="flex: 1; margin: 0 !important; background: #e2e8f0; border-radius: 6px;">
           <button class="memo-sub-tab active" data-filter="pending">PENDING</button>
           <button class="memo-sub-tab" data-filter="done">COMPLETED</button>
         </div>
-        <button id="syncBadgeTasks" class="sync-badge-btn"
-          title="Click to backup or restore data via Google account"
-          style="margin-left: 8px; flex-shrink: 0; font-size: 11px; padding: 4px 8px; height: 26px; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center;">
-          ☁️ Sync
+        <button id="syncBadgeTasks" class="sync-badge-btn" title="Click to backup or restore data via Google account">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8"
+            stroke-linecap="round" stroke-linejoin="round" class="sync-icon-svg"
+            style="transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+          </svg>
+          <span>Sync</span>
         </button>
       </div>
-      
+
       <!-- Hidden Quick Add Task Placeholder -->
       <div id="spTaskFormPlaceholder" style="display: none;">
         <div class="task-quick-bar" id="spTasksForm"
           style="padding: 12px 16px 16px 16px; background: white; transition: padding 0.3s ease;">
 
+          <div class="task-quick-title-row" style="margin-bottom: 8px; width: 100%;">
+            <input type="text" id="quickTaskTitle" placeholder="Title (optional)"
+              style="width: 50%; height: 28px; font-size: 12px; font-weight: 600; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); outline: none; box-sizing: border-box; font-family: inherit;"
+              autocomplete="off">
+          </div>
           <div class="task-quick-input-row" style="margin-bottom: 12px; width: 100%;">
-            <textarea id="quickTaskInput"
-              placeholder="Add new task... (Shift + Enter to save)"
+            <textarea id="quickTaskInput" placeholder="Add new task... (Shift + Enter to save)"
               class="quick-note-textarea"
               style="width: 100%; min-height: 110px; resize: vertical; box-sizing: border-box;"></textarea>
           </div>
@@ -142,7 +167,7 @@
           <div class="task-reminder-wrapper"
             style="margin-bottom: 12px; display:flex; align-items:center; gap:6px; width:100%;">
             <div class="task-reminder-row" id="quickTaskReminderRow"
-              style="flex:1; background:#fff; padding:0 10px; border-radius:6px; border:1px solid var(--border); cursor:pointer; display:flex; align-items:center; min-width:0; height:34px; box-sizing:border-box; position:relative;">
+              style="flex:1; background:#fff; padding:0 10px; border-radius:6px; border:1px solid var(--border); cursor:pointer; display:flex; align-items:center; min-width:0; height:34px; box-sizing:border-box; position:relative; transition: opacity 0.2s ease;">
               <label class="task-reminder-label" for="quickTaskReminderDt"
                 style="margin-right:6px; cursor:pointer; display:inline-flex; align-items:center; white-space:nowrap; font-size:12.5px; line-height:1; height:100%; position:relative; z-index:2; pointer-events:none;">
                 <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"
@@ -152,12 +177,15 @@
                 </svg>
                 Remind at:
               </label>
-              <input type="datetime-local" id="quickTaskReminderDt" class="quick-task-datetime"
+              <input type="text" id="quickTaskReminderDt" class="quick-task-datetime" placeholder="yyyy-mm-dd hh:mm"
                 style="position:absolute; top:0; left:0; width:100%; height:100%; z-index:1; padding-left:92px; box-sizing:border-box; cursor:pointer; background:transparent; border:none; outline:none; font-size:12.5px; display:inline-flex; align-items:center; line-height:1;">
             </div>
 
+            <span
+              style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin: 0 4px; flex-shrink: 0; user-select: none; background: #f1f5f9; padding: 4px 6px; border-radius: 4px; border: 1px solid #e2e8f0; line-height: 1;">OR</span>
+
             <select id="quickTaskReminderSelect" class="custom-select"
-              style="width: 115px; height: 34px; font-size: 12.5px; border-radius: 6px; cursor: pointer; outline: none; box-sizing: border-box; flex-shrink: 0; line-height: 1; padding: 0 24px 0 10px;">
+              style="width: 115px; height: 34px; font-size: 12.5px; border-radius: 6px; cursor: pointer; outline: none; box-sizing: border-box; flex-shrink: 0; line-height: 1; padding: 0 24px 0 10px; transition: opacity 0.2s ease;">
               <option value="">Remind in...</option>
               <option value="15">+15m</option>
               <option value="30">+30m</option>
@@ -169,12 +197,18 @@
             </select>
           </div>
 
-          <div class="input-helper" id="snoozeHintText" style="margin-top:6px; margin-bottom: 12px;">⏰ Starts at selected time — snoozes every 5 mins until completed (<a href="#" class="settings-subtab-link" data-subtab="features-snooze" style="color: var(--accent); font-weight: 700; text-decoration: underline;">change in Settings</a>)</div>
+          <div class="input-helper" id="snoozeHintText" style="margin-top:6px; margin-bottom: 12px;">⏰ Starts at
+            selected time — snoozes every 5 mins until completed (<a href="#" class="settings-subtab-link"
+              data-subtab="features-snooze"
+              style="color: var(--accent); font-weight: 700; text-decoration: underline;">change in Settings</a>)</div>
 
           <!-- Modal Action Buttons at the Bottom -->
-          <div style="display: flex; gap: 8px; margin-top: 16px; justify-content: flex-end; width: 100%; border-top: 1px solid var(--border); padding-top: 12px;">
-            <button type="button" class="btn btn-secondary" id="btnCancelTask" style="padding: 0 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: transparent; height: 36px; color: var(--text-2); display: inline-flex; align-items: center; justify-content: center;">Cancel</button>
-            <button type="button" class="btn btn-primary" id="btnQuickTaskSave" style="padding: 0 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; background: var(--accent); color: #fff; border: none; height: 36px; min-width: 90px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 4px var(--accent-dim);">
+          <div
+            style="display: flex; gap: 8px; margin-top: 16px; justify-content: flex-end; width: 100%; border-top: 1px solid var(--border); padding-top: 12px;">
+            <button type="button" class="btn btn-secondary" id="btnCancelTask"
+              style="padding: 0 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: transparent; height: 36px; color: var(--text-2); display: inline-flex; align-items: center; justify-content: center;">Cancel</button>
+            <button type="button" class="btn btn-primary" id="btnQuickTaskSave"
+              style="padding: 0 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; background: var(--accent); color: #fff; border: none; height: 36px; min-width: 90px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 4px var(--accent-dim);">
               🎯 Add Task
             </button>
           </div>
@@ -183,54 +217,71 @@
 
       <!-- Task list -->
       <div id="taskList" class="memo-panel active" style="flex:1;overflow-y:auto;padding:12px;"></div>
-      
+
       <!-- Floating Action Button for Tasks -->
       <button id="btnFabAddTask" class="sp-fab" title="Add Task">🎯</button>
     </div>
 
     <!-- ─── Tab: Notes ─── -->
     <div class="tab-content" id="tab-memo">
-      <div class="panel-section" style="border-bottom: 1px solid var(--border); padding: 10px 16px; background: var(--bg-2); flex-shrink: 0;">
-        <div class="search-form-header" style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; align-items: center; margin-bottom: 0;">
-          <button id="syncBadgeNotes" class="sync-badge-btn"
-            title="Click to backup or restore data via Google account"
-            style="flex-shrink: 0; font-size: 11px; padding: 4px 8px; height: 26px; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center;">
-            ☁️ Sync
-          </button>
+      <div class="panel-section"
+        style="border-bottom: 1px solid var(--border); padding: 10px 16px; background: var(--bg-2); flex-shrink: 0; box-sizing: border-box; width: 100%;">
+        <div class="search-form-header"
+          style="display: flex; flex-direction: column; gap: 8px; align-items: flex-end; margin-bottom: 0; width: 100%;">
           <div class="memo-sub-tabs" id="memoCategoryTabs"
             style="width: 100%; display: flex !important; background: var(--bg-1) !important; border: 1px solid var(--border) !important; border-radius: 6px !important; padding: 2px !important; margin: 0 !important; box-shadow: none !important; gap: 4px 2px !important; flex-wrap: wrap !important;">
             <!-- Categories as sub-tabs rendered dynamically -->
           </div>
+          <button id="syncBadgeNotes" class="sync-badge-btn" title="Click to backup or restore data via Google account">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8"
+              stroke-linecap="round" stroke-linejoin="round" class="sync-icon-svg"
+              style="transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);">
+              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+            </svg>
+            <span>Sync</span>
+          </button>
         </div>
       </div>
-      
+
       <!-- Hidden Quick Note Placeholder -->
       <div id="spMemoFormPlaceholder" style="display: none;">
         <div class="task-quick-bar" id="spMemoForm"
           style="padding: 12px 16px 16px 16px; background: white; transition: padding 0.3s ease;">
 
+          <div class="task-quick-title-row" style="margin-bottom: 8px; width: 100%;">
+            <input type="text" id="quickNoteTitle" placeholder="Title (optional)"
+              style="width: 50%; height: 28px; font-size: 12px; font-weight: 600; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); outline: none; box-sizing: border-box; font-family: inherit;"
+              autocomplete="off">
+          </div>
           <div class="task-quick-input-row" style="margin-bottom: 12px; width: 100%;">
-            <textarea id="quickNoteInput"
-              placeholder="Write a note... (Shift + Enter to save)"
+            <textarea id="quickNoteInput" placeholder="Write a note... (Shift + Enter to save)"
               class="quick-note-textarea" autocomplete="off"
               style="width: 100%; min-height: 110px; resize: vertical; box-sizing: border-box;"></textarea>
           </div>
 
-          <div style="margin-bottom: 12px; display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%;">
+          <div
+            style="margin-bottom: 12px; display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%;">
             <div style="display:flex; align-items:center; gap:8px;">
-              <span style="font-size:13px; color:var(--text-2); font-weight:600; display:flex; align-items:center; gap:4px; white-space:nowrap;">📁 Category:</span>
+              <span
+                style="font-size:13px; color:var(--text-2); font-weight:600; display:flex; align-items:center; gap:4px; white-space:nowrap;">📁
+                Category:</span>
               <select id="quickNoteCategory" class="custom-select quick-note-category-select"
                 style="width: 130px; height: 32px; font-size: 12.5px; border-radius: 6px; cursor: pointer; outline: none; box-sizing: border-box; line-height: 1; padding: 2px 24px 2px 8px; margin: 0;">
                 <!-- Categories rendered dynamically -->
               </select>
             </div>
-            <div class="input-helper" style="margin: 0; font-size:11.5px; font-weight: 500;">Manage in <a href="#" class="settings-subtab-link" data-subtab="categories" style="color: var(--accent); font-weight: 700; text-decoration: underline;">Settings</a></div>
+            <div class="input-helper" style="margin: 0; font-size:11.5px; font-weight: 500;"><a href="#"
+                class="settings-subtab-link" data-subtab="categories"
+                style="color: var(--accent); font-weight: 700; text-decoration: underline;">⚙️ Customize List</a></div>
           </div>
 
           <!-- Modal Action Buttons at the Bottom -->
-          <div style="display: flex; gap: 8px; margin-top: 16px; justify-content: flex-end; width: 100%; border-top: 1px solid var(--border); padding-top: 12px;">
-            <button type="button" class="btn btn-secondary" id="btnCancelNote" style="padding: 0 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: transparent; height: 36px; color: var(--text-2); display: inline-flex; align-items: center; justify-content: center;">Cancel</button>
-            <button type="button" class="btn btn-primary" id="btnQuickNoteSave" style="padding: 0 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; background: var(--accent); color: #fff; border: none; height: 36px; min-width: 90px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 4px var(--accent-dim);">
+          <div
+            style="display: flex; gap: 8px; margin-top: 16px; justify-content: flex-end; width: 100%; border-top: 1px solid var(--border); padding-top: 12px;">
+            <button type="button" class="btn btn-secondary" id="btnCancelNote"
+              style="padding: 0 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: transparent; height: 36px; color: var(--text-2); display: inline-flex; align-items: center; justify-content: center;">Cancel</button>
+            <button type="button" class="btn btn-primary" id="btnQuickNoteSave"
+              style="padding: 0 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; background: var(--accent); color: #fff; border: none; height: 36px; min-width: 90px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 4px var(--accent-dim);">
               📝 Add Note
             </button>
           </div>
@@ -240,14 +291,14 @@
 
       <!-- Note list -->
       <div id="memoNoteList" class="memo-panel active" style="flex:1;overflow-y:auto;padding:12px;"></div>
-      
+
       <!-- Floating Action Button for Notes -->
       <button id="btnFabAddNote" class="sp-fab" title="Add Note">📝</button>
     </div>
 
     <!-- ─── Tab: Missed Mentions ─── -->
     <div class="tab-content" id="tab-mentions">
-      
+
       <!-- Hidden Mentions Form Placeholder -->
       <div id="spMentionsFormPlaceholder" style="display: none;">
         <div class="search-form" id="spMentionsForm">
@@ -260,30 +311,30 @@
             </select>
             <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
               <div id="spMentionChannelsMS" data-placeholder="Search channel..."></div>
-              <label class="checkbox-label" style="margin-left:2px">
+              <div class="checkbox-label" style="margin-left:2px">
                 <input type="checkbox" id="spMentionIncludeDM">
                 <span style="font-size:11px">Include Direct Messages</span>
-              </label>
+              </div>
             </div>
           </div>
 
           <div style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
-            <label class="checkbox-label">
+            <div class="checkbox-label">
               <input type="checkbox" id="spMentionDirect" checked>
               <span>Direct mention (@you)</span>
-            </label>
-            <label class="checkbox-label">
+            </div>
+            <div class="checkbox-label">
               <input type="checkbox" id="spMentionHere">
               <span>Group mention (@here)</span>
-            </label>
-            <label class="checkbox-label">
+            </div>
+            <div class="checkbox-label">
               <input type="checkbox" id="spMentionChannel">
               <span>Channel mention (@channel / @all)</span>
-            </label>
-            <label class="checkbox-label">
+            </div>
+            <div class="checkbox-label">
               <input type="checkbox" id="spMentionDMs" checked>
               <span>Direct Messages (DM / GM)</span>
-            </label>
+            </div>
           </div>
           <div class="search-main-row">
             <button class="btn btn-primary btn-full" id="btnSpScanMentions">
@@ -296,10 +347,21 @@
           </div>
         </div>
       </div>
-      
+
       <!-- Results view occupying full height -->
-      <div class="panel-section" id="spMentionResults" style="flex:1; overflow-y:auto; padding:16px;">
-        <div class="empty-state">🔔 Click the floating button (🔔) in the bottom-right to configure criteria and scan!</div>
+      <div class="panel-section" id="spMentionResults"
+        style="flex:1; overflow-y:auto; padding:var(--app-padding, 16px);">
+        <div class="empty-state">
+          <div class="sp-how-to-use-card">
+            <div class="card-icon">💡</div>
+            <div>
+              <h4 class="card-title">How to use?</h4>
+              <p class="card-desc">
+                Click the floating button (🔔) at the bottom to configure filters and scan. It scans for posts where you were mentioned but haven't reacted or replied to yet.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Floating Action Button for Mentions -->
@@ -308,36 +370,31 @@
 
     <!-- ─── Tab: Reactions ─── -->
     <div id="tab-reactions" class="tab-content">
-      <div class="panel-section" style="padding: 14px 16px 10px 16px; border-bottom: 1px solid var(--border); background: var(--bg-2); flex-shrink: 0;">
-        <div class="search-form-header" style="align-items: center; display: flex; justify-content: space-between; width: 100%;">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <h2 class="section-title" style="margin: 0; font-size: 15px; font-weight: 600; color: var(--text-1);">Reactions & Emojis</h2>
-          </div>
-        </div>
-        <p class="hint-text" style="font-size:12px; color:var(--text-3); margin-top:4px; margin-bottom:0; font-weight: 500; display:block;">
-          💡 Set quick-spam reactions and manage image library.
-        </p>
-      </div>
-
       <!-- Sub-tabs Bar for Reactions -->
       <div class="memo-sub-tabs" id="reactionsSubTabs">
         <button class="memo-sub-tab active" data-section="meme">IMAGE LIBRARY</button>
         <button class="memo-sub-tab" data-section="picker">REACTION SPAMMER</button>
       </div>
 
-      <div style="flex:1; overflow-y: auto; padding: 16px;">
+      <div style="flex:1; overflow-y: auto; padding: var(--app-padding, 16px);">
         <!-- Content: Image Library -->
         <div id="reactions-section-meme" class="reactions-tab-panel active">
           <div class="settings-group" id="personalMemesConfigArea" style="padding-bottom: 16px;">
-            <h3 class="settings-title"
-              style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px;">
-              <span>Image Library</span>
-              <label for="sidepanel-meme-upload" class="btn-upload-premium">
+            <h3 class="settings-title" style="margin-bottom: 4px;">Image Library</h3>
+            <div
+              style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 8px;">
+              <p class="settings-desc" style="margin: 0; line-height: 1.4;">
+                Upload or delete images for quick access.<br>
+                <span
+                  style="font-size: 11.5px; color: var(--text-3); font-weight: 500; display: inline-block; margin-top: 3px;">Click
+                  the image icon 🖼️ in the chatbox toolbar to open the picker.</span>
+              </p>
+              <label for="sidepanel-meme-upload" class="btn-upload-premium"
+                style="flex-shrink: 0; white-space: nowrap; cursor: pointer;">
                 + Upload Image
               </label>
               <input type="file" id="sidepanel-meme-upload" accept="image/*" style="display:none;" />
-            </h3>
-            <p class="settings-desc">Upload or delete images for quick access inside the chatbox.</p>
+            </div>
             <div id="sidepanel-memes-storage-container"
               style="margin-top: 6px; padding: 6px 10px; background: var(--bg-1); border: 1px solid var(--border); border-radius: 6px; display: flex; flex-direction: column; gap: 4px;">
               <div
@@ -369,6 +426,17 @@
 
         <!-- Content: Emoji Picker -->
         <div id="reactions-section-picker" class="reactions-tab-panel" style="display:none">
+          <!-- Reaction Spammer Explainer Card -->
+          <div class="sp-how-to-use-card">
+            <div class="card-icon">💡</div>
+            <div>
+              <h4 class="card-title">How to use?</h4>
+              <p class="card-desc">
+                Hover over any message on ChatOps, then click the <strong>Fire button (🔥)</strong> in the hover actions menu to instantly spam your selected emojis, or click the <strong>Return button (↩️)</strong> to retract them!
+              </p>
+            </div>
+          </div>
+
           <div class="settings-group" id="reactionsConfigArea">
             <h3 class="settings-title">Selected Emojis (Max 20)</h3>
             <p class="settings-desc">Click on an emoji below to remove it from your quick-spam list.</p>
@@ -378,7 +446,8 @@
             </div>
 
             <h3 class="settings-title">Add Emojis</h3>
-            <p class="settings-desc" style="margin-bottom: 12px;">Click on an emoji below to add it to your quick-spam list.</p>
+            <p class="settings-desc" style="margin-bottom: 12px;">Click on an emoji below to add it to your quick-spam
+              list.</p>
 
             <div class="settings-emoji-tabs" style="margin-bottom:12px;">
               <button type="button" class="emoji-tab-btn active" id="emojiTabStandard">STANDARD</button>
@@ -388,8 +457,7 @@
             <!-- Emoji Search Input -->
             <div class="emoji-search-wrapper"
               style="position:relative; margin-bottom:12px; display:flex; align-items:center; width: 100%;">
-              <input type="text" id="emojiSearchInput"
-                placeholder="Search emoji by name (e.g. fire, heart)..."
+              <input type="text" id="emojiSearchInput" placeholder="Search emoji by name (e.g. fire, heart)..."
                 style="flex:1; padding:8px 32px 8px 12px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:13px; outline:none; background:var(--bg-1); color:var(--text-1); font-family:inherit; width: 100%;">
               <span class="emoji-search-icon"
                 style="position:absolute; right:10px; color:var(--text-3); font-size:13px; pointer-events:none;">🔍</span>
@@ -409,7 +477,8 @@
                 <!-- Custom emojis rendered dynamically -->
               </div>
               <div id="customEmojiLoading"
-                style="text-align:center; padding:10px; color:var(--text-3); font-size:12px; display:none;">Loading more emojis...</div>
+                style="text-align:center; padding:10px; color:var(--text-3); font-size:12px; display:none;">Loading more
+                emojis...</div>
             </div>
           </div>
         </div>
@@ -426,7 +495,7 @@
         <button class="memo-sub-tab" data-section="sync">SYNC DATA</button>
       </div>
 
-      <div style="flex:1; overflow-y: auto; padding: 16px;">
+      <div style="flex:1; overflow-y: auto; padding: var(--app-padding, 16px);">
         <!-- Section: General -->
         <div id="settings-section-general" class="settings-tab-panel active">
 
@@ -434,7 +503,8 @@
           <div class="settings-group"
             style="padding: 16px; background: var(--bg-1); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); margin-bottom: 16px;">
             <p style="color: var(--text-1); font-size: 14px; font-weight: 600; margin: 0 0 12px 0; line-height: 1.45;">
-              Welcome to <strong style="color: var(--accent); font-weight: 700;">ChatOps++</strong>! Your productivity toolkit:
+              Welcome to <strong style="color: var(--accent); font-weight: 700;">ChatOps++</strong>! Your productivity
+              toolkit:
             </p>
             <div style="display: flex; flex-direction: column; gap: 10px;">
               <div
@@ -471,7 +541,8 @@
                 style="display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: var(--text-2); line-height: 1.4;">
                 <span
                   style="font-size: 14px; flex-shrink: 0; background: rgba(52, 152, 219, 0.08); width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #3498db;">🖼️</span>
-                <div style="padding-top: 2px;"><strong>Image Library:</strong> Upload and quick-send your favorite personal images.</div>
+                <div style="padding-top: 2px;"><strong>Image Library:</strong> Upload and quick-send your favorite
+                  personal images.</div>
               </div>
             </div>
           </div>
@@ -482,9 +553,11 @@
             <div style="font-size: 20px; color: var(--success); line-height: 1; margin-top: 2px;">🛡️</div>
             <div>
               <h3 class="settings-title"
-                style="color: var(--success); font-size: 14px; font-weight: 700; margin: 0 0 6px 0;">Privacy & Security Commitment</h3>
+                style="color: var(--success); font-size: 14px; font-weight: 700; margin: 0 0 6px 0;">Privacy & Security
+                Commitment</h3>
               <p class="settings-desc" style="color: var(--text-2); font-size: 13px; line-height: 1.55; margin: 0;">
-                <strong>ChatOps++</strong> does not collect, store, or transmit your personal data. All data is stored 100% locally in your browser (Local Storage) under your full control.
+                <strong>ChatOps++</strong> does not collect, store, or transmit your personal data. All data is stored
+                100% locally in your browser (Local Storage) under your full control.
               </p>
             </div>
           </div>
@@ -494,10 +567,13 @@
             style="padding: 16px; background: rgba(52, 152, 219, 0.04); border: 1px dashed #3498db; border-radius: 12px; margin-bottom: 16px; display: flex; gap: 10px; align-items: flex-start;">
             <div style="font-size: 20px; color: #3498db; line-height: 1; margin-top: 2px;">💬</div>
             <div>
-              <h3 class="settings-title"
-                style="color: #3498db; font-size: 14px; font-weight: 700; margin: 0 0 6px 0;">Support & Feedback</h3>
+              <h3 class="settings-title" style="color: #3498db; font-size: 14px; font-weight: 700; margin: 0 0 6px 0;">
+                Support & Feedback</h3>
               <p class="settings-desc" style="color: var(--text-2); font-size: 13px; line-height: 1.55; margin: 0;">
-                For any questions, suggestions, or bug reports, please contact <a href="https://chat.runsystem.vn/runsystem/messages/@hannd-runsystem.net" class="support-chatops-link" style="color: #3498db; font-weight: 700; text-decoration: underline;">hannd@runsystem.net</a> via ChatOps.
+                For any questions, suggestions, or bug reports, please contact <a
+                  href="https://chat.runsystem.vn/runsystem/messages/@hannd-runsystem.net" class="support-chatops-link"
+                  style="color: #3498db; font-weight: 700; text-decoration: underline;">hannd@runsystem.net</a> via
+                ChatOps.
               </p>
             </div>
           </div>
@@ -505,7 +581,8 @@
 
         <!-- Section: Features -->
         <div id="settings-section-features" class="settings-tab-panel" style="display:none">
-          <h2 style="font-size: 15px; font-weight: 600; color: var(--text-1); margin-bottom: 20px;">Feature Settings</h2>
+          <h2 style="font-size: 15px; font-weight: 600; color: var(--text-1); margin-bottom: 20px;">Feature Settings
+          </h2>
 
           <!-- Sub-tab Bar for Features -->
           <div class="settings-subtab-bar" style="margin-bottom: 16px;">
@@ -602,17 +679,22 @@
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 8px;">
                   <div>
-                    🍏 <strong>macOS:</strong> Go to <em>System Settings</em> → <em>Notifications</em> → <strong>Google Chrome</strong> → Enable <strong>Allow Notifications</strong> and select <strong>Banners</strong> or <strong>Alerts</strong>.
+                    🍏 <strong>macOS:</strong> Go to <em>System Settings</em> → <em>Notifications</em> → <strong>Google
+                      Chrome</strong> → Enable <strong>Allow Notifications</strong> and select <strong>Banners</strong>
+                    or <strong>Alerts</strong>.
                   </div>
                   <div>
-                    🪟 <strong>Windows:</strong> Go to <em>Settings</em> → <em>System</em> → <em>Notifications</em> → Ensure general alerts are ON and allow <strong>Google Chrome</strong>.
+                    🪟 <strong>Windows:</strong> Go to <em>Settings</em> → <em>System</em> → <em>Notifications</em> →
+                    Ensure general alerts are ON and allow <strong>Google Chrome</strong>.
                   </div>
                   <div>
-                    🐧 <strong>Ubuntu (Linux):</strong> Go to <em>Settings</em> → <em>Notifications</em> → <strong>Google Chrome</strong> → Ensure notifications are enabled.
+                    🐧 <strong>Ubuntu (Linux):</strong> Go to <em>Settings</em> → <em>Notifications</em> →
+                    <strong>Google Chrome</strong> → Ensure notifications are enabled.
                   </div>
                   <div
                     style="border-top: 1px dashed var(--border); margin-top: 6px; padding-top: 8px; font-style: italic; color: var(--accent); font-weight: 500;">
-                    💡 Tip: If notifications do not appear after enabling, restart Google Chrome completely (Cmd+Q on macOS, or close all windows) for the OS to apply permissions.
+                    💡 Tip: If notifications do not appear after enabling, restart Google Chrome completely (Cmd+Q on
+                    macOS, or close all windows) for the OS to apply permissions.
                   </div>
                 </div>
               </div>
@@ -623,7 +705,7 @@
         <!-- Section: Theme -->
         <div id="settings-section-theme" class="settings-tab-panel" style="display:none">
           <h2 style="font-size: 15px; font-weight: 600; color: var(--text-1); margin-bottom: 20px;">Theme Settings</h2>
-          <div class="settings-group" style="padding: 16px;">
+          <div class="settings-group">
 
             <!-- Color Preset Selectors -->
             <div class="settings-color-grid"
@@ -631,7 +713,8 @@
               <div class="settings-color-item"
                 style="border: 1px solid var(--border); padding: 12px; border-radius: 10px; background: var(--bg-1); box-shadow: 0 2px 4px rgba(0,0,0,0.01);">
                 <span
-                  style="font-weight: 600; font-size: 13px; color: var(--text-1); display: block; margin-bottom: 10px;">Header Component</span>
+                  style="font-weight: 600; font-size: 13px; color: var(--text-1); display: block; margin-bottom: 10px;">Header
+                  Component</span>
                 <div class="color-presets-row" data-key="headerColor" style="display: flex; gap: 8px;">
                   <button class="color-preset active" data-color="#1c58d9"
                     style="background: #1c58d9; width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
@@ -643,13 +726,26 @@
                     style="background: #805bfa; width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
                   <button class="color-preset" data-color="#1153ab"
                     style="background: #1153ab; width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
+                  <button class="color-preset" data-color="#ff7a00"
+                    style="background: #ff7a00; width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"
+                    title="Orange"></button>
+                  <button class="color-preset" data-color="#00b4d8"
+                    style="background: #00b4d8; width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"
+                    title="Teal"></button>
+                  <button class="color-preset" data-color="#f43f5e"
+                    style="background: #f43f5e; width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"
+                    title="Rose"></button>
+                  <button class="color-preset" data-color="#1e293b"
+                    style="background: #1e293b; width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"
+                    title="Slate"></button>
                 </div>
               </div>
 
               <div class="settings-color-item"
                 style="border: 1px solid var(--border); padding: 12px; border-radius: 10px; background: var(--bg-1); box-shadow: 0 2px 4px rgba(0,0,0,0.01);">
                 <span
-                  style="font-weight: 600; font-size: 13px; color: var(--text-1); display: block; margin-bottom: 10px;">Navigation Bar (Tabs)</span>
+                  style="font-weight: 600; font-size: 13px; color: var(--text-1); display: block; margin-bottom: 10px;">Navigation
+                  Bar (Tabs)</span>
                 <div class="color-presets-row" data-key="navColor" style="display: flex; gap: 8px;">
                   <button class="color-preset active" data-color="#1c58d9"
                     style="background: #1c58d9; width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
@@ -661,13 +757,26 @@
                     style="background: #805bfa; width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
                   <button class="color-preset" data-color="#1153ab"
                     style="background: #1153ab; width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
+                  <button class="color-preset" data-color="#ff7a00"
+                    style="background: #ff7a00; width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"
+                    title="Orange"></button>
+                  <button class="color-preset" data-color="#00b4d8"
+                    style="background: #00b4d8; width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"
+                    title="Teal"></button>
+                  <button class="color-preset" data-color="#f43f5e"
+                    style="background: #f43f5e; width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"
+                    title="Rose"></button>
+                  <button class="color-preset" data-color="#1e293b"
+                    style="background: #1e293b; width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"
+                    title="Slate"></button>
                 </div>
               </div>
 
               <div class="settings-color-item"
                 style="border: 1px solid var(--border); padding: 12px; border-radius: 10px; background: var(--bg-1); box-shadow: 0 2px 4px rgba(0,0,0,0.01);">
                 <span
-                  style="font-weight: 600; font-size: 13px; color: var(--text-1); display: block; margin-bottom: 10px;">Accent Buttons & Highlights</span>
+                  style="font-weight: 600; font-size: 13px; color: var(--text-1); display: block; margin-bottom: 10px;">Accent
+                  Buttons & Highlights</span>
                 <div class="color-presets-row" data-key="accentColor" style="display: flex; gap: 8px;">
                   <button class="color-preset active" data-color="#1c58d9"
                     style="background: #1c58d9; width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
@@ -679,7 +788,38 @@
                     style="background: #805bfa; width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
                   <button class="color-preset" data-color="#f5a623"
                     style="background: #f5a623; width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
+                  <button class="color-preset" data-color="#ff7a00"
+                    style="background: #ff7a00; width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"
+                    title="Orange"></button>
+                  <button class="color-preset" data-color="#00b4d8"
+                    style="background: #00b4d8; width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"
+                    title="Teal"></button>
+                  <button class="color-preset" data-color="#f43f5e"
+                    style="background: #f43f5e; width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"
+                    title="Rose"></button>
+                  <button class="color-preset" data-color="#1e293b"
+                    style="background: #1e293b; width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"
+                    title="Slate"></button>
                 </div>
+              </div>
+            </div>
+
+            <!-- Padding Density Control -->
+            <div class="settings-color-item"
+              style="border: 1px solid var(--border); padding: 12px; border-radius: 10px; background: var(--bg-1); box-shadow: 0 2px 4px rgba(0,0,0,0.01); margin-top: 16px; max-width: 480px;">
+              <span
+                style="font-weight: 600; font-size: 13px; color: var(--text-1); display: block; margin-bottom: 4px;">Layout
+                Spacing (Padding)</span>
+              <p class="settings-desc" style="margin-bottom: 10px; font-size: 12px; line-height: 1.4;">
+                Fine-tune the density and spacing of lists, cards, and panels across the extension.
+              </p>
+              <div class="settings-row" style="display: flex; align-items: center; gap: 8px;">
+                <select id="settingAppPadding" class="custom-select" style="width:100%; max-width:200px;">
+                  <option value="10px">Compact (10px)</option>
+                  <option value="12px" selected>Default (12px)</option>
+                  <option value="16px">Comfortable (16px)</option>
+                  <option value="20px">Spacious (20px)</option>
+                </select>
               </div>
             </div>
           </div>
@@ -687,7 +827,8 @@
 
         <!-- Section: Categories -->
         <div id="settings-section-categories" class="settings-tab-panel" style="display:none">
-          <h2 style="font-size: 15px; font-weight: 600; color: var(--text-1); margin-bottom: 20px;">Note Categories (Max 5).</h2>
+          <h2 style="font-size: 15px; font-weight: 600; color: var(--text-1); margin-bottom: 20px;">Note Categories (Max
+            5).</h2>
           <div class="settings-group">
 
             <div class="category-add-row" style="display:flex; gap:8px; margin-bottom:12px;">
@@ -731,7 +872,8 @@
               </div>
               <p class="settings-desc"
                 style="color: var(--text-2); font-size: 13.5px; line-height: 1.5; margin: 0 0 14px 0;">
-                Backup or restore your tasks and notes to the cloud via your Google account to sync data across computers.
+                Backup or restore your tasks and notes to the cloud via your Google account to sync data across
+                computers.
               </p>
               <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
                 <button id="btnSyncCloudBackup" class="btn btn-secondary"
@@ -740,7 +882,7 @@
                 </button>
                 <button id="btnSyncCloudRestore" class="btn btn-primary"
                   style="flex:1; display:flex; align-items:center; justify-content:center; gap:6px; font-size:13.5px; font-weight:700; padding:10px; border-radius:8px; transition:all 0.2s; height:38px; cursor:pointer;">
-                  📥 Restore from Cloud
+                  🔄 Restore from Cloud
                 </button>
               </div>
               <div id="syncStatusMessage"
@@ -755,9 +897,11 @@
               <div style="font-size: 18px; color: var(--accent); line-height: 1; margin-top: 2px;">💡</div>
               <div>
                 <h4 class="settings-title"
-                  style="color: var(--accent); font-size: 13px; font-weight: 700; margin: 0 0 4px 0;">Why use manual sync?</h4>
+                  style="color: var(--accent); font-size: 13px; font-weight: 700; margin: 0 0 4px 0;">Why use manual
+                  sync?</h4>
                 <p class="settings-desc" style="color: var(--text-2); font-size: 12px; line-height: 1.5; margin: 0;">
-                  To ensure maximum privacy and instant speed, all data is stored offline by default. Manual sync lets you decide exactly when to backup or transfer your data.
+                  To ensure maximum privacy and instant speed, all data is stored offline by default. Manual sync lets
+                  you decide exactly when to backup or transfer your data.
                 </p>
               </div>
             </div>
@@ -774,7 +918,8 @@
               </div>
               <p class="settings-desc"
                 style="color: var(--text-2); font-size: 13.5px; line-height: 1.5; margin: 0 0 12px 0;">
-                Automatically delete completed tasks or notes after a certain period of time to keep your data synchronized quickly.
+                Automatically delete completed tasks or notes after a certain period of time to keep your data
+                synchronized quickly.
               </p>
               <div
                 style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; background:var(--bg-2); padding:8px 12px; border-radius:8px; border:1px solid var(--border); flex-wrap:wrap; gap:6px;">
@@ -788,13 +933,15 @@
                   </svg>
                   Storage Used:
                 </span>
-                <span id="storageUsageDisplay" style="font-size:13px; font-weight:600; color:var(--text-1);">Calculating...</span>
+                <span id="storageUsageDisplay"
+                  style="font-size:13px; font-weight:600; color:var(--text-1);">Calculating...</span>
               </div>
               <div
                 style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; flex-wrap:wrap;">
                 <div style="display:flex; flex-direction:column; gap:4px; flex:1; min-width:180px;">
                   <span style="font-size:14.5px; font-weight:600; color:var(--text-1);">Auto Cleanup Period:</span>
-                  <span style="font-size:13px; color:var(--text-3); font-weight:500;">Only applies to completed tasks and notes.</span>
+                  <span style="font-size:13px; color:var(--text-3); font-weight:500;">Only applies to completed tasks
+                    and notes.</span>
                 </div>
                 <select id="settingsAutoCleanupDays" class="custom-select" style="width:170px; font-size:13.5px;">
                   <option value="0">Never</option>
@@ -840,7 +987,8 @@
       </h3>
       <p
         style="color: #94a3b8; font-size: 14px; line-height: 1.55; text-align: center; margin: 0 0 20px 0; font-weight: 500;">
-        If this extension makes your work more productive and enjoyable, feel free to buy the developer a coffee to support further AI vibecoding! 🚀
+        If this extension makes your work more productive and enjoyable, feel free to buy the developer a coffee to
+        support further AI vibecoding! 🚀
       </p>
 
       <!-- Large QR Code Card -->

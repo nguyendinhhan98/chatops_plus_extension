@@ -22,7 +22,8 @@ import {
   filterChannels,
   escapeHtml,
   showLoading, 
-  showError 
+  showError,
+  initCommonFlatpickr
 } from '../../src/utils/index.js';
 import { UI_CONFIG } from '../../src/constants.js';
 import { language } from '../../src/lang.js';
@@ -173,6 +174,22 @@ export function setup(state) {
       }
     }
   });
+
+  // Initialize Flatpickr on Before/After search dates
+  const afterInput = document.getElementById('spSearchAfter');
+  const beforeInput = document.getElementById('spSearchBefore');
+  if (afterInput) {
+    initCommonFlatpickr(afterInput, {
+      enableTime: false,
+      dateFormat: "Y-m-d"
+    });
+  }
+  if (beforeInput) {
+    initCommonFlatpickr(beforeInput, {
+      enableTime: false,
+      dateFormat: "Y-m-d"
+    });
+  }
 }
 
 /**
@@ -189,8 +206,13 @@ export function clearResults() {
   delete fromInput.dataset.username;
   const termsInput = document.getElementById('spSearchTerms');
   termsInput.value = '';
-  document.getElementById('spSearchAfter').value = '';
-  document.getElementById('spSearchBefore').value = '';
+  const afterEl = document.getElementById('spSearchAfter');
+  const beforeEl = document.getElementById('spSearchBefore');
+  if (afterEl?._flatpickr) afterEl._flatpickr.clear();
+  else if (afterEl) afterEl.value = '';
+
+  if (beforeEl?._flatpickr) beforeEl._flatpickr.clear();
+  else if (beforeEl) beforeEl.value = '';
   document.getElementById('chkSearchIncludeDM').checked = false;
   const btnClearSearch = document.getElementById('btnSpClearSearch');
   if (btnClearSearch) btnClearSearch.style.display = 'none';
@@ -334,6 +356,19 @@ export async function performSpSearch(isLoadMore = false) {
     if (searchState.hasMore) {
       resultsEl.insertAdjacentHTML('beforeend', `<div class="loading-state" id="btnLoadMoreSearch"><span class="spinner"></span> ${language.loadingMore}</div>`);
     }
+
+    // Only show collapse button if the text actually overflows
+    document.getElementById('searchPostList')?.querySelectorAll('.post-item').forEach(card => {
+      const textEl = card.querySelector('.post-body');
+      const collapseBtn = card.querySelector('.collapse-btn');
+      // Only process items where the collapse button hasn't been hidden yet
+      if (textEl && collapseBtn && collapseBtn.style.display !== 'none') {
+        const isOverflowing = textEl.scrollHeight > textEl.clientHeight + 1;
+        if (!isOverflowing) {
+          collapseBtn.style.display = 'none';
+        }
+      }
+    });
 
   } catch (err) {
     if (!isLoadMore) showError(resultsEl, err.message);

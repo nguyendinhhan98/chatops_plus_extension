@@ -261,7 +261,7 @@ body {
   display: flex;
   flex-wrap: wrap;
   background: var(--nav-bg, #1153ab);
-  padding: 6px 12px;
+  padding: var(--tab-nav-padding, 6px 12px);
   position: relative;
   z-index: 10;
   min-height: 50px;
@@ -276,7 +276,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 2px;
-  padding: 6px 4px;
+  padding: var(--tab-btn-padding, 6px 4px);
   background: none;
   border: none;
   color: #ffffff;
@@ -632,7 +632,7 @@ textarea.search-form-textarea {
   gap: 8px;
   font-size: 13.5px;
   color: var(--text-2);
-  cursor: pointer;
+  cursor: default;
   user-select: none;
 }
 
@@ -960,18 +960,7 @@ textarea.search-form-textarea {
 
 
 
-/* ─── Leave Item ─── */
-.leave-item {
-  padding: 12px 14px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  margin-bottom: 8px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
-}
 
-.leave-time { font-size: 11px; color: var(--text-3); margin-bottom: 3px; }
-.leave-message { font-size: 13px; color: var(--text-2); line-height: 1.5; }
 
 /* ─── Quick Actions ─── */
 .quick-actions { 
@@ -1082,7 +1071,7 @@ textarea.search-form-textarea {
   justify-content: center; /* Vertically center input row & chips */
   gap: 4px;
   width: 100%;
-  min-height: 42px; /* Standardized height */
+  min-height: 42px; /* Standardized height to perfectly match custom-select */
   padding: 4px 10px;
   background: var(--bg);
   border: 1px solid var(--border);
@@ -1187,9 +1176,9 @@ textarea.search-form-textarea {
 
 .quick-note-textarea {
   width: 100%;
-  resize: none;
+  resize: vertical;
   padding: 10px 12px;
-  min-height: 80px;
+  min-height: 120px;
   background: #ffffff;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -1199,7 +1188,7 @@ textarea.search-form-textarea {
   line-height: 1.5;
   outline: none;
   box-sizing: border-box;
-  transition: all var(--transition);
+  transition: border-color var(--transition), box-shadow var(--transition);
 }
 
 .quick-note-textarea:focus {
@@ -1318,7 +1307,7 @@ textarea.search-form-textarea {
   border-radius: 8px !important;
   padding: 2px !important;
   gap: 4px 2px !important;
-  margin: 8px 16px 8px 16px !important;
+  margin: var(--sub-tabs-margin, 8px 16px) !important;
   flex-wrap: wrap !important;
   overflow-x: auto !important;
   scrollbar-width: none !important;
@@ -1334,7 +1323,7 @@ textarea.search-form-textarea {
   flex: 1 1 auto !important;
   min-width: 60px !important;
   white-space: nowrap !important;
-  padding: 5px 10px !important;
+  padding: var(--sub-tab-padding, 5px 10px) !important;
   background: none !important;
   border: none !important;
   color: #334155 !important; /* High-contrast Dark Slate for extremely clear readability */
@@ -1373,14 +1362,14 @@ textarea.search-form-textarea {
   border-radius: 10px !important;
   padding: 3px !important;
   gap: 4px 3px !important;
-  margin-bottom: 18px !important;
+  margin-bottom: var(--settings-subtabs-margin, 18px) !important;
   width: 100% !important;
   flex-wrap: wrap !important;
 }
 
 .settings-subtab-btn {
   flex: 1 !important;
-  padding: 8px 12px !important;
+  padding: var(--settings-subtab-padding, 8px 12px) !important;
   background: none !important;
   border: none !important;
   color: #334155 !important; /* High-contrast Dark Slate */
@@ -1418,7 +1407,7 @@ textarea.search-form-textarea {
 }
 
 /* Panels */
-.memo-panel { display: none; flex: 1; overflow-y: auto; padding: 12px; }
+.memo-panel { display: none; flex: 1; overflow-y: auto; padding: var(--content-padding, 12px); }
 .memo-panel.active { display: block; }
 
 /* List section headers */
@@ -1547,8 +1536,8 @@ input:checked + .toggle-slider:before { transform: translateX(16px); }
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 12px;
-  margin-bottom: 8px;
+  padding: 10px;
+  margin-bottom: 6px;
   transition: border-color var(--transition), box-shadow var(--transition);
 }
 .memo-item:hover {
@@ -1598,6 +1587,24 @@ input:checked + .toggle-slider:before { transform: translateX(16px); }
   display: block;
 }
 
+/* Square Footer Checkbox */
+.memo-checkbox-container.footer-checkbox {
+  width: 14px;
+  height: 14px;
+  margin-top: 0;
+}
+.memo-checkbox-container.footer-checkbox .memo-checkmark-custom {
+  border-radius: 3px;
+  border-width: 1.2px;
+}
+.memo-checkbox-container.footer-checkbox .memo-checkmark-custom::after {
+  left: 4px;
+  top: 1px;
+  width: 3px;
+  height: 6px;
+  border-width: 0 1.5px 1.5px 0;
+}
+
 .memo-content {
   flex: 1; min-width: 0;
   display: flex; flex-direction: column; gap: 5px;
@@ -1620,19 +1627,161 @@ input:checked + .toggle-slider:before { transform: translateX(16px); }
 }
 
 .memo-note-text {
-  font-size: 15px; /* Increased size */
-  font-weight: 500;
-  color: var(--text-1);
-  line-height: 1.6;
-  letter-spacing: -0.1px;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: #1e293b !important;
+  line-height: 1.5 !important;
+  letter-spacing: -0.15px !important;
+  word-break: break-word !important;
 }
+
 .memo-item.memo-done .memo-note-text {
-  text-decoration: line-through; color: var(--text-3);
+  text-decoration: line-through !important;
+  color: var(--text-3) !important;
+  opacity: 0.7;
+}
+
+/* Card Meta & Badges */
+.sp-card-date {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-3);
+  background: var(--bg-2, #f5f5f7);
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+/* Card Left Accent Strip */
+.note-item {
+  border-left: 3.5px solid var(--border) !important;
+}
+.note-item.cat-work {
+  border-left: 3.5px solid var(--accent, #1c58d9) !important;
+}
+.note-item.cat-personal {
+  border-left: 3.5px solid var(--success, #3db887) !important;
+}
+.note-item.cat-ideas {
+  border-left: 3.5px solid var(--warning, #f5a623) !important;
+}
+.note-item.cat-general {
+  border-left: 3.5px solid #94a3b8 !important;
+}
+
+/* Tasks left accent */
+.task-item {
+  border-left: 3.5px solid #94a3b8 !important;
+}
+.memo-item {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02), 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: transform var(--transition, 0.2s), border-color var(--transition, 0.2s), box-shadow var(--transition, 0.2s) !important;
+}
+.memo-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 12px -4px rgba(0, 0, 0, 0.06) !important;
+}
+.memo-item.memo-overdue {
+  border-left: 3.5px solid var(--danger, #d0454c) !important;
+}
+.memo-item.memo-done {
+  border-left: 3.5px solid var(--success, #3db887) !important;
+}
+
+/* Premium Compact Datepicker Wrapper */
+.task-update-reminder-wrapper {
+  display: inline-flex;
+  align-items: center;
+  background: var(--bg-1, #ffffff);
+  border: 1px solid var(--border, #e0e0e5);
+  border-radius: 6px;
+  padding: 1px 4px;
+  position: relative;
+  width: 135px;
+  height: 22px;
+  box-sizing: border-box;
+  overflow: hidden;
+  transition: all var(--transition, 0.2s);
+}
+
+.task-update-reminder-wrapper .reminder-clock-icon {
+  opacity: 0.7;
+  color: var(--text-3);
+  margin-right: 4px;
+  position: relative;
+  z-index: 2;
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+.task-update-reminder-wrapper .task-update-reminder {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  padding-left: 18px;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-2);
+  background: transparent;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+.task-update-reminder-wrapper .task-update-reminder::placeholder {
+  color: var(--text-3);
+  opacity: 0.55;
+  font-size: 9.5px;
+  font-weight: 500;
+}
+
+.task-update-reminder-wrapper:hover {
+  border-color: var(--accent);
+  background-color: var(--bg-2, #f5f5f7);
+}
+
+.task-update-reminder-wrapper.has-reminder {
+  background-color: rgba(245, 166, 35, 0.06) !important;
+  border-color: rgba(245, 166, 35, 0.2) !important;
+}
+.task-update-reminder-wrapper.has-reminder .reminder-clock-icon {
+  color: #d97706 !important;
+  opacity: 0.9;
+}
+.task-update-reminder-wrapper.has-reminder .task-update-reminder {
+  color: #d97706 !important;
+  font-weight: 600;
+}
+
+/* Compact select category options tag backgrounds */
+.sp-compact-select[data-category="work"] {
+  background-color: rgba(28, 88, 217, 0.05);
+  color: #1c58d9;
+  border-color: rgba(28, 88, 217, 0.15);
+}
+.sp-compact-select[data-category="personal"] {
+  background-color: rgba(61, 184, 135, 0.06);
+  color: #2b9e70;
+  border-color: rgba(61, 184, 135, 0.15);
+}
+.sp-compact-select[data-category="ideas"] {
+  background-color: rgba(245, 166, 35, 0.06);
+  color: #d97706;
+  border-color: rgba(245, 166, 35, 0.15);
+}
+.sp-compact-select[data-category="general"] {
+  background-color: rgba(106, 106, 108, 0.05);
+  color: #4a4a4c;
+  border-color: rgba(106, 106, 108, 0.12);
 }
 
 .memo-footer {
   display: flex; justify-content: space-between; align-items: center;
-  margin-top: 10px; padding-top: 8px;
+  margin-top: 6px; padding-top: 6px;
   border-top: 1px solid var(--border);
 }
 
@@ -1642,13 +1791,52 @@ input:checked + .toggle-slider:before { transform: translateX(16px); }
 }
 .memo-meta .reminder-active { color: var(--warning); font-weight: 600; }
 
+/* Compact Premium Select for Note Cards */
+.sp-compact-select {
+  font-family: var(--font);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-2);
+  background-color: var(--bg-1, #ffffff);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' fill='%23555555' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: calc(100% - 6px) center;
+  border: 1px solid var(--border, #e0e0e5);
+  border-radius: 6px;
+  padding: 1px 16px 1px 6px;
+  height: 22px;
+  line-height: 18px;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  outline: none;
+  transition: all var(--transition, 0.2s);
+  max-width: 95px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-sizing: border-box;
+}
+
+.sp-compact-select:hover {
+  border-color: var(--accent);
+  background-color: var(--bg-2, #f5f5f7);
+  color: var(--accent);
+}
+
+.sp-compact-select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-dim);
+  background-color: var(--bg-1, #ffffff);
+}
+
 .btn-edit-memo {
   background: rgba(28, 88, 217, 0.08) !important;
   color: var(--accent) !important;
   border: 1px solid rgba(28, 88, 217, 0.15) !important;
-  width: 28px; height: 28px;
+  width: 24px; height: 24px;
   display: flex; align-items: center; justify-content: center;
-  border-radius: 6px;
+  border-radius: 4px;
   transition: all var(--transition);
   cursor: pointer;
 }
@@ -1662,9 +1850,9 @@ input:checked + .toggle-slider:before { transform: translateX(16px); }
   background: rgba(208, 69, 76, 0.08) !important;
   color: var(--danger) !important;
   border: 1px solid rgba(208, 69, 76, 0.15) !important;
-  width: 28px; height: 28px;
+  width: 24px; height: 24px;
   display: flex; align-items: center; justify-content: center;
-  border-radius: 6px;
+  border-radius: 4px;
   transition: all var(--transition);
   cursor: pointer;
 }
@@ -1672,6 +1860,13 @@ input:checked + .toggle-slider:before { transform: translateX(16px); }
   background: var(--danger) !important;
   color: #fff !important;
   transform: scale(1.05);
+}
+
+.memo-actions .post-jump-link {
+  width: 24px;
+  height: 24px;
+  font-size: 13px;
+  box-shadow: none;
 }
 
 /* ─── Meme assets ─── */
@@ -1736,8 +1931,8 @@ input:checked + .toggle-slider:before { transform: translateX(16px); }
   background: none;
   border: 1px solid var(--border);
   color: var(--text-3);
-  width: 28px; height: 28px;
-  border-radius: var(--radius-sm);
+  width: 24px; height: 24px;
+  border-radius: 4px;
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
   transition: all var(--transition);
@@ -1854,8 +2049,8 @@ input:checked + .toggle-slider:before { transform: translateX(16px); }
 .selected-emoji-tag {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
+  gap: 4px;
+  padding: 4px 8px;
   background: var(--bg-1);
   border: 1px solid var(--border);
   border-radius: 20px;
@@ -1921,27 +2116,34 @@ input:checked + .toggle-slider:before { transform: translateX(16px); }
 
 /* Sync badge button next to titles */
 .sync-badge-btn {
-  background: transparent;
-  border: none;
-  padding: 0;
-  margin: 0;
-  color: var(--accent);
-  font-size: 11.5px;
-  font-weight: 700;
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  padding: 4px 8px;
+  height: 24px;
+  border-radius: 6px;
+  color: var(--text-2);
+  font-size: 11px;
+  font-weight: 600;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 4px;
   cursor: pointer;
   transition: all 0.2s ease;
   outline: none;
-  border-bottom: 1px dashed var(--accent);
-  padding-bottom: 1px;
-  line-height: 1.2;
+  box-sizing: border-box;
+  margin-left: 8px;
+  flex-shrink: 0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 .sync-badge-btn:hover {
+  background: var(--bg-3);
   color: var(--accent);
-  border-bottom-style: solid;
+  border-color: var(--accent);
   transform: translateY(-1px);
+}
+.sync-badge-btn:hover .sync-icon-svg {
+  transform: rotate(180deg);
 }
 .sync-badge-btn:active {
   transform: scale(0.95);
@@ -1970,8 +2172,7 @@ input:checked + .toggle-slider:before { transform: translateX(16px); }
 .post-item, 
 .settings-group, 
 .user-card, 
-.channel-card, 
-.leave-item {
+.channel-card {
   animation: itemFadeInScale 0.48s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
@@ -2234,4 +2435,224 @@ textarea {
 }
 .custom-dropdown-toggle:hover {
   border-color: var(--accent) !important;
+}
+
+/* ─── Premium Custom Flatpickr Calendar Styling ─── */
+.flatpickr-calendar,
+.flatpickr-calendar * {
+  box-sizing: border-box !important;
+}
+
+.flatpickr-calendar {
+  background: var(--bg-1, #ffffff) !important;
+  border: 1px solid var(--border, #cbd5e1) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05) !important;
+  font-family: var(--font), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  width: 296px !important; /* Perfect fit for 294px inner content + 2px borders */
+  overflow: hidden !important;
+}
+
+.flatpickr-months {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 8px 12px !important;
+  background: var(--bg-2, #f8fafc) !important;
+  border-top-left-radius: 11px !important;
+  border-top-right-radius: 11px !important;
+  border-bottom: 1px solid var(--border, #cbd5e1) !important;
+}
+
+.flatpickr-month {
+  color: var(--text-1, #0f172a) !important;
+  font-weight: 700 !important;
+  height: 28px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.flatpickr-current-month {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  padding: 0 !important;
+  font-size: 13.5px !important;
+}
+
+.flatpickr-current-month .numInputWrapper span.arrowUp:after {
+  border-bottom-color: var(--accent) !important;
+}
+.flatpickr-current-month .numInputWrapper span.arrowDown:after {
+  border-top-color: var(--accent) !important;
+}
+
+.flatpickr-weekdays {
+  background: var(--bg-2, #f8fafc) !important;
+  padding: 6px 0 !important;
+  display: flex !important;
+  width: 100% !important; /* Spans full inner width perfectly to both borders */
+  margin: 0 !important;
+}
+
+span.flatpickr-weekday {
+  color: var(--text-3, #64748b) !important;
+  font-weight: 600 !important;
+  font-size: 11px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 1 !important; /* Dynamically spans 1/7th of 294px = 42px exactly */
+  text-align: center !important;
+}
+
+.flatpickr-days {
+  display: flex !important;
+  width: 100% !important; /* Spans full inner width perfectly to both borders */
+  margin: 0 !important;
+  justify-content: center !important;
+  padding: 4px 0 !important;
+}
+
+.dayContainer {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: flex-start !important;
+  width: 294px !important;
+  max-width: 294px !important;
+  min-width: 294px !important;
+  padding: 0 !important;
+  margin: 0 auto !important;
+}
+
+.flatpickr-day {
+  border-radius: 6px !important;
+  color: var(--text-2, #334155) !important;
+  font-weight: 500 !important;
+  font-size: 12px !important;
+  width: 40px !important;
+  height: 40px !important;
+  line-height: 40px !important;
+  margin: 1px !important;
+  flex: 0 0 40px !important;
+  max-width: 40px !important;
+  box-sizing: border-box !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.15s ease !important;
+}
+
+.flatpickr-day:hover {
+  background: var(--bg-2, #f1f5f9) !important;
+  color: var(--accent) !important;
+}
+
+.flatpickr-day.today {
+  border-color: var(--accent) !important;
+  color: var(--accent) !important;
+  font-weight: 700 !important;
+}
+
+.flatpickr-day.selected {
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+.flatpickr-time {
+  border-top: 1px solid var(--border, #cbd5e1) !important;
+  padding: 6px 0 !important;
+  background: var(--bg-2, #f8fafc) !important;
+  border-bottom-left-radius: 11px !important;
+  border-bottom-right-radius: 11px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 38px !important;
+}
+
+.flatpickr-time .numInputWrapper {
+  display: inline-flex !important;
+  flex-direction: column !important;
+  width: 40px !important;
+  height: 100% !important;
+  position: relative !important;
+}
+
+.flatpickr-time input {
+  font-family: inherit !important;
+  font-weight: 600 !important;
+  color: var(--text-1, #0f172a) !important;
+  font-size: 13px !important;
+  width: 100% !important;
+  height: 100% !important;
+  text-align: center !important;
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.flatpickr-time .flatpickr-time-separator {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 10px !important;
+  color: var(--text-1, #0f172a) !important;
+  font-weight: 600 !important;
+}
+
+.flatpickr-time .flatpickr-am-pm {
+  color: var(--text-1, #0f172a) !important;
+  font-weight: 600 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 40px !important;
+  height: 100% !important;
+}
+
+.flatpickr-calendar.hasTime .flatpickr-time {
+  height: 38px !important;
+}
+
+/* Premium "How to use?" Card styling following active theme */
+.sp-how-to-use-card {
+  padding: 12px 14px;
+  background: var(--bg-1);
+  border: 1px dashed var(--accent);
+  border-radius: 12px;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  box-sizing: border-box;
+  text-align: left;
+  width: 100%;
+}
+.sp-how-to-use-card .card-icon {
+  font-size: 18px;
+  line-height: 1;
+  margin-top: 1px;
+}
+.sp-how-to-use-card .card-title {
+  color: var(--accent);
+  font-size: 14.5px;
+  font-weight: 700;
+  margin: 0 0 4px 0;
+  font-family: var(--font);
+}
+.sp-how-to-use-card .card-desc {
+  color: var(--text-2);
+  font-size: 13.5px;
+  line-height: 1.5;
+  margin: 0;
+  font-family: var(--font);
+}
+.empty-state:has(.sp-how-to-use-card) {
+  padding: 16px 0;
 }

@@ -93,7 +93,7 @@ export async function handleTaskAlarm(taskId) {
     }
 
     // Set extension badge so user sees it in any tab
-    chrome.action.setBadgeText({ text: '!' });
+    chrome.action.setBadgeText({ text: 'TASK' });
     chrome.action.setBadgeBackgroundColor({ color: '#d0454c' });
 
     // Reschedule alarm dynamically using user's settings snooze minutes (default 5)

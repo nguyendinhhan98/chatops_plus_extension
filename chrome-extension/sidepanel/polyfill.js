@@ -55,7 +55,7 @@ if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) {
 /**
  * Reusable utility to convert a standard select element into a premium custom dropdown opening downward.
  */
-window.convertToCustomDropdown = function(selectId, width = null) {
+window.convertToCustomDropdown = function(selectId, width = null, height = null) {
   const nativeSelect = document.getElementById(selectId);
   if (!nativeSelect) return;
 
@@ -70,6 +70,7 @@ window.convertToCustomDropdown = function(selectId, width = null) {
   // Read width or use default
   const computedStyle = window.getComputedStyle(nativeSelect);
   const selectWidth = width || computedStyle.width || '100%';
+  const selectHeight = height || '34px';
 
   const container = document.createElement('div');
   container.className = 'custom-dropdown-container';
@@ -86,7 +87,7 @@ window.convertToCustomDropdown = function(selectId, width = null) {
   container.innerHTML = `
     <div class="custom-dropdown" style="position: relative; width: 100%; box-sizing: border-box; font-family: var(--font);">
       <button type="button" class="custom-dropdown-toggle"
-        style="width: 100%; height: 34px; font-size: 12.5px; border-radius: 6px; border: 1px solid var(--border); background: #ffffff; color: var(--text-2); cursor: pointer; outline: none; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; font-weight: 500; transition: all 0.2s ease; box-sizing: border-box;">
+        style="width: 100%; height: ${selectHeight}; font-size: 12.5px; border-radius: 6px; border: 1px solid var(--border); background: #ffffff; color: var(--text-2); cursor: pointer; outline: none; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; font-weight: 500; transition: all 0.2s ease; box-sizing: border-box;">
         <span class="custom-dropdown-selected-text">${initialText}</span>
         <span class="custom-dropdown-arrow" style="font-size: 9px; opacity: 0.6; transition: transform 0.2s ease;">▼</span>
       </button>

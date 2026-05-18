@@ -40,7 +40,7 @@ export const language = {
 
   // Sidepanel Search Tab
   search: 'Search',
-  searchEmptyState: '<span style="opacity: 0.5; filter: grayscale(40%); margin-right: 4px;">💡</span>Click the floating search button (🔍) in the bottom-right to customize filters and search messages!',
+  searchEmptyState: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">How to use?</h4><p class="card-desc">Click the floating search button (🔍) in the bottom-right to customize filters and search messages!</p></div></div>',
   searchCriteriaRequired: 'Please enter at least 1 search criteria',
   searchHelpTooltip: 'Search messages by keyword, sender, channel, and date range.',
   searchKeywordHelper: 'Keyword should be 2 or more characters.',
@@ -53,7 +53,7 @@ export const language = {
 
   // Sidepanel Mentions Tab
   scanMentions: 'Scan Now',
-  scanMentionsStart: '🔔 Click the floating button (🔔) in the bottom-right to configure criteria and scan!',
+  scanMentionsStart: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">How to use?</h4><p class="card-desc">Click the floating button (🔔) at the bottom to configure filters and scan. It scans for posts where you were mentioned but haven\'t reacted or replied to yet.</p></div></div>',
   scanningChannels: 'Scanning channels...',
   noMissedMentions: 'No missed mentions in the last {hours}h! 🎉',
   mentionsFound: 'Detected {count} pending mentions in {channels} channels',
@@ -69,7 +69,7 @@ export const language = {
 
   // Sidepanel Tasks Tab
   taskTabLabel: 'Tasks',
-  taskEmpty: '<span style="opacity: 0.5; filter: grayscale(40%); margin-right: 4px;">💡</span>Click the floating button (🎯) in the bottom-right to add a task, or hover over any message in ChatOps and click the 🎯 button!',
+  taskEmpty: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">How to use?</h4><p class="card-desc">Click the floating button (🎯) in the bottom-right to add a task, or hover over any message in ChatOps and click the 🎯 button to pin it as a task!</p></div></div>',
   taskClickHint: '📌 Pin messages in ChatOps or click the floating "🎯" button in the bottom-right.',
   taskPending: 'Pending',
   taskCompleted: 'Completed',
@@ -91,7 +91,7 @@ export const language = {
 
   // Sidepanel Memo (Notes) Tab
   memoTasksEmpty: 'No tasks yet.',
-  memoNotesEmpty: '<span style="opacity: 0.5; filter: grayscale(40%); margin-right: 4px;">💡</span>Click the floating button (📝) in the bottom-right to add a note, or hover over any message in ChatOps and click the 📝 button!',
+  memoNotesEmpty: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">How to use?</h4><p class="card-desc">Click the floating button (📝) in the bottom-right to add a note, or hover over any message in ChatOps and click the 📝 button to pin it as a note!</p></div></div>',
   memoClickHint: '📝 Pin notes in ChatOps or click the floating "📝" button in the bottom-right.',
   memoPending: 'Pending',
   memoCompleted: 'Completed',
@@ -135,8 +135,8 @@ export const language = {
   storageLimitExceeded: 'Storage limit reached (10 MB). Please delete some images before uploading.',
 
   // Content Script - Quick Task Popover
-  quickTaskCreate: 'Create Task',
-  quickTaskTitle: 'Create Task',
+  quickTaskCreate: 'Quick Task',
+  quickTaskTitle: 'Quick Task',
   quickTaskNotePlaceholder: 'Add note (optional)...',
   quickTaskRemindAt: 'Remind at:',
   quickTaskHint: '⏰ Starts at selected time — snoozes every {minutes} mins until completed (<a href="#" class="settings-subtab-link" data-subtab="features-snooze" style="color: var(--accent); font-weight: 700; text-decoration: underline;">change in Settings</a>)',

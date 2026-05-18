@@ -19,6 +19,36 @@ export function escapeHtml(unsafe) {
 }
 
 /**
+ * Parses simple Markdown and converts text to rich HTML (links, bold, italic, code, newlines) safely
+ */
+export function formatRichText(unsafe) {
+  if (typeof unsafe !== 'string') return unsafe;
+  let html = escapeHtml(unsafe);
+  
+  // Convert newlines to <br>
+  html = html.replace(/\n/g, '<br>');
+  
+  // Parse inline code `code` (monospace, styled nicely)
+  html = html.replace(/`([^`]+)`/g, '<code style="background:var(--bg-2, #f5f5f7); padding: 2px 5px; border-radius: 4px; font-family: monospace; font-size: 12px; color: #d1325d;">$1</code>');
+  
+  // Parse bold **text** or __text__
+  html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/__([^_]+)__/g, '<strong>$1</strong>');
+  
+  // Parse italic *text* or _text_
+  html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+  html = html.replace(/_([^_]+)_/g, '<em>$1</em>');
+  
+  // Parse Markdown links [text](url)
+  html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2" target="_blank" class="post-link" style="color:var(--accent);text-decoration:underline;word-break:break-all;">$1</a>');
+  
+  // Parse raw URLs (excluding links already processed or quotes)
+  html = html.replace(/(^|[^"'])(https?:\/\/[^\s<]+)/g, '$1<a href="$2" target="_blank" class="post-link" style="color:var(--accent);text-decoration:underline;word-break:break-all;">$2</a>');
+  
+  return html;
+}
+
+/**
  * Generates a ChatOps permalink URL
  */
 export function makePermalinkSync(postId, baseUrl, teamName) {
@@ -49,12 +79,7 @@ export function renderPostList(posts, usersMap, baseUrl, teamName, channelsMap, 
     const channelName = channel ? getChannelLabel(channel) : language.unknown;
     const permalink = makePermalinkSync(post.id, baseUrl, teamName);
 
-    let contentHtml = escapeHtml(post.message);
-    
-    // Parse Markdown links [text](url)
-    contentHtml = contentHtml.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2" target="_blank" class="post-link" style="color:var(--accent);text-decoration:underline;">$1</a>');
-    // Parse raw URLs (not immediately preceded by " or ')
-    contentHtml = contentHtml.replace(/(^|[^"'])(https?:\/\/[^\s<]+)/g, '$1<a href="$2" target="_blank" class="post-link" style="color:var(--accent);text-decoration:underline;">$2</a>');
+    let contentHtml = formatRichText(post.message);
 
     if (keyword && keyword.length >= 2) {
       const regex = new RegExp(`(${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
@@ -136,32 +161,14 @@ export function renderChannelCard(channel) {
   `;
 }
 
-/**
- * Renders a leave request post item
- */
-export function renderLeaveItem(post, user, permalink) {
-  const author = user ? escapeHtml(user.username) : 'Unknown';
-  return `
-    <div class="leave-item">
-      <div class="post-header">
-        <span class="post-author">@${author}</span>
-        <span class="post-channel">${language.in} ${escapeHtml(post._channelName)}</span>
-        <span class="post-time">${formatUnixMsToVN(post.create_at)}</span>
-      </div>
-      <div class="leave-message">${escapeHtml(post.message).replace(/\n/g, '<br>')}</div>
-      <div class="post-actions">
-         <a href="${permalink}" class="post-jump-link" title="${language.viewMessage}">↗</a>
-      </div>
-    </div>
-  `;
-}
+
 
 /**
  * Renders a missed mention post item
  */
 export function renderMentionItem(post, author, permalink) {
   const authorName = author ? formatUserDisplayName(author) : '(Unknown)';
-  const escapedText = escapeHtml(post.message);
+  const escapedText = formatRichText(post.message);
   
   return `
     <div class="post-item missed-mention-item" id="item_${post.id}">

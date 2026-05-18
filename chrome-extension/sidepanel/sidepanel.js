@@ -160,9 +160,13 @@ function setupTabs() {
       switchTab('settings');
       
       // Select the sync sub-tab in Settings
-      const syncSubTabBtn = document.querySelector(`#settingsSubTabs .memo-sub-tab[data-section="sync"]`);
-      if (syncSubTabBtn) {
-        syncSubTabBtn.click();
+      if (typeof window.navigateToSettingsSubtab === 'function') {
+        window.navigateToSettingsSubtab('sync-cloud');
+      } else {
+        const syncSubTabBtn = document.querySelector(`#settingsSubTabs .memo-sub-tab[data-section="sync"]`);
+        if (syncSubTabBtn) {
+          syncSubTabBtn.click();
+        }
       }
       
       setTimeout(() => {

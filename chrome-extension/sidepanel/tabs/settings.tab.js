@@ -233,7 +233,8 @@ const DEFAULT_SETTINGS = {
   memeEnabled: true,
   spamEmojis: ['thumbsup', 'heart', 'fire', 'rocket', 'laughing'],
   autoCleanupDays: 30,
-  notificationType: 'in-page'
+  notificationType: 'in-page',
+  appPadding: '12px'
 };
 
 /**
@@ -291,6 +292,11 @@ async function loadAndApplySettings() {
   const notificationTypeSelect = document.getElementById('settingNotificationType');
   if (notificationTypeSelect) {
     notificationTypeSelect.value = settings.notificationType || 'both';
+  }
+
+  const appPaddingSelect = document.getElementById('settingAppPadding');
+  if (appPaddingSelect) {
+    appPaddingSelect.value = settings.appPadding || '12px';
   }
   
   // Apply colors to pickers
@@ -358,7 +364,8 @@ async function loadAndApplySettings() {
 
   if (typeof window.convertToCustomDropdown === 'function') {
     window.convertToCustomDropdown('settingsAutoCleanupDays');
-    window.convertToCustomDropdown('settingNotificationType');
+    window.convertToCustomDropdown('settingNotificationType', '220px');
+    window.convertToCustomDropdown('settingAppPadding', '200px');
   }
 }
 
@@ -462,6 +469,15 @@ function setupEventListeners() {
   if (notificationTypeSelect) {
     notificationTypeSelect.addEventListener('change', async (e) => {
       await updateSettings({ notificationType: e.target.value });
+      showAutoSaveFeedback();
+    });
+  }
+
+  const appPaddingSelect = document.getElementById('settingAppPadding');
+  if (appPaddingSelect) {
+    appPaddingSelect.addEventListener('change', async (e) => {
+      await updateSettings({ appPadding: e.target.value });
+      applyThemeToDOM(await getSettings());
       showAutoSaveFeedback();
     });
   }
@@ -849,6 +865,8 @@ function setupEventListeners() {
     }
   }
 
+  window.navigateToSettingsSubtab = navigateToSubtab;
+
   // Handle click on custom links that navigate between sub-tabs
   document.addEventListener('click', (e) => {
     const link = e.target.closest('.settings-subtab-link');
@@ -911,7 +929,7 @@ function setupEventListeners() {
         alert(language.backupFailed);
       } finally {
         btnBackup.disabled = false;
-        btnBackup.textContent = '📤 ' + (language.backupToCloud || 'Backup to Cloud');
+        btnBackup.textContent = '☁️ ' + (language.backupToCloud || 'Backup to Cloud');
       }
     });
   }
@@ -959,7 +977,7 @@ function setupEventListeners() {
         alert(language.restoreFailed);
       } finally {
         btnRestore.disabled = false;
-        btnRestore.textContent = '📥 ' + (language.restoreFromCloud || 'Restore from Cloud');
+        btnRestore.textContent = '🔄 ' + (language.restoreFromCloud || 'Restore from Cloud');
       }
     });
   }
@@ -1136,7 +1154,6 @@ function renderSelectedEmojis(settings) {
     return `
       <div class="selected-emoji-tag" data-name="${name}" title="Click to remove">
         ${content}
-        <span style="font-size:11px; font-weight:500;">${name}</span>
         <span class="emoji-tag-remove">&times;</span>
       </div>
     `;
@@ -1336,6 +1353,61 @@ export function applyThemeToDOM(settings) {
   const accentColor = settings.accentColor || '#1c58d9';
   root.style.setProperty('--accent', accentColor);
 
+  // App Padding
+  const appPaddingVal = settings.appPadding || '12px';
+  root.style.setProperty('--app-padding', appPaddingVal);
+  
+  // Calculate content, main navigation tabs, and inner sub-tabs density proportionally
+  let contentPaddingVal = '10px';
+  let tabNavPaddingVal = '6px 12px';
+  let tabBtnPaddingVal = '6px 4px';
+  let subTabsMarginVal = '8px 16px';
+  let subTabPaddingVal = '5px 10px';
+  let settingsSubtabPaddingVal = '8px 12px';
+  let settingsSubtabsMarginVal = '18px';
+
+  if (appPaddingVal === '10px') {
+    contentPaddingVal = '8px';
+    tabNavPaddingVal = '4px 10px';
+    tabBtnPaddingVal = '4px 2px';
+    subTabsMarginVal = '4px 10px';
+    subTabPaddingVal = '3px 6px';
+    settingsSubtabPaddingVal = '5px 8px';
+    settingsSubtabsMarginVal = '12px';
+  } else if (appPaddingVal === '12px') {
+    contentPaddingVal = '10px';
+    tabNavPaddingVal = '6px 12px';
+    tabBtnPaddingVal = '6px 4px';
+    subTabsMarginVal = '8px 16px';
+    subTabPaddingVal = '5px 10px';
+    settingsSubtabPaddingVal = '8px 12px';
+    settingsSubtabsMarginVal = '18px';
+  } else if (appPaddingVal === '16px') {
+    contentPaddingVal = '12px';
+    tabNavPaddingVal = '8px 16px';
+    tabBtnPaddingVal = '8px 6px';
+    subTabsMarginVal = '12px 20px';
+    subTabPaddingVal = '7px 14px';
+    settingsSubtabPaddingVal = '10px 16px';
+    settingsSubtabsMarginVal = '24px';
+  } else if (appPaddingVal === '20px') {
+    contentPaddingVal = '16px';
+    tabNavPaddingVal = '10px 20px';
+    tabBtnPaddingVal = '10px 8px';
+    subTabsMarginVal = '16px 24px';
+    subTabPaddingVal = '9px 18px';
+    settingsSubtabPaddingVal = '12px 20px';
+    settingsSubtabsMarginVal = '30px';
+  }
+
+  root.style.setProperty('--content-padding', contentPaddingVal);
+  root.style.setProperty('--tab-nav-padding', tabNavPaddingVal);
+  root.style.setProperty('--tab-btn-padding', tabBtnPaddingVal);
+  root.style.setProperty('--sub-tabs-margin', subTabsMarginVal);
+  root.style.setProperty('--sub-tab-padding', subTabPaddingVal);
+  root.style.setProperty('--settings-subtab-padding', settingsSubtabPaddingVal);
+  root.style.setProperty('--settings-subtabs-margin', settingsSubtabsMarginVal);
+
   // Dynamic Live Preview Mockup Update
   const mockHeader = document.getElementById('mockupHeader');
   if (mockHeader) mockHeader.style.background = headerColor;
@@ -1432,9 +1504,32 @@ export async function renderSidepanelMemes() {
   }
 
   if (customMemes.length === 0) {
-    container.innerHTML = `<span style="font-size:12px; color:var(--text-3); grid-column: 1/-1; text-align: center; margin: auto; padding: 10px;">No custom memes yet. Upload to start!</span>`;
+    container.style.minHeight = 'auto';
+    container.style.background = 'transparent';
+    container.style.border = 'none';
+    container.style.padding = '16px 0';
+    container.style.display = 'flex';
+    container.style.justifyContent = 'stretch';
+    container.style.alignItems = 'stretch';
+    container.innerHTML = `
+      <div class="sp-how-to-use-card" style="margin-bottom: 0;">
+        <div class="card-icon">💡</div>
+        <div>
+          <h4 class="card-title">How to use?</h4>
+          <p class="card-desc">No custom images yet. Upload some images using the button above to start, then click the image icon (🖼️) in the ChatOps chatbox toolbar to open the picker!</p>
+        </div>
+      </div>
+    `;
     return;
   }
+
+  container.style.minHeight = '300px';
+  container.style.background = 'var(--bg-2)';
+  container.style.border = '1px solid var(--border)';
+  container.style.padding = '12px';
+  container.style.display = 'grid';
+  container.style.justifyContent = 'stretch';
+  container.style.alignItems = 'stretch';
 
   container.innerHTML = customMemes.map((url, idx) => {
     const formattedSize = formatSize(memeSizes[idx]);

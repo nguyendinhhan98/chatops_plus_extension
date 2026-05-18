@@ -74,3 +74,23 @@ export function showEmpty(el, message) {
   if (!el) return;
   el.innerHTML = `<div class="empty-state">${message}</div>`;
 }
+
+/**
+ * Common initializer for Flatpickr with standardized elegant options.
+ * @param {HTMLElement|string} el 
+ * @param {Object} options 
+ */
+export function initCommonFlatpickr(el, options = {}) {
+  if (typeof flatpickr !== 'function') {
+    console.warn('[ChatOps Ext] Flatpickr is not available globally.');
+    return null;
+  }
+  return flatpickr(el, {
+    enableTime: true,
+    dateFormat: "Y-m-d H:i",
+    time_24hr: true,
+    minuteIncrement: 5,
+    disableMobile: true,
+    ...options
+  });
+}

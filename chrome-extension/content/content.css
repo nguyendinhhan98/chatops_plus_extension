@@ -7,7 +7,7 @@
   right: 20px;
   width: 44px;
   height: 44px;
-  border-radius: 8px;
+  border-radius: 4px;
   cursor: pointer;
   z-index: 99999;
   display: flex;
@@ -22,7 +22,6 @@
 
 #chatops-ext-floating-btn:hover {
   transform: scale(1.06);
-  border-radius: 4px;
   box-shadow: 0 6px 16px rgba(0,0,0,0.22);
   filter: brightness(0.98);
 }
@@ -209,8 +208,7 @@ html body #chatops-quick-note-popover textarea#cqn-note-text {
   font-size: 13.5px !important;
   line-height: 1.5 !important;
   resize: vertical !important;
-  height: 110px !important;
-  min-height: 110px !important;
+  min-height: 140px !important;
   outline: none !important;
   box-sizing: border-box !important;
   box-shadow: none !important;
@@ -774,4 +772,188 @@ html body #chatops-quick-note-popover textarea#cqn-note-text {
   background: rgba(28, 88, 217, 0.08) !important;
   color: #1c58d9 !important;
   border-color: rgba(28, 88, 217, 0.2) !important;
+}
+
+/* ─── Premium Custom Flatpickr Calendar Styling ─── */
+.flatpickr-calendar,
+.flatpickr-calendar * {
+  box-sizing: border-box !important;
+}
+
+.flatpickr-calendar {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05) !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  width: 296px !important; /* Perfect fit for 294px inner content + 2px borders */
+  overflow: hidden !important;
+  z-index: 100000000 !important;
+}
+
+.flatpickr-months {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 8px 12px !important;
+  background: #f8fafc !important;
+  border-top-left-radius: 11px !important;
+  border-top-right-radius: 11px !important;
+  border-bottom: 1px solid #cbd5e1 !important;
+}
+
+.flatpickr-month {
+  color: #0f172a !important;
+  font-weight: 700 !important;
+  height: 28px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.flatpickr-current-month {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  padding: 0 !important;
+  font-size: 13.5px !important;
+}
+
+.flatpickr-current-month .numInputWrapper span.arrowUp:after {
+  border-bottom-color: #1c58d9 !important;
+}
+.flatpickr-current-month .numInputWrapper span.arrowDown:after {
+  border-top-color: #1c58d9 !important;
+}
+
+.flatpickr-weekdays {
+  background: #f8fafc !important;
+  padding: 6px 0 !important;
+  display: flex !important;
+  width: 100% !important; /* Spans full inner width perfectly to both borders */
+  margin: 0 !important;
+}
+
+span.flatpickr-weekday {
+  color: #64748b !important;
+  font-weight: 600 !important;
+  font-size: 11px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 1 !important; /* Dynamically spans 1/7th of 294px = 42px exactly */
+  text-align: center !important;
+}
+
+.flatpickr-days {
+  display: flex !important;
+  width: 100% !important; /* Spans full inner width perfectly to both borders */
+  margin: 0 !important;
+  justify-content: center !important;
+  padding: 4px 0 !important;
+}
+
+.dayContainer {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: flex-start !important;
+  width: 294px !important;
+  max-width: 294px !important;
+  min-width: 294px !important;
+  padding: 0 !important;
+  margin: 0 auto !important;
+}
+
+.flatpickr-day {
+  border-radius: 6px !important;
+  color: #334155 !important;
+  font-weight: 500 !important;
+  font-size: 12px !important;
+  width: 40px !important;
+  height: 40px !important;
+  line-height: 40px !important;
+  margin: 1px !important;
+  flex: 0 0 40px !important;
+  max-width: 40px !important;
+  box-sizing: border-box !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.15s ease !important;
+}
+
+.flatpickr-day:hover {
+  background: #f1f5f9 !important;
+  color: #1c58d9 !important;
+}
+
+.flatpickr-day.today {
+  border-color: #1c58d9 !important;
+  color: #1c58d9 !important;
+  font-weight: 700 !important;
+}
+
+.flatpickr-day.selected {
+  background: #1c58d9 !important;
+  border-color: #1c58d9 !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+.flatpickr-time {
+  border-top: 1px solid #cbd5e1 !important;
+  padding: 6px 0 !important;
+  background: #f8fafc !important;
+  border-bottom-left-radius: 11px !important;
+  border-bottom-right-radius: 11px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 38px !important;
+}
+
+.flatpickr-time .numInputWrapper {
+  display: inline-flex !important;
+  flex-direction: column !important;
+  width: 40px !important;
+  height: 100% !important;
+  position: relative !important;
+}
+
+.flatpickr-time input {
+  font-family: inherit !important;
+  font-weight: 600 !important;
+  color: #0f172a !important;
+  font-size: 13px !important;
+  width: 100% !important;
+  height: 100% !important;
+  text-align: center !important;
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.flatpickr-time .flatpickr-time-separator {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 10px !important;
+  color: #0f172a !important;
+  font-weight: 600 !important;
+}
+
+.flatpickr-time .flatpickr-am-pm {
+  color: #0f172a !important;
+  font-weight: 600 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 40px !important;
+  height: 100% !important;
+}
+
+.flatpickr-calendar.hasTime .flatpickr-time {
+  height: 38px !important;
 }

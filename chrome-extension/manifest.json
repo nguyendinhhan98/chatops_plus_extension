@@ -21,9 +21,11 @@
         "https://chat.runsystem.vn/*"
       ],
       "css": [
+        "sidepanel/flatpickr.css",
         "content/content.css"
       ],
       "js": [
+        "sidepanel/flatpickr.js",
         "content/loader.js"
       ],
       "run_at": "document_idle"
@@ -55,7 +57,10 @@
         "icons/*.png",
         "content/content.js",
         "src/constants.js",
-        "src/lang.js"
+        "src/lang.js",
+        "src/utils/index.js",
+        "src/utils/formatter.js",
+        "src/utils/date.js"
       ],
       "matches": [
         "https://chat.runsystem.vn/*"
