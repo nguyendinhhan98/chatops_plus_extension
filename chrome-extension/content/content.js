@@ -14,7 +14,10 @@ chrome.runtime.onMessage.addListener((message) => {
 
 async function injectDynamicTheme() {
   const res = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS]);
-  const settings = res[STORAGE_KEYS.SETTINGS] || { themeColor: '#1c58d9' };
+  const settings = res[STORAGE_KEYS.SETTINGS] || {};
+  
+  const accentColor = settings.accentColor || settings.themeColor || '#1c58d9';
+  const headerColor = settings.headerColor || settings.themeColor || '#1c58d9';
   
   let styleEl = document.getElementById('chatops-dynamic-theme');
   if (!styleEl) {
@@ -24,16 +27,37 @@ async function injectDynamicTheme() {
   }
   styleEl.textContent = `
     :root {
-      --chatops-accent: ${settings.themeColor};
+      --chatops-accent: ${accentColor};
+      --chatops-header: ${headerColor};
     }
     .chatops-reminder-banner { border-top-color: var(--chatops-accent) !important; }
     .crb-title { color: var(--chatops-accent) !important; }
     .crb-progress { background: var(--chatops-accent) !important; }
-    .cqn-header { background: var(--chatops-accent) !important; }
+    .cqn-header { background: var(--chatops-header) !important; }
     .cqn-btn-primary { background: var(--chatops-accent) !important; }
     .cqn-mode-btn.active { color: var(--chatops-accent) !important; border-color: var(--chatops-accent) !important; background: rgba(0,0,0,0.05) !important; }
     .cqn-preview { border-left-color: var(--chatops-accent) !important; }
   `;
+}
+
+/**
+ * Handles side panel opening, switching to tasks tab, and redirecting to the thread
+ */
+async function handleNotificationJump(postId, taskTeamName) {
+  try {
+    await chrome.storage.local.set({ [STORAGE_KEYS.SIDEPANEL_TAB]: 'tasks' });
+    await chrome.runtime.sendMessage({ type: MESSAGE_TYPES.OPEN_SIDE_PANEL }).catch(() => {});
+    setTimeout(() => {
+      chrome.runtime.sendMessage({ type: 'SWITCH_TAB', tab: 'tasks' }).catch(() => {});
+    }, 150);
+  } catch (err) {
+    console.warn('[ChatOps Ext] Failed to trigger side panel tasks tab:', err);
+  }
+
+  if (postId) {
+    const teamName = taskTeamName || window.location.pathname.split('/')[1] || CHATOPS_CONFIG.DEFAULT_TEAM;
+    window.location.href = `/${teamName}/pl/${postId}`;
+  }
 }
 
 /**
@@ -61,7 +85,7 @@ async function showReminderBanner(text, taskId, isTask = false, postId = null, t
       <div class="crb-content" style="display:flex; flex-direction:column; min-width:0; flex:1;">
         <div style="display:flex; align-items:center; justify-content:space-between; width:100%; margin-bottom: 3px;">
           <div class="crb-title" style="margin-bottom:0;">${isTask ? language.reminderTaskTitle : language.reminderTitle}</div>
-          ${isLongText ? `<button class="crb-collapse-btn collapse-btn" style="width:16px; height:16px; font-size:7px; margin-left:8px;" title="Mở rộng/Thu gọn">▶</button>` : ''}
+          ${isLongText ? `<button class="crb-collapse-btn collapse-btn" style="width:16px; height:16px; font-size:7px; margin-left:8px;" title="Expand/Collapse">▶</button>` : ''}
         </div>
         <div class="crb-text ${isLongText ? 'collapsible-body collapsed' : ''}" style="${isLongText ? 'white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; transition: all 0.2s;' : 'white-space: pre-wrap;'}">${escText}</div>
       </div>
@@ -70,7 +94,7 @@ async function showReminderBanner(text, taskId, isTask = false, postId = null, t
     ${isTask ? `
       <div class="crb-task-actions">
         <button class="crb-done-btn" data-task-id="${taskId}">${language.reminderDoneBtn}</button>
-        ${postId ? `<button class="crb-jump-btn" data-post-id="${postId}">Đi tới tin nhắn</button>` : ''}
+        ${postId ? `<button class="crb-jump-btn" data-post-id="${postId}">${language.viewMessage || 'Go to message'}</button>` : ''}
       </div>
     ` : ''}
     <div class="crb-progress"></div>
@@ -93,6 +117,19 @@ async function showReminderBanner(text, taskId, isTask = false, postId = null, t
     banner.classList.remove('visible');
     setTimeout(() => banner.remove(), 400);
   });
+
+  const innerEl = banner.querySelector('.crb-inner');
+  if (innerEl) {
+    innerEl.addEventListener('click', async (e) => {
+      if (e.target.closest('.crb-close') || e.target.closest('.crb-collapse-btn')) {
+        return;
+      }
+      if (closeTimer) clearTimeout(closeTimer);
+      banner.classList.remove('visible');
+      setTimeout(() => banner.remove(), 400);
+      await handleNotificationJump(postId, taskTeamName);
+    });
+  }
 
   if (isLongText) {
     const collBtn = banner.querySelector('.crb-collapse-btn');
@@ -142,7 +179,8 @@ async function showReminderBanner(text, taskId, isTask = false, postId = null, t
   }
 
   if (isTask && taskId) {
-    banner.querySelector('.crb-done-btn').addEventListener('click', () => {
+    banner.querySelector('.crb-done-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
       if (closeTimer) clearTimeout(closeTimer);
       chrome.runtime.sendMessage({ type: MESSAGE_TYPES.MARK_TASK_DONE, taskId });
       banner.classList.remove('visible');
@@ -152,10 +190,12 @@ async function showReminderBanner(text, taskId, isTask = false, postId = null, t
 
     const jumpBtn = banner.querySelector('.crb-jump-btn');
     if (jumpBtn) {
-      jumpBtn.addEventListener('click', () => {
+      jumpBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
         if (closeTimer) clearTimeout(closeTimer);
-        const teamName = taskTeamName || window.location.pathname.split('/')[1] || CHATOPS_CONFIG.DEFAULT_TEAM;
-        window.location.href = `/${teamName}/pl/${postId}`;
+        banner.classList.remove('visible');
+        setTimeout(() => banner.remove(), 400);
+        await handleNotificationJump(postId, taskTeamName);
       });
     }
   }
@@ -203,7 +243,7 @@ function showToast(msg) {
   btn.style.cursor = 'pointer';
 
   const BUBBLE_SVG = `
-    <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" style="width:100%; height:100%; display:block;">
+    <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" style="width:32px; height:32px; display:block;">
       <circle cx="256" cy="240" r="210" fill="#43a047"/>
       <path d="M160 400 L120 480 L260 420" fill="#43a047"/>
       <circle cx="165" cy="240" r="32" fill="white"/>
@@ -221,6 +261,12 @@ function showToast(msg) {
   closeIconBtn.title = language.floatingBtnHide;
   btn.appendChild(closeIconBtn);
 
+  // Red badge for pending tasks count
+  const badgeEl = document.createElement('div');
+  badgeEl.id = 'chatops-ext-floating-badge';
+  badgeEl.className = 'chatops-floating-badge hidden';
+  btn.appendChild(badgeEl);
+
   closeIconBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     btn.remove();
@@ -228,77 +274,65 @@ function showToast(msg) {
 
   document.body.appendChild(btn);
 
-  // Restore position from storage
-  chrome.storage.local.get([STORAGE_KEYS.BTN_POSITION], (result) => {
-    const pos = result[STORAGE_KEYS.BTN_POSITION];
-    if (pos) {
-      btn.style.top = pos.top;
-      btn.style.left = pos.left;
-      btn.style.right = 'auto';
-      btn.style.transform = 'none';
+  // Function to align the floating button under the last team icon
+  function alignButtonToSidebar() {
+    let defaultLeft = '12px';
+    let defaultTop = '240px';
+    
+    // Find Mattermost team sidebar and center the button under the last team icon (RUN)
+    const teamSidebar = document.querySelector('.team-sidebar, #teamSidebar, .team-wrapper, [class*="team-sidebar"]');
+    if (teamSidebar) {
+      const teamItems = teamSidebar.querySelectorAll('a, .team-btn, [class*="team-container"], [class*="team-btn"]');
+      if (teamItems && teamItems.length > 0) {
+        const lastTeam = teamItems[teamItems.length - 1];
+        const rect = lastTeam.getBoundingClientRect();
+        // Centered horizontally inside the sidebar, and 12px below the last team item
+        defaultLeft = `${rect.left + (rect.width - 44) / 2}px`;
+        defaultTop = `${rect.bottom + 12}px`;
+      }
     }
-  });
-
-  // Drag-and-drop logic
-  let isDragging = false;
-  let hasMoved = false;
-  let startX, startY, initialX, initialY;
-
-  btn.addEventListener('mousedown', (e) => {
-    if (e.button !== 0) return;
-    isDragging = true;
-    hasMoved = false;
-    startX = e.clientX;
-    startY = e.clientY;
     
-    const rect = btn.getBoundingClientRect();
-    initialX = rect.left;
-    initialY = rect.top;
-    
-    btn.classList.add('dragging');
+    btn.style.left = defaultLeft;
+    btn.style.top = defaultTop;
     btn.style.right = 'auto';
     btn.style.transform = 'none';
-  });
+  }
 
-  document.addEventListener('mousemove', (e) => {
-    if (!isDragging) return;
-    const dx = e.clientX - startX;
-    const dy = e.clientY - startY;
-    
-    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
-      hasMoved = true;
-    }
+  async function updateFloatingBadgeCount() {
+    try {
+      const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
+      const allItems = res[STORAGE_KEYS.MEMOS] || [];
+      const pendingTasks = allItems.filter(m => m.type === 'task' && !m.done);
+      const count = pendingTasks.length;
 
-    if (hasMoved) {
-      let newX = initialX + dx;
-      let newY = initialY + dy;
-      const maxX = window.innerWidth - btn.offsetWidth;
-      const maxY = window.innerHeight - btn.offsetHeight;
-      newX = Math.max(0, Math.min(newX, maxX));
-      newY = Math.max(0, Math.min(newY, maxY));
-      btn.style.left = `${newX}px`;
-      btn.style.top = `${newY}px`;
-    }
-  });
-
-  document.addEventListener('mouseup', () => {
-    if (isDragging) {
-      isDragging = false;
-      btn.classList.remove('dragging');
-      if (hasMoved) {
-        chrome.storage.local.set({
-          [STORAGE_KEYS.BTN_POSITION]: { top: btn.style.top, left: btn.style.left }
-        });
+      const badge = document.getElementById('chatops-ext-floating-badge');
+      if (badge) {
+        if (count > 0) {
+          badge.textContent = count;
+          badge.classList.remove('hidden');
+        } else {
+          badge.textContent = '';
+          badge.classList.add('hidden');
+        }
       }
-      setTimeout(() => { hasMoved = false; }, 50);
+    } catch (err) {
+      console.error('[ChatOps Ext] Failed to update badge count:', err);
     }
-  });
+  }
 
-  btn.addEventListener('click', (e) => {
-    if (hasMoved) {
-      e.preventDefault();
-      return;
-    }
+  alignButtonToSidebar();
+  updateFloatingBadgeCount();
+  // Recalculate once DOM/React page has fully loaded
+  window.addEventListener('load', () => {
+    alignButtonToSidebar();
+    updateFloatingBadgeCount();
+  });
+  setTimeout(() => {
+    alignButtonToSidebar();
+    updateFloatingBadgeCount();
+  }, 1500); // 1.5s robust fallback
+
+  btn.addEventListener('click', () => {
     try {
       chrome.runtime.sendMessage({ type: MESSAGE_TYPES.TOGGLE_SIDE_PANEL });
     } catch (err) {
@@ -310,58 +344,96 @@ function showToast(msg) {
 
   console.log('[ChatOps Ext] Floating button injected.');
 
-  // --- Meme Integration into Main Chat UI ---
-  function injectMemeButton() {
+  // --- Image Integration into Main Chat UI ---
+  function injectImageButton() {
     const emojiBtn = document.getElementById(SELECTORS.EMOJI_BUTTON.slice(1));
-    if (!emojiBtn || document.getElementById('chatops-ext-meme-btn')) return;
+    if (!emojiBtn) return;
 
-    const memeBtn = document.createElement('button');
-    memeBtn.id = 'chatops-ext-meme-btn';
-    memeBtn.type = 'button';
-    memeBtn.innerHTML = '🖼️';
-    memeBtn.title = 'Quick Meme Picker';
-    emojiBtn.parentNode.insertBefore(memeBtn, emojiBtn.nextSibling);
+    const memeEnabled = cachedSettings.memeEnabled !== false;
+    const existingBtn = document.getElementById('chatops-ext-image-btn');
+    if (!memeEnabled) {
+      if (existingBtn) existingBtn.remove();
+      return;
+    }
 
-    memeBtn.addEventListener('click', (e) => {
+    if (existingBtn) return;
+
+    const imageBtn = document.createElement('button');
+    imageBtn.id = 'chatops-ext-image-btn';
+    imageBtn.type = 'button';
+    imageBtn.innerHTML = '🖼️';
+    imageBtn.title = 'Quick Image Picker';
+    emojiBtn.parentNode.insertBefore(imageBtn, emojiBtn.nextSibling);
+
+    imageBtn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      toggleMemePickerUI(memeBtn);
+      toggleImagePickerUI(imageBtn);
     });
   }
 
-  let memePickerEl = null;
+  let imagePickerEl = null;
 
-  async function loadCustomMemes() {
+  function getBase64Size(dataURL) {
+    if (!dataURL) return 0;
+    const base64Part = dataURL.split(',')[1];
+    if (!base64Part) return dataURL.length;
+    const padding = base64Part.endsWith('==') ? 2 : (base64Part.endsWith('=') ? 1 : 0);
+    return (base64Part.length * 3 / 4) - padding;
+  }
+
+  function formatSize(bytes) {
+    if (bytes === 0) return '0 KB';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  }
+
+  async function loadCustomImages() {
     const res = await chrome.storage.local.get(['custom_memes']);
     const customMemes = res.custom_memes || [];
-    const container = document.getElementById('chatops-custom-memes-grid');
+    const container = document.getElementById('chatops-custom-images-grid');
     if (!container) return;
 
+    // Calculate total size
+    let totalBytes = 0;
+    customMemes.forEach(url => {
+      totalBytes += getBase64Size(url);
+    });
+    const formattedSize = formatSize(totalBytes);
+
+    // Update dynamic header size subtitle
+    const sizeEl = document.getElementById('chatops-your-images-size');
+    if (sizeEl) {
+      sizeEl.textContent = `(${formattedSize} / 10 MB)`;
+    }
+
     if (customMemes.length === 0) {
-      container.innerHTML = `<span style="font-size:11px; color:#999; margin: auto;">Chưa có meme tự thêm</span>`;
+      container.innerHTML = `<span style="font-size:11.5px; color:#999; text-align:center; width:100%; display:block; padding: 24px 0; grid-column: 1 / -1;">${language.noCustomImages || 'No custom images yet'}</span>`;
       return;
     }
 
     container.innerHTML = customMemes.map((url, idx) => `
-      <div class="chatops-custom-meme-cell">
-        <img src="${url}" class="chatops-custom-meme-item" title="Nhấn để gửi" />
-        <button class="chatops-custom-meme-delete" data-idx="${idx}" title="Xóa ảnh">&times;</button>
+      <div class="chatops-custom-image-cell">
+        <img src="${url}" class="chatops-custom-image-item" loading="lazy" title="${language.clickToSend || 'Click to send'}" />
+        <button class="chatops-custom-image-delete" data-idx="${idx}" title="${language.deleteImage || 'Delete image'}">&times;</button>
       </div>
     `).join('');
   }
 
-  // ─── Meme Preview (hover/click) ───
-  function openMemePreview(src) {
-    let overlay = document.getElementById('chatops-meme-preview-overlay');
+  // ─── Image Preview (hover/click) ───
+  function openImagePreview(src) {
+    let overlay = document.getElementById('chatops-image-preview-overlay');
     if (!overlay) {
       overlay = document.createElement('div');
-      overlay.id = 'chatops-meme-preview-overlay';
-      overlay.className = 'chatops-meme-preview-overlay';
-      overlay.innerHTML = `<img id="chatops-meme-preview-img" src="" alt="preview" />`;
+      overlay.id = 'chatops-image-preview-overlay';
+      overlay.className = 'chatops-image-preview-overlay';
+      overlay.innerHTML = `<img id="chatops-image-preview-img" src="" alt="preview" />`;
       overlay.addEventListener('click', () => overlay.classList.add('hidden'));
       document.body.appendChild(overlay);
     }
-    overlay.querySelector('#chatops-meme-preview-img').src = src;
+    overlay.querySelector('#chatops-image-preview-img').src = src;
     overlay.classList.remove('hidden');
   }
 
@@ -406,35 +478,71 @@ function showToast(msg) {
     reader.readAsDataURL(file);
   }
 
-  function registerCustomMemeEvents() {
-    const fileInput = document.getElementById('chatops-meme-upload-input');
+  function registerCustomImageEvents() {
+    const fileInput = document.getElementById('chatops-image-upload-input');
     if (fileInput) {
-      fileInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
+      fileInput.addEventListener('change', async (e) => {
+        const files = Array.from(e.target.files);
+        if (files.length === 0) return;
 
-        compressImage(file, 1000, 1000, 0.9, async (dataUrl) => {
+        if (files.length > 10) {
+          alert(language.maxUploadLimitError || 'You can only upload up to 10 images at once.');
+        }
+
+        const filesToProcess = files.slice(0, 10);
+        
+        // Process all images in parallel
+        const compressionPromises = filesToProcess.map(file => {
+          return new Promise((resolve) => {
+            compressImage(file, 1000, 1000, 0.9, (dataUrl) => {
+              resolve(dataUrl);
+            });
+          });
+        });
+
+        const dataUrls = await Promise.all(compressionPromises);
+        const validUrls = dataUrls.filter(Boolean);
+
+        if (validUrls.length > 0) {
           const res = await chrome.storage.local.get(['custom_memes']);
           const customMemes = res.custom_memes || [];
-          customMemes.unshift(dataUrl);
+          
+          let totalBytes = 0;
+          customMemes.forEach(url => {
+            totalBytes += getBase64Size(url);
+          });
+          
+          let newBytes = 0;
+          validUrls.forEach(url => {
+            newBytes += getBase64Size(url);
+          });
+          
+          if (totalBytes + newBytes > 10 * 1024 * 1024) {
+            alert(language.storageLimitExceeded || 'Storage limit reached (10 MB). Please delete some images before uploading.');
+            fileInput.value = '';
+            return;
+          }
+          
+          customMemes.unshift(...validUrls);
           await chrome.storage.local.set({ custom_memes: customMemes });
-          fileInput.value = '';
-          loadCustomMemes();
-        });
+          loadCustomImages();
+        }
+        
+        fileInput.value = '';
       });
     }
 
-    const container = document.getElementById('chatops-custom-memes-grid');
+    const container = document.getElementById('chatops-custom-images-grid');
     if (container) {
       container.addEventListener('click', async (e) => {
-        const img = e.target.closest('.chatops-custom-meme-item');
+        const img = e.target.closest('.chatops-custom-image-item');
         if (img) {
-          insertMemeToChat(img.src);
-          if (memePickerEl) memePickerEl.classList.add('hidden');
+          insertImageToChat(img.src);
+          if (imagePickerEl) imagePickerEl.classList.add('hidden');
           return;
         }
 
-        const delBtn = e.target.closest('.chatops-custom-meme-delete');
+        const delBtn = e.target.closest('.chatops-custom-image-delete');
         if (delBtn) {
           e.stopPropagation();
           const idx = parseInt(delBtn.dataset.idx, 10);
@@ -442,74 +550,58 @@ function showToast(msg) {
           const customMemes = res.custom_memes || [];
           customMemes.splice(idx, 1);
           await chrome.storage.local.set({ custom_memes: customMemes });
-          loadCustomMemes();
+          loadCustomImages();
         }
       });
     }
   }
 
-  function toggleMemePickerUI(anchorBtn) {
-    if (!memePickerEl) {
-      memePickerEl = document.createElement('div');
-      memePickerEl.className = 'chatops-meme-picker hidden';
-      memePickerEl.innerHTML = `
-        <div class="chatops-meme-picker-header">
-          <span>${language.memeLibrary}</span>
-          <button type="button" id="chatops-meme-close" class="chatops-meme-close-btn">✕</button>
+  function toggleImagePickerUI(anchorBtn) {
+    if (!imagePickerEl) {
+      imagePickerEl = document.createElement('div');
+      imagePickerEl.className = 'chatops-image-picker hidden';
+      imagePickerEl.innerHTML = `
+        <div class="chatops-image-picker-header">
+          <span>${language.imageLibrary}</span>
+          <button type="button" id="chatops-image-close" class="chatops-image-close-btn">✕</button>
         </div>
-        <div class="chatops-meme-upload-area">
+        <div class="chatops-image-upload-area">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
-            <span style="font-size:11px; font-weight:700; color:#555; text-transform:uppercase; letter-spacing:0.5px;">Ảnh của bạn</span>
-            <label for="chatops-meme-upload-input" class="chatops-meme-upload-btn">
-              + Tải ảnh lên
+            <div style="display:flex; flex-direction:column; line-height: 1.2;">
+              <span id="chatops-your-images-header" style="font-size:11px; font-weight:700; color:#555; text-transform:uppercase; letter-spacing:0.5px;">${language.yourImages || 'Your images'}</span>
+              <span id="chatops-your-images-size" style="font-size:10px; color:#888; margin-top:2px;">(0 KB / 10 MB)</span>
+            </div>
+            <label for="chatops-image-upload-input" class="chatops-image-upload-btn">
+              ${language.uploadImageBtn || '+ Upload image'}
             </label>
-            <input type="file" id="chatops-meme-upload-input" accept="image/*" style="display:none;" />
+            <input type="file" id="chatops-image-upload-input" accept="image/*" style="display:none;" multiple />
           </div>
-          <div id="chatops-custom-memes-grid" class="chatops-custom-memes-grid-container">
-            <span class="chatops-meme-empty">Chưa có ảnh. Nhấn "Tải ảnh lên" để thêm!</span>
+          <div id="chatops-custom-images-grid" class="chatops-custom-images-grid-container">
+            <span class="chatops-image-empty">${language.noImagesHint || 'No images yet. Click "Upload image" to add!'}</span>
           </div>
         </div>
       `;
-      document.body.appendChild(memePickerEl);
-      document.getElementById('chatops-meme-close').addEventListener('click', () => {
-        memePickerEl.classList.add('hidden');
+      document.body.appendChild(imagePickerEl);
+      document.getElementById('chatops-image-close').addEventListener('click', () => {
+        imagePickerEl.classList.add('hidden');
       });
-      loadCustomMemes();
-      registerCustomMemeEvents();
+      loadCustomImages();
+      registerCustomImageEvents();
     }
 
-    const isHidden = memePickerEl.classList.contains('hidden');
+    const isHidden = imagePickerEl.classList.contains('hidden');
     if (isHidden) {
-      loadCustomMemes();
+      loadCustomImages();
       const rect = anchorBtn.getBoundingClientRect();
-      memePickerEl.style.bottom = `${window.innerHeight - rect.top + 10}px`;
-      memePickerEl.style.left = `${Math.max(10, rect.left - 260)}px`;
-      memePickerEl.classList.remove('hidden');
+      imagePickerEl.style.bottom = `${window.innerHeight - rect.top + 10}px`;
+      imagePickerEl.style.left = `${Math.max(10, rect.left - 260)}px`;
+      imagePickerEl.classList.remove('hidden');
     } else {
-      memePickerEl.classList.add('hidden');
+      imagePickerEl.classList.add('hidden');
     }
   }
 
-  async function loadMemesToMainUI() {
-    const grid = document.getElementById('chatops-meme-grid');
-    try {
-      const [imgflipRes, redditRes] = await Promise.allSettled([
-        fetch('https://api.imgflip.com/get_memes').then(r => r.json()),
-        fetch('https://meme-api.com/gimme/50').then(r => r.json())
-      ]);
-      let allMemes = [];
-      if (imgflipRes.status === 'fulfilled' && imgflipRes.value.success) {
-        allMemes.push(...imgflipRes.value.data.memes.map(m => ({ url: m.url })));
-      }
-      if (redditRes.status === 'fulfilled' && redditRes.value.memes) {
-        allMemes.push(...redditRes.value.memes.map(m => ({ url: m.url })));
-      }
-      allMemes.sort(() => Math.random() - 0.5);
-      grid.innerHTML = allMemes.slice(0, 60).map(m => `<img src="${m.url}" class="chatops-meme-item" loading="lazy" />`).join('');
-    } catch (err) {
-      grid.innerHTML = `<div style="grid-column: 1/-1; padding:20px; color:red;">${language.memeError}</div>`;
-    }
-  }
+
 
   function dataURLtoBlob(dataurl) {
     var arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
@@ -520,7 +612,7 @@ function showToast(msg) {
     return new Blob([u8arr], {type:mime});
   }
 
-  function insertMemeToChat(url) {
+  function insertImageToChat(url) {
     const textarea = document.getElementById(SELECTORS.CHAT_TEXTBOX.slice(1));
     if (!textarea) return;
 
@@ -528,7 +620,7 @@ function showToast(msg) {
       try {
         const blob = dataURLtoBlob(url);
         const ext = blob.type.split('/')[1] || 'png';
-        const file = new File([blob], `meme.${ext}`, { type: blob.type });
+        const file = new File([blob], `image.${ext}`, { type: blob.type });
 
         const dataTransfer = new DataTransfer();
         dataTransfer.items.add(file);
@@ -579,12 +671,12 @@ function showToast(msg) {
       <textarea id="cqn-note-text" placeholder="${language.quickTaskNotePlaceholder}"></textarea>
       
       <div id="cqn-note-section" style="padding: 0 13px 8px;">
-        <div style="font-size:11px; font-weight:600; color:var(--text-3); text-transform:uppercase; margin-bottom:4px;">Danh mục:</div>
+        <div style="font-size:11px; font-weight:600; color:var(--text-3); text-transform:uppercase; margin-bottom:4px;">${language.categoryLabel || 'Category:'}</div>
         <select id="cqn-category" style="width:100%; padding:6px; border:1px solid #e0e0e5; border-radius:4px; font-size:12px; font-family:inherit; background:#fff; outline:none; cursor:pointer;">
-          <option value="general">📁 Chung</option>
-          <option value="work">📁 Công việc</option>
-          <option value="personal">📁 Cá nhân</option>
-          <option value="ideas">📁 Ý tưởng</option>
+          <option value="general">📁 ${language.categoryGeneral || 'General'}</option>
+          <option value="work">📁 ${language.categoryWork || 'Work'}</option>
+          <option value="personal">📁 ${language.categoryPersonal || 'Personal'}</option>
+          <option value="ideas">📁 ${language.categoryIdeas || 'Ideas'}</option>
         </select>
       </div>
 
@@ -592,11 +684,11 @@ function showToast(msg) {
         <div style="padding: 0 13px 8px;">
           <div style="font-size:12px; font-weight:600; color:#4a4a4c; margin-bottom:6px; display:flex; align-items:center; gap:4px;">
             <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" style="opacity:0.7"><path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/></svg>
-            Nhắc sau:
+            ${language.quickTaskRemindAfter || 'Remind after:'}
           </div>
           <div class="cqn-presets" style="flex-wrap:wrap;">
-            <button type="button" class="cqn-preset-btn" style="min-width:40px;" data-min="15">+15ph</button>
-            <button type="button" class="cqn-preset-btn" style="min-width:40px;" data-min="30">+30ph</button>
+            <button type="button" class="cqn-preset-btn" style="min-width:40px;" data-min="15">+15m</button>
+            <button type="button" class="cqn-preset-btn" style="min-width:40px;" data-min="30">+30m</button>
             <button type="button" class="cqn-preset-btn" style="min-width:40px;" data-min="60">+1h</button>
             <button type="button" class="cqn-preset-btn" style="min-width:40px;" data-min="120">+2h</button>
             <button type="button" class="cqn-preset-btn" style="min-width:40px;" data-min="240">+4h</button>
@@ -604,7 +696,7 @@ function showToast(msg) {
             <button type="button" class="cqn-preset-btn" style="min-width:40px;" data-min="480">+8h</button>
           </div>
           <div style="font-size:12px; font-weight:600; color:#4a4a4c; margin:8px 0 6px 0; display:flex; align-items:center; gap:4px;">
-            Nhắc lúc:
+            ${language.quickTaskRemindAt || 'Remind at:'}
           </div>
           <div class="cqn-reminder-row" style="background:#fff; border:1px solid #e0e0e5; border-radius:4px; padding:2px 8px;">
             <input type="datetime-local" id="cqn-reminder-time" style="cursor:pointer; background:transparent; border:none; outline:none; box-shadow:none; flex:1;">
@@ -678,9 +770,9 @@ function showToast(msg) {
     if (!msgTextFull) {
       const imgEl = postEl.querySelector('img.attachment__image, img.markdown-inline-img, .post-image__column img');
       if (imgEl) {
-        msgTextFull = '[Hình ảnh] Vui lòng xem trực tiếp trên ChatOps';
+        msgTextFull = language.msgPreviewImage || '[Image] Please view directly on ChatOps';
       } else {
-        msgTextFull = '[Không có nội dung chữ]';
+        msgTextFull = language.msgPreviewNoText || '[No text content]';
       }
     }
     const postId = postEl.id ? postEl.id.replace(SELECTORS.POST_ID_PREFIX, '') : '';
@@ -701,15 +793,15 @@ function showToast(msg) {
     if (popover.dataset.mode === 'note') {
       if (taskSection) taskSection.style.display = 'none';
       if (noteSection) noteSection.style.display = 'block';
-      popover.querySelector('.cqn-title').textContent = language.quickNoteTitle || 'Thêm ghi chú nhanh';
+      popover.querySelector('.cqn-title').textContent = language.quickNoteTitle || 'Add Quick Note';
     } else {
       if (taskSection) taskSection.style.display = 'block';
       if (noteSection) noteSection.style.display = 'none';
-      popover.querySelector('.cqn-title').textContent = language.quickTaskTitle || 'Tạo việc làm';
+      popover.querySelector('.cqn-title').textContent = language.quickTaskTitle || 'Create Task';
       if (hintEl) {
         const res = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS]);
         const settings = res[STORAGE_KEYS.SETTINGS] || { snoozeMinutes: 5 };
-        hintEl.textContent = language.quickTaskHint.replace('{minutes}', settings.snoozeMinutes);
+        hintEl.innerHTML = language.quickTaskHint.replace('{minutes}', settings.snoozeMinutes);
       }
     }
 
@@ -756,10 +848,10 @@ function showToast(msg) {
     
     popover.classList.remove('visible');
     quickNoteBackdrop.classList.remove('visible');
-    showToast(mode === 'note' ? (language.quickNoteSaveSuccess || 'Đã lưu ghi chú') : language.quickTaskSaveSuccess);
+    showToast(mode === 'note' ? (language.quickNoteSaveSuccess || 'Note saved successfully') : language.quickTaskSaveSuccess);
   }
 
-  let cachedSettings = { spamEnabled: true, showTabs: { search: true, tasks: true, notes: true, missed: true } };
+  let cachedSettings = { spamEnabled: true, memeEnabled: true, showTabs: { search: true, tasks: true, notes: true, missed: true } };
 
   // Fetch initial settings
   chrome.storage.local.get([STORAGE_KEYS.SETTINGS], (res) => {
@@ -769,11 +861,20 @@ function showToast(msg) {
     }
   });
 
-  // Listen to settings changes reactively
+  // Listen to settings and custom image changes reactively
   chrome.storage.onChanged.addListener((changes, areaName) => {
-    if (areaName === 'local' && changes[STORAGE_KEYS.SETTINGS]) {
-      cachedSettings = changes[STORAGE_KEYS.SETTINGS].newValue || { spamEnabled: true, showTabs: { search: true, tasks: true, notes: true, missed: true } };
-      handleQuickActionButtonsVisibility();
+    if (areaName === 'local') {
+      if (changes[STORAGE_KEYS.SETTINGS]) {
+        cachedSettings = changes[STORAGE_KEYS.SETTINGS].newValue || { spamEnabled: true, showTabs: { search: true, tasks: true, notes: true, missed: true } };
+        handleQuickActionButtonsVisibility();
+        injectDynamicTheme();
+      }
+      if (changes.custom_memes) {
+        loadCustomImages();
+      }
+      if (changes[STORAGE_KEYS.MEMOS]) {
+        updateFloatingBadgeCount();
+      }
     }
   });
 
@@ -794,6 +895,7 @@ function showToast(msg) {
     }
     
     injectQuickNoteButtons();
+    injectImageButton();
   }
 
   function injectQuickNoteButtons() {
@@ -816,7 +918,7 @@ function showToast(msg) {
           const taskBtn = document.createElement('button');
           taskBtn.className = 'chatops-quick-note-btn task-btn';
           taskBtn.innerHTML = '🎯';
-          taskBtn.title = language.quickTaskCreate || 'Tạo việc làm';
+          taskBtn.title = language.quickTaskCreate || 'Create Task';
           taskBtn.addEventListener('click', (e) => {
             e.preventDefault(); e.stopPropagation();
             openQuickNote(postEl, taskBtn, 'task');
@@ -833,7 +935,7 @@ function showToast(msg) {
           const noteBtn = document.createElement('button');
           noteBtn.className = 'chatops-quick-note-btn note-btn';
           noteBtn.innerHTML = '📝';
-          noteBtn.title = language.quickNoteCreate || 'Thêm ghi chú nhanh';
+          noteBtn.title = language.quickNoteCreate || 'Add Quick Note';
           noteBtn.addEventListener('click', (e) => {
             e.preventDefault(); e.stopPropagation();
             openQuickNote(postEl, noteBtn, 'note');
@@ -851,7 +953,7 @@ function showToast(msg) {
           const spamBtn = document.createElement('button');
           spamBtn.className = 'chatops-quick-note-btn spam-btn';
           spamBtn.innerHTML = '🔥';
-          spamBtn.title = 'Spam biểu cảm (Reactions)';
+          spamBtn.title = language.spamReactionsTitle || 'Spam Reactions';
           spamBtn.addEventListener('click', (e) => {
             e.preventDefault(); e.stopPropagation();
             const postId = postEl.id ? postEl.id.replace(SELECTORS.POST_ID_PREFIX, '') : '';
@@ -871,9 +973,9 @@ function showToast(msg) {
               spamBtn.disabled = false;
 
               if (res && res.ok) {
-                showToast('Đã spam thả cảm xúc thành công! 🔥');
+                showToast(language.spamSuccess || 'Spam reactions added successfully! 🔥');
               } else {
-                showToast('Lỗi spam biểu cảm: ' + (res?.error || 'Không rõ'));
+                showToast((language.spamErrorPrefix || 'Spam reactions error: ') + (res?.error || 'Unknown'));
               }
             });
           });
@@ -885,7 +987,7 @@ function showToast(msg) {
           const retractBtn = document.createElement('button');
           retractBtn.className = 'chatops-quick-note-btn retract-btn';
           retractBtn.innerHTML = '↩️';
-          retractBtn.title = 'Thu hồi spam biểu cảm (Undo)';
+          retractBtn.title = language.undoSpamTitle || 'Undo Spam Reactions';
           retractBtn.addEventListener('click', (e) => {
             e.preventDefault(); e.stopPropagation();
             const postId = postEl.id ? postEl.id.replace(SELECTORS.POST_ID_PREFIX, '') : '';
@@ -905,9 +1007,9 @@ function showToast(msg) {
               retractBtn.disabled = false;
 
               if (res && res.ok) {
-                showToast('Đã thu hồi spam biểu cảm! ↩️');
+                showToast(language.undoSpamSuccess || 'Spam reactions removed successfully! ↩️');
               } else {
-                showToast('Lỗi thu hồi biểu cảm: ' + (res?.error || 'Không rõ'));
+                showToast((language.undoSpamErrorPrefix || 'Undo reactions error: ') + (res?.error || 'Unknown'));
               }
             });
           });
@@ -920,8 +1022,31 @@ function showToast(msg) {
     });
   }
 
-  const observer = new MutationObserver(() => { injectMemeButton(); injectQuickNoteButtons(); });
+  // Handle click on settings links inside the Mattermost content script page (e.g. from Quick Task Popover)
+  document.addEventListener('click', async (e) => {
+    const link = e.target.closest('.settings-subtab-link');
+    if (link) {
+      e.preventDefault();
+      const subtabName = link.dataset.subtab;
+      if (subtabName) {
+        // Close popover
+        const closeBtn = document.getElementById('cqn-close');
+        if (closeBtn) closeBtn.click();
+
+        // Save target tab & sub-tab to local storage so the sidepanel opens directly to it
+        await chrome.storage.local.set({ 
+          [STORAGE_KEYS.SIDEPANEL_TAB]: 'settings',
+          'sidePanelSubTab': subtabName 
+        });
+        
+        // Open the sidepanel programmatically!
+        chrome.runtime.sendMessage({ type: MESSAGE_TYPES.OPEN_SIDE_PANEL });
+      }
+    }
+  });
+
+  const observer = new MutationObserver(() => { injectImageButton(); injectQuickNoteButtons(); });
   observer.observe(document.body, { childList: true, subtree: true });
-  injectMemeButton();
+  injectImageButton();
   injectQuickNoteButtons();
 })();

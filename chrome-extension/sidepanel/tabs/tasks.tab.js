@@ -1,6 +1,6 @@
 /**
  * Tasks Tab Module — ChatOps Chrome Extension
- * Manages "Việc làm" (To-Do tasks) with reminders.
+ * Manages To-Do tasks with reminders.
  */
 
 import { escapeHtml, makePermalinkSync, formatUnixMsToVN, formatRelativeTime } from '../../src/utils/index.js';
@@ -179,8 +179,9 @@ export function setup(state) {
     // Task completion toggle
     if (e.target.classList.contains('task-checkbox')) {
       const id = e.target.dataset.id;
-      const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
+      const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS, STORAGE_KEYS.SETTINGS]);
       const memos = res[STORAGE_KEYS.MEMOS] || [];
+      const settings = res[STORAGE_KEYS.SETTINGS] || { snoozeMinutes: 5 };
       const task = memos.find(m => m.id === id);
       if (task) {
         task.done = e.target.checked;
@@ -189,7 +190,8 @@ export function setup(state) {
         if (e.target.checked) {
           chrome.alarms.clear(id);
         } else {
-          chrome.runtime.sendMessage({ type: MESSAGE_TYPES.SET_TASK_ALARM, taskId: id, time: Date.now() + UI_CONFIG.TASK_SNOOZE_MINUTES * 60 * 1000 });
+          const snoozeMins = settings.snoozeMinutes || 5;
+          chrome.runtime.sendMessage({ type: MESSAGE_TYPES.SET_TASK_ALARM, taskId: id, time: Date.now() + snoozeMins * 60 * 1000 });
         }
         loadTasks();
       }
@@ -213,8 +215,8 @@ export function setup(state) {
             <div class="inline-edit-form" style="margin-top: 4px; display: flex; flex-direction: column; gap: 8px;">
               <textarea class="inline-edit-textarea" style="width: 100%; min-height: 60px; padding: 8px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 13px; outline: none; background: #fff; resize: vertical; color: var(--text-1);">${escapeHtml(task.note)}</textarea>
               <div style="display: flex; gap: 6px; justify-content: flex-end;">
-                <button class="btn btn-secondary inline-edit-cancel" data-id="${id}" style="padding: 4px 10px; font-size: 11.5px; height: 26px; border-radius: 6px; cursor:pointer;">Hủy</button>
-                <button class="btn btn-primary inline-edit-save" data-id="${id}" style="padding: 4px 10px; font-size: 11.5px; height: 26px; border-radius: 6px; cursor:pointer; color:#fff;">Lưu</button>
+                <button class="btn btn-secondary inline-edit-cancel" data-id="${id}" style="padding: 4px 10px; font-size: 11.5px; height: 26px; border-radius: 6px; cursor:pointer;">${language.cancel || 'Cancel'}</button>
+                <button class="btn btn-primary inline-edit-save" data-id="${id}" style="padding: 4px 10px; font-size: 11.5px; height: 26px; border-radius: 6px; cursor:pointer; color:#fff;">${language.save || 'Save'}</button>
               </div>
             </div>
           `;
@@ -235,7 +237,7 @@ export function setup(state) {
       if (textarea) {
         const newText = textarea.value.trim();
         if (!newText) {
-          alert('Nội dung việc làm không được để trống.');
+          alert(language.taskEmptyError || 'Task content cannot be empty.');
           return;
         }
         
@@ -255,6 +257,13 @@ export function setup(state) {
   // Reload when tab is clicked
   document.querySelectorAll('.tab-btn').forEach(btn => {
     if (btn.dataset.tab === TABS.TASKS) btn.addEventListener('click', loadTasks);
+  });
+
+  // Listen to storage changes reactively to reload tasks list
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName === 'local' && changes[STORAGE_KEYS.MEMOS]) {
+      loadTasks();
+    }
   });
 
   loadTasks();
@@ -289,7 +298,7 @@ export async function loadTasks() {
     }
   } else {
     if (done.length === 0) {
-      html = `<div class="empty-state">Chưa có việc nào đã hoàn thành</div>`;
+      html = `<div class="empty-state">${language.noCompletedTasks || 'No completed tasks yet.'}</div>`;
     } else {
       html += `<div style="text-align:right;margin-bottom:8px;"><button class="memo-clear-done-btn" id="btnClearDoneTasks">${language.taskClearAll}</button></div>`;
       html += done.map(task => renderTaskCard(task, now)).join('');
@@ -331,7 +340,7 @@ function renderTaskCard(task, now) {
           <input type="checkbox" class="task-checkbox" data-id="${task.id}" ${task.done ? 'checked' : ''}>
           <span class="memo-checkmark-custom"></span>
         </label>
-        <button class="collapse-btn" data-id="${task.id}" style="margin-right: 4px;" title="Mở rộng/Thu gọn">▶</button>
+        <button class="collapse-btn" data-id="${task.id}" style="margin-right: 4px;" title="${language.expandCollapseBtn || 'Expand/Collapse'}">▶</button>
         <div class="memo-content" style="flex:1; min-width:0;">
           ${hasOriginalPost ? `<div class="memo-post-preview post-preview" style="display:none; margin-bottom:4px;">📌 ${escapeHtml(task.postText)}</div>` : ''}
           <div class="memo-note-text task-text collapsible-body collapsed" style="margin-top: 2px;">${escapeHtml(task.note || language.taskNoContent)}</div>
@@ -343,13 +352,13 @@ function renderTaskCard(task, now) {
           ${!task.done ? `
             <div style="display:flex; align-items:center; background:#fff; border:1px solid var(--border); border-radius:4px; padding:2px 6px;">
               <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style="opacity:0.7; margin-right:4px;"><path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/></svg>
-              <input type="datetime-local" class="task-update-reminder" data-id="${task.id}" value="${task.reminder || ''}" style="border:none; outline:none; font-size:11px; background:transparent; cursor:pointer;" title="Đổi giờ nhắc" />
+              <input type="datetime-local" class="task-update-reminder" data-id="${task.id}" value="${task.reminder || ''}" style="border:none; outline:none; font-size:11px; background:transparent; cursor:pointer;" title="${language.changeReminderTime || 'Change reminder time'}" />
             </div>
           ` : ''}
         </div>
         <div class="memo-actions">
           ${permalink ? `<a href="${permalink}" class="post-jump-link" title="${language.memoViewOriginal}">↗</a>` : ''}
-          <button class="btn-edit-memo btn-edit-task" data-id="${task.id}" title="Chỉnh sửa việc làm">
+          <button class="btn-edit-memo btn-edit-task" data-id="${task.id}" title="${language.editTask || 'Edit Task'}">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none; opacity:0.85;">
               <path d="M12 20h9"></path>
               <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>

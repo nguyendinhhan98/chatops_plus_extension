@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', init);
  * Initializes the side panel by fetching config, profile, and teams
  */
 async function init() {
-  const selectEl = document.getElementById('spWorkspaceSelect');
+  const dropdownEl = document.getElementById('spWorkspaceDropdown');
   try {
     const settings = await getSettings();
     applyThemeToDOM(settings);
@@ -34,10 +34,16 @@ async function init() {
     const [config, user, teams] = await Promise.all([getConfig(), getMyProfile(), getMyTeams()]);
     state.setConfig(config);
     state.setUser(user);
-    await setupWorkspaceSelector(teams, selectEl);
+    await setupWorkspaceSelector(teams, dropdownEl);
     chrome.runtime.sendMessage({ type: MESSAGE_TYPES.SIDE_PANEL_STATE, state: 'OPEN' });
   } catch (err) {
-    if (selectEl) selectEl.innerHTML = `<option value="">❌ ${err.message}</option>`;
+    if (dropdownEl) {
+      const selectedEl = document.getElementById('spWorkspaceSelected');
+      if (selectedEl) {
+        const text = selectedEl.querySelector('.selected-text');
+        if (text) text.textContent = `❌ ${err.message}`;
+      }
+    }
   }
 
   setupSearch(state);
@@ -60,36 +66,91 @@ async function init() {
 /**
  * Sets up the workspace dropdown selector
  */
-async function setupWorkspaceSelector(teams, select) {
+async function setupWorkspaceSelector(teams, dropdownContainer) {
+  const selectedEl = document.getElementById('spWorkspaceSelected');
+  const optionsEl = document.getElementById('spWorkspaceOptions');
+  const selectedText = selectedEl?.querySelector('.selected-text');
+  
   if (!teams?.length) { 
-    select.innerHTML = `<option value="">${language.noWorkspaces}</option>`; 
+    if (selectedText) selectedText.textContent = language.noWorkspaces || 'No workspaces'; 
     return; 
   }
-  select.innerHTML = teams.map(t => `<option value="${t.id}">${escapeHtml(t.display_name)}</option>`).join('');
 
   const saved = await chrome.storage.local.get([STORAGE_KEYS.CURRENT_TEAM]);
   const config = state.getConfig();
-  let defaultTeam = teams.find(t => t.id === saved[STORAGE_KEYS.CURRENT_TEAM]) 
+  let defaultTeam = teams.find(t => String(t.id) === String(saved[STORAGE_KEYS.CURRENT_TEAM])) 
     || teams.find(t => t.name === (config.teamName || CHATOPS_CONFIG.DEFAULT_TEAM)) 
     || teams[0];
   
   state.setTeam(defaultTeam);
-  select.value = defaultTeam.id;
-  select.addEventListener('change', (e) => {
-    state.setTeam(teams.find(t => t.id === e.target.value));
-    chrome.storage.local.set({ [STORAGE_KEYS.CURRENT_TEAM]: e.target.value });
-    resetAllTabs();
+  if (selectedText) selectedText.textContent = defaultTeam.display_name;
+
+  // Render options dynamically
+  if (optionsEl) {
+    optionsEl.innerHTML = teams.map(t => `
+      <div class="custom-dropdown-option ${t.id === defaultTeam.id ? 'selected' : ''}" data-value="${t.id}">
+        ${escapeHtml(t.display_name)}
+      </div>
+    `).join('');
+  }
+
+  // Toggle dropdown open/close
+  selectedEl?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isOpen = dropdownContainer.classList.contains('open');
+    
+    // Close other elements if needed, then toggle this one
+    dropdownContainer.classList.toggle('open', !isOpen);
+    optionsEl?.classList.toggle('show', !isOpen);
   });
+
+  // Handle option click
+  optionsEl?.addEventListener('click', (e) => {
+    const optionItem = e.target.closest('.custom-dropdown-option');
+    if (!optionItem) return;
+
+    const val = optionItem.dataset.value;
+    const selectedTeam = teams.find(t => String(t.id) === String(val));
+    if (!selectedTeam) return;
+
+    if (selectedText) selectedText.textContent = selectedTeam.display_name;
+    
+    optionsEl.querySelectorAll('.custom-dropdown-option').forEach(item => {
+      item.classList.toggle('selected', item.dataset.value === val);
+    });
+
+    state.setTeam(selectedTeam);
+    chrome.storage.local.set({ [STORAGE_KEYS.CURRENT_TEAM]: val });
+
+    // Close the dropdown
+    dropdownContainer.classList.remove('open');
+    optionsEl.classList.remove('show');
+
+    // Defer reset to prevent rendering glitches
+    setTimeout(() => {
+      resetAllTabs();
+    }, 50);
+  });
+
+  // Close dropdown if clicked outside
+  document.addEventListener('click', () => {
+    dropdownContainer?.classList.remove('open');
+    optionsEl?.classList.remove('show');
+  });
+}
+
+/**
+ * Switches the active tab in the UI
+ */
+function switchTab(id) {
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === id));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === `tab-${id}`));
 }
 
 /**
  * Handles tab switching UI logic
  */
 function setupTabs() {
-  const switchTab = (id) => {
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === id));
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === `tab-${id}`));
-  };
   document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
   
   // Handle sync badge clicks to navigate to settings sync section
@@ -97,7 +158,7 @@ function setupTabs() {
     document.getElementById(badgeId)?.addEventListener('click', () => {
       switchTab('settings');
       
-      // Select the sync sub-tab in Cài đặt
+      // Select the sync sub-tab in Settings
       const syncSubTabBtn = document.querySelector(`#settingsSubTabs .memo-sub-tab[data-section="sync"]`);
       if (syncSubTabBtn) {
         syncSubTabBtn.click();
@@ -118,11 +179,96 @@ function setupTabs() {
       }, 150);
     });
   });
+  // Handle programmatic links to settings/reactions sub-tabs (e.g. from Tasks, Mentions, etc.)
+  document.addEventListener('click', (e) => {
+    const supportLink = e.target.closest('.support-chatops-link');
+    if (supportLink) {
+      e.preventDefault();
+      const url = supportLink.getAttribute('href');
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs && tabs[0]) {
+          chrome.tabs.update(tabs[0].id, { url });
+        }
+      });
+      return;
+    }
+
+    const link = e.target.closest('.settings-subtab-link');
+    if (link) {
+      e.preventDefault();
+      const subtabName = link.dataset.subtab;
+      if (!subtabName) return;
+
+      let tabId = 'settings';
+      if (subtabName.startsWith('reactions-')) {
+        tabId = 'reactions';
+      }
+
+      // 1. Switch to the correct main tab
+      switchTab(tabId);
+
+      // 2. Switch top-level sub-tab/category
+      let sectionId = '';
+      if (subtabName.startsWith('features-')) {
+        sectionId = 'features';
+      } else if (subtabName.startsWith('reactions-')) {
+        sectionId = subtabName === 'reactions-picker' ? 'picker' : 'meme';
+      } else if (subtabName.startsWith('sync-')) {
+        sectionId = 'sync';
+      } else if (subtabName === 'categories') {
+        sectionId = 'categories';
+      }
+
+      if (sectionId) {
+        const selector = tabId === 'settings' ? '#settingsSubTabs' : '#reactionsSubTabs';
+        const tabBtn = document.querySelector(`${selector} .memo-sub-tab[data-section="${sectionId}"]`);
+        if (tabBtn) {
+          tabBtn.click();
+        }
+      }
+
+      // 3. Switch inner subtab panel
+      const subtabBtn = document.querySelector(`.settings-subtab-btn[data-subtab="${subtabName}"]`);
+      if (subtabBtn) {
+        subtabBtn.click();
+      }
+    }
+  });
   
-  chrome.storage.local.get([STORAGE_KEYS.SIDEPANEL_TAB], (res) => { 
+  chrome.storage.local.get([STORAGE_KEYS.SIDEPANEL_TAB, 'sidePanelSubTab'], (res) => { 
     if (res[STORAGE_KEYS.SIDEPANEL_TAB]) { 
       switchTab(res[STORAGE_KEYS.SIDEPANEL_TAB]); 
       chrome.storage.local.remove(STORAGE_KEYS.SIDEPANEL_TAB); 
+      
+      const subtab = res['sidePanelSubTab'];
+      if (subtab) {
+        chrome.storage.local.remove('sidePanelSubTab');
+        
+        let tabId = 'settings';
+        if (subtab.startsWith('reactions-')) {
+          tabId = 'reactions';
+        }
+        
+        let sectionId = '';
+        if (subtab.startsWith('features-')) {
+          sectionId = 'features';
+        } else if (subtab.startsWith('reactions-')) {
+          sectionId = subtab === 'reactions-picker' ? 'picker' : 'meme';
+        } else if (subtab.startsWith('sync-')) {
+          sectionId = 'sync';
+        }
+
+        if (sectionId) {
+          setTimeout(() => {
+            const selector = tabId === 'settings' ? '#settingsSubTabs' : '#reactionsSubTabs';
+            const tabBtn = document.querySelector(`${selector} .memo-sub-tab[data-section="${sectionId}"]`);
+            if (tabBtn) tabBtn.click();
+            
+            const subtabBtn = document.querySelector(`.settings-subtab-btn[data-subtab="${subtab}"]`);
+            if (subtabBtn) subtabBtn.click();
+          }, 150);
+        }
+      }
     } 
   });
 }
@@ -141,6 +287,9 @@ function setupStateHandlers() {
     else if (msg.type === MESSAGE_TYPES.MEMO_UPDATED) {
       loadMemos();
       loadTasks();
+    } else if (msg.type === 'SWITCH_TAB') {
+      switchTab(msg.tab);
+      sendResponse({ ok: true });
     }
   });
 

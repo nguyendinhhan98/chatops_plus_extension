@@ -46,7 +46,7 @@ export function renderPostList(posts, usersMap, baseUrl, teamName, channelsMap, 
     const user = usersMap[post.user_id];
     const channel = channelsMap[post.channel_id];
     const author = user ? formatUserDisplayName(user) : language.unknown;
-    const channelName = channel ? (channel.display_name || channel.name) : language.unknown;
+    const channelName = channel ? getChannelLabel(channel) : language.unknown;
     const permalink = makePermalinkSync(post.id, baseUrl, teamName);
 
     let contentHtml = escapeHtml(post.message);
@@ -64,7 +64,7 @@ export function renderPostList(posts, usersMap, baseUrl, teamName, channelsMap, 
     return `
       <div class="post-item" id="item_${post.id}">
         <div class="post-header" style="display:flex; align-items:center;">
-          <button class="collapse-btn" data-id="${post.id}" style="margin-right: 4px;" title="Mở rộng/Thu gọn">▶</button>
+          <button class="collapse-btn" data-id="${post.id}" style="margin-right: 4px;" title="Expand/Collapse">▶</button>
           <div class="post-header-left" style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:flex; gap:8px; align-items:center;">
             <span class="post-author" style="font-weight:600;">${escapeHtml(author)}</span>
             <span class="post-channel" style="color:var(--text-3); font-size:11px;">${language.in} ${escapeHtml(channelName)}</span>
@@ -166,7 +166,7 @@ export function renderMentionItem(post, author, permalink) {
   return `
     <div class="post-item missed-mention-item" id="item_${post.id}">
       <div class="post-header" style="display:flex; align-items:center;">
-        <button class="collapse-btn" data-id="${post.id}" style="margin-right: 4px;" title="Mở rộng/Thu gọn">▶</button>
+        <button class="collapse-btn" data-id="${post.id}" style="margin-right: 4px;" title="Expand/Collapse">▶</button>
         <span class="post-author" style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight:600;">${escapeHtml(authorName)}</span>
         <span class="post-time" title="${formatUnixMsToVN(post.create_at)}" style="flex-shrink: 0; margin-left: 8px; font-size:11px; color:var(--text-3);">${formatRelativeTime(post.create_at)}</span>
       </div>

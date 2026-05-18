@@ -185,7 +185,7 @@ async function scanMentionsDeep() {
 
             if (trulyMissed.length > 0) {
               const channelInfo = await getChannelById(member.channel_id).catch(() => null);
-              const channelLabel = channelInfo ? (channelInfo.display_name || channelInfo.name) : language.unknown;
+              const channelLabel = channelInfo ? getChannelLabel(channelInfo) : language.unknown;
               results.push({ channelLabel, posts: trulyMissed });
             }
           } catch {}

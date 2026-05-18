@@ -47,8 +47,11 @@
   --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-body {
+body, input, select, textarea, button {
   font-family: var(--font);
+}
+
+body {
   background: var(--bg);
   color: var(--text-1);
   height: 100vh;
@@ -64,6 +67,18 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--bg-3); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--border-hover); }
+
+/* ─── Settings Subtab Links ─── */
+.settings-subtab-link {
+  color: var(--accent) !important;
+  font-weight: 700;
+  text-decoration: underline !important;
+  cursor: pointer !important;
+  transition: opacity 0.2s ease;
+}
+.settings-subtab-link:hover {
+  opacity: 0.8 !important;
+}
 
 /* ─── Layout ─── */
 .panel-container {
@@ -106,31 +121,91 @@ body {
   height: 100%;
 }
 
-.workspace-select {
-  flex: 1;
-  padding: 10px 36px 10px 12px;
-  background: rgba(255, 255, 255, 0.15) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='white' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E") no-repeat calc(100% - 14px) center;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  border-radius: var(--radius-sm);
+/* Premium Custom Workspace Dropdown */
+.custom-dropdown {
+  position: relative;
+  width: 100%;
+}
+
+.custom-dropdown-selected {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-sm, 6px);
   color: #ffffff;
-  font-size: 15px;
-  font-family: var(--font);
+  font-size: 14px;
   font-weight: 600;
-  outline: none;
   cursor: pointer;
-  appearance: none;
-  transition: all var(--transition);
+  transition: all var(--transition, 0.2s);
+  user-select: none;
 }
 
-.workspace-select:hover, .workspace-select:focus {
-  background-color: rgba(255, 255, 255, 0.25);
-  border-color: rgba(255, 255, 255, 0.4);
+.custom-dropdown-selected:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.35);
 }
 
-.workspace-select option {
-  background: #ffffff;
-  color: var(--text-1);
+.custom-dropdown-selected .dropdown-arrow {
+  font-size: 10px;
+  opacity: 0.8;
+  transition: transform 0.2s ease;
 }
+
+.custom-dropdown.open .custom-dropdown-selected .dropdown-arrow {
+  transform: rotate(180deg);
+}
+
+.custom-dropdown-options {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: var(--bg, #ffffff);
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: var(--radius-sm, 6px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.15);
+  z-index: 10000;
+  max-height: 200px;
+  overflow-y: auto;
+  opacity: 0;
+  transform: translateY(-8px);
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.custom-dropdown-options.show {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.custom-dropdown-option {
+  padding: 8px 12px;
+  font-size: 13.5px;
+  color: var(--text-1, #1e293b);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  user-select: none;
+  font-weight: 500;
+  text-align: left;
+}
+
+.custom-dropdown-option:hover {
+  background: var(--bg-2, #f1f5f9) !important;
+  color: var(--accent, #1d4ed8) !important;
+}
+
+.custom-dropdown-option.selected {
+  background: var(--accent-dim, #eff6ff) !important;
+  color: var(--accent, #1d4ed8) !important;
+  font-weight: 600;
+}
+
 
 .custom-select {
   padding: 8px 28px 8px 12px;
@@ -183,30 +258,31 @@ body {
 /* ─── Tab Navigation ─── */
 .tab-nav {
   display: flex;
+  flex-wrap: wrap;
   background: var(--nav-bg, #1153ab);
-  padding: 0 12px;
+  padding: 6px 12px;
   position: relative;
   z-index: 10;
-  overflow: hidden;
-  height: 64px;
+  min-height: 50px;
+  height: auto;
 }
 
 .tab-btn {
-  flex: 1;
+  flex: 1 1 75px;
+  min-width: 75px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 2px;
-  padding: 0;
+  padding: 6px 4px;
   background: none;
   border: none;
   color: #ffffff;
   opacity: 0.9; /* Increased visibility */
   cursor: pointer;
   transition: all var(--transition);
-  min-width: 0;
-  height: 100%;
+  height: auto;
   position: relative;
 }
 
@@ -226,6 +302,7 @@ body {
   color: var(--accent, #1c58d9) !important;
   background: #ffffff;
   opacity: 1;
+  border-radius: 6px;
 }
 
 .tab-btn:hover .tab-icon {
@@ -247,6 +324,7 @@ body {
 .tab-btn:hover {
   color: var(--nav-text-active);
   background: rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
 }
 
 .tab-btn.active {
@@ -254,9 +332,9 @@ body {
   background: #ffffff;
   border-bottom: none;
   font-weight: 700;
-  border-radius: var(--radius) var(--radius) 0 0;
-  margin-top: 4px;
-  box-shadow: 0 -4px 12px rgba(0,0,0,0.05);
+  border-radius: 6px;
+  margin: 2px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 
 /* 5-tab layout: compact labels */
@@ -301,7 +379,7 @@ body {
 
 /* ─── Panel Section ─── */
 .panel-section {
-  padding: 18px 16px;
+  padding: 10px 12px;
   border-bottom: 1px solid #d1d5db;
   flex-shrink: 0;
   background: #ffffff;
@@ -324,7 +402,7 @@ body {
 .search-form {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   /* overflow: hidden;  -- Removed to prevent clipping dropdowns */
   transition: max-height 0.3s ease, opacity 0.3s ease, margin 0.3s ease;
   position: relative;
@@ -425,8 +503,6 @@ body {
 .search-form select,
 .search-form textarea {
   width: 100%;
-  height: 42px; /* Standardized height */
-  padding: 0 14px;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -438,15 +514,23 @@ body {
   box-sizing: border-box;
 }
 
+.search-form input {
+  height: 42px; /* Standardized height */
+  padding: 0 14px;
+  line-height: 40px; /* 42px height minus 2px border */
+}
+
 .search-form select {
+  height: 42px;
   padding: 0 32px 0 12px;
-  background: #ffffff;
+  line-height: 40px;
 }
 
 textarea.search-form-textarea {
   height: auto;
   min-height: 80px;
-  padding: 11px 14px;
+  padding: 10px 14px;
+  line-height: 1.5;
 }
 
 .search-form input:focus,
@@ -687,15 +771,21 @@ textarea.search-form-textarea {
 .post-item {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 12px 14px;
+  gap: 4px;
+  padding: 8px 10px;
   border-bottom: 1px solid var(--border);
   background: var(--bg);
   transition: background var(--transition);
   position: relative;
 }
 
-.post-item:hover { background: var(--bg-2); }
+.post-item:nth-child(even) {
+  background: var(--bg-2);
+}
+
+.post-item:hover {
+  background: rgba(28, 88, 217, 0.06) !important;
+}
 
 .post-avatar { width: 32px; height: 32px; flex-shrink: 0; }
 .post-avatar img {
@@ -986,6 +1076,7 @@ textarea.search-form-textarea {
 .multiselect-container {
   display: flex;
   flex-direction: column;
+  justify-content: center; /* Vertically center input row & chips */
   gap: 4px;
   width: 100%;
   min-height: 42px; /* Standardized height */
@@ -1011,14 +1102,17 @@ textarea.search-form-textarea {
 }
 
 .multiselect-container .multiselect-input {
-  border: none;
-  background: transparent;
-  padding: 4px 0;
-  width: 100%;
-  height: 28px;
-  font-size: 15px;
-  color: var(--text-1);
-  outline: none;
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  width: 100% !important;
+  height: 28px !important;
+  line-height: 28px !important; /* Perfect vertical baseline centering */
+  font-size: 15px !important;
+  color: var(--text-1) !important;
+  outline: none !important;
+  box-shadow: none !important;
+  box-sizing: border-box !important;
 }
 
 .multiselect-chips { display: flex; flex-wrap: wrap; gap: 5px; }
@@ -1053,8 +1147,8 @@ textarea.search-form-textarea {
 .quick-note-bar {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 10px 14px;
+  gap: 4px;
+  padding: 6px 10px;
   background: #ffffff;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
@@ -1070,6 +1164,7 @@ textarea.search-form-textarea {
   flex: 1;
   height: 38px;
   padding: 0 12px;
+  line-height: 36px; /* 38px height minus 2px border */
   background: var(--bg-2);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -1083,6 +1178,28 @@ textarea.search-form-textarea {
 
 .quick-note-input:focus {
   background: #fff;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-dim);
+}
+
+.quick-note-textarea {
+  width: 100%;
+  resize: none;
+  padding: 10px 12px;
+  min-height: 80px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-1);
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.5;
+  outline: none;
+  box-sizing: border-box;
+  transition: all var(--transition);
+}
+
+.quick-note-textarea:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 2px var(--accent-dim);
 }
@@ -1162,7 +1279,7 @@ textarea.search-form-textarea {
 }
 
 .task-quick-bar, .quick-note-bar {
-  padding: 0 16px 12px 16px;
+  padding: 0 12px 8px 12px;
   border-bottom: 1px solid #d1d5db;
   background: #ffffff;
   position: relative;
@@ -1188,40 +1305,8 @@ textarea.search-form-textarea {
   box-shadow: 0 0 0 2px var(--accent-dim);
 }
 
-/* Sub-tabs */
+/* Premium Segmented Switcher for all Sub-Tabs */
 .memo-sub-tabs {
-  display: flex;
-  background: #ffffff;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-  white-space: nowrap;
-  overflow-x: auto;
-  scrollbar-width: none; /* Firefox */
-}
-.memo-sub-tabs::-webkit-scrollbar {
-  display: none; /* Safari and Chrome */
-}
-
-.memo-sub-tab {
-  flex: none;
-  padding: 10px 16px;
-  background: none; border: none;
-  border-bottom: 2px solid transparent;
-  color: var(--text-3);
-  font-size: 11px; font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-family: var(--font); cursor: pointer;
-  transition: all var(--transition);
-  display: flex; align-items: center; justify-content: center;
-  gap: 6px; margin-bottom: -1px;
-}
-
-.memo-sub-tab:hover { color: var(--text-1); background: var(--bg-2); }
-.memo-sub-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-
-/* Premium Segmented Switcher for Settings Sub-Tabs */
-#settingsSubTabs.memo-sub-tabs {
   display: flex !important;
   background: #f1f5f9 !important;
   border: 1px solid #cbd5e1 !important;
@@ -1233,16 +1318,16 @@ textarea.search-form-textarea {
   overflow-x: auto !important;
   scrollbar-width: none !important;
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05) !important;
-  border-bottom: none !important;
+  flex-shrink: 0 !important;
 }
 
-#settingsSubTabs.memo-sub-tabs::-webkit-scrollbar {
+.memo-sub-tabs::-webkit-scrollbar {
   display: none !important;
 }
 
-#settingsSubTabs .memo-sub-tab {
-  flex: 1 1 76px !important;
-  min-width: 76px !important;
+.memo-sub-tab {
+  flex: 1 1 60px !important;
+  min-width: 60px !important;
   padding: 8px 12px !important;
   background: none !important;
   border: none !important;
@@ -1261,12 +1346,12 @@ textarea.search-form-textarea {
   margin: 0 !important;
 }
 
-#settingsSubTabs .memo-sub-tab:hover {
+.memo-sub-tab:hover {
   color: #0f172a !important; /* Jet Black-Slate on hover */
   background: #e2e8f0 !important;
 }
 
-#settingsSubTabs .memo-sub-tab.active {
+.memo-sub-tab.active {
   background: var(--accent) !important; /* Bold, solid background for the active tab */
   color: #ffffff !important; /* Ultra high-contrast pure white text */
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
@@ -1594,13 +1679,13 @@ input:checked + .toggle-slider:before { transform: translateX(16px); }
 
 /* ─── Task Quick Bar ─── */
 .task-quick-bar {
-  padding: 14px 16px;
+  padding: 8px 12px;
   background: #ffffff;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 .task-quick-title {
   font-size: 12px;
@@ -1679,15 +1764,15 @@ input:checked + .toggle-slider:before { transform: translateX(16px); }
   display: flex;
 }
 
-/* ─── ý 5: Date picker full-row clickable ─── */
+/* ─── Item 5: Date picker full-row clickable ─── */
 .task-reminder-row { cursor: pointer; transition: background var(--transition); }
 .task-reminder-row:hover { background: var(--bg-3); }
 .quick-task-datetime { pointer-events: none; }
 
-/* ─── ý 6: Note icon in quick bar ─── */
+/* ─── Item 6: Note icon in quick bar ─── */
 .quick-note-icon { font-size: 18px; flex-shrink: 0; line-height: 1; }
 
-/* ─── ý 7: Note content row (text + copy btn side by side) ─── */
+/* ─── Item 7: Note content row (text + copy btn side by side) ─── */
 .note-content-row {
   display: flex;
   align-items: flex-start;
@@ -1696,7 +1781,7 @@ input:checked + .toggle-slider:before { transform: translateX(16px); }
 .note-content-row .note-body { flex: 1; min-width: 0; }
 .note-content-row .btn-copy-note { flex-shrink: 0; margin-top: 2px; }
 
-/* ─── ý 10: Better font sizes globally ─── */
+/* ─── Item 10: Better font sizes globally ─── */
 .input-helper { font-size: 13px !important; color: var(--text-2) !important; line-height: 1.5; }
 .hint-text { font-size: 13px !important; color: var(--text-2) !important; }
 .memo-list-header { font-size: 13px; }

@@ -131,7 +131,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           for (const tab of tabs) {
             chrome.tabs.sendMessage(tab.id, {
               type: MESSAGE_TYPES.SHOW_REMINDER,
-              message: '🔔 Đây là thông báo thử nghiệm từ ChatOps++!',
+              message: '🔔 This is a test notification from ChatOps++!',
               taskId: 'test_task',
               postId: null,
               teamName: null,
@@ -147,8 +147,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         chrome.notifications.create('test_notification_' + Date.now(), {
           type: 'basic',
           iconUrl: chrome.runtime.getURL('icons/icon128.png'),
-          title: '🎯 Thông báo thử nghiệm ChatOps++',
-          message: 'Hệ thống thông báo đẩy OS đang hoạt động hoàn hảo!',
+          title: '🎯 ChatOps++ Test Notification',
+          message: 'OS push notification system is working perfectly!',
           priority: 2,
           requireInteraction: true
         }, (notificationId) => {
@@ -290,16 +290,31 @@ chrome.notifications.onClicked.addListener(async (notificationId) => {
         targetUrl = `${CHATOPS_CONFIG.DEFAULT_URL}/${task.teamName}/pl/${task.postId}`;
       }
       
+      // Save side panel tab setting to tasks
+      await chrome.storage.local.set({ [STORAGE_KEYS.SIDEPANEL_TAB]: 'tasks' });
+      
       // Query if we already have an open ChatOps tab
       const tabs = await chrome.tabs.query({ url: `${CHATOPS_CONFIG.DEFAULT_URL}/*` });
+      let activeTabId = null;
       if (tabs.length > 0) {
         // Focus the existing tab and update its URL
-        await chrome.tabs.update(tabs[0].id, { active: true, url: targetUrl });
-        const windowId = tabs[0].windowId;
-        await chrome.windows.update(windowId, { focused: true });
+        const tab = tabs[0];
+        await chrome.tabs.update(tab.id, { active: true, url: targetUrl });
+        await chrome.windows.update(tab.windowId, { focused: true });
+        activeTabId = tab.id;
       } else {
         // Create new tab if none exists
-        await chrome.tabs.create({ url: targetUrl });
+        const newTab = await chrome.tabs.create({ url: targetUrl });
+        activeTabId = newTab.id;
+      }
+      
+      // Open the side panel for this tab
+      if (chrome.sidePanel && activeTabId) {
+        await chrome.sidePanel.open({ tabId: activeTabId }).catch(() => {});
+        // Send a real-time message to switch to the "tasks" tab in case it's already open
+        setTimeout(() => {
+          chrome.runtime.sendMessage({ type: 'SWITCH_TAB', tab: 'tasks' }).catch(() => {});
+        }, 300);
       }
     }
   } catch (err) {

@@ -86,19 +86,43 @@ element.innerHTML = renderUserCard(user);
 element.innerHTML = renderPostList(posts, usersMap, chatopsUrl, teamName);
 ```
 
-## Pattern: Loading state
+## Pattern: Quốc tế hóa (i18n & Localization)
+
+Tất cả text hiển thị trên UI **KHÔNG ĐƯỢC** hardcode trực tiếp. Phải import và sử dụng file i18n trung tâm tại [src/lang.js](file:///home/hannd/Documents/MY_PROJECT/mcp-chatops/chrome-extension/src/lang.js).
+
+### Quy tắc Vàng:
+1. **KHÔNG HARDCODE**: Khai báo key mô tả trong `src/lang.js` và gọi qua `language.yourKey` trong mã nguồn.
+2. **KHI THÊM TEXT**: Phải khai báo trong `src/lang.js` trước theo định dạng `camelCase`.
+3. **KHI XÓA TEXT**: Kiểm tra toàn bộ code xem còn sử dụng key đó không. Nếu không, **phải xóa hoàn toàn** key khỏi `src/lang.js` để tối ưu bundle size.
+4. **TÁI SỬ DỤNG**: Kiểm tra các key dùng chung (`loading`, `save`, `cancel`, `error`) trước khi định nghĩa mới.
+
+### Cách import & sử dụng:
+```javascript
+import { language } from '../../src/lang.js';
+
+// Rút trích text thông thường
+button.textContent = language.save || 'Save';
+
+// Rút trích text có tham số động (dynamic placeholder)
+const hint = language.taskReminderHint.replace('{minutes}', snoozeVal);
+```
+
+## Pattern: Loading & Error State (i18n compliant)
 
 ```javascript
+import { language } from '../../src/lang.js';
+import { escapeHtml } from '../src/utils/formatter.js';
+
 const resultsEl = document.getElementById('results');
 
-// Show loading
-resultsEl.innerHTML = '<div class="loading-state"><span class="spinner"></span> Đang tải...</div>';
+// Show loading sử dụng i18n
+resultsEl.innerHTML = `<div class="loading-state"><span class="spinner"></span> ${language.loading}</div>`;
 
 try {
   const data = await apiCall();
   resultsEl.innerHTML = renderData(data);
 } catch (err) {
-  resultsEl.innerHTML = `<div class="empty-state" style="color:var(--error)">❌ ${escapeHtml(err.message)}</div>`;
+  resultsEl.innerHTML = `<div class="empty-state" style="color:var(--error)">❌ ${language.errorLoading}: ${escapeHtml(err.message)}</div>`;
 }
 ```
 

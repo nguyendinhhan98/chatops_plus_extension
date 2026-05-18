@@ -12,7 +12,7 @@ description: >
 
 1.  **Strict Modularization**: Each feature (tab) is an isolated module.
 2.  **Centralized State**: Shared state is managed via `state.js`.
-3.  **No Hardcoding**: All magic values must live in `src/constants.js`.
+3.  **No Hardcoding**: All magic values must live in `src/constants.js`. All user-facing UI text strings must live in `src/lang.js`.
 4.  **English Documentation**: All comments and code must be in English.
 5.  **Pure Rendering**: Logic and UI templates are decoupled.
 

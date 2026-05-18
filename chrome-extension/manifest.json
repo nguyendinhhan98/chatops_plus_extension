@@ -2,14 +2,15 @@
   "manifest_version": 3,
   "name": "ChatOps++",
   "version": "1.1.3",
-  "description": "ChatOps++ là tiện ích mở rộng hỗ trợ toàn diện cho người dùng ChatOps.",
+  "description": "ChatOps++ is a comprehensive browser utility extension for ChatOps users.",
   "permissions": [
     "storage",
     "activeTab",
     "sidePanel",
     "alarms",
     "cookies",
-    "notifications"
+    "notifications",
+    "unlimitedStorage"
   ],
   "host_permissions": [
     "https://chat.runsystem.vn/*"

@@ -1,11 +1,22 @@
 /**
  * Memo (Notes) Tab Module — ChatOps Chrome Extension
- * Manages personal notes/ghi chú.
+ * Manages personal notes/memos.
  */
 
 import { escapeHtml, makePermalinkSync, formatRelativeTime } from '../../src/utils/index.js';
 import { CHATOPS_CONFIG, STORAGE_KEYS, TABS } from '../../src/constants.js';
 import { language } from '../../src/lang.js';
+
+function getCategoryDisplayName(cat) {
+  switch (cat.toLowerCase()) {
+    case 'all': return language.categoryAll || 'ALL';
+    case 'general': return language.categoryGeneral || 'General';
+    case 'work': return language.categoryWork || 'Work';
+    case 'personal': return language.categoryPersonal || 'Personal';
+    case 'ideas': return language.categoryIdeas || 'Ideas';
+    default: return cat;
+  }
+}
 
 let _state = null;
 
@@ -57,7 +68,7 @@ export function setup(state) {
     }
 
     const categorySelect = document.getElementById('quickNoteCategory');
-    const category = categorySelect ? categorySelect.value : 'Chung';
+    const category = categorySelect ? categorySelect.value : 'General';
 
     const id = `memo_${Date.now()}`;
     const item = {
@@ -133,8 +144,8 @@ export function setup(state) {
             <div class="inline-edit-form" style="width:100%; display: flex; flex-direction: column; gap: 8px;">
               <textarea class="inline-edit-textarea" style="width: 100%; min-height: 60px; padding: 8px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 13px; outline: none; background: #fff; resize: vertical; color: var(--text-1);">${escapeHtml(note.note)}</textarea>
               <div style="display: flex; gap: 6px; justify-content: flex-end;">
-                <button class="btn btn-secondary inline-edit-cancel" data-id="${id}" style="padding: 4px 10px; font-size: 11.5px; height: 26px; border-radius: 6px; cursor:pointer;">Hủy</button>
-                <button class="btn btn-primary inline-edit-save" data-id="${id}" style="padding: 4px 10px; font-size: 11.5px; height: 26px; border-radius: 6px; cursor:pointer; color:#fff;">Lưu</button>
+                <button class="btn btn-secondary inline-edit-cancel" data-id="${id}" style="padding: 4px 10px; font-size: 11.5px; height: 26px; border-radius: 6px; cursor:pointer;">${language.cancel || 'Cancel'}</button>
+                <button class="btn btn-primary inline-edit-save" data-id="${id}" style="padding: 4px 10px; font-size: 11.5px; height: 26px; border-radius: 6px; cursor:pointer; color:#fff;">${language.save || 'Save'}</button>
               </div>
             </div>
           `;
@@ -155,7 +166,7 @@ export function setup(state) {
       if (textarea) {
         const newText = textarea.value.trim();
         if (!newText) {
-          alert('Nội dung ghi chú không được để trống.');
+          alert(language.memoEmptyNoteError || 'Note content cannot be empty.');
           return;
         }
         
@@ -215,20 +226,20 @@ export function setup(state) {
  */
 async function renderCategories() {
   const res = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS]);
-  const categories = res[STORAGE_KEYS.SETTINGS]?.memoCategories || ['Chung', 'Công việc', 'Cá nhân', 'Ý tưởng'];
+  const categories = res[STORAGE_KEYS.SETTINGS]?.memoCategories || ['General', 'Work', 'Personal', 'Ideas'];
   
   const quickSelect = document.getElementById('quickNoteCategory');
   const tabsContainer = document.getElementById('memoCategoryTabs');
   
   if (quickSelect) {
-    quickSelect.innerHTML = categories.map(c => `<option value="${c}">📁 ${c}</option>`).join('');
+    quickSelect.innerHTML = categories.map(c => `<option value="${c}">📁 ${getCategoryDisplayName(c)}</option>`).join('');
   }
   
   if (tabsContainer) {
     const currentActive = tabsContainer.querySelector('.memo-sub-tab.active')?.dataset.category || 'all';
-    let html = `<button class="memo-sub-tab ${currentActive === 'all' ? 'active' : ''}" data-category="all">TẤT CẢ</button>`;
+    let html = `<button class="memo-sub-tab ${currentActive === 'all' ? 'active' : ''}" data-category="all">${getCategoryDisplayName('all').toUpperCase()}</button>`;
     html += categories.map(c => `
-      <button class="memo-sub-tab ${currentActive === c ? 'active' : ''}" data-category="${c}">${c.toUpperCase()}</button>
+      <button class="memo-sub-tab ${currentActive === c ? 'active' : ''}" data-category="${c}">${getCategoryDisplayName(c).toUpperCase()}</button>
     `).join('');
     tabsContainer.innerHTML = html;
   }
@@ -249,7 +260,7 @@ export async function loadMemos() {
   const activeTab = document.querySelector('#memoCategoryTabs .memo-sub-tab.active');
   const filter = activeTab ? activeTab.dataset.category : 'all';
   if (filter !== 'all') {
-    notes = notes.filter(n => (n.category || 'Chung') === filter);
+    notes = notes.filter(n => (n.category || 'General') === filter);
   }
 
   // Update badge
@@ -265,7 +276,7 @@ export async function loadMemos() {
   }
 
   const settingsRes = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS]);
-  const categories = settingsRes[STORAGE_KEYS.SETTINGS]?.memoCategories || ['Chung', 'Công việc', 'Cá nhân', 'Ý tưởng'];
+  const categories = settingsRes[STORAGE_KEYS.SETTINGS]?.memoCategories || ['General', 'Work', 'Personal', 'Ideas'];
 
   noteList.innerHTML = notes.map(note => renderNoteCard(note, categories)).join('');
 }
@@ -273,7 +284,7 @@ export async function loadMemos() {
 /**
  * Renders a note card component
  */
-function renderNoteCard(note, categories = ['Chung', 'Công việc', 'Cá nhân', 'Ý tưởng']) {
+function renderNoteCard(note, categories = ['General', 'Work', 'Personal', 'Ideas']) {
   const cachedConfig = _state.getConfig();
   const currentTeam = _state.getTeam();
   const permalink = note.postId && cachedConfig
@@ -284,15 +295,15 @@ function renderNoteCard(note, categories = ['Chung', 'Công việc', 'Cá nhân'
   const rawText = note.note || '';
   const hasOriginalPost = note.postId && note.postText && note.postText !== note.note;
   
-  const categoryLabel = note.category || 'Chung';
+  const categoryLabel = note.category || 'General';
   const categoryOptions = categories.map(c => `
-    <option value="${c}" ${c === categoryLabel ? 'selected' : ''}>${c}</option>
+    <option value="${c}" ${c === categoryLabel ? 'selected' : ''}>${getCategoryDisplayName(c)}</option>
   `).join('');
 
   return `
     <div class="memo-item note-item" id="item_${note.id}">
       <div class="note-content-row" style="display:flex; align-items:flex-start;">
-        <button class="collapse-btn" data-id="${note.id}" style="margin-right: 4px;" title="Mở rộng/Thu gọn">▶</button>
+        <button class="collapse-btn" data-id="${note.id}" style="margin-right: 4px;" title="${language.expandCollapseBtn || 'Expand/Collapse'}">▶</button>
         <div class="memo-note-text note-body collapsible-body collapsed" style="flex:1; min-width:0; margin-top:2px;">${escapedText}</div>
         <button class="btn-copy-note" data-text="${rawText.replace(/"/g, '&quot;')}" title="${language.memoCopyNote}" style="flex-shrink:0; margin-left:8px;">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
@@ -302,7 +313,7 @@ function renderNoteCard(note, categories = ['Chung', 'Công việc', 'Cá nhân'
         </button>
       </div>
       <div style="margin-top:4px; display:flex; align-items:center; gap:6px;">
-        <span style="font-size:10px; color:var(--text-3); font-weight:600; display:flex; align-items:center; gap:2px;">📁 Danh mục:</span>
+        <span style="font-size:10px; color:var(--text-3); font-weight:600; display:flex; align-items:center; gap:2px;">📁 ${language.categoryLabel || 'Category:'}</span>
         <select class="note-edit-category" data-id="${note.id}" style="font-size:10px; padding:1px 4px; background:var(--bg-2); border:1px solid var(--border); border-radius:10px; color:var(--text-2); font-weight:600; outline:none; cursor:pointer;">
           ${categoryOptions}
         </select>
@@ -314,7 +325,7 @@ function renderNoteCard(note, categories = ['Chung', 'Công việc', 'Cá nhân'
         </div>
         <div class="memo-actions">
           ${permalink ? `<a href="${permalink}" class="post-jump-link" title="${language.memoViewOriginal}">↗</a>` : ''}
-          <button class="btn-edit-memo" data-id="${note.id}" title="Chỉnh sửa ghi chú">
+          <button class="btn-edit-memo" data-id="${note.id}" title="${language.editNote || 'Edit Note'}">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none; opacity:0.85;">
               <path d="M12 20h9"></path>
               <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>

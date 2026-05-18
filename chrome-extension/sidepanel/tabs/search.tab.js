@@ -63,7 +63,7 @@ export function setup(state) {
       updateSearchButtonState();
       termsInput.focus();
       const resultsEl = document.getElementById('spSearchResults');
-      if (resultsEl) resultsEl.innerHTML = `<div class="empty-state">Nhập từ khóa và nhấn tìm kiếm</div>`;
+      if (resultsEl) resultsEl.innerHTML = `<div class="empty-state">${language.searchEmptyState}</div>`;
       searchState.terms = '';
     });
   }
@@ -313,7 +313,7 @@ export async function performSpSearch(isLoadMore = false) {
             <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style="margin-right: 4px;">
               <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
             </svg>
-            Xóa kết quả
+            ${language.clearResults || 'Clear Results'}
           </button>
         </div>
         <div id="searchPostList">${html}</div>

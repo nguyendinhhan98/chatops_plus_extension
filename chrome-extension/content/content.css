@@ -7,18 +7,25 @@
   right: 20px;
   width: 44px;
   height: 44px;
-  border-radius: 50%;
+  border-radius: 8px;
   cursor: pointer;
   z-index: 99999;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.2s ease;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   user-select: none;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  border: 1px solid rgba(0,0,0,0.06);
 }
 
-#chatops-ext-floating-btn:hover { transform: scale(1.06); }
-#chatops-ext-floating-btn.dragging { opacity: 0.85; }
+#chatops-ext-floating-btn:hover {
+  transform: scale(1.06);
+  border-radius: 4px;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.22);
+  filter: brightness(0.98);
+}
 
 #chatops-ext-close-btn {
   position: absolute;
@@ -34,6 +41,34 @@
   border: 1px solid rgba(255,255,255,0.12);
 }
 #chatops-ext-floating-btn:hover #chatops-ext-close-btn { display: flex; }
+
+/* ─── Floating Button Badge ─── */
+#chatops-ext-floating-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #d04444;
+  color: #ffffff;
+  font-family: 'Open Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 1.5px solid #ffffff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+  line-height: 1;
+  pointer-events: none;
+  z-index: 10;
+}
+
+#chatops-ext-floating-badge.hidden {
+  display: none !important;
+}
 
 /* ─── Quick Note Inject Button ─── */
 .chatops-quick-note-btn {
@@ -231,6 +266,17 @@
   font-size: 12px; color: #6a6a6c; font-style: italic;
 }
 
+.settings-subtab-link {
+  color: var(--chatops-accent) !important;
+  font-weight: 700;
+  text-decoration: underline !important;
+  cursor: pointer !important;
+  transition: opacity 0.2s ease;
+}
+.settings-subtab-link:hover {
+  opacity: 0.8 !important;
+}
+
 /* Buttons */
 .cqn-actions {
   display: flex; gap: 8px; padding: 8px 13px 12px;
@@ -378,7 +424,7 @@
 }
 
 /* ─── Image Library Picker ─── */
-.chatops-meme-picker {
+.chatops-image-picker {
   position: absolute; bottom: 50px; right: 0;
   width: 320px; max-height: 480px;
   background: #ffffff; border: 1px solid #e0e0e5;
@@ -388,7 +434,7 @@
   z-index: 20000; overflow: hidden;
   font-family: 'Inter', sans-serif; color: #1a1a1c;
 }
-.chatops-meme-picker-header {
+.chatops-image-picker-header {
   padding: 10px 12px;
   border-bottom: 1px solid #e0e0e5;
   display: flex; justify-content: space-between; align-items: center;
@@ -396,7 +442,7 @@
   background: #f5f5f7;
   cursor: default;
 }
-.chatops-meme-close-btn {
+.chatops-image-close-btn {
   background: rgba(0,0,0,0.06);
   border: none;
   border-radius: 50%;
@@ -408,17 +454,17 @@
   transition: all 0.2s;
   outline: none;
 }
-.chatops-meme-close-btn:hover {
+.chatops-image-close-btn:hover {
   background: rgba(220, 38, 38, 0.1);
   color: #dc2626;
 }
-.chatops-meme-upload-area {
+.chatops-image-upload-area {
   padding: 10px 12px;
   background: #fafafa;
   border-bottom: 1px solid #e0e0e5;
   flex-shrink: 0;
 }
-.chatops-meme-upload-btn {
+.chatops-image-upload-btn {
   font-size: 12px;
   font-weight: 600;
   color: #1c58d9;
@@ -434,16 +480,16 @@
   white-space: nowrap;
   user-select: none;
 }
-.chatops-meme-upload-btn:hover {
+.chatops-image-upload-btn:hover {
   background: rgba(28, 88, 217, 0.12);
   border-color: rgba(28, 88, 217, 0.35);
   transform: translateY(-0.5px);
 }
-.chatops-meme-upload-btn:active {
+.chatops-image-upload-btn:active {
   background: rgba(28, 88, 217, 0.18);
   transform: translateY(0.5px);
 }
-.chatops-custom-memes-grid-container {
+.chatops-custom-images-grid-container {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
@@ -452,26 +498,29 @@
   max-height: 360px;
   overflow-y: auto;
 }
-.chatops-custom-meme-cell {
+.chatops-custom-image-cell {
   position: relative;
   border-radius: 6px;
   overflow: hidden;
   border: 1px solid #e0e0e5;
-  aspect-ratio: 1;
+  width: 100%;
+  padding-top: 100%; /* Classic aspect ratio 1:1 box trick */
   background: #f3f4f6;
 }
-.chatops-custom-meme-item {
+.chatops-custom-image-item {
+  position: absolute;
+  top: 0; left: 0;
   width: 100%; height: 100%;
   object-fit: cover;
   cursor: pointer;
   display: block;
   transition: opacity 0.15s, transform 0.15s;
 }
-.chatops-custom-meme-item:hover {
+.chatops-custom-image-item:hover {
   opacity: 0.85;
   transform: scale(1.03);
 }
-.chatops-custom-meme-delete {
+.chatops-custom-image-delete {
   position: absolute; top: 3px; right: 3px;
   background: rgba(0,0,0,0.65);
   color: white;
@@ -486,10 +535,11 @@
   outline: none;
   opacity: 0;
   transition: opacity 0.2s, background 0.2s;
+  z-index: 5;
 }
-.chatops-custom-meme-cell:hover .chatops-custom-meme-delete { opacity: 1; }
-.chatops-custom-meme-delete:hover { background: rgba(220, 38, 38, 0.9); }
-.chatops-meme-empty {
+.chatops-custom-image-cell:hover .chatops-custom-image-delete { opacity: 1; }
+.chatops-custom-image-delete:hover { background: rgba(220, 38, 38, 0.9); }
+.chatops-image-empty {
   font-size: 11.5px;
   color: #999;
   text-align: center;
@@ -498,7 +548,7 @@
   padding: 16px 0;
   display: block;
 }
-.chatops-meme-preview-overlay {
+.chatops-image-preview-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
   background: rgba(0,0,0,0.85);
@@ -509,8 +559,8 @@
   justify-content: center;
   cursor: zoom-out;
 }
-.chatops-meme-preview-overlay.hidden { display: none; }
-.chatops-meme-preview-overlay img {
+.chatops-image-preview-overlay.hidden { display: none; }
+.chatops-image-preview-overlay img {
   max-width: 85vw;
   max-height: 85vh;
   object-fit: contain;
@@ -518,10 +568,10 @@
   box-shadow: 0 10px 40px rgba(0,0,0,0.5);
   border: 2px solid rgba(255,255,255,0.2);
 }
-.chatops-meme-picker.hidden { display: none !important; }
+.chatops-image-picker.hidden { display: none !important; }
 
-/* Injected Meme Button matching other borderless icons in ChatOps toolbar */
-#chatops-ext-meme-btn {
+/* Injected Image Button matching other borderless icons in ChatOps toolbar */
+#chatops-ext-image-btn {
   background: transparent !important;
   border: none !important;
   border-radius: 4px !important;
@@ -538,26 +588,26 @@
   padding: 0 !important;
   outline: none !important;
 }
-#chatops-ext-meme-btn:hover {
+#chatops-ext-image-btn:hover {
   background: rgba(0, 0, 0, 0.05) !important;
   transform: scale(1.05) !important;
 }
-#chatops-ext-meme-btn:active {
+#chatops-ext-image-btn:active {
   transform: scale(0.95) !important;
 }
 
-/* Custom Scrollbar for Horizontal Meme Grid */
-#chatops-custom-memes-grid::-webkit-scrollbar {
+/* Custom Scrollbar for Horizontal Image Grid */
+#chatops-custom-images-grid::-webkit-scrollbar {
   height: 4px;
 }
-#chatops-custom-memes-grid::-webkit-scrollbar-track {
+#chatops-custom-images-grid::-webkit-scrollbar-track {
   background: transparent;
 }
-#chatops-custom-memes-grid::-webkit-scrollbar-thumb {
+#chatops-custom-images-grid::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 4px;
 }
-#chatops-custom-memes-grid::-webkit-scrollbar-thumb:hover {
+#chatops-custom-images-grid::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
 

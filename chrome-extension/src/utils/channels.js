@@ -51,7 +51,7 @@ export async function enrichChannels(channels, currentUser) {
  * @returns {Boolean}
  */
 export function isDM(channel) {
-  return channel.type === 'D' || (channel.name && channel.name.includes('__')) || channel.display_name === 'Tin nhắn trực tiếp';
+  return channel.type === 'D' || (channel.name && channel.name.includes('__')) || channel.display_name === 'Direct Message';
 }
 
 /**

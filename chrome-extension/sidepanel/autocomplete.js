@@ -18,7 +18,7 @@ export function setupAutocomplete(inputId, fetchOptions, renderFn, onSelectFn) {
   clearBtn.innerHTML = '✕';
   clearBtn.className = 'autocomplete-clear';
   clearBtn.style.display = inputEl.value ? 'flex' : 'none';
-  clearBtn.title = 'Xóa';
+  clearBtn.title = 'Clear';
   wrapper.appendChild(clearBtn);
   
   const dropdown = document.createElement('div');

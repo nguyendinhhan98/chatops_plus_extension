@@ -107,7 +107,6 @@ const STANDARD_EMOJIS = [
   { name: 'tomato', char: '🍅' },
   { name: 'eggplant', char: '🍆' },
   { name: 'avocado', char: '🥑' },
-  { name: 'broccoli', char: ' Broccoli ' },
   { name: 'hot_pepper', char: '🌶️' },
   { name: 'corn', char: '🌽' },
   { name: 'carrot', char: '🥕' },
@@ -229,11 +228,12 @@ const DEFAULT_SETTINGS = {
     notes: true,
     missed: true
   },
-  memoCategories: ['Chung', 'Công việc', 'Cá nhân', 'Ý tưởng'],
+  memoCategories: ['General', 'Work', 'Personal', 'Ideas'],
   spamEnabled: true,
+  memeEnabled: true,
   spamEmojis: ['thumbsup', 'heart', 'fire', 'rocket', 'laughing'],
   autoCleanupDays: 30,
-  notificationType: 'both'
+  notificationType: 'in-page'
 };
 
 /**
@@ -248,7 +248,33 @@ export async function setup(state) {
 
 export async function getSettings() {
   const res = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS]);
-  return { ...DEFAULT_SETTINGS, ...res[STORAGE_KEYS.SETTINGS] };
+  const settings = { ...DEFAULT_SETTINGS, ...res[STORAGE_KEYS.SETTINGS] };
+
+  // Auto-migrate old Vietnamese default categories to English
+  if (settings.memoCategories) {
+    const vnToEnMap = {
+      'chung': 'General',
+      'công việc': 'Work',
+      'cá nhân': 'Personal',
+      'ý tưởng': 'Ideas'
+    };
+    let migrated = false;
+    const newCategories = settings.memoCategories.map(cat => {
+      const lower = cat.trim().toLowerCase();
+      if (vnToEnMap[lower]) {
+        migrated = true;
+        return vnToEnMap[lower];
+      }
+      return cat;
+    });
+
+    if (migrated) {
+      settings.memoCategories = newCategories;
+      await chrome.storage.local.set({ [STORAGE_KEYS.SETTINGS]: settings });
+    }
+  }
+
+  return settings;
 }
 
 async function loadAndApplySettings() {
@@ -302,6 +328,17 @@ async function loadAndApplySettings() {
     }
   }
 
+  // Apply personal memes toggle
+  const chkMemeEnabled = document.getElementById('settingMemeEnabled');
+  if (chkMemeEnabled) {
+    chkMemeEnabled.checked = settings.memeEnabled !== false;
+    const configArea = document.getElementById('personalMemesConfigArea');
+    if (configArea) {
+      configArea.style.opacity = chkMemeEnabled.checked ? '1' : '0.5';
+      configArea.style.pointerEvents = chkMemeEnabled.checked ? 'auto' : 'none';
+    }
+  }
+
   // Pre-load selected, standard grid, and personal memes
   renderSelectedEmojis(settings);
   renderStandardEmojiGrid(settings);
@@ -313,7 +350,7 @@ async function loadAndApplySettings() {
   // Update snooze hint text dynamically
   const snoozeHint = document.getElementById('snoozeHintText');
   if (snoozeHint) {
-    snoozeHint.textContent = language.taskReminderHint.replace('{minutes}', settings.snoozeMinutes);
+    snoozeHint.innerHTML = language.taskReminderHint.replace('{minutes}', settings.snoozeMinutes);
   }
 
   // Update cloud sync status
@@ -330,6 +367,28 @@ function setupEventListeners() {
       compressSidepanelImage(file, 1000, 1000, 0.9, async (dataUrl) => {
         const res = await chrome.storage.local.get(['custom_memes']);
         const customMemes = res.custom_memes || [];
+
+        const getBase64Size = (url) => {
+          if (!url) return 0;
+          const base64Part = url.split(',')[1];
+          if (!base64Part) return url.length;
+          const padding = base64Part.endsWith('==') ? 2 : (base64Part.endsWith('=') ? 1 : 0);
+          return (base64Part.length * 3 / 4) - padding;
+        };
+
+        let totalBytes = 0;
+        customMemes.forEach(url => {
+          totalBytes += getBase64Size(url);
+        });
+
+        const newBytes = getBase64Size(dataUrl);
+
+        if (totalBytes + newBytes > 10 * 1024 * 1024) {
+          alert(language.storageLimitExceeded || 'Storage limit reached (10 MB). Please delete some images before uploading.');
+          fileInput.value = '';
+          return;
+        }
+
         customMemes.unshift(dataUrl);
         await chrome.storage.local.set({ custom_memes: customMemes });
         fileInput.value = '';
@@ -389,7 +448,7 @@ function setupEventListeners() {
     
     const snoozeHint = document.getElementById('snoozeHintText');
     if (snoozeHint) {
-      snoozeHint.textContent = language.taskReminderHint.replace('{minutes}', val);
+      snoozeHint.innerHTML = language.taskReminderHint.replace('{minutes}', val);
     }
     showAutoSaveFeedback();
   });
@@ -412,16 +471,16 @@ function setupEventListeners() {
       }, (response) => {
         if (response && response.ok) {
           if (typeVal === 'in-page') {
-            alert('🟢 Đã gửi banner thử nghiệm thành công!\nVui lòng chuyển sang tab ChatOps đang mở để kiểm tra banner thông báo hiển thị ở đầu trang nhé.');
+            alert(language.testBannerSuccess);
           } else if (typeVal === 'system') {
-            alert('🟢 Chrome đã gửi thông báo đến hệ thống (OS) thành công!\nNếu vẫn không thấy banner hiện lên bên góc màn hình, bạn hãy kiểm tra xem có đang bật chế độ Tập trung (Focus/DND) hoặc bị kẹt thông báo trong Notification Center của máy không nhé.');
+            alert(language.testSystemSuccess);
           } else {
-            alert('🟢 Đã gửi thử nghiệm cả 2 hình thức thành công!\n1. Banner thông báo đã gửi đến tab ChatOps của bạn.\n2. Lệnh đẩy thông báo đã gửi đến hệ điều hành (OS) của máy tính.');
+            alert(language.testBothSuccess);
           }
         } else if (response && !response.ok) {
-          alert('🔴 Lỗi gửi thông báo từ background: ' + response.error);
+          alert((language.testErrorPrefix || '🔴 Background notification error: ') + response.error);
         } else if (!response) {
-          alert('🔴 Không thể kết nối đến Background Service Worker. Vui lòng Reload lại Extension ở trang chrome://extensions.');
+          alert(language.testBgWorkerError);
         }
       });
     });
@@ -458,6 +517,20 @@ function setupEventListeners() {
         configArea.style.opacity = e.target.checked ? '1' : '0.5';
         configArea.style.pointerEvents = e.target.checked ? 'auto' : 'none';
       }
+    });
+  }
+
+  const chkMemeEnabled = document.getElementById('settingMemeEnabled');
+  if (chkMemeEnabled) {
+    chkMemeEnabled.addEventListener('change', async (e) => {
+      await updateSettings({ memeEnabled: e.target.checked });
+      showAutoSaveFeedback();
+      const configArea = document.getElementById('personalMemesConfigArea');
+      if (configArea) {
+        configArea.style.opacity = e.target.checked ? '1' : '0.5';
+        configArea.style.pointerEvents = e.target.checked ? 'auto' : 'none';
+      }
+      chrome.runtime.sendMessage({ type: 'SETTINGS_UPDATED' });
     });
   }
 
@@ -583,13 +656,13 @@ function setupEventListeners() {
     // Check duplicate case-insensitively
     const isDuplicate = settings.memoCategories.some(cat => cat.toLowerCase() === val.toLowerCase());
     if (isDuplicate) {
-      showErrorFeedback("Danh mục này đã tồn tại!");
+      showErrorFeedback("This category already exists!");
       return;
     }
 
     // Check maximum 5 categories
     if (settings.memoCategories.length >= 5) {
-      showErrorFeedback("Tối đa chỉ được tạo 5 danh mục!");
+      showErrorFeedback("Maximum of 5 categories allowed!");
       return;
     }
     
@@ -613,10 +686,10 @@ function setupEventListeners() {
         // Check if there is active data associated with this category
         const resMemos = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
         const memos = resMemos[STORAGE_KEYS.MEMOS] || [];
-        const hasData = memos.some(m => m.type === 'memo' && (m.category || 'Chung') === cat);
+        const hasData = memos.some(m => m.type === 'memo' && (m.category || 'General') === cat);
         
         if (hasData) {
-          showErrorFeedback(`Danh mục "${cat}" đang chứa dữ liệu ghi chú, không thể xóa!`);
+          showErrorFeedback(`Category "${cat}" contains notes and cannot be deleted!`);
           return;
         }
         
@@ -653,6 +726,29 @@ function setupEventListeners() {
     }
   });
 
+  // Reactions sub-tabs
+  document.getElementById('reactionsSubTabs')?.addEventListener('click', (e) => {
+    if (e.target.classList.contains('memo-sub-tab')) {
+      const sectionId = e.target.dataset.section;
+      if (!sectionId) return;
+
+      // Update tabs
+      document.querySelectorAll('#reactionsSubTabs .memo-sub-tab').forEach(b => b.classList.remove('active'));
+      e.target.classList.add('active');
+
+      // Update panels
+      document.querySelectorAll('.reactions-tab-panel').forEach(p => {
+        p.style.display = 'none';
+        p.classList.remove('active');
+      });
+      const targetPanel = document.getElementById(`reactions-section-${sectionId}`);
+      if (targetPanel) {
+        targetPanel.style.display = 'block';
+        targetPanel.classList.add('active');
+      }
+    }
+  });
+
   // Handle click on sub-tabs inside panels (Reactions & Sync)
   document.querySelectorAll('.settings-subtab-bar').forEach(bar => {
     bar.addEventListener('click', (e) => {
@@ -671,7 +767,7 @@ function setupEventListeners() {
       btn.classList.add('active');
 
       // Find the parent panel (e.g. #settings-section-reactions or #settings-section-sync)
-      const panel = bar.closest('.settings-tab-panel');
+      const panel = bar.closest('.settings-tab-panel') || bar.closest('#tab-reactions');
       if (panel) {
         // Hide all subtab content divs inside this panel
         panel.querySelectorAll('.settings-subtab-content').forEach(content => {
@@ -687,6 +783,79 @@ function setupEventListeners() {
     });
   });
 
+  // Helper to programmatically navigate to a settings sub-tab
+  function navigateToSubtab(subtabName) {
+    let sectionId = '';
+    if (subtabName.startsWith('features-')) {
+      sectionId = 'features';
+    } else if (subtabName.startsWith('reactions-')) {
+      sectionId = 'reactions';
+    } else if (subtabName.startsWith('sync-')) {
+      sectionId = 'sync';
+    }
+
+    if (!sectionId) return;
+
+    // 1. Switch top-level Settings Category
+    const tabBtn = document.querySelector(`#settingsSubTabs .memo-sub-tab[data-section="${sectionId}"]`);
+    if (tabBtn) {
+      // Deactivate sibling top-level buttons
+      document.querySelectorAll('#settingsSubTabs .memo-sub-tab').forEach(b => b.classList.remove('active'));
+      // Activate target top-level button
+      tabBtn.classList.add('active');
+
+      // Show target section panel
+      document.querySelectorAll('.settings-tab-panel').forEach(p => {
+        p.style.display = 'none';
+        p.classList.remove('active');
+      });
+      const targetPanel = document.getElementById(`settings-section-${sectionId}`);
+      if (targetPanel) {
+        targetPanel.style.display = 'block';
+        targetPanel.classList.add('active');
+      }
+    }
+
+    // 2. Switch inside subtab panel
+    const subtabBtn = document.querySelector(`.settings-subtab-btn[data-subtab="${subtabName}"]`);
+    if (subtabBtn) {
+      const bar = subtabBtn.closest('.settings-subtab-bar');
+      if (bar) {
+        // Deactivate siblings in sub-tab bar
+        bar.querySelectorAll('.settings-subtab-btn').forEach(b => {
+          b.classList.remove('active');
+        });
+        // Activate clicked button
+        subtabBtn.classList.add('active');
+
+        const panel = bar.closest('.settings-tab-panel');
+        if (panel) {
+          // Hide all sub-tab contents in this panel
+          panel.querySelectorAll('.settings-subtab-content').forEach(content => {
+            content.style.display = 'none';
+          });
+          // Show target sub-tab content
+          const targetContent = panel.querySelector(`#subtab-content-${subtabName}`);
+          if (targetContent) {
+            targetContent.style.display = 'block';
+          }
+        }
+      }
+    }
+  }
+
+  // Handle click on custom links that navigate between sub-tabs
+  document.addEventListener('click', (e) => {
+    const link = e.target.closest('.settings-subtab-link');
+    if (link) {
+      e.preventDefault();
+      const subtabName = link.dataset.subtab;
+      if (subtabName) {
+        navigateToSubtab(subtabName);
+      }
+    }
+  });
+
   // Cloud Sync click listeners
   const btnBackup = document.getElementById('btnSyncCloudBackup');
   const btnRestore = document.getElementById('btnSyncCloudRestore');
@@ -695,7 +864,7 @@ function setupEventListeners() {
     btnBackup.addEventListener('click', async () => {
       try {
         btnBackup.disabled = true;
-        btnBackup.textContent = '⏳ Đang sao lưu...';
+        btnBackup.textContent = '⏳ ' + (language.backingUp || 'Backing up...');
         
         // Get memos from local
         const localRes = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
@@ -731,13 +900,13 @@ function setupEventListeners() {
         await updateSyncStatusText();
         showAutoSaveFeedback();
         
-        alert('🎉 Đã sao lưu dữ liệu lên tài khoản Google thành công!');
+        alert(language.backupSuccess);
       } catch (err) {
         console.error('[ChatOps Ext] Cloud backup error:', err);
-        alert('❌ Sao lưu thất bại. Vui lòng thử lại.');
+        alert(language.backupFailed);
       } finally {
         btnBackup.disabled = false;
-        btnBackup.textContent = '📤 Sao lưu lên Cloud';
+        btnBackup.textContent = '📤 ' + (language.backupToCloud || 'Backup to Cloud');
       }
     });
   }
@@ -745,11 +914,11 @@ function setupEventListeners() {
   if (btnRestore) {
     btnRestore.addEventListener('click', async () => {
       try {
-        const confirmRestore = confirm('⚠️ Bạn có chắc chắn muốn khôi phục dữ liệu từ Cloud?\nDữ liệu ghi chú & việc làm trên máy này sẽ bị GHI ĐÈ hoàn toàn bởi dữ liệu từ tài khoản Google của bạn.');
+        const confirmRestore = confirm(language.confirmRestore);
         if (!confirmRestore) return;
         
         btnRestore.disabled = true;
-        btnRestore.textContent = '⏳ Đang khôi phục...';
+        btnRestore.textContent = '⏳ ' + (language.restoring || 'Restoring...');
         
         // Get all keys from sync
         const allSyncData = await chrome.storage.sync.get(null);
@@ -779,13 +948,13 @@ function setupEventListeners() {
         // Force reload all UI tabs
         chrome.runtime.sendMessage({ type: MESSAGE_TYPES.MEMO_UPDATED });
         
-        alert('🎉 Đã khôi phục dữ liệu từ tài khoản Google thành công!');
+        alert(language.restoreSuccess);
       } catch (err) {
         console.error('[ChatOps Ext] Cloud restore error:', err);
-        alert('❌ Khôi phục thất bại. Vui lòng thử lại.');
+        alert(language.restoreFailed);
       } finally {
         btnRestore.disabled = false;
-        btnRestore.textContent = '📥 Khôi phục từ Cloud';
+        btnRestore.textContent = '📥 ' + (language.restoreFromCloud || 'Restore from Cloud');
       }
     });
   }
@@ -809,25 +978,32 @@ function setupEventListeners() {
   const btnManualCleanup = document.getElementById('btnManualCleanupNow');
   if (btnManualCleanup) {
     btnManualCleanup.addEventListener('click', async () => {
-      const confirmCleanup = confirm('🧹 Bạn có chắc chắn muốn dọn dẹp các ghi chú & việc làm đã hoàn thành cũ hơn thời gian thiết lập ngay bây giờ không?');
+      const confirmCleanup = confirm(language.confirmCleanup);
       if (!confirmCleanup) return;
       
       btnManualCleanup.disabled = true;
-      btnManualCleanup.textContent = '⏳ Đang dọn dẹp...';
+      btnManualCleanup.textContent = '⏳ ' + (language.cleaningUp || 'Cleaning up...');
       
       try {
         const deletedCount = await runAutoCleanupForce();
         await updateStorageUsageDisplay();
-        alert(`🎉 Đã dọn dẹp thành công! Đã xóa ${deletedCount} mục cũ khỏi bộ nhớ máy.`);
+        alert(language.cleanupSuccess.replace('{count}', deletedCount));
       } catch (err) {
         console.error('[ChatOps Ext] Manual cleanup error:', err);
-        alert('❌ Dọn dẹp thất bại. Vui lòng thử lại.');
+        alert(language.cleanupFailed);
       } finally {
         btnManualCleanup.disabled = false;
-        btnManualCleanup.textContent = '🧹 Dọn dẹp ngay bây giờ';
+        btnManualCleanup.textContent = '🧹 ' + (language.cleanUpNow || 'Clean up now');
       }
     });
   }
+
+  // Listen for storage changes to sync custom images reactively
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName === 'local' && changes.custom_memes) {
+      renderSidepanelMemes();
+    }
+  });
 }
 
 async function updateSyncStatusText() {
@@ -843,9 +1019,10 @@ async function updateSyncStatusText() {
     const mins = String(date.getMinutes()).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
-    syncStatusEl.innerHTML = `☁️ Đồng bộ lần cuối: <strong style="color:var(--success); font-weight:700;">${hrs}:${mins} - ${day}/${month}</strong>`;
+    const timeStr = `${hrs}:${mins} - ${day}/${month}`;
+    syncStatusEl.innerHTML = language.lastSyncText.replace('{time}', timeStr);
   } else {
-    syncStatusEl.innerHTML = `⏳ Chưa từng sao lưu hoặc khôi phục trên máy này.`;
+    syncStatusEl.innerHTML = language.neverSyncedText;
   }
 
   // Update storage usage display
@@ -854,9 +1031,10 @@ async function updateSyncStatusText() {
 
 function formatBytes(bytes) {
   if (bytes === 0) return '0 B';
-  if (bytes < 1024) return `${bytes} B`;
-  const kb = (bytes / 1024).toFixed(1);
-  return `${kb} KB`;
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }
 
 async function updateStorageUsageDisplay() {
@@ -867,10 +1045,12 @@ async function updateStorageUsageDisplay() {
     const localBytes = await chrome.storage.local.getBytesInUse(null);
     const syncBytes = await chrome.storage.sync.getBytesInUse(null);
     
-    displayEl.innerHTML = `💻 Máy này: <strong style="color:var(--accent);">${formatBytes(localBytes)}</strong> | ☁️ Đám mây: <strong style="color:var(--success);">${formatBytes(syncBytes)}</strong> / 100KB`;
+    displayEl.innerHTML = language.storageUsageText
+      .replace('{local}', formatBytes(localBytes))
+      .replace('{sync}', formatBytes(syncBytes));
   } catch (err) {
     console.error('[ChatOps Ext] Failed to get storage usage:', err);
-    displayEl.textContent = 'Không khả dụng';
+    displayEl.textContent = 'N/A';
   }
 }
 
@@ -879,10 +1059,15 @@ function showAutoSaveFeedback() {
   if (fb) {
     fb.style.display = 'block';
     fb.style.color = 'var(--success)';
-    fb.style.background = 'rgba(46, 204, 113, 0.1)';
-    fb.style.border = '1px solid var(--success)';
-    fb.style.borderRadius = 'var(--radius-sm)';
-    fb.textContent = 'Đã tự động lưu';
+    fb.style.background = 'rgba(46, 204, 113, 0.12)';
+    fb.style.border = 'none';
+    fb.style.borderTop = '1px solid rgba(46, 204, 113, 0.2)';
+    fb.style.borderRadius = '0 0 12px 12px';
+    fb.style.padding = '10px 14px';
+    fb.style.marginTop = '0';
+    fb.style.boxSizing = 'border-box';
+    fb.style.fontFamily = 'inherit';
+    fb.textContent = language.autoSaved || 'Auto-saved';
     setTimeout(() => { fb.style.display = 'none'; }, 2000);
   }
 }
@@ -892,9 +1077,14 @@ function showErrorFeedback(message) {
   if (fb) {
     fb.style.display = 'block';
     fb.style.color = '#e74c3c';
-    fb.style.background = 'rgba(231, 76, 60, 0.1)';
-    fb.style.border = '1px solid #e74c3c';
-    fb.style.borderRadius = 'var(--radius-sm)';
+    fb.style.background = 'rgba(231, 76, 60, 0.12)';
+    fb.style.border = 'none';
+    fb.style.borderTop = '1px solid rgba(231, 76, 60, 0.2)';
+    fb.style.borderRadius = '0 0 12px 12px';
+    fb.style.padding = '10px 14px';
+    fb.style.marginTop = '0';
+    fb.style.boxSizing = 'border-box';
+    fb.style.fontFamily = 'inherit';
     fb.textContent = message;
     setTimeout(() => { fb.style.display = 'none'; }, 3000);
   }
@@ -920,7 +1110,7 @@ function renderSelectedEmojis(settings) {
   }
 
   if (currentList.length === 0) {
-    container.innerHTML = `<span style="font-size:12px; color:var(--text-3); font-style:italic;">Chưa chọn biểu cảm nào. Vui lòng chọn bên dưới!</span>`;
+    container.innerHTML = `<span style="font-size:12px; color:var(--text-3); font-style:italic;">No emojis selected. Select from below!</span>`;
     return;
   }
 
@@ -939,7 +1129,7 @@ function renderSelectedEmojis(settings) {
     }
 
     return `
-      <div class="selected-emoji-tag" data-name="${name}" title="Click để xóa">
+      <div class="selected-emoji-tag" data-name="${name}" title="Click to remove">
         ${content}
         <span style="font-size:11px; font-weight:500;">${name}</span>
         <span class="emoji-tag-remove">&times;</span>
@@ -964,7 +1154,7 @@ function renderStandardEmojiGrid(settings, filterQuery = '') {
   const filtered = STANDARD_EMOJIS.filter(item => item.name.toLowerCase().includes(filterQuery));
 
   if (filtered.length === 0) {
-    grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--text-3); font-size:12px;">Không tìm thấy biểu cảm nào phù hợp.</div>`;
+    grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--text-3); font-size:12px;">No matching emojis found.</div>`;
     return;
   }
 
@@ -1021,7 +1211,7 @@ async function loadNextCustomEmojiPage(settings) {
     console.error('Failed to load next custom emojis page:', err);
     const gridItems = document.getElementById('customEmojiGridItems');
     if (gridItems && gridItems.children.length === 0) {
-      gridItems.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:20px; color:#e74c3c; font-size:12px;">Không thể kết nối đến ChatOps server hoặc chưa đồng bộ cookie.</div>`;
+      gridItems.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:20px; color:#e74c3c; font-size:12px;">Cannot connect to ChatOps server or cookies not synced.</div>`;
     }
   } finally {
     isLoadingCustomEmojis = false;
@@ -1046,7 +1236,7 @@ function renderCustomEmojiGrid(settings, filterQuery = '') {
 
   if (filtered.length === 0) {
     if (customEmojiPage <= 1) {
-      gridItems.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--text-3); font-size:12px;">Không tìm thấy hình ảnh nào phù hợp.</div>`;
+      gridItems.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--text-3); font-size:12px;">No matching custom emojis found.</div>`;
     }
     return;
   }
@@ -1081,7 +1271,7 @@ async function toggleEmojiSelection(emojiName) {
     list = list.filter(name => name !== emojiName);
   } else {
     if (list.length >= 20) {
-      showErrorFeedback('Chỉ chọn tối đa 20 biểu cảm thả spam!');
+      showErrorFeedback('Select up to 20 emojis for spam!');
       return;
     }
     list.push(emojiName);
@@ -1107,7 +1297,7 @@ function renderCategoryList(categories) {
   listEl.innerHTML = categories.map(cat => `
     <li style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:var(--bg-2); border-radius:6px; border:1px solid var(--border);">
       <span style="font-size:14.5px; font-weight:600; color:var(--text-1);">${escapeHtml(cat)}</span>
-      <button class="btn-delete-cat btn-delete-memo" data-cat="${escapeHtml(cat)}" title="Xóa">
+      <button class="btn-delete-cat btn-delete-memo" data-cat="${escapeHtml(cat)}" title="Delete">
         <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style="pointer-events:none;"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>
       </button>
     </li>
@@ -1219,11 +1409,11 @@ export async function renderSidepanelMemes() {
   // Update dynamic storage indicators
   const storageText = document.getElementById('sidepanel-memes-storage-text');
   const storageBar = document.getElementById('sidepanel-memes-storage-bar');
-  const maxStorageBytes = 5 * 1024 * 1024; // 5MB limit
+  const maxStorageBytes = 10 * 1024 * 1024; // 10MB limit
 
   if (storageText && storageBar) {
     const totalFormatted = formatSize(totalBytes);
-    storageText.textContent = `${totalFormatted} / 5 MB`;
+    storageText.textContent = `${totalFormatted} / 10 MB`;
     const percent = Math.min((totalBytes / maxStorageBytes) * 100, 100);
     storageBar.style.width = `${percent}%`;
     
@@ -1237,7 +1427,7 @@ export async function renderSidepanelMemes() {
   }
 
   if (customMemes.length === 0) {
-    container.innerHTML = `<span style="font-size:12px; color:var(--text-3); grid-column: 1/-1; text-align: center; margin: auto; padding: 10px;">Chưa có ảnh tự thêm. Tải lên để sử dụng!</span>`;
+    container.innerHTML = `<span style="font-size:12px; color:var(--text-3); grid-column: 1/-1; text-align: center; margin: auto; padding: 10px;">No custom memes yet. Upload to start!</span>`;
     return;
   }
 
@@ -1304,7 +1494,7 @@ export async function runAutoCleanup() {
   
   let cutoffTime;
   if (days === -1) {
-    cutoffTime = Date.now() + 10000; // Ngay lập tức (cộng thêm 10s sai lệch hệ thống)
+    cutoffTime = Date.now() + 10000; // Immediately (with 10s system tolerance)
   } else {
     cutoffTime = Date.now() - (days * 24 * 60 * 60 * 1000);
   }
@@ -1331,7 +1521,7 @@ export async function runAutoCleanup() {
 }
 
 export async function runAutoCleanupForce() {
-  // Đối với nút bấm thủ công "Dọn dẹp ngay", dọn sạch TOÀN BỘ các mục đã hoàn thành ngay lập tức không cần lọc ngày
+  // For the manual "Clean up now" button, immediately clear ALL completed items without date filtering
   const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
   const memos = res[STORAGE_KEYS.MEMOS] || [];
   

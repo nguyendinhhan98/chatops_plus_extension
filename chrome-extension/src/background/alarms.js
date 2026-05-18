@@ -79,7 +79,7 @@ export async function handleTaskAlarm(taskId) {
       chrome.notifications.create(taskId, {
         type: 'basic',
         iconUrl: chrome.runtime.getURL('icons/icon128.png'),
-        title: '🎯 Nhắc nhở ChatOps++',
+        title: '🎯 ChatOps++ Reminder',
         message: message,
         priority: 2,
         requireInteraction: true
@@ -96,9 +96,10 @@ export async function handleTaskAlarm(taskId) {
     chrome.action.setBadgeText({ text: '!' });
     chrome.action.setBadgeBackgroundColor({ color: '#d0454c' });
 
-    // Reschedule alarm for every 5 minutes until done
-    chrome.alarms.create(taskId, { delayInMinutes: UI_CONFIG.TASK_SNOOZE_MINUTES });
-    console.log('[ChatOps Ext] Task alarm fired and rescheduled:', taskId);
+    // Reschedule alarm dynamically using user's settings snooze minutes (default 5)
+    const snoozeMinutes = settings.snoozeMinutes || 5;
+    chrome.alarms.create(taskId, { delayInMinutes: snoozeMinutes });
+    console.log('[ChatOps Ext] Task alarm fired and rescheduled:', taskId, 'with snooze:', snoozeMinutes, 'mins');
 
   } catch (err) {
     console.error('[ChatOps Ext] handleTaskAlarm error:', err);
