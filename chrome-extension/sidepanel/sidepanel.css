@@ -1844,6 +1844,27 @@ input:checked + .toggle-slider:before { transform: translateX(16px); }
   background-color: var(--bg-1, #ffffff);
 }
 
+.sp-compact-select option {
+  background-color: var(--bg-1, #ffffff) !important;
+  color: var(--text-1, #1e293b) !important;
+  font-family: var(--font);
+  font-size: 11.5px;
+  font-weight: 500;
+  padding: 4px;
+}
+.sp-compact-select option[value="work"], .sp-compact-select option[value="Work"] {
+  color: #1c58d9 !important;
+}
+.sp-compact-select option[value="personal"], .sp-compact-select option[value="Personal"] {
+  color: #2b9e70 !important;
+}
+.sp-compact-select option[value="ideas"], .sp-compact-select option[value="Ideas"] {
+  color: #d97706 !important;
+}
+.sp-compact-select option[value="general"], .sp-compact-select option[value="General"] {
+  color: #4a4a4c !important;
+}
+
 .btn-edit-memo {
   background: rgba(28, 88, 217, 0.08) !important;
   color: var(--accent) !important;

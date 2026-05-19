@@ -565,6 +565,7 @@ function setupEventListeners() {
         // Reset the sibling custom color picker wrapper back to original gradient state if a preset was clicked
         const customWrapper = row.querySelector('.color-preset-custom-wrapper');
         if (customWrapper) {
+          customWrapper.classList.remove('active');
           customWrapper.dataset.color = '';
           customWrapper.style.background = 'linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet)';
           const customInput = customWrapper.querySelector('.custom-color-picker-input');
@@ -573,9 +574,9 @@ function setupEventListeners() {
         
         // Auto-save structural color
         const newSettings = {
-          headerColor: document.querySelector('.color-presets-row[data-key="headerColor"] .color-preset.active')?.dataset.color,
-          navColor: document.querySelector('.color-presets-row[data-key="navColor"] .color-preset.active')?.dataset.color,
-          accentColor: document.querySelector('.color-presets-row[data-key="accentColor"] .color-preset.active')?.dataset.color
+          headerColor: document.querySelector('.color-presets-row[data-key="headerColor"] .color-preset.active, .color-presets-row[data-key="headerColor"] .color-preset-custom-wrapper.active')?.dataset.color,
+          navColor: document.querySelector('.color-presets-row[data-key="navColor"] .color-preset.active, .color-presets-row[data-key="navColor"] .color-preset-custom-wrapper.active')?.dataset.color,
+          accentColor: document.querySelector('.color-presets-row[data-key="accentColor"] .color-preset.active, .color-presets-row[data-key="accentColor"] .color-preset-custom-wrapper.active')?.dataset.color
         };
         updateSettings(newSettings);
         applyThemeToDOM(newSettings);
@@ -598,9 +599,9 @@ function setupEventListeners() {
         
         // Auto-save structural color
         const newSettings = {
-          headerColor: document.querySelector('.color-presets-row[data-key="headerColor"] .color-preset.active')?.dataset.color,
-          navColor: document.querySelector('.color-presets-row[data-key="navColor"] .color-preset.active')?.dataset.color,
-          accentColor: document.querySelector('.color-presets-row[data-key="accentColor"] .color-preset.active')?.dataset.color
+          headerColor: document.querySelector('.color-presets-row[data-key="headerColor"] .color-preset.active, .color-presets-row[data-key="headerColor"] .color-preset-custom-wrapper.active')?.dataset.color,
+          navColor: document.querySelector('.color-presets-row[data-key="navColor"] .color-preset.active, .color-presets-row[data-key="navColor"] .color-preset-custom-wrapper.active')?.dataset.color,
+          accentColor: document.querySelector('.color-presets-row[data-key="accentColor"] .color-preset.active, .color-presets-row[data-key="accentColor"] .color-preset-custom-wrapper.active')?.dataset.color
         };
         await updateSettings(newSettings);
         applyThemeToDOM(newSettings);

@@ -729,7 +729,7 @@ html body #chatops-quick-note-popover textarea#cqn-note-text {
 .chatops-image-picker.hidden { display: none !important; }
 
 /* Injected Image Button matching other borderless icons in ChatOps toolbar */
-#chatops-ext-image-btn {
+.chatops-ext-image-picker-btn {
   background: transparent !important;
   border: none !important;
   border-radius: 4px !important;
@@ -746,11 +746,11 @@ html body #chatops-quick-note-popover textarea#cqn-note-text {
   padding: 0 !important;
   outline: none !important;
 }
-#chatops-ext-image-btn:hover {
+.chatops-ext-image-picker-btn:hover {
   background: rgba(0, 0, 0, 0.05) !important;
   transform: scale(1.05) !important;
 }
-#chatops-ext-image-btn:active {
+.chatops-ext-image-picker-btn:active {
   transform: scale(0.95) !important;
 }
 

@@ -466,7 +466,9 @@ async function renderCategories() {
   
   if (quickSelect) {
     quickSelect.innerHTML = categories.map(c => `<option value="${c}">📁 ${getCategoryDisplayName(c)}</option>`).join('');
-
+    if (typeof window.convertToCustomDropdown === 'function') {
+      window.convertToCustomDropdown('quickNoteCategory', '140px');
+    }
   }
   
   if (tabsContainer) {

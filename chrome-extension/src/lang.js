@@ -61,8 +61,8 @@ const en = {
 
   // Sidepanel Tasks Tab
   taskTabLabel: 'Tasks',
-  taskEmpty: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">How to use?</h4><p class="card-desc">Click the floating button (🎯) in the bottom-right to add a task, or hover over any message in ChatOps and click the 🎯 button to pin it as a task!</p></div></div>',
-  taskClickHint: '📌 Pin messages in ChatOps or click the floating "🎯" button in the bottom-right.',
+  taskEmpty: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">How to use?</h4><p class="card-desc">Click the floating button <span style="display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; width: 15px; height: 15px; border-radius: 50%; font-size: 10px; font-weight: bold; line-height: 1; margin: 0 2px; vertical-align: middle; position: relative; top: -1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">+</span> in the bottom-right to add a task, or hover over any message in ChatOps and click the 🎯 button to pin it as a task!</p></div></div>',
+  taskClickHint: '📌 Pin messages in ChatOps or click the floating <span style="display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; width: 14px; height: 14px; border-radius: 50%; font-size: 9px; font-weight: bold; line-height: 1; margin: 0 2px; vertical-align: middle; position: relative; top: -1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">+</span> button in the bottom-right.',
   taskPending: 'Pending',
   taskCompleted: 'Completed',
   taskClearAll: 'Clear All',
@@ -83,8 +83,8 @@ const en = {
 
   // Sidepanel Memo (Notes) Tab
   memoTasksEmpty: 'No tasks yet.',
-  memoNotesEmpty: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">How to use?</h4><p class="card-desc">Click the floating button (📝) in the bottom-right to add a note, or hover over any message in ChatOps and click the 📝 button to pin it as a note!</p></div></div>',
-  memoClickHint: '📝 Pin notes in ChatOps or click the floating "📝" button in the bottom-right.',
+  memoNotesEmpty: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">How to use?</h4><p class="card-desc">Click the floating button <span style="display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; width: 15px; height: 15px; border-radius: 50%; font-size: 10px; font-weight: bold; line-height: 1; margin: 0 2px; vertical-align: middle; position: relative; top: -1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">+</span> in the bottom-right to add a note, or hover over any message in ChatOps and click the 📝 button to pin it as a note!<br><br>💡 <strong>Pro Tip:</strong> You can click on any individual line inside a note to copy only that line instantly!</p></div></div>',
+  memoClickHint: '📝 Pin notes in ChatOps or click the floating <span style="display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; width: 14px; height: 14px; border-radius: 50%; font-size: 9px; font-weight: bold; line-height: 1; margin: 0 2px; vertical-align: middle; position: relative; top: -1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">+</span> button in the bottom-right.',
   memoPending: 'Pending',
   memoCompleted: 'Completed',
   memoClearAll: 'Clear All',
@@ -247,10 +247,11 @@ const en = {
   settingsOverviewWelcome: 'Welcome to <strong style="color: var(--accent); font-weight: 700;">ChatOps++</strong>! Your productivity toolkit:',
   overviewSearchDesc: '<strong>Search Messages:</strong> Instant chat history query.',
   overviewTasksDesc: '<strong>Tasks:</strong> Smart task manager with snooze alerts.',
-  overviewNotesDesc: '<strong>Notes:</strong> Category-based quick note-taking.',
+  overviewNotesDesc: '<strong>Notes:</strong> Category-based quick note-taking with instant click-to-copy individual lines.',
   overviewMissedDesc: '<strong>Missed Mentions:</strong> Track missed channel messages.',
   overviewSpamDesc: '<strong>Spam Reactions:</strong> Express multiple emojis instantly and retract them easily.',
   overviewImageDesc: '<strong>Image Library:</strong> Upload and quick-send your favorite personal images.',
+  overviewQuickDeleteDesc: '<strong>Quick Delete:</strong> Instantly fade out and delete your own chat messages.',
   overviewPrivacyTitle: 'Privacy & Security Commitment',
   overviewPrivacyDesc: '<strong>ChatOps++</strong> does not collect, store, or transmit your personal data. All data is stored 100% locally in your browser (Local Storage) under your full control.',
   overviewSupportTitle: 'Support & Feedback',
@@ -401,8 +402,8 @@ const vi = {
 
   // Sidepanel Tasks Tab
   taskTabLabel: 'Công việc',
-  taskEmpty: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">Hướng dẫn sử dụng</h4><p class="card-desc">Nhấp vào nút (🎯) ở góc dưới cùng bên phải để thêm công việc, hoặc di chuột qua bất kỳ tin nhắn nào trong ChatOps và nhấp vào biểu tượng 🎯 để ghim thành công việc!</p></div></div>',
-  taskClickHint: '📌 Ghim tin nhắn trong ChatOps hoặc nhấp vào nút "🎯" ở góc dưới cùng bên phải.',
+  taskEmpty: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">Hướng dẫn sử dụng</h4><p class="card-desc">Nhấp vào nút <span style="display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; width: 15px; height: 15px; border-radius: 50%; font-size: 10px; font-weight: bold; line-height: 1; margin: 0 2px; vertical-align: middle; position: relative; top: -1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">+</span> ở góc dưới cùng bên phải để thêm công việc, hoặc di chuột qua bất kỳ tin nhắn nào trong ChatOps và nhấp vào biểu tượng 🎯 để ghim thành công việc!</p></div></div>',
+  taskClickHint: '📌 Ghim tin nhắn trong ChatOps hoặc nhấp vào nút <span style="display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; width: 14px; height: 14px; border-radius: 50%; font-size: 9px; font-weight: bold; line-height: 1; margin: 0 2px; vertical-align: middle; position: relative; top: -1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">+</span> ở góc dưới cùng bên phải.',
   taskPending: 'Chờ xử lý',
   taskCompleted: 'Đã hoàn thành',
   taskClearAll: 'Xóa tất cả',
@@ -423,8 +424,8 @@ const vi = {
 
   // Sidepanel Memo (Notes) Tab
   memoTasksEmpty: 'Chưa có công việc nào.',
-  memoNotesEmpty: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">Hướng dẫn sử dụng</h4><p class="card-desc">Nhấp vào nút (📝) ở góc dưới cùng bên phải để thêm ghi chú, hoặc di chuột qua bất kỳ tin nhắn nào trong ChatOps và nhấp vào biểu tượng 📝 để ghim thành ghi chú!</p></div></div>',
-  memoClickHint: '📝 Ghim ghi chú trong ChatOps hoặc nhấp vào nút "📝" ở góc dưới cùng bên phải.',
+  memoNotesEmpty: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">Hướng dẫn sử dụng</h4><p class="card-desc">Nhấp vào nút <span style="display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; width: 15px; height: 15px; border-radius: 50%; font-size: 10px; font-weight: bold; line-height: 1; margin: 0 2px; vertical-align: middle; position: relative; top: -1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">+</span> ở góc dưới cùng bên phải để thêm ghi chú, hoặc di chuột qua bất kỳ tin nhắn nào trong ChatOps và nhấp vào biểu tượng 📝 để ghim thành ghi chú!<br><br>💡 <strong>Mẹo nhỏ:</strong> Bạn có thể nhấp vào bất kỳ dòng nào trong ghi chú để sao chép nhanh duy nhất dòng đó!</p></div></div>',
+  memoClickHint: '📝 Ghim ghi chú trong ChatOps hoặc nhấp vào nút <span style="display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; width: 14px; height: 14px; border-radius: 50%; font-size: 9px; font-weight: bold; line-height: 1; margin: 0 2px; vertical-align: middle; position: relative; top: -1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">+</span> ở góc dưới cùng bên phải.',
   memoPending: 'Chờ xử lý',
   memoCompleted: 'Đã hoàn thành',
   memoClearAll: 'Xóa tất cả',
@@ -587,10 +588,11 @@ const vi = {
   settingsOverviewWelcome: 'Chào mừng bạn đến với <strong style="color: var(--accent); font-weight: 700;">ChatOps++</strong>! Bộ công cụ tăng năng suất của bạn:',
   overviewSearchDesc: '<strong>Tìm kiếm tin nhắn:</strong> Truy vấn lịch sử trò chuyện tức thì.',
   overviewTasksDesc: '<strong>Công việc:</strong> Quản lý công việc thông minh với thông báo nhắc lại.',
-  overviewNotesDesc: '<strong>Ghi chú:</strong> Ghi chú nhanh theo phân loại danh mục.',
+  overviewNotesDesc: '<strong>Ghi chú:</strong> Ghi chú nhanh theo phân loại danh mục và hỗ trợ click để sao chép nhanh từng dòng.',
   overviewMissedDesc: '<strong>Nhắc nhở bỏ lỡ:</strong> Theo dõi các tin nhắn kênh bị bỏ qua.',
   overviewSpamDesc: '<strong>Spam cảm xúc:</strong> Bày tỏ nhiều cảm xúc cùng lúc tức thì và thu hồi dễ dàng.',
   overviewImageDesc: '<strong>Thư viện ảnh:</strong> Tải lên và gửi nhanh các hình ảnh cá nhân yêu thích của bạn.',
+  overviewQuickDeleteDesc: '<strong>Xóa nhanh tin nhắn:</strong> Xóa ngay lập tức các tin nhắn của chính bạn trên khung chat.',
   overviewPrivacyTitle: 'Cam kết Bảo mật & Riêng tư',
   overviewPrivacyDesc: '<strong>ChatOps++</strong> không thu thập, lưu trữ hoặc truyền tải dữ liệu cá nhân của bạn. Tất cả dữ liệu được lưu trữ 100% cục bộ trong trình duyệt của bạn (Local Storage) dưới toàn quyền kiểm soát của bạn.',
   overviewSupportTitle: 'Hỗ trợ & Góp ý',

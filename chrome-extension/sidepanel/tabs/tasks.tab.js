@@ -9,6 +9,7 @@ import { language } from '../../src/lang.js';
 
 let _state = null;
 let currentFilter = 'pending';
+let isLocalTaskUpdate = false;
 
 /**
  * Initializes the Tasks Tab
@@ -544,6 +545,16 @@ export function setup(state) {
       const itemIdx = parseInt(e.target.dataset.itemIdx);
       const isChecked = e.target.checked;
       
+      // Update styling immediately on the DOM to ensure zero jitter/lag
+      const parentLine = e.target.closest('.task-checklist-line');
+      if (parentLine) {
+        const textSpan = parentLine.querySelector('.task-checklist-text');
+        if (textSpan) {
+          textSpan.style.color = isChecked ? 'var(--text-3)' : 'var(--text-1)';
+          textSpan.style.textDecoration = isChecked ? 'line-through' : 'none';
+        }
+      }
+
       const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS, STORAGE_KEYS.SETTINGS]);
       const memos = res[STORAGE_KEYS.MEMOS] || [];
       const settings = res[STORAGE_KEYS.SETTINGS] || { snoozeMinutes: 5 };
@@ -554,22 +565,44 @@ export function setup(state) {
         
         // Check if all checklist items are completed
         const allDone = task.checklist.every(item => item.done === true);
+        const card = document.getElementById('item_' + taskId);
+        
         if (allDone) {
           task.done = true;
           task.doneAt = Date.now();
           chrome.alarms.clear(taskId);
+          
+          isLocalTaskUpdate = false;
+          await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
+          // Re-render when status changes so task moves to the completed section
+          loadTasks();
         } else {
-          // If task was previously done but now a checklist item is unchecked, mark task as not done
+          // If task was previously done but now a checklist item is unchecked
+          let statusChanged = false;
           if (task.done) {
             task.done = false;
             task.doneAt = null;
+            statusChanged = true;
             const snoozeMins = settings.snoozeMinutes || 5;
             chrome.runtime.sendMessage({ type: MESSAGE_TYPES.SET_TASK_ALARM, taskId, time: Date.now() + snoozeMins * 60 * 1000 });
           }
+          
+          isLocalTaskUpdate = true;
+          await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
+          setTimeout(() => { isLocalTaskUpdate = false; }, 100);
+          
+          if (statusChanged) {
+            isLocalTaskUpdate = false;
+            loadTasks();
+          } else {
+            // Just update parent task checkbox and layout status if needed without re-rendering everything
+            if (card) {
+              const parentCheckbox = card.querySelector('.task-checkbox');
+              if (parentCheckbox) parentCheckbox.checked = false;
+              card.classList.remove('memo-done');
+            }
+          }
         }
-        
-        await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
-        loadTasks();
       }
     }
 
@@ -594,6 +627,13 @@ export function setup(state) {
             <div class="inline-edit-form" style="margin-top: 4px; display: flex; flex-direction: column; gap: 8px;">
               <input type="text" class="inline-edit-title" placeholder="Title (optional)" value="${escapeHtml(task.title || '')}" style="width: 100%; height: 28px; font-size: 13px; font-weight: 600; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); outline: none; box-sizing: border-box; font-family: inherit;" autocomplete="off">
               <textarea class="inline-edit-textarea" rows="10" style="width: 100%; min-height: 180px; padding: 8px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 13px; outline: none; background: #fff; resize: vertical; color: var(--text-1);">${escapeHtml(task.note)}</textarea>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:12px; font-weight:600; color:var(--text-2);">Category:</span>
+                <select class="sp-compact-select inline-edit-category" style="max-width:120px; margin:0;">
+                  <option value="normal" ${task.taskCategory !== 'checklist' ? 'selected' : ''}>Normal</option>
+                  <option value="checklist" ${task.taskCategory === 'checklist' ? 'selected' : ''}>Checklist</option>
+                </select>
+              </div>
               <div style="display: flex; gap: 6px; justify-content: flex-end;">
                 <button class="btn btn-secondary inline-edit-cancel" data-id="${id}" style="padding: 4px 10px; font-size: 11.5px; height: 26px; border-radius: 6px; cursor:pointer;">${language.cancel}</button>
                 <button class="btn btn-primary inline-edit-save" data-id="${id}" style="padding: 4px 10px; font-size: 11.5px; height: 26px; border-radius: 6px; cursor:pointer; color:#fff;">${language.save}</button>
@@ -643,6 +683,11 @@ export function setup(state) {
             task.note = newText;
             task.updatedAt = Date.now();
             
+            const categorySelect = card.querySelector('.inline-edit-category');
+            if (categorySelect) {
+              task.taskCategory = categorySelect.value;
+            }
+            
             if (task.taskCategory === 'checklist') {
               const newLines = newText.split('\n').filter(l => l.trim());
               const oldChecklist = task.checklist || [];
@@ -666,12 +711,37 @@ export function setup(state) {
               } else {
                 task.doneAt = null;
               }
+            } else {
+              task.checklist = [];
             }
             
             await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
           }
           loadTasks();
         }
+    }
+  });
+
+  // Handle task category inline footer selection
+  document.getElementById('taskList').addEventListener('change', async (e) => {
+    if (e.target.classList.contains('task-edit-category')) {
+      const id = e.target.dataset.id;
+      const newCategory = e.target.value;
+      const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
+      const memos = res[STORAGE_KEYS.MEMOS] || [];
+      const task = memos.find(m => m.id === id);
+      if (task) {
+        task.taskCategory = newCategory;
+        if (newCategory === 'checklist') {
+          const lines = (task.note || '').split('\n').filter(l => l.trim());
+          task.checklist = lines.map((text, idx) => ({ id: `${task.id}_line_${idx}`, text: text.trim(), done: false }));
+        } else {
+          task.checklist = [];
+        }
+        task.updatedAt = Date.now();
+        await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
+        loadTasks();
+      }
     }
   });
 
@@ -683,6 +753,7 @@ export function setup(state) {
   // Listen to storage changes reactively to reload tasks list
   chrome.storage.onChanged.addListener((changes, areaName) => {
     if (areaName === 'local' && changes[STORAGE_KEYS.MEMOS]) {
+      if (isLocalTaskUpdate) return;
       loadTasks();
     }
   });
@@ -806,7 +877,7 @@ function renderTaskCard(task, now) {
   let taskBodyHtml = '';
   if (task.taskCategory === 'checklist' && task.checklist && task.checklist.length > 0) {
     taskBodyHtml = task.checklist.map((item, idx) => {
-      return `<div class="task-checklist-line" style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:13px;white-space:normal;"><label class="memo-checkbox-container footer-checkbox" style="margin:0;position:relative;top:2px;" title="Mark done"><input type="checkbox" class="task-checklist-item-checkbox" data-task-id="${task.id}" data-item-idx="${idx}" ${item.done ? 'checked' : ''}><span class="memo-checkmark-custom"></span></label><span class="task-checklist-text" style="flex:1;min-width:0;color:${item.done ? 'var(--text-3)' : 'var(--text-1)'};text-decoration:${item.done ? 'line-through' : 'none'};transition:all 0.2s;white-space:normal !important;">${formatRichText(item.text)}</span></div>`;
+      return `<div class="task-checklist-line" style="display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;font-size:13px;white-space:normal;"><label class="memo-checkbox-container footer-checkbox" style="margin:0;position:relative;top:2px;" title="Mark done"><input type="checkbox" class="task-checklist-item-checkbox" data-task-id="${task.id}" data-item-idx="${idx}" ${item.done ? 'checked' : ''}><span class="memo-checkmark-custom"></span></label><span class="task-checklist-text" style="flex:1;min-width:0;color:${item.done ? 'var(--text-3)' : 'var(--text-1)'};text-decoration:${item.done ? 'line-through' : 'none'};transition:all 0.2s;white-space:normal !important;">${formatRichText(item.text)}</span></div>`;
     }).join('');
   } else {
     taskBodyHtml = formatRichText(task.note || language.taskNoContent);
@@ -829,6 +900,10 @@ function renderTaskCard(task, now) {
             <span class="memo-checkmark-custom"></span>
           </label>
           <span class="sp-card-date">${formatRelativeTime(task.createdAt)}</span>
+          <select class="sp-compact-select task-edit-category" data-id="${task.id}" style="max-width: 95px; margin: 0; font-size: 11.5px; font-weight: 400;">
+            <option value="normal" ${task.taskCategory !== 'checklist' ? 'selected' : ''}>Normal</option>
+            <option value="checklist" ${task.taskCategory === 'checklist' ? 'selected' : ''}>Checklist</option>
+          </select>
           ${task.repeatDaily ? `
             <span class="repeat-daily-badge" style="font-size:10px; font-weight:700; color:var(--accent); background:rgba(28,88,217,0.08); padding:1px 5px; border-radius:4px; display:inline-flex; align-items:center; gap:2px;" title="${language.taskRemindDailyLabel}">
               🔄 ${language.repeatDailyBadgeText || 'Daily'}

@@ -464,31 +464,63 @@ function showToast(msg) {
 
   console.log('[ChatOps Ext] Floating button injected.');
 
-  // --- Image Integration into Main Chat UI ---
+  // --- Image Integration into Main & RHS Chat UI ---
   function injectImageButton() {
-    const emojiBtn = document.getElementById(SELECTORS.EMOJI_BUTTON.slice(1));
-    if (!emojiBtn) return;
-
     const memeEnabled = cachedSettings.memeEnabled !== false;
-    const existingBtn = document.getElementById('chatops-ext-image-btn');
-    if (!memeEnabled) {
-      if (existingBtn) existingBtn.remove();
-      return;
-    }
+    
+    const targets = [
+      { id: 'emojiPickerButton', textboxId: 'post_textbox', btnId: 'chatops-ext-image-btn' },
+      { id: 'rhsEmojiPickerButton', textboxId: 'reply_textbox', btnId: 'chatops-ext-image-btn-rhs' }
+    ];
 
-    if (existingBtn) return;
+    targets.forEach(target => {
+      let emojiBtn = document.getElementById(target.id);
+      
+      // Fallback structural lookup if element is not found by ID (common in RHS or new Mattermost versions)
+      if (!emojiBtn) {
+        const textbox = document.getElementById(target.textboxId) || 
+          (target.textboxId === 'reply_textbox' 
+            ? document.querySelector('#reply_textbox, .sidebar-right textarea, .rhs-thread textarea, .sidebar--right textarea, [placeholder*="reply" i]')
+            : document.querySelector('#post_textbox, .post-create-body textarea, [placeholder*="write" i]'));
 
-    const imageBtn = document.createElement('button');
-    imageBtn.id = 'chatops-ext-image-btn';
-    imageBtn.type = 'button';
-    imageBtn.innerHTML = '🖼️';
-    imageBtn.title = 'Quick Image Picker';
-    emojiBtn.parentNode.insertBefore(imageBtn, emojiBtn.nextSibling);
+        if (textbox) {
+          const container = textbox.closest('.post-create-body, .input-container, .post-body__cell, .post-create, form, [class*="post-create"]');
+          if (container) {
+            // Find any emoji button inside this textbox's container
+            emojiBtn = container.querySelector('#emojiPickerButton, #rhsEmojiPickerButton, button[aria-label*="emoji" i], button[aria-label*="Emoji"], button[class*="emoji" i], .emoji-picker__container button, button[id*="Emoji"]');
+          }
+        }
+      }
 
-    imageBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      toggleImagePickerUI(imageBtn);
+      if (!emojiBtn) {
+        // Cleanup if they vanished
+        const existingBtn = document.getElementById(target.btnId);
+        if (existingBtn) existingBtn.remove();
+        return;
+      }
+
+      const existingBtn = document.getElementById(target.btnId);
+      if (!memeEnabled) {
+        if (existingBtn) existingBtn.remove();
+        return;
+      }
+
+      if (existingBtn) return;
+
+      const imageBtn = document.createElement('button');
+      imageBtn.id = target.btnId;
+      imageBtn.type = 'button';
+      imageBtn.className = 'chatops-ext-image-picker-btn';
+      imageBtn.innerHTML = '🖼️';
+      imageBtn.title = 'Quick Image Picker';
+      imageBtn.dataset.targetTextbox = target.textboxId;
+      emojiBtn.parentNode.insertBefore(imageBtn, emojiBtn.nextSibling);
+
+      imageBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleImagePickerUI(imageBtn, target.textboxId);
+      });
     });
   }
 
@@ -693,7 +725,7 @@ function showToast(msg) {
     }
   }
 
-  function toggleImagePickerUI(anchorBtn) {
+  function toggleImagePickerUI(anchorBtn, targetTextboxId) {
     if (!imagePickerEl) {
       imagePickerEl = document.createElement('div');
       imagePickerEl.className = 'chatops-image-picker hidden';
@@ -724,7 +756,7 @@ function showToast(msg) {
       });
       document.addEventListener('click', (e) => {
         const isClickInside = imagePickerEl.contains(e.target);
-        const isClickAnchor = e.target.closest('#chatops-ext-image-btn');
+        const isClickAnchor = e.target.closest('.chatops-ext-image-picker-btn');
         if (!isClickInside && !isClickAnchor) {
           imagePickerEl.classList.add('hidden');
         }
@@ -732,6 +764,8 @@ function showToast(msg) {
       loadCustomImages();
       registerCustomImageEvents();
     }
+
+    imagePickerEl.dataset.activeTextbox = targetTextboxId || 'post_textbox';
 
     const isHidden = imagePickerEl.classList.contains('hidden');
     if (isHidden) {
@@ -757,7 +791,15 @@ function showToast(msg) {
   }
 
   function insertImageToChat(url) {
-    const textarea = document.getElementById(SELECTORS.CHAT_TEXTBOX.slice(1));
+    const targetId = imagePickerEl?.dataset.activeTextbox || 'post_textbox';
+    let textarea = document.getElementById(targetId);
+    if (!textarea) {
+      if (targetId === 'reply_textbox') {
+        textarea = document.querySelector('#reply_textbox, .sidebar-right textarea, .rhs-thread textarea, .sidebar--right textarea, [placeholder*="reply" i]');
+      } else {
+        textarea = document.querySelector('#post_textbox, .post-create-body textarea, [placeholder*="write" i]');
+      }
+    }
     if (!textarea) return;
 
     if (url.startsWith('data:')) {
@@ -1129,7 +1171,7 @@ function showToast(msg) {
         msgTextFull = language.msgPreviewNoText;
       }
     }
-    const postId = postEl.id ? postEl.id.replace(SELECTORS.POST_ID_PREFIX, '') : '';
+    const postId = cleanPostId(postEl);
     
     // Pre-fill the textarea directly
     const titleInput = document.getElementById('cqn-note-title');
@@ -1267,6 +1309,9 @@ function showToast(msg) {
         cachedMemos = changes[STORAGE_KEYS.MEMOS].newValue || [];
         updateFloatingBadgeCount();
         runWithObserverDisabled(() => {
+          document.querySelectorAll('.post, [id^="post_"], [class*="post-message"]').forEach(el => {
+            delete el.dataset.chatopsStatus;
+          });
           injectQuickNoteButtons();
         });
       }
@@ -1274,6 +1319,11 @@ function showToast(msg) {
   });
 
   function handleQuickActionButtonsVisibility() {
+    // Clear post processing cache so buttons are properly re-evaluated
+    document.querySelectorAll('.post, [id^="post_"], [class*="post-message"]').forEach(el => {
+      delete el.dataset.chatopsStatus;
+    });
+
     const showTabs = cachedSettings.showTabs || { search: true, tasks: true, notes: true, missed: true };
     const tasksEnabled = showTabs.tasks !== false;
     const notesEnabled = showTabs.notes !== false;
@@ -1298,6 +1348,11 @@ function showToast(msg) {
     injectImageButton();
   }
 
+  function cleanPostId(postEl) {
+    const rawId = postEl?.id || '';
+    return rawId.replace('post_', '').replace('rhsPost_', '').replace('rhs_post_', '');
+  }
+
   function injectQuickNoteButtons() {
     // 1. Find all post elements (in main view or RHS thread)
     const posts = document.querySelectorAll(`.post, [id^="post_"], [class*="post-message"]`);
@@ -1308,14 +1363,20 @@ function showToast(msg) {
     const spamEnabled = cachedSettings.spamEnabled !== false;
 
     posts.forEach(postEl => {
+      const postId = cleanPostId(postEl);
+      if (!postId) return;
+
+      const savedMemo = cachedMemos.find(m => m.postId === postId);
+      const currentStatus = savedMemo ? savedMemo.type : 'none';
+
       // Find the action bar within this post
       const actionArea = postEl.querySelector('.post-menu, .post__actions, .dot-menu__container, [class*="post-menu"], .post-action-menu');
       if (!actionArea) return;
 
-      const postId = postEl.id ? postEl.id.replace(SELECTORS.POST_ID_PREFIX, '') : '';
-      if (!postId) return;
-
-      const savedMemo = cachedMemos.find(m => m.postId === postId);
+      if (postEl.dataset.chatopsStatus === currentStatus) {
+        return;
+      }
+      postEl.dataset.chatopsStatus = currentStatus;
 
       if (savedMemo) {
         // Hide normal create buttons if present
@@ -1398,7 +1459,7 @@ function showToast(msg) {
           spamBtn.title = language.spamReactionsTitle;
           spamBtn.addEventListener('click', (e) => {
             e.preventDefault(); e.stopPropagation();
-            const postId = postEl.id ? postEl.id.replace(SELECTORS.POST_ID_PREFIX, '') : '';
+            const postId = cleanPostId(postEl);
             if (!postId) return;
 
             const origHtml = spamBtn.innerHTML;
@@ -1414,9 +1475,7 @@ function showToast(msg) {
               spamBtn.style.opacity = '1';
               spamBtn.disabled = false;
 
-              if (res && res.ok) {
-                showToast(language.spamSuccess);
-              } else {
+              if (!res || !res.ok) {
                 showToast(language.spamErrorPrefix + (res?.error || language.unknown));
               }
             });
@@ -1432,7 +1491,7 @@ function showToast(msg) {
           retractBtn.title = language.undoSpamTitle;
           retractBtn.addEventListener('click', (e) => {
             e.preventDefault(); e.stopPropagation();
-            const postId = postEl.id ? postEl.id.replace(SELECTORS.POST_ID_PREFIX, '') : '';
+            const postId = cleanPostId(postEl);
             if (!postId) return;
 
             const origHtml = retractBtn.innerHTML;
@@ -1448,9 +1507,7 @@ function showToast(msg) {
               retractBtn.style.opacity = '1';
               retractBtn.disabled = false;
 
-              if (res && res.ok) {
-                showToast(language.undoSpamSuccess);
-              } else {
+              if (!res || !res.ok) {
                 showToast(language.undoSpamErrorPrefix + (res?.error || language.unknown));
               }
             });
@@ -1518,11 +1575,40 @@ function showToast(msg) {
     }
   });
 
-  observer = new MutationObserver(() => {
-    runWithObserverDisabled(() => {
-      injectImageButton();
-      injectQuickNoteButtons();
-    });
+  let observerTimeout = null;
+  observer = new MutationObserver((mutations) => {
+    let shouldUpdate = false;
+    for (const m of mutations) {
+      if (m.addedNodes.length > 0) {
+        for (const node of m.addedNodes) {
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            if (
+              node.classList?.contains('post') || 
+              node.id?.startsWith('post_') || 
+              node.id?.startsWith('rhsPost_') ||
+              node.classList?.contains('post-list__table') ||
+              node.classList?.contains('post-list') ||
+              node.matches?.('.post-menu, .post__actions, .dot-menu__container, [class*="post-menu"], .post-action-menu, textarea, #emojiPickerButton, #rhsEmojiPickerButton, button[aria-label*="emoji" i]') ||
+              (node.querySelector && node.querySelector('.post-menu, .post__actions, .dot-menu__container, [class*="post-menu"], .post-action-menu, textarea, #emojiPickerButton, #rhsEmojiPickerButton, button[aria-label*="emoji" i]'))
+            ) {
+              shouldUpdate = true;
+              break;
+            }
+          }
+        }
+      }
+      if (shouldUpdate) break;
+    }
+
+    if (!shouldUpdate) return;
+
+    clearTimeout(observerTimeout);
+    observerTimeout = setTimeout(() => {
+      runWithObserverDisabled(() => {
+        injectImageButton();
+        injectQuickNoteButtons();
+      });
+    }, 200);
   });
   
   observer.observe(document.body, { childList: true, subtree: true });

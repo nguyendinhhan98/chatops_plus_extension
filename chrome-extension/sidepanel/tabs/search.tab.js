@@ -44,8 +44,14 @@ export function setup(state) {
   const termsInput = document.getElementById('spSearchTerms');
 
   const updateSearchButtonState = () => {
-    const hasText = termsInput.value.trim().length > 0;
-    if (hasText) {
+    const terms = termsInput.value.trim();
+    const from = document.getElementById('spSearchFrom')?.value.trim() || '';
+    const inChannels = searchInMS ? searchInMS.getSelected() : [];
+    const after = document.getElementById('spSearchAfter')?.value.trim() || '';
+    const before = document.getElementById('spSearchBefore')?.value.trim() || '';
+
+    const hasValue = terms.length > 0 || from.length > 0 || inChannels.length > 0 || after.length > 0 || before.length > 0;
+    if (hasValue) {
       btnSearch.disabled = false;
       btnSearch.style.opacity = '1';
       btnSearch.style.cursor = 'pointer';
@@ -76,16 +82,40 @@ export function setup(state) {
     updateSearchButtonState();
   });
 
+  // Bind change/input on other fields to dynamically update the Search button state
+  document.getElementById('spSearchFrom')?.addEventListener('input', updateSearchButtonState);
+  document.getElementById('spSearchFrom')?.addEventListener('change', updateSearchButtonState);
+  document.getElementById('spSearchIn')?.addEventListener('change', updateSearchButtonState);
+  document.getElementById('spSearchAfter')?.addEventListener('change', updateSearchButtonState);
+  document.getElementById('spSearchAfter')?.addEventListener('input', updateSearchButtonState);
+  document.getElementById('spSearchBefore')?.addEventListener('change', updateSearchButtonState);
+  document.getElementById('spSearchBefore')?.addEventListener('input', updateSearchButtonState);
+
   // Set initial state
   updateSearchButtonState();
 
+  // Also bind to tab btn clicks to ensure state is completely in-sync when tab switches
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    if (btn.dataset.tab === 'search') {
+      btn.addEventListener('click', () => {
+        setTimeout(updateSearchButtonState, 50);
+      });
+    }
+  });
+
   btnSearch.addEventListener('click', () => {
-    if (termsInput.value.trim().length > 0) {
+    const terms = termsInput.value.trim();
+    const from = document.getElementById('spSearchFrom')?.value.trim() || '';
+    const inChannels = searchInMS ? searchInMS.getSelected() : [];
+    if (terms.length > 0 || from.length > 0 || inChannels.length > 0) {
       performSpSearch(false);
     }
   });
   termsInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && termsInput.value.trim().length > 0) {
+    const terms = termsInput.value.trim();
+    const from = document.getElementById('spSearchFrom')?.value.trim() || '';
+    const inChannels = searchInMS ? searchInMS.getSelected() : [];
+    if (e.key === 'Enter' && (terms.length > 0 || from.length > 0 || inChannels.length > 0)) {
       performSpSearch(false);
     }
   });
