@@ -732,8 +732,8 @@ textarea.search-form-textarea {
 
 .collapsible-body:not(.collapsed) {
   white-space: normal !important;
-  max-height: 250px !important;
-  overflow-y: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
 }
 .collapsible-body::-webkit-scrollbar {
   width: 4px;

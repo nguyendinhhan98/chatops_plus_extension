@@ -88,7 +88,7 @@ export function renderPostList(posts, usersMap, baseUrl, teamName, channelsMap, 
 
     return `
       <div class="post-item" id="item_${post.id}">
-        <div class="post-header" style="display:flex; align-items:center; padding-right: 56px;">
+        <div class="post-header" style="display:flex; align-items:center;">
           <button class="collapse-btn" data-id="${post.id}" style="margin-right: 4px;" title="Expand/Collapse">▶</button>
           <div class="post-header-left" style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:flex; gap:8px; align-items:center;">
             <span class="post-author" style="font-weight:600;">${escapeHtml(author)}</span>
@@ -172,7 +172,7 @@ export function renderMentionItem(post, author, permalink) {
   
   return `
     <div class="post-item missed-mention-item" id="item_${post.id}">
-      <div class="post-header" style="display:flex; align-items:center; padding-right: 56px;">
+      <div class="post-header" style="display:flex; align-items:center;">
         <button class="collapse-btn" data-id="${post.id}" style="margin-right: 4px;" title="Expand/Collapse">▶</button>
         <span class="post-author" style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight:600;">${escapeHtml(authorName)}</span>
         <span class="post-time" title="${formatUnixMsToVN(post.create_at)}" style="flex-shrink: 0; margin-left: 8px; font-size:11px; color:var(--text-3);">${formatRelativeTime(post.create_at)}</span>
