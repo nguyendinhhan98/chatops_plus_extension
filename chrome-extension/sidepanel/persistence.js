@@ -40,10 +40,16 @@ export function restoreState(selectors) {
 
     if (s.search) {
       const termsEl = document.getElementById('spSearchTerms');
-      if (termsEl) termsEl.value = s.search.terms || '';
+      if (termsEl) {
+        termsEl.value = s.search.terms || '';
+        termsEl.dispatchEvent(new Event('input', { bubbles: true }));
+      }
       
       const fromEl = document.getElementById('spSearchFrom');
-      if (fromEl) fromEl.value = s.search.from || '';
+      if (fromEl) {
+        fromEl.value = s.search.from || '';
+        fromEl.dispatchEvent(new Event('input', { bubbles: true }));
+      }
       
       const afterEl = document.getElementById('spSearchAfter');
       if (afterEl) afterEl.value = s.search.after || '';

@@ -58,3 +58,13 @@ export async function deletePostReaction(userId, postId, emojiName) {
     method: 'DELETE'
   });
 }
+
+/**
+ * Delete a specific post
+ */
+export async function deletePost(postId) {
+  return request(`/posts/${postId}`, {
+    method: 'DELETE'
+  });
+}
+

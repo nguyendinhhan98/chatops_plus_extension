@@ -1,4 +1,4 @@
-import { STORAGE_KEYS, CHATOPS_CONFIG, MESSAGE_TYPES } from '../../src/constants.js';
+import { STORAGE_KEYS, CHATOPS_CONFIG, MESSAGE_TYPES, DEFAULT_MEMES } from '../../src/constants.js';
 import { language, setLanguage, applyI18n } from '../../src/lang.js';
 import { getCustomEmojis, getConfig } from '../../src/api/index.js';
 
@@ -408,7 +408,13 @@ function setupEventListeners() {
       const file = e.target.files[0];
       if (!file) return;
 
-      compressSidepanelImage(file, 1000, 1000, 0.9, async (dataUrl) => {
+      if (!file.type.startsWith('image/')) {
+        alert(language.uploadOnlyImages);
+        fileInput.value = '';
+        return;
+      }
+
+      const processDataUrl = async (dataUrl) => {
         const res = await chrome.storage.local.get(['custom_memes']);
         const customMemes = res.custom_memes || [];
 
@@ -437,7 +443,17 @@ function setupEventListeners() {
         await chrome.storage.local.set({ custom_memes: customMemes });
         fileInput.value = '';
         renderSidepanelMemes();
-      });
+      };
+
+      if (file.type === 'image/gif') {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          processDataUrl(ev.target.result);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        compressSidepanelImage(file, 1000, 1000, 0.9, processDataUrl);
+      }
     });
   }
 
@@ -1161,21 +1177,7 @@ async function updateStorageUsageDisplay() {
 }
 
 function showAutoSaveFeedback() {
-  const fb = document.getElementById('settingsStatus');
-  if (fb) {
-    fb.style.display = 'block';
-    fb.style.color = 'var(--success)';
-    fb.style.background = 'rgba(46, 204, 113, 0.12)';
-    fb.style.border = 'none';
-    fb.style.borderTop = '1px solid rgba(46, 204, 113, 0.2)';
-    fb.style.borderRadius = '0 0 12px 12px';
-    fb.style.padding = '10px 14px';
-    fb.style.marginTop = '0';
-    fb.style.boxSizing = 'border-box';
-    fb.style.fontFamily = 'inherit';
-    fb.textContent = language.autoSaved;
-    setTimeout(() => { fb.style.display = 'none'; }, 2000);
-  }
+  // Empty to remove auto-save feedback notice
 }
 
 function showErrorFeedback(message) {
@@ -1444,7 +1446,7 @@ export function applyThemeToDOM(settings) {
   let contentPaddingVal = '10px';
   let tabNavPaddingVal = '6px 12px';
   let tabBtnPaddingVal = '6px 4px';
-  let subTabsMarginVal = '8px 16px';
+  let subTabsMarginVal = '8px 12px';
   let subTabPaddingVal = '5px 10px';
   let settingsSubtabPaddingVal = '8px 12px';
   let settingsSubtabsMarginVal = '18px';
@@ -1461,7 +1463,7 @@ export function applyThemeToDOM(settings) {
     contentPaddingVal = '10px';
     tabNavPaddingVal = '6px 12px';
     tabBtnPaddingVal = '6px 4px';
-    subTabsMarginVal = '8px 16px';
+    subTabsMarginVal = '8px 12px';
     subTabPaddingVal = '5px 10px';
     settingsSubtabPaddingVal = '8px 12px';
     settingsSubtabsMarginVal = '18px';
@@ -1469,7 +1471,7 @@ export function applyThemeToDOM(settings) {
     contentPaddingVal = '12px';
     tabNavPaddingVal = '8px 16px';
     tabBtnPaddingVal = '8px 6px';
-    subTabsMarginVal = '12px 20px';
+    subTabsMarginVal = '12px 16px';
     subTabPaddingVal = '7px 14px';
     settingsSubtabPaddingVal = '10px 16px';
     settingsSubtabsMarginVal = '24px';
@@ -1477,7 +1479,7 @@ export function applyThemeToDOM(settings) {
     contentPaddingVal = '16px';
     tabNavPaddingVal = '10px 20px';
     tabBtnPaddingVal = '10px 8px';
-    subTabsMarginVal = '16px 24px';
+    subTabsMarginVal = '16px 20px';
     subTabPaddingVal = '9px 18px';
     settingsSubtabPaddingVal = '12px 20px';
     settingsSubtabsMarginVal = '30px';
@@ -1537,7 +1539,11 @@ export function applyTabVisibilityToDOM(showTabs) {
 
 export async function renderSidepanelMemes() {
   const res = await chrome.storage.local.get(['custom_memes']);
-  const customMemes = res.custom_memes || [];
+  let customMemes = res.custom_memes;
+  if (customMemes === undefined) {
+    customMemes = DEFAULT_MEMES;
+    await chrome.storage.local.set({ custom_memes: customMemes });
+  }
   const container = document.getElementById('sidepanel-memes-grid');
   if (!container) return;
 

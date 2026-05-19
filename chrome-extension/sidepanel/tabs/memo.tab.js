@@ -132,7 +132,7 @@ export function setup(state) {
     });
   }
 
-  // Local Notes Backup (JSON Export & Import)
+  // Local Notes Backup (Markdown Export & Import)
   const exportBtn = document.getElementById('btnExportNotes');
   if (exportBtn) {
     exportBtn.addEventListener('click', async () => {
@@ -145,13 +145,21 @@ export function setup(state) {
         return;
       }
       
-      const jsonStr = JSON.stringify(notesOnly, null, 2);
-      const blob = new Blob([jsonStr], { type: 'application/json' });
+      let mdStr = '';
+      notesOnly.forEach(m => {
+        mdStr += `## Note: ${m.title || ''}\n`;
+        mdStr += `- ID: ${m.id}\n`;
+        mdStr += `- Created: ${new Date(m.createdAt).toISOString()}\n`;
+        mdStr += `- Updated: ${new Date(m.updatedAt || m.createdAt).toISOString()}\n`;
+        mdStr += `\n${m.note}\n\n---\n\n`;
+      });
+      
+      const blob = new Blob([mdStr], { type: 'text/markdown' });
       const url = URL.createObjectURL(blob);
       
       const a = document.createElement('a');
       a.href = url;
-      a.download = `mcp_notes_backup_${new Date().toISOString().slice(0,10)}.json`;
+      a.download = `mcp_notes_backup_${new Date().toISOString().slice(0,10)}.md`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -168,13 +176,66 @@ export function setup(state) {
       const reader = new FileReader();
       reader.onload = async (evt) => {
         try {
-          const importedData = JSON.parse(evt.target.result);
-          if (!Array.isArray(importedData)) {
-            throw new Error("Invalid format: Must be an array of notes.");
+          const content = evt.target.result.trim();
+          let validNotes = [];
+          
+          if (content.startsWith('[') || content.startsWith('{')) {
+            // Parse as JSON for backward compatibility
+            const importedData = JSON.parse(content);
+            const arr = Array.isArray(importedData) ? importedData : [importedData];
+            validNotes = arr.filter(item => item && item.id && item.type === 'memo' && item.note);
+          } else {
+            // Parse as Markdown/Text
+            const rawNotes = content.split(/[\r\n]+---[\r\n]+/);
+            for (const raw of rawNotes) {
+              const trimmed = raw.trim();
+              if (!trimmed) continue;
+              
+              const lines = trimmed.split('\n');
+              let title = '';
+              let id = '';
+              let createdAt = Date.now();
+              let updatedAt = Date.now();
+              let noteLines = [];
+              let inContent = false;
+              
+              for (const line of lines) {
+                if (inContent) {
+                  noteLines.push(line);
+                } else if (line.startsWith('## Note:')) {
+                  title = line.substring(8).trim();
+                } else if (line.startsWith('- ID:')) {
+                  id = line.substring(5).trim();
+                } else if (line.startsWith('- Created:')) {
+                  const dateStr = line.substring(10).trim();
+                  createdAt = Date.parse(dateStr) || Date.now();
+                } else if (line.startsWith('- Updated:')) {
+                  const dateStr = line.substring(10).trim();
+                  updatedAt = Date.parse(dateStr) || Date.now();
+                } else if (line.trim() === '') {
+                  if (id) {
+                    inContent = true;
+                  }
+                } else {
+                  inContent = true;
+                  noteLines.push(line);
+                }
+              }
+              
+              const noteContent = noteLines.join('\n').trim();
+              if (id && noteContent) {
+                validNotes.push({
+                  id,
+                  type: 'memo',
+                  title,
+                  note: noteContent,
+                  createdAt,
+                  updatedAt
+                });
+              }
+            }
           }
           
-          // Validate notes structure
-          const validNotes = importedData.filter(item => item && item.id && item.type === 'memo' && item.note);
           if (validNotes.length === 0) {
             alert(language.noValidNotesFound || "No valid notes found in file!");
             return;
@@ -290,6 +351,8 @@ export function setup(state) {
       const note = memos.find(m => m.id === id);
       if (note) {
         const card = document.getElementById('item_' + id);
+        const collapseBtn = card?.querySelector('.collapse-btn');
+        if (collapseBtn) collapseBtn.style.display = 'none';
         const contentEl = card.querySelector('.note-content-row');
         if (contentEl) {
           const actionsEl = card.querySelector('.memo-actions');
@@ -305,6 +368,17 @@ export function setup(state) {
               </div>
             </div>
           `;
+          const ta = contentEl.querySelector('.inline-edit-textarea');
+          if (ta) {
+            ta.style.boxSizing = 'border-box';
+            ta.style.height = 'auto';
+            ta.style.height = Math.max(180, ta.scrollHeight) + 'px';
+            ta.style.overflowY = 'hidden';
+            ta.addEventListener('input', () => {
+              ta.style.height = 'auto';
+              ta.style.height = Math.max(180, ta.scrollHeight) + 'px';
+            });
+          }
         }
       }
     }

@@ -99,7 +99,8 @@
   opacity: 1 !important;
 }
 
-.chatops-quick-note-btn.delete-btn:hover {
+.chatops-quick-note-btn.delete-btn:hover,
+.chatops-quick-note-btn.msg-delete-btn:hover {
   background: rgba(208, 69, 76, 0.1) !important;
 }
 
@@ -303,7 +304,7 @@ html body #chatops-quick-note-popover textarea#cqn-note-text {
 #chatops-quick-note-popover .custom-dropdown-toggle {
   width: 100% !important;
   height: 34px !important;
-  font-size: 12.5px !important;
+  font-size: 11.5px !important;
   border-radius: 6px !important;
   border: 1px solid #cbd5e1 !important;
   background: #ffffff !important;
@@ -314,7 +315,7 @@ html body #chatops-quick-note-popover textarea#cqn-note-text {
   align-items: center !important;
   justify-content: space-between !important;
   padding: 0 10px !important;
-  font-weight: 500 !important;
+  font-weight: 400 !important;
   transition: all 0.2s ease !important;
   box-sizing: border-box !important;
   box-shadow: none !important;
@@ -345,7 +346,7 @@ html body #chatops-quick-note-popover textarea#cqn-note-text {
 
 #chatops-quick-note-popover .custom-dropdown-item {
   padding: 6px 12px !important;
-  font-size: 12.5px !important;
+  font-size: 11.5px !important;
   color: #1e293b !important;
   cursor: pointer !important;
   transition: all 0.2s ease !important;
@@ -353,6 +354,7 @@ html body #chatops-quick-note-popover textarea#cqn-note-text {
   list-style: none !important;
   margin: 0 !important;
   background: #ffffff !important;
+  font-weight: 400 !important;
 }
 
 #chatops-quick-note-popover .custom-dropdown-item:hover {
@@ -362,7 +364,8 @@ html body #chatops-quick-note-popover textarea#cqn-note-text {
 
 #chatops-quick-note-popover .custom-dropdown-selected-text {
   color: #1e293b !important;
-  font-size: 12.5px !important;
+  font-size: 11.5px !important;
+  font-weight: 400 !important;
 }
 
 #chatops-quick-note-popover .custom-dropdown-arrow {
@@ -522,7 +525,8 @@ html body #chatops-quick-note-popover textarea#cqn-note-text {
 .crb-close {
   background: none; border: none;
   color: #6a6a6c; cursor: pointer;
-  font-size: 18px; line-height: 1; padding: 0; flex-shrink: 0;
+  font-size: 22px; line-height: 1; padding: 4px; flex-shrink: 0;
+  margin-top: -6px; margin-right: -6px;
   transition: color 0.14s;
 }
 .crb-close:hover { color: #d0454c; }

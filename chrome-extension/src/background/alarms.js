@@ -1,6 +1,7 @@
 import { getMyProfile, getMyChannelMembers, getTeamByName, getConfig } from '../api/index.js';
 import { ALARMS, UI_CONFIG, CHATOPS_CONFIG, MESSAGE_TYPES, STORAGE_KEYS } from '../constants.js';
 import { language, loadLanguage } from '../lang.js';
+import { formatDateTime } from '../utils/date.js';
 
 /**
  * Handles periodic mention checks
@@ -45,8 +46,20 @@ export async function handleTaskAlarm(taskId) {
     }
 
     if (task.done) {
-      chrome.alarms.clear(taskId);
-      return;
+      if (task.repeatDaily) {
+        // Reset done status for the new day's reminder
+        task.done = false;
+        task.doneAt = null;
+        if (task.checklist) {
+          task.checklist.forEach(item => {
+            item.done = false;
+          });
+        }
+        await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
+      } else {
+        chrome.alarms.clear(taskId);
+        return;
+      }
     }
 
     let message = '';

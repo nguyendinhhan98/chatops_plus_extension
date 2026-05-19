@@ -3,7 +3,7 @@
  * Manages To-Do tasks with reminders.
  */
 
-import { escapeHtml, makePermalinkSync, formatUnixMsToVN, formatRelativeTime, initCommonFlatpickr, formatRichText } from '../../src/utils/index.js';
+import { escapeHtml, makePermalinkSync, formatUnixMsToVN, formatRelativeTime, initCommonFlatpickr, formatRichText, formatDateTime } from '../../src/utils/index.js';
 import { CHATOPS_CONFIG, MESSAGE_TYPES, UI_CONFIG, STORAGE_KEYS, TABS } from '../../src/constants.js';
 import { language } from '../../src/lang.js';
 
@@ -23,6 +23,11 @@ export function setup(state) {
   const reminderInput = document.getElementById('quickTaskReminderDt');
   const reminderRow = document.getElementById('quickTaskReminderRow');
   const presetSelect = document.getElementById('quickTaskReminderSelect');
+  const categorySelect = document.getElementById('quickTaskCategory');
+  const checklistBuilder = document.getElementById('quickTaskChecklistBuilder');
+  const checklistContainer = document.getElementById('checklistInputsContainer');
+  const addChecklistItemBtn = document.getElementById('btnAddChecklistItem');
+  const taskInputRow = quickInput?.closest('.task-quick-input-row');
 
   function syncReminderDimming() {
     const customSelect = presetSelect?.nextElementSibling;
@@ -115,6 +120,7 @@ export function setup(state) {
 
     if (typeof window.convertToCustomDropdown === 'function') {
       window.convertToCustomDropdown('quickTaskReminderSelect', '115px');
+      window.convertToCustomDropdown('quickTaskCategory', '140px');
     }
 
     const customSelect = presetSelect?.nextElementSibling;
@@ -126,14 +132,218 @@ export function setup(state) {
     }
   }
 
+    // Checklist builder helpers
+    function updateAddButtonState() {
+      if (!addChecklistItemBtn) return;
+      const currentRows = checklistContainer?.querySelectorAll('.checklist-builder-row') || [];
+      if (currentRows.length >= 10) {
+        addChecklistItemBtn.style.display = 'none';
+      } else {
+        addChecklistItemBtn.style.display = 'inline-flex';
+      }
+    }
+
+    function updateChecklistRowPlaceholders() {
+      if (!checklistContainer) return;
+      const inputs = checklistContainer.querySelectorAll('.checklist-builder-input');
+      const placeholderText = language.checklistPlaceholder || 'Checklist item {num}...';
+      inputs.forEach((input, index) => {
+        input.placeholder = placeholderText.replace('{num}', index + 1);
+      });
+    }
+
+    function addChecklistRow() {
+      if (!checklistContainer) return;
+      const currentRows = checklistContainer.querySelectorAll('.checklist-builder-row');
+      if (currentRows.length >= 10) return;
+
+      const row = document.createElement('div');
+      row.className = 'checklist-builder-row';
+      row.style.display = 'flex';
+      row.style.alignItems = 'center';
+      row.style.gap = '8px';
+      row.style.width = '100%';
+
+      const checkboxSpan = document.createElement('span');
+      checkboxSpan.style.fontSize = '14px';
+      checkboxSpan.style.color = 'var(--text-3)';
+      checkboxSpan.style.fontWeight = '500';
+      checkboxSpan.style.userSelect = 'none';
+      checkboxSpan.textContent = '⬜';
+
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'checklist-builder-input';
+      const placeholderText = language.checklistPlaceholder || 'Checklist item {num}...';
+      input.placeholder = placeholderText.replace('{num}', currentRows.length + 1);
+      input.style.flex = '1';
+      input.style.height = '32px';
+      input.style.fontSize = '12.5px';
+      input.style.borderRadius = '6px';
+      input.style.border = '1px solid var(--border)';
+      input.style.padding = '4px 8px';
+      input.style.outline = 'none';
+      input.style.boxSizing = 'border-box';
+      input.style.fontFamily = 'inherit';
+
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'btn-remove-checklist-row';
+      removeBtn.innerHTML = '&times;';
+      removeBtn.style.background = 'none';
+      removeBtn.style.border = 'none';
+      removeBtn.style.fontSize = '16px';
+      removeBtn.style.color = 'var(--text-3)';
+      removeBtn.style.cursor = 'pointer';
+      removeBtn.style.padding = '4px';
+      removeBtn.style.display = 'inline-flex';
+      removeBtn.style.alignItems = 'center';
+      removeBtn.style.justifyContent = 'center';
+      removeBtn.style.height = '24px';
+      removeBtn.style.width = '24px';
+      removeBtn.style.lineHeight = '1';
+      removeBtn.style.transition = 'color 0.2s';
+
+      removeBtn.addEventListener('mouseenter', () => removeBtn.style.color = 'var(--danger)');
+      removeBtn.addEventListener('mouseleave', () => removeBtn.style.color = 'var(--text-3)');
+
+      removeBtn.addEventListener('click', () => {
+        row.remove();
+        updateChecklistRowPlaceholders();
+        updateSaveButtonState();
+        updateAddButtonState();
+      });
+
+      input.addEventListener('input', () => {
+        updateSaveButtonState();
+      });
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const rows = Array.from(checklistContainer.querySelectorAll('.checklist-builder-row'));
+          const idx = rows.indexOf(row);
+          if (idx < rows.length - 1) {
+            rows[idx + 1].querySelector('.checklist-builder-input')?.focus();
+          } else {
+            if (rows.length < 10) {
+              addChecklistRow();
+              const newRows = checklistContainer.querySelectorAll('.checklist-builder-row');
+              newRows[newRows.length - 1].querySelector('.checklist-builder-input')?.focus();
+            }
+          }
+        }
+      });
+
+      row.appendChild(checkboxSpan);
+      row.appendChild(input);
+      row.appendChild(removeBtn);
+      checklistContainer.appendChild(row);
+
+      updateAddButtonState();
+    }
+
+    function initChecklistBuilder() {
+      if (!checklistContainer) return;
+      checklistContainer.innerHTML = '';
+      for (let i = 0; i < 3; i++) {
+        addChecklistRow();
+      }
+    }
+
+    function handleCategoryChange() {
+      const category = categorySelect?.value || 'normal';
+      if (category === 'checklist') {
+        if (taskInputRow) taskInputRow.style.display = 'none';
+        if (checklistBuilder) checklistBuilder.style.display = 'flex';
+        const inputs = checklistContainer?.querySelectorAll('.checklist-builder-input') || [];
+        if (inputs.length === 0) {
+          initChecklistBuilder();
+        }
+      } else {
+        if (taskInputRow) taskInputRow.style.display = 'block';
+        if (checklistBuilder) checklistBuilder.style.display = 'none';
+      }
+      updateSaveButtonState();
+    }
+
+    if (categorySelect) {
+      categorySelect.addEventListener('change', handleCategoryChange);
+    }
+
+    if (addChecklistItemBtn) {
+      addChecklistItemBtn.addEventListener('click', () => {
+        addChecklistRow();
+        const inputs = checklistContainer?.querySelectorAll('.checklist-builder-input') || [];
+        if (inputs.length > 0) {
+          inputs[inputs.length - 1].focus();
+        }
+      });
+    }
+
+    function resetTaskForm() {
+      try {
+        if (quickInput) {
+          quickInput.value = '';
+          quickInput.style.height = 'auto';
+        }
+        if (quickTitleInput) {
+          quickTitleInput.value = '';
+        }
+        const repeatDailyCheckbox = document.getElementById('quickTaskRemindDaily');
+        if (repeatDailyCheckbox) {
+          repeatDailyCheckbox.checked = false;
+        }
+        if (categorySelect) {
+          categorySelect.value = 'normal';
+          const customSelect = categorySelect.nextElementSibling;
+          if (customSelect && customSelect.classList.contains('custom-dropdown-container')) {
+            const selectedText = customSelect.querySelector('.custom-dropdown-selected-text');
+            if (selectedText) {
+              selectedText.textContent = language.categoryNormal || 'Normal';
+            }
+          }
+        }
+        if (fpQuick && typeof fpQuick.clear === 'function') {
+          try {
+            fpQuick.clear();
+          } catch (e) {}
+        }
+        if (presetSelect) {
+          presetSelect.value = '';
+          const customSelect = presetSelect.nextElementSibling;
+          if (customSelect && customSelect.classList.contains('custom-dropdown-container')) {
+            const selectedText = customSelect.querySelector('.custom-dropdown-selected-text');
+            if (selectedText) selectedText.textContent = 'Remind in...';
+          }
+        }
+        if (checklistContainer) {
+          checklistContainer.innerHTML = '';
+        }
+        handleCategoryChange();
+        syncReminderDimming();
+        updateSaveButtonState();
+      } catch (err) {
+        console.warn('[ChatOps Ext] Error in resetTaskForm:', err);
+      }
+    }
+
   const autoExpand = (el) => {
     el.style.height = 'auto';
     el.style.height = Math.min(el.scrollHeight, 220) + 'px';
   };
 
   const updateSaveButtonState = () => {
-    const hasText = quickInput.value.trim().length > 0;
-    if (hasText) {
+    const category = categorySelect?.value || 'normal';
+    let hasContent = false;
+    if (category === 'checklist') {
+      const inputs = Array.from(checklistContainer?.querySelectorAll('.checklist-builder-input') || []);
+      hasContent = inputs.some(input => input.value.trim().length > 0);
+    } else {
+      hasContent = quickInput?.value?.trim()?.length > 0;
+    }
+
+    if (hasContent) {
       quickSaveBtn.style.opacity = '1';
       quickSaveBtn.style.cursor = 'pointer';
     } else {
@@ -141,26 +351,57 @@ export function setup(state) {
       quickSaveBtn.style.cursor = 'not-allowed';
     }
   };
-  quickInput.addEventListener('input', () => {
-    updateSaveButtonState();
-    autoExpand(quickInput);
-  });
+
+  if (quickInput) {
+    quickInput.addEventListener('input', () => {
+      updateSaveButtonState();
+      autoExpand(quickInput);
+    });
+  }
   updateSaveButtonState();
 
   const saveTask = async () => {
-    const text = quickInput.value.trim();
     const titleText = quickTitleInput ? quickTitleInput.value.trim() : '';
-    if (!text) {
-      quickInput.style.borderColor = 'var(--danger)';
-      quickInput.style.boxShadow = '0 0 0 2px rgba(231, 76, 60, 0.2)';
-      setTimeout(() => {
-        quickInput.style.borderColor = '';
-        quickInput.style.boxShadow = '';
-      }, 1500);
-      return;
+    const taskCat = categorySelect?.value || 'normal';
+    let text = '';
+    let checklistItems = [];
+
+    if (taskCat === 'checklist') {
+      const inputs = Array.from(checklistContainer?.querySelectorAll('.checklist-builder-input') || []);
+      const vals = inputs.map(i => i.value.trim()).filter(v => v !== '');
+      if (vals.length === 0) {
+        const firstInput = checklistContainer?.querySelector('.checklist-builder-input');
+        if (firstInput) {
+          firstInput.style.borderColor = 'var(--danger)';
+          firstInput.style.boxShadow = '0 0 0 2px rgba(231, 76, 60, 0.2)';
+          firstInput.focus();
+          setTimeout(() => {
+            firstInput.style.borderColor = '';
+            firstInput.style.boxShadow = '';
+          }, 1500);
+        }
+        return;
+      }
+      text = vals.join('\n');
+      const id = `task_${Date.now()}`;
+      checklistItems = vals.map((lineText, idx) => ({ id: `${id}_line_${idx}`, text: lineText, done: false }));
+    } else {
+      text = quickInput.value.trim();
+      if (!text) {
+        quickInput.style.borderColor = 'var(--danger)';
+        quickInput.style.boxShadow = '0 0 0 2px rgba(231, 76, 60, 0.2)';
+        quickInput.focus();
+        setTimeout(() => {
+          quickInput.style.borderColor = '';
+          quickInput.style.boxShadow = '';
+        }, 1500);
+        return;
+      }
     }
 
-    const taskCat = document.getElementById('quickTaskCategory')?.value || 'normal';
+    const repeatDailyCheckbox = document.getElementById('quickTaskRemindDaily');
+    const isRepeatDaily = repeatDailyCheckbox ? repeatDailyCheckbox.checked : false;
+
     const id = `task_${Date.now()}`;
     const item = {
       id,
@@ -172,12 +413,11 @@ export function setup(state) {
       createdAt: Date.now(),
       done: false,
       reminder: reminderInput?.value || null,
+      repeatDaily: isRepeatDaily,
       status: 'pending',
       teamName: _state.getTeam()?.name || CHATOPS_CONFIG.DEFAULT_TEAM,
       taskCategory: taskCat,
-      checklist: taskCat === 'checklist'
-        ? text.split('\n').filter(l => l.trim()).map((lineText, idx) => ({ id: `${id}_line_${idx}`, text: lineText.trim(), done: false }))
-        : []
+      checklist: taskCat === 'checklist' ? checklistItems : []
     };
 
     const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS, STORAGE_KEYS.SETTINGS]);
@@ -186,28 +426,7 @@ export function setup(state) {
     memos.unshift(item);
     await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
 
-    quickInput.value = '';
-    quickInput.style.height = 'auto';
-    if (quickTitleInput) {
-      quickTitleInput.value = '';
-    }
-    const taskCatSelect = document.getElementById('quickTaskCategory');
-    if (taskCatSelect) {
-      taskCatSelect.value = 'normal';
-    }
-    if (fpQuick) {
-      fpQuick.clear();
-    }
-    if (presetSelect) {
-      presetSelect.value = '';
-      const customSelect = presetSelect.nextElementSibling;
-      if (customSelect && customSelect.classList.contains('custom-dropdown-container')) {
-        const selectedText = customSelect.querySelector('.custom-dropdown-selected-text');
-        if (selectedText) selectedText.textContent = 'Remind in...';
-      }
-    }
-    syncReminderDimming();
-    updateSaveButtonState();
+    resetTaskForm();
 
     const startTime = item.reminder
       ? new Date(item.reminder).getTime()
@@ -216,18 +435,19 @@ export function setup(state) {
     
     loadTasks();
 
-    // Close the Action Modal
     if (window.ModalManager) {
       window.ModalManager.close();
     }
   };
 
-  quickInput.addEventListener('keydown', e => { 
-    if (e.key === 'Enter' && e.shiftKey) {
-      e.preventDefault();
-      saveTask(); 
-    }
-  });
+  if (quickInput) {
+    quickInput.addEventListener('keydown', e => { 
+      if (e.key === 'Enter' && e.shiftKey) {
+        e.preventDefault();
+        saveTask(); 
+      }
+    });
+  }
   if (quickSaveBtn) {
     quickSaveBtn.addEventListener('click', saveTask);
   }
@@ -235,6 +455,11 @@ export function setup(state) {
   const cancelBtn = document.getElementById('btnCancelTask');
   if (cancelBtn) {
     cancelBtn.addEventListener('click', () => {
+      try {
+        resetTaskForm();
+      } catch (err) {
+        console.error('[ChatOps Ext] Error in cancel button handler:', err);
+      }
       if (window.ModalManager) {
         window.ModalManager.close();
       }
@@ -357,6 +582,9 @@ export function setup(state) {
       const task = memos.find(m => m.id === id);
       if (task) {
         const card = document.getElementById('item_' + id);
+        const collapseBtn = card?.querySelector('.collapse-btn');
+        if (collapseBtn) collapseBtn.style.display = 'none';
+
         const contentEl = card.querySelector('.memo-content');
         if (contentEl) {
           const actionsEl = card.querySelector('.memo-actions');
@@ -372,6 +600,17 @@ export function setup(state) {
               </div>
             </div>
           `;
+          const ta = contentEl.querySelector('.inline-edit-textarea');
+          if (ta) {
+            ta.style.boxSizing = 'border-box';
+            ta.style.height = 'auto';
+            ta.style.height = Math.max(180, ta.scrollHeight) + 'px';
+            ta.style.overflowY = 'hidden';
+            ta.addEventListener('input', () => {
+              ta.style.height = 'auto';
+              ta.style.height = Math.max(180, ta.scrollHeight) + 'px';
+            });
+          }
         }
       }
     }
@@ -567,17 +806,7 @@ function renderTaskCard(task, now) {
   let taskBodyHtml = '';
   if (task.taskCategory === 'checklist' && task.checklist && task.checklist.length > 0) {
     taskBodyHtml = task.checklist.map((item, idx) => {
-      return `
-        <div class="task-checklist-line" style="display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; font-size: 13px;">
-          <label class="memo-checkbox-container" style="margin: 0; padding: 0; width: 14px; height: 14px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; position: relative; top: 2px;" title="Mark done">
-            <input type="checkbox" class="task-checklist-item-checkbox" data-task-id="${task.id}" data-item-idx="${idx}" ${item.done ? 'checked' : ''}>
-            <span class="memo-checkmark-custom" style="width: 14px; height: 14px; border-radius: 4px; border: 1.5px solid var(--border);"></span>
-          </label>
-          <span class="task-checklist-text" style="flex: 1; color: ${item.done ? 'var(--text-3)' : 'var(--text-1)'}; text-decoration: ${item.done ? 'line-through' : 'none'}; transition: all 0.2s;">
-            ${formatRichText(item.text)}
-          </span>
-        </div>
-      `;
+      return `<div class="task-checklist-line" style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:13px;white-space:normal;"><label class="memo-checkbox-container footer-checkbox" style="margin:0;position:relative;top:2px;" title="Mark done"><input type="checkbox" class="task-checklist-item-checkbox" data-task-id="${task.id}" data-item-idx="${idx}" ${item.done ? 'checked' : ''}><span class="memo-checkmark-custom"></span></label><span class="task-checklist-text" style="flex:1;min-width:0;color:${item.done ? 'var(--text-3)' : 'var(--text-1)'};text-decoration:${item.done ? 'line-through' : 'none'};transition:all 0.2s;white-space:normal !important;">${formatRichText(item.text)}</span></div>`;
     }).join('');
   } else {
     taskBodyHtml = formatRichText(task.note || language.taskNoContent);
@@ -600,6 +829,11 @@ function renderTaskCard(task, now) {
             <span class="memo-checkmark-custom"></span>
           </label>
           <span class="sp-card-date">${formatRelativeTime(task.createdAt)}</span>
+          ${task.repeatDaily ? `
+            <span class="repeat-daily-badge" style="font-size:10px; font-weight:700; color:var(--accent); background:rgba(28,88,217,0.08); padding:1px 5px; border-radius:4px; display:inline-flex; align-items:center; gap:2px;" title="${language.taskRemindDailyLabel}">
+              🔄 ${language.repeatDailyBadgeText || 'Daily'}
+            </span>
+          ` : ''}
           ${!task.done ? `
             <div class="task-update-reminder-wrapper ${task.reminder ? 'has-reminder' : ''}">
               <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor" class="reminder-clock-icon"><path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/></svg>

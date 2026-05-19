@@ -457,6 +457,15 @@ const ModalManager = {
 
     if (onOpen) onOpen();
 
+    // Prevent automatic browser focus when modal is shown/appended
+    if (document.activeElement && modal.contains(document.activeElement)) {
+      document.activeElement.blur();
+    }
+    setTimeout(() => {
+      if (document.activeElement && modal.contains(document.activeElement)) {
+        document.activeElement.blur();
+      }
+    }, 50);
   },
 
   close() {

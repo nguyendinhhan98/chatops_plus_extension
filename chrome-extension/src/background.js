@@ -2,7 +2,7 @@
  * Background Service Worker — ChatOps Chrome Extension
  */
 
-import { getConfig, getMyProfile, addPostReaction, deletePostReaction } from './api/index.js';
+import { getConfig, getMyProfile, addPostReaction, deletePostReaction, deletePost } from './api/index.js';
 import { syncCookies, setupCookieSync } from './background/cookie-sync.js';
 import { 
   handleMentionCheck, 
@@ -15,6 +15,7 @@ import {
 } from './background/panel-manager.js';
 import { ALARMS, UI_CONFIG, MESSAGE_TYPES, CHATOPS_CONFIG, STORAGE_KEYS } from './constants.js';
 import { language, loadLanguage } from './lang.js';
+import { formatDateTime } from './utils/date.js';
 
 /**
  * Initialize extension services
@@ -120,6 +121,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       handleRetractReactions(message.postId, sendResponse);
       return true;
 
+    case MESSAGE_TYPES.DELETE_POST:
+      deletePost(message.postId)
+        .then(() => sendResponse({ ok: true }))
+        .catch((err) => sendResponse({ ok: false, error: err.message }));
+      return true;
+
+    case MESSAGE_TYPES.GET_MY_PROFILE:
+      getMyProfile()
+        .then((profile) => sendResponse({ ok: true, profile }))
+        .catch((err) => sendResponse({ ok: false, error: err.message }));
+      return true;
+
     case MESSAGE_TYPES.TEST_NOTIFICATION:
       const testType = message.notificationType || 'both';
       loadLanguage().then(() => {
@@ -186,7 +199,21 @@ function handleMarkTaskDone(taskId, sendResponse) {
     if (task) {
       task.done = true;
       task.doneAt = Date.now();
-      chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos }, () => sendResponse({ ok: true }));
+      if (task.repeatDaily) {
+        // Reschedule for tomorrow
+        const currentReminder = new Date(task.reminder || Date.now());
+        currentReminder.setDate(currentReminder.getDate() + 1);
+        while (currentReminder.getTime() <= Date.now()) {
+          currentReminder.setDate(currentReminder.getDate() + 1);
+        }
+        task.reminder = formatDateTime(currentReminder);
+        chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos }, () => {
+          chrome.alarms.create(taskId, { when: currentReminder.getTime() });
+          sendResponse({ ok: true });
+        });
+      } else {
+        chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos }, () => sendResponse({ ok: true }));
+      }
     } else {
       sendResponse({ ok: false, error: 'Task not found' });
     }

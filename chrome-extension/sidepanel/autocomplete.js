@@ -126,8 +126,10 @@ export function setupAutocomplete(inputId, fetchOptions, renderFn, onSelectFn) {
     // Debounce
     clearTimeout(timeoutId);
     timeoutId = setTimeout(() => {
-      dropdown.style.display = 'block';
-      loadData(false);
+      if (document.activeElement === inputEl) {
+        dropdown.style.display = 'block';
+        loadData(false);
+      }
     }, UI_CONFIG.DEBOUNCE_DELAY_MS);
   });
 

@@ -2,7 +2,7 @@
  * Content Script for ChatOps domain
  */
 
-import { MESSAGE_TYPES, UI_CONFIG, SELECTORS, STORAGE_KEYS, ALARMS } from '../src/constants.js';
+import { MESSAGE_TYPES, UI_CONFIG, SELECTORS, STORAGE_KEYS, ALARMS, DEFAULT_MEMES } from '../src/constants.js';
 import { language, loadLanguage } from '../src/lang.js';
 import { formatRichText } from '../src/utils/formatter.js';
 
@@ -10,6 +10,20 @@ import { formatRichText } from '../src/utils/formatter.js';
 let quickNotePopover = null;
 let quickNoteBackdrop = null;
 let imagePickerEl = null;
+let observer = null;
+
+function runWithObserverDisabled(fn) {
+  if (observer) {
+    observer.disconnect();
+  }
+  try {
+    fn();
+  } finally {
+    if (observer) {
+      observer.observe(document.body, { childList: true, subtree: true });
+    }
+  }
+}
 function initCommonFlatpickr(el, options = {}) {
   if (typeof flatpickr !== 'function') {
     console.warn('[ChatOps Ext] Flatpickr is not available globally.');
@@ -196,7 +210,6 @@ async function showReminderBanner(text, taskId, isTask = false, postId = null, t
       <div class="crb-task-actions" style="display: flex; flex-direction: column; gap: 6px;">
         <div style="display: flex; gap: 6px; width: 100%;">
           <button class="crb-done-btn" data-task-id="${taskId}" style="flex: 1; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;">${language.reminderDoneBtn}</button>
-          <button class="crb-dismiss-btn" style="padding: 0 12px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 4px; color: #475569; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.14s; height: 32px; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;">${language.cancel}</button>
         </div>
         ${postId ? `<button class="crb-jump-btn" data-post-id="${postId}" style="width: 100%; margin-top: 0; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;">${language.viewMessage}</button>` : ''}
       </div>
@@ -279,18 +292,9 @@ async function showReminderBanner(text, taskId, isTask = false, postId = null, t
       chrome.runtime.sendMessage({ type: MESSAGE_TYPES.MARK_TASK_DONE, taskId });
       banner.classList.remove('visible');
       setTimeout(() => banner.remove(), 400);
-      showToast(language.reminderTaskCompleted);
     });
 
-    const dismissBtn = banner.querySelector('.crb-dismiss-btn');
-    if (dismissBtn) {
-      dismissBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (closeTimer) clearTimeout(closeTimer);
-        banner.classList.remove('visible');
-        setTimeout(() => banner.remove(), 400);
-      });
-    }
+
 
     const jumpBtn = banner.querySelector('.crb-jump-btn');
     if (jumpBtn) {
@@ -384,8 +388,16 @@ function showToast(msg) {
       '.team-sidebar .team-wrapper, [class*="team-sidebar-items"], [class*="team-sidebar__scroller"], .team-wrapper, .team-sidebar, #teamSidebar, [class*="team-sidebar"]'
     );
     if (teamSidebar) {
-      if (btn.parentNode !== teamSidebar) {
-        teamSidebar.appendChild(btn);
+      const teamItems = teamSidebar.querySelectorAll('a, .team-btn, [class*="team-container"], [class*="team-btn"]');
+      if (teamItems && teamItems.length > 0) {
+        const lastTeam = teamItems[teamItems.length - 1];
+        if (btn.parentNode !== lastTeam.parentNode) {
+          lastTeam.parentNode.insertBefore(btn, lastTeam.nextSibling);
+        }
+      } else {
+        if (btn.parentNode !== teamSidebar) {
+          teamSidebar.appendChild(btn);
+        }
       }
       btn.classList.add('in-sidebar');
       btn.style.left = '';
@@ -500,7 +512,11 @@ function showToast(msg) {
 
   async function loadCustomImages() {
     const res = await chrome.storage.local.get(['custom_memes']);
-    const customMemes = res.custom_memes || [];
+    let customMemes = res.custom_memes;
+    if (customMemes === undefined) {
+      customMemes = DEFAULT_MEMES;
+      await chrome.storage.local.set({ custom_memes: customMemes });
+    }
     const container = document.getElementById('chatops-custom-images-grid');
     if (!container) return;
 
@@ -593,6 +609,13 @@ function showToast(msg) {
         const files = Array.from(e.target.files);
         if (files.length === 0) return;
 
+        const hasNonImage = files.some(f => !f.type.startsWith('image/'));
+        if (hasNonImage) {
+          alert(language.uploadOnlyImages);
+          fileInput.value = '';
+          return;
+        }
+
         if (files.length > 10) {
           alert(language.maxUploadLimitError);
         }
@@ -602,9 +625,15 @@ function showToast(msg) {
         // Process all images in parallel
         const compressionPromises = filesToProcess.map(file => {
           return new Promise((resolve) => {
-            compressImage(file, 1000, 1000, 0.9, (dataUrl) => {
-              resolve(dataUrl);
-            });
+            if (file.type === 'image/gif') {
+              const reader = new FileReader();
+              reader.onload = (ev) => resolve(ev.target.result);
+              reader.readAsDataURL(file);
+            } else {
+              compressImage(file, 1000, 1000, 0.9, (dataUrl) => {
+                resolve(dataUrl);
+              });
+            }
           });
         });
 
@@ -794,14 +823,14 @@ function showToast(msg) {
     container.innerHTML = `
       <div class="custom-dropdown" style="position: relative; width: 100%; box-sizing: border-box; font-family: var(--font);">
         <button type="button" class="custom-dropdown-toggle"
-          style="width: 100%; height: 34px; font-size: 12.5px; border-radius: 6px; border: 1px solid #cbd5e1; background: #ffffff; color: #1a1a1c; cursor: pointer; outline: none; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; font-weight: 500; transition: all 0.2s ease; box-sizing: border-box;">
-          <span class="custom-dropdown-selected-text">${initialText}</span>
+          style="width: 100%; height: 34px; font-size: 11.5px; border-radius: 6px; border: 1px solid #cbd5e1; background: #ffffff; color: #1a1a1c; cursor: pointer; outline: none; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; font-weight: 400; transition: all 0.2s ease; box-sizing: border-box;">
+          <span class="custom-dropdown-selected-text" style="font-weight: 400; font-size: 11.5px;">${initialText}</span>
           <span class="custom-dropdown-arrow" style="font-size: 9px; opacity: 0.6; transition: transform 0.2s ease;">▼</span>
         </button>
         <ul class="custom-dropdown-menu"
           style="position: absolute; top: 100%; right: 0; margin-top: 6px; width: 100%; min-width: 120px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12); padding: 4px 0; list-style: none; display: none; z-index: 1000000; max-height: 220px; overflow-y: auto; box-sizing: border-box;">
           ${options.map(opt => `
-            <li class="custom-dropdown-item" data-value="${opt.value}" style="padding: 6px 12px; font-size: 12.5px; color: #1a1a1c; cursor: pointer; transition: all 0.2s ease; text-align: left; list-style: none; margin: 0;">${opt.textContent}</li>
+            <li class="custom-dropdown-item" data-value="${opt.value}" style="padding: 6px 12px; font-size: 11.5px; color: #1a1a1c; cursor: pointer; transition: all 0.2s ease; text-align: left; list-style: none; margin: 0; font-weight: 400;">${opt.textContent}</li>
           `).join('')}
         </ul>
       </div>
@@ -1195,22 +1224,30 @@ function showToast(msg) {
     
     popover.classList.remove('visible');
     quickNoteBackdrop.classList.remove('visible');
-    showToast(mode === 'note' ? language.quickNoteSaveSuccess : language.quickTaskSaveSuccess);
   }
 
   let cachedSettings = { spamEnabled: true, memeEnabled: true, showTabs: { search: true, tasks: true, notes: true, missed: true } };
   let cachedMemos = [];
+  let myUserId = '';
 
   // Fetch initial settings and memos
   chrome.storage.local.get([STORAGE_KEYS.SETTINGS, STORAGE_KEYS.MEMOS], (res) => {
     if (res[STORAGE_KEYS.SETTINGS]) {
       cachedSettings = res[STORAGE_KEYS.SETTINGS];
-      handleQuickActionButtonsVisibility();
     }
     if (res[STORAGE_KEYS.MEMOS]) {
       cachedMemos = res[STORAGE_KEYS.MEMOS];
-      injectQuickNoteButtons();
     }
+    injectDynamicTheme();
+    loadCustomImages();
+    
+    // Fetch my profile ID to identify our own messages
+    chrome.runtime.sendMessage({ type: MESSAGE_TYPES.GET_MY_PROFILE }, (profileRes) => {
+      if (profileRes && profileRes.ok && profileRes.profile) {
+        myUserId = profileRes.profile.id;
+      }
+    });
+
   });
 
   // Listen to settings and custom image changes reactively
@@ -1218,8 +1255,10 @@ function showToast(msg) {
     if (areaName === 'local') {
       if (changes[STORAGE_KEYS.SETTINGS]) {
         cachedSettings = changes[STORAGE_KEYS.SETTINGS].newValue || { spamEnabled: true, showTabs: { search: true, tasks: true, notes: true, missed: true } };
-        handleQuickActionButtonsVisibility();
-        injectDynamicTheme();
+        runWithObserverDisabled(() => {
+          handleQuickActionButtonsVisibility();
+          injectDynamicTheme();
+        });
       }
       if (changes.custom_memes) {
         loadCustomImages();
@@ -1227,7 +1266,9 @@ function showToast(msg) {
       if (changes[STORAGE_KEYS.MEMOS]) {
         cachedMemos = changes[STORAGE_KEYS.MEMOS].newValue || [];
         updateFloatingBadgeCount();
-        injectQuickNoteButtons();
+        runWithObserverDisabled(() => {
+          injectQuickNoteButtons();
+        });
       }
     }
   });
@@ -1246,6 +1287,11 @@ function showToast(msg) {
     }
     if (!spamEnabled) {
       document.querySelectorAll('.chatops-quick-note-btn.spam-btn, .chatops-quick-note-btn.retract-btn').forEach(el => el.remove());
+    }
+    
+    const isQuickDeleteEnabled = cachedSettings.quickDelete === true;
+    if (!isQuickDeleteEnabled) {
+      document.querySelectorAll('.chatops-quick-note-btn.msg-delete-btn').forEach(el => el.remove());
     }
     
     injectQuickNoteButtons();
@@ -1297,7 +1343,6 @@ function showToast(msg) {
               const memos = res[STORAGE_KEYS.MEMOS] || [];
               const updatedMemos = memos.filter(m => m.id !== savedMemo.id);
               await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: updatedMemos });
-              showToast(savedMemo.type === 'task' ? 'Task deleted' : 'Note deleted');
             } catch (err) {
               console.error('[ChatOps Ext] Failed to delete memo:', err);
             }
@@ -1416,6 +1461,41 @@ function showToast(msg) {
         // If not enabled, clean up any existing spam and retract buttons from this post
         postEl.querySelectorAll('.chatops-quick-note-btn.spam-btn, .chatops-quick-note-btn.retract-btn').forEach(el => el.remove());
       }
+
+      // Inject Delete Message button (🗑️ with red color) if it's our post and quickDelete is enabled
+      const isOurPost = postEl.classList.contains('current--user') || (myUserId && postEl.getAttribute('data-user-id') === myUserId);
+      const isQuickDeleteEnabled = cachedSettings.quickDelete === true;
+      if (isOurPost && isQuickDeleteEnabled) {
+        if (!postEl.querySelector('.chatops-quick-note-btn.msg-delete-btn')) {
+          const msgDeleteBtn = document.createElement('button');
+          msgDeleteBtn.className = 'chatops-quick-note-btn msg-delete-btn';
+          msgDeleteBtn.innerHTML = '🗑️';
+          msgDeleteBtn.title = language.deletePostTooltip || 'Xóa tin nhắn (ChatOps)';
+          msgDeleteBtn.style.color = '#d0454c';
+          msgDeleteBtn.addEventListener('click', async (e) => {
+            e.preventDefault(); e.stopPropagation();
+            chrome.runtime.sendMessage({
+              type: MESSAGE_TYPES.DELETE_POST,
+              postId
+            }, (res) => {
+              if (res && res.ok) {
+                // Fade out and remove post element
+                postEl.style.transition = 'opacity 0.3s ease';
+                postEl.style.opacity = '0';
+                setTimeout(() => {
+                  postEl.remove();
+                }, 300);
+              } else {
+                console.error('[ChatOps Ext] Failed to delete message:', res?.error);
+                alert(res?.error || 'Failed to delete message');
+              }
+            });
+          });
+          actionArea.appendChild(msgDeleteBtn);
+        }
+      } else {
+        postEl.querySelector('.chatops-quick-note-btn.msg-delete-btn')?.remove();
+      }
     });
   }
 
@@ -1438,8 +1518,17 @@ function showToast(msg) {
     }
   });
 
-  const observer = new MutationObserver(() => { injectImageButton(); injectQuickNoteButtons(); });
+  observer = new MutationObserver(() => {
+    runWithObserverDisabled(() => {
+      injectImageButton();
+      injectQuickNoteButtons();
+    });
+  });
+  
   observer.observe(document.body, { childList: true, subtree: true });
-  injectImageButton();
-  injectQuickNoteButtons();
+  
+  runWithObserverDisabled(() => {
+    injectImageButton();
+    injectQuickNoteButtons();
+  });
 })();

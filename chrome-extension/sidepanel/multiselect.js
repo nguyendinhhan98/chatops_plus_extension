@@ -155,8 +155,10 @@ export function setupMultiSelect(containerId, fetchOptions, renderFn, getValueFn
 
     clearTimeout(timeoutId);
     timeoutId = setTimeout(() => {
-      dropdown.style.display = 'block';
-      loadData(false);
+      if (document.activeElement === input) {
+        dropdown.style.display = 'block';
+        loadData(false);
+      }
     }, UI_CONFIG.DEBOUNCE_DELAY_MS);
   });
 

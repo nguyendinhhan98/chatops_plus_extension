@@ -105,14 +105,14 @@ window.convertToCustomDropdown = function(selectId, width = null, height = null)
   container.innerHTML = `
     <div class="custom-dropdown" style="position: relative; width: 100%; box-sizing: border-box; font-family: var(--font);">
       <button type="button" class="custom-dropdown-toggle"
-        style="width: 100%; height: ${selectHeight}; font-size: 12.5px; border-radius: 6px; border: 1px solid var(--border); background: #ffffff; color: var(--text-2); cursor: pointer; outline: none; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; font-weight: 500; transition: all 0.2s ease; box-sizing: border-box;">
-        <span class="custom-dropdown-selected-text">${initialText}</span>
+        style="width: 100%; height: ${selectHeight}; font-size: 11.5px; border-radius: 6px; border: 1px solid var(--border); background: #ffffff; color: var(--text-2); cursor: pointer; outline: none; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; font-weight: 400; transition: all 0.2s ease; box-sizing: border-box;">
+        <span class="custom-dropdown-selected-text" style="font-weight: 400; font-size: 11.5px;">${initialText}</span>
         <span class="custom-dropdown-arrow" style="font-size: 9px; opacity: 0.6; transition: transform 0.2s ease;">▼</span>
       </button>
       <ul class="custom-dropdown-menu"
         style="position: absolute; top: 100%; right: 0; margin-top: 6px; width: 100%; min-width: 120px; background: #ffffff; border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12); padding: 4px 0; list-style: none; display: none; z-index: 1000; max-height: 220px; overflow-y: auto; box-sizing: border-box;">
         ${options.map(opt => `
-          <li class="custom-dropdown-item" data-value="${opt.value}" style="padding: 6px 12px; font-size: 12.5px; color: var(--text-2); cursor: pointer; transition: all 0.2s ease; text-align: left;">${opt.textContent}</li>
+          <li class="custom-dropdown-item" data-value="${opt.value}" style="padding: 6px 12px; font-size: 11.5px; color: var(--text-2); cursor: pointer; transition: all 0.2s ease; text-align: left; font-weight: 400;">${opt.textContent}</li>
         `).join('')}
       </ul>
     </div>
