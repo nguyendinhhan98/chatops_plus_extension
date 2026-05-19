@@ -382,8 +382,16 @@ function showToast(msg) {
     // Find Mattermost team sidebar and place the button inside it natively
     const teamSidebar = document.querySelector('.team-sidebar, #teamSidebar, .team-wrapper, [class*="team-sidebar"]');
     if (teamSidebar) {
-      if (btn.parentNode !== teamSidebar) {
-        teamSidebar.appendChild(btn);
+      const teamItems = teamSidebar.querySelectorAll('a, .team-btn, [class*="team-container"], [class*="team-btn"]');
+      if (teamItems && teamItems.length > 0) {
+        const lastTeam = teamItems[teamItems.length - 1];
+        if (btn.parentNode !== lastTeam.parentNode) {
+          lastTeam.parentNode.insertBefore(btn, lastTeam.nextSibling);
+        }
+      } else {
+        if (btn.parentNode !== teamSidebar) {
+          teamSidebar.appendChild(btn);
+        }
       }
       btn.classList.add('in-sidebar');
       btn.style.left = '';
