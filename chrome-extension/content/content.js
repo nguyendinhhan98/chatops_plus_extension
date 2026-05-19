@@ -379,8 +379,10 @@ function showToast(msg) {
 
   // Function to align the floating button under the last team icon
   function alignButtonToSidebar() {
-    // Find Mattermost team sidebar and place the button inside it natively
-    const teamSidebar = document.querySelector('.team-sidebar, #teamSidebar, .team-wrapper, [class*="team-sidebar"]');
+    // Find Mattermost team sidebar scroller or wrapper first, falling back to outer team sidebar
+    const teamSidebar = document.querySelector(
+      '.team-sidebar .team-wrapper, [class*="team-sidebar-items"], [class*="team-sidebar__scroller"], .team-wrapper, .team-sidebar, #teamSidebar, [class*="team-sidebar"]'
+    );
     if (teamSidebar) {
       if (btn.parentNode !== teamSidebar) {
         teamSidebar.appendChild(btn);
