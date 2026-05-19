@@ -172,19 +172,19 @@ export function renderMentionItem(post, author, permalink) {
   
   return `
     <div class="post-item missed-mention-item" id="item_${post.id}">
-      <div class="post-header" style="display:flex; align-items:center;">
+      <div class="post-header" style="display:flex; align-items:center; padding-right: 32px;">
         <button class="collapse-btn" data-id="${post.id}" style="margin-right: 4px;" title="Expand/Collapse">▶</button>
         <span class="post-author" style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight:600;">${escapeHtml(authorName)}</span>
         <span class="post-time" title="${formatUnixMsToVN(post.create_at)}" style="flex-shrink: 0; margin-left: 8px; font-size:11px; color:var(--text-3);">${formatRelativeTime(post.create_at)}</span>
       </div>
       <div class="post-body collapsible-body collapsed" style="margin-top:4px;">${escapedText}</div>
-      <div class="post-actions" style="display: flex; align-items: center; justify-content: space-between; margin-top: 8px;">
-        <a href="${permalink}" target="_blank" class="post-jump-link" title="${language.openInChatOps}">↗</a>
-        <div class="mention-reactions-row" style="display: flex; gap: 6px; align-items: center;">
-          <button class="mention-react-btn" data-post-id="${post.id}" data-emoji="white_check_mark" title="React with :white_check_mark:">✅</button>
-          <button class="mention-react-btn" data-post-id="${post.id}" data-emoji="eyes" title="React with :eyes:">👀</button>
-          <button class="mention-react-btn" data-post-id="${post.id}" data-emoji="thumbsup" title="React with :+1:">👍</button>
-        </div>
+      <div class="post-actions">
+        <a href="${permalink}" target="_blank" class="post-jump-link" title="${language.openInChatOps || 'Open in ChatOps'}">↗</a>
+      </div>
+      <div class="mention-reactions-row" style="display: flex; gap: 8px; align-items: center; justify-content: flex-end; margin-top: 8px;">
+        <button class="mention-react-btn" data-post-id="${post.id}" data-emoji="white_check_mark" title="React with :white_check_mark:">✅</button>
+        <button class="mention-react-btn" data-post-id="${post.id}" data-emoji="eyes" title="React with :eyes:">👀</button>
+        <button class="mention-react-btn" data-post-id="${post.id}" data-emoji="thumbsup" title="React with :+1:">👍</button>
       </div>
     </div>
   `;

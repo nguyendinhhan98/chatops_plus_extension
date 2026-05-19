@@ -25,7 +25,7 @@
   top: auto !important;
   right: auto !important;
   bottom: auto !important;
-  margin: 12px auto !important;
+  margin: 12px auto 24px auto !important;
   display: flex !important;
   transform: none !important;
 }

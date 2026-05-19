@@ -137,10 +137,10 @@ async function scanMentionsDeep() {
   resultsEl.innerHTML = `
     <div class="progress-bar"><div class="progress-fill" id="mentionProgress" style="width:0%"></div></div>
     <div class="loading-state" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
-      <span class="spinner"></span> <span>${language.scanningChannels}</span>
+      <span class="spinner"></span> <span data-i18n="scanningChannels">${language.scanningChannels}</span>
     </div>
     <div style="font-size: 12.5px; color: var(--text-2); text-align: center; margin-top: 14px; padding: 0 16px; line-height: 1.45; font-style: italic;">
-      💡 ${language.scanTimeNotice}
+      💡 <span data-i18n="scanTimeNotice">${language.scanTimeNotice}</span>
     </div>
   `;
  
