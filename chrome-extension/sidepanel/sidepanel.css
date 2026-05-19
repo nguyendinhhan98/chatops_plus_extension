@@ -725,7 +725,7 @@ textarea.search-form-textarea {
 
 .collapsible-body.collapsed {
   max-height: 145px !important;
-  overflow: hidden !important;
+  overflow-y: auto !important;
   position: relative;
   display: block !important;
 }
