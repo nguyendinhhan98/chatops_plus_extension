@@ -234,7 +234,9 @@ const DEFAULT_SETTINGS = {
   spamEmojis: ['thumbsup', 'heart', 'fire', 'rocket', 'laughing'],
   autoCleanupDays: 30,
   notificationType: 'in-page',
-  appPadding: '12px'
+  appPadding: '12px',
+  quickDelete: false,
+  soundNotification: false
 };
 
 /**
@@ -304,9 +306,29 @@ async function loadAndApplySettings() {
   colorKeys.forEach(key => {
     const row = document.querySelector(`.color-presets-row[data-key="${key}"]`);
     if (row) {
-      row.querySelectorAll('.color-preset').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.color === settings[key]);
+      let matchedPreset = false;
+      const presets = row.querySelectorAll('.color-preset:not(.color-preset-custom-wrapper)');
+      presets.forEach(btn => {
+        const isMatched = btn.dataset.color === settings[key];
+        btn.classList.toggle('active', isMatched);
+        if (isMatched) matchedPreset = true;
       });
+
+      const customWrapper = row.querySelector('.color-preset-custom-wrapper');
+      if (customWrapper) {
+        const customInput = customWrapper.querySelector('.custom-color-picker-input');
+        if (!matchedPreset && settings[key]) {
+          customWrapper.classList.add('active');
+          customWrapper.dataset.color = settings[key];
+          customWrapper.style.background = settings[key];
+          if (customInput) customInput.value = settings[key];
+        } else {
+          customWrapper.classList.remove('active');
+          customWrapper.dataset.color = '';
+          customWrapper.style.background = 'linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet)';
+          if (customInput) customInput.value = '#000000';
+        }
+      }
     }
   });
   
@@ -343,6 +365,16 @@ async function loadAndApplySettings() {
       configArea.style.opacity = chkMemeEnabled.checked ? '1' : '0.5';
       configArea.style.pointerEvents = chkMemeEnabled.checked ? 'auto' : 'none';
     }
+  }
+
+  const chkQuickDelete = document.getElementById('settingQuickDelete');
+  if (chkQuickDelete) {
+    chkQuickDelete.checked = settings.quickDelete === true;
+  }
+
+  const chkSoundNotification = document.getElementById('settingSoundNotification');
+  if (chkSoundNotification) {
+    chkSoundNotification.checked = settings.soundNotification === true;
   }
 
   // Pre-load selected, standard grid, and personal memes
@@ -507,13 +539,21 @@ function setupEventListeners() {
     });
   }
 
-  document.querySelectorAll('.color-preset').forEach(btn => {
+  document.querySelectorAll('.color-preset:not(.color-preset-custom-wrapper)').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const row = e.target.closest('.color-presets-row');
-      const color = e.target.dataset.color;
       if (row) {
         row.querySelectorAll('.color-preset').forEach(b => b.classList.remove('active'));
         e.target.classList.add('active');
+
+        // Reset the sibling custom color picker wrapper back to original gradient state if a preset was clicked
+        const customWrapper = row.querySelector('.color-preset-custom-wrapper');
+        if (customWrapper) {
+          customWrapper.dataset.color = '';
+          customWrapper.style.background = 'linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet)';
+          const customInput = customWrapper.querySelector('.custom-color-picker-input');
+          if (customInput) customInput.value = '#000000';
+        }
         
         // Auto-save structural color
         const newSettings = {
@@ -526,6 +566,33 @@ function setupEventListeners() {
         showAutoSaveFeedback();
       }
     });
+  });
+
+  document.querySelectorAll('.custom-color-picker-input').forEach(input => {
+    const handleCustomColorChange = async (e) => {
+      const color = e.target.value;
+      const wrapper = e.target.closest('.color-preset-custom-wrapper');
+      const row = e.target.closest('.color-presets-row');
+      
+      if (wrapper && row) {
+        row.querySelectorAll('.color-preset').forEach(b => b.classList.remove('active'));
+        wrapper.classList.add('active');
+        wrapper.dataset.color = color;
+        wrapper.style.background = color;
+        
+        // Auto-save structural color
+        const newSettings = {
+          headerColor: document.querySelector('.color-presets-row[data-key="headerColor"] .color-preset.active')?.dataset.color,
+          navColor: document.querySelector('.color-presets-row[data-key="navColor"] .color-preset.active')?.dataset.color,
+          accentColor: document.querySelector('.color-presets-row[data-key="accentColor"] .color-preset.active')?.dataset.color
+        };
+        await updateSettings(newSettings);
+        applyThemeToDOM(newSettings);
+        showAutoSaveFeedback();
+      }
+    };
+    input.addEventListener('input', handleCustomColorChange);
+    input.addEventListener('change', handleCustomColorChange);
   });
 
   const chkSpamEnabled = document.getElementById('settingSpamEnabled');
@@ -552,6 +619,22 @@ function setupEventListeners() {
         configArea.style.pointerEvents = e.target.checked ? 'auto' : 'none';
       }
       chrome.runtime.sendMessage({ type: 'SETTINGS_UPDATED' });
+    });
+  }
+
+  const chkQuickDelete = document.getElementById('settingQuickDelete');
+  if (chkQuickDelete) {
+    chkQuickDelete.addEventListener('change', async (e) => {
+      await updateSettings({ quickDelete: e.target.checked });
+      showAutoSaveFeedback();
+    });
+  }
+
+  const chkSoundNotification = document.getElementById('settingSoundNotification');
+  if (chkSoundNotification) {
+    chkSoundNotification.addEventListener('change', async (e) => {
+      await updateSettings({ soundNotification: e.target.checked });
+      showAutoSaveFeedback();
     });
   }
 

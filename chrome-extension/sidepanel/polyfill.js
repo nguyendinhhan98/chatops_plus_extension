@@ -1,3 +1,21 @@
+// Safe wrap for CSSStyleSheet.prototype.cssRules to avoid SecurityError in cross-origin environments (e.g. under macOS Chrome)
+try {
+  const originalCssRulesDescriptor = Object.getOwnPropertyDescriptor(CSSStyleSheet.prototype, 'cssRules');
+  if (originalCssRulesDescriptor) {
+    Object.defineProperty(CSSStyleSheet.prototype, 'cssRules', {
+      get: function() {
+        try {
+          return originalCssRulesDescriptor.get.call(this);
+        } catch (e) {
+          return [];
+        }
+      }
+    });
+  }
+} catch (e) {
+  console.warn('[ChatOps Ext] Failed to patch CSSStyleSheet cssRules getter:', e);
+}
+
 // Polyfill chrome APIs for browser environments/testing
 if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) {
   window.chrome = window.chrome || {};

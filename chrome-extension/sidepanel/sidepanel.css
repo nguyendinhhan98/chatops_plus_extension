@@ -724,17 +724,29 @@ textarea.search-form-textarea {
 }
 
 .collapsible-body.collapsed {
-  display: -webkit-box !important;
-  -webkit-line-clamp: 2 !important;
-  -webkit-box-orient: vertical !important;
-  white-space: normal !important;
+  max-height: 145px !important;
   overflow: hidden !important;
-  text-overflow: ellipsis !important;
+  position: relative;
+  display: block !important;
 }
 
 .collapsible-body:not(.collapsed) {
-  white-space: pre-wrap !important;
-  max-height: none !important;
+  white-space: normal !important;
+  max-height: 250px !important;
+  overflow-y: auto !important;
+}
+.collapsible-body::-webkit-scrollbar {
+  width: 4px;
+}
+.collapsible-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+.collapsible-body::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+.collapsible-body::-webkit-scrollbar-thumb:hover {
+  background: var(--text-3);
 }
 
 /* Unified Collapse Button Style */
@@ -1176,9 +1188,11 @@ textarea.search-form-textarea {
 
 .quick-note-textarea {
   width: 100%;
-  resize: vertical;
+  resize: none;
   padding: 10px 12px;
-  min-height: 120px;
+  min-height: 80px;
+  max-height: 220px;
+  overflow-y: auto;
   background: #ffffff;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -2305,7 +2319,8 @@ textarea {
   background: var(--accent);
   color: #ffffff;
   border: 2px solid rgba(255, 255, 255, 0.2);
-  font-size: 18px;
+  font-size: 24px;
+  font-weight: bold;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2655,4 +2670,65 @@ span.flatpickr-weekday {
 }
 .empty-state:has(.sp-how-to-use-card) {
   padding: 16px 0;
+}
+
+/* Note Line-by-Line Copy Hover Styles */
+.note-line-item {
+  position: relative;
+  cursor: pointer;
+  padding: 3px 6px;
+  border-radius: 4px;
+  transition: background var(--transition);
+}
+.note-line-item:hover {
+  background: rgba(28, 88, 217, 0.04);
+}
+.note-line-item:hover .btn-copy-line {
+  opacity: 0.85 !important;
+}
+.btn-copy-line {
+  transition: opacity 0.2s, color 0.2s, transform 0.1s !important;
+}
+.btn-copy-line:hover {
+  color: var(--accent) !important;
+  transform: scale(1.15);
+}
+.btn-copy-line:active {
+  transform: scale(0.9);
+}
+.note-line-text {
+  white-space: pre-wrap !important;
+  word-break: break-all;
+  flex: 1;
+}
+.note-line-blank {
+  min-height: 1.2em;
+}
+
+/* Mention Reaction Buttons Styles */
+.mention-react-btn {
+  background: var(--bg-1) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 6px !important;
+  width: 28px !important;
+  height: 26px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  font-size: 13.5px !important;
+  transition: all 0.2s ease !important;
+  padding: 0 !important;
+  color: var(--text-2) !important;
+  outline: none !important;
+}
+.mention-react-btn:hover {
+  background: var(--bg-2) !important;
+  border-color: var(--text-3) !important;
+  transform: scale(1.1) !important;
+}
+.mention-react-btn.reacted {
+  background: var(--accent-dim) !important;
+  border-color: var(--accent) !important;
+  color: var(--accent) !important;
 }

@@ -322,6 +322,19 @@ const en = {
   cleanup30Days: 'After 30 days',
   cleanup90Days: 'After 90 days',
   cleanupNowBtn: 'Cleanup Now',
+  confirmDeleteTask: '⚠️ Are you sure you want to delete this task?',
+  confirmDeleteNote: '⚠️ Are you sure you want to delete this note?',
+  settingQuickDelete: 'Quick Delete (No confirmation popup)',
+  settingSoundNotification: 'Play sound for notifications',
+  customColorLabel: 'Custom...',
+  exportNotesBtn: 'Export',
+  importNotesBtn: 'Import',
+  exportNotesBtnTitle: 'Export notes to JSON file',
+  importNotesBtnTitle: 'Import notes from JSON file',
+  importSuccess: '🎉 Successfully imported {count} notes!',
+  importFailed: '❌ Import failed. Please check the file content.',
+  categoryNormal: 'Normal',
+  categoryChecklist: 'Checklist',
 };
 
 // Vietnamese Dictionary
@@ -640,6 +653,19 @@ const vi = {
   cleanup30Days: 'Sau 30 ngày',
   cleanup90Days: 'Sau 90 days',
   cleanupNowBtn: 'Dọn dẹp ngay',
+  confirmDeleteTask: '⚠️ Bạn có chắc chắn muốn xóa công việc này không?',
+  confirmDeleteNote: '⚠️ Bạn có chắc chắn muốn xóa ghi chú này không?',
+  settingQuickDelete: 'Xóa nhanh (Không hiện xác nhận)',
+  settingSoundNotification: 'Phát âm thanh khi có thông báo',
+  customColorLabel: 'Tùy chọn...',
+  exportNotesBtn: 'Xuất ghi chú',
+  importNotesBtn: 'Nhập ghi chú',
+  exportNotesBtnTitle: 'Xuất ghi chú ra tệp JSON',
+  importNotesBtnTitle: 'Nhập ghi chú từ tệp JSON',
+  importSuccess: '🎉 Đã nhập thành công {count} ghi chú!',
+  importFailed: '❌ Nhập thất bại. Vui lòng kiểm tra lại nội dung file.',
+  categoryNormal: 'Thường',
+  categoryChecklist: 'Checklist',
 };
 
 // Swaps the active language dictionary key-value pairs in-place
@@ -661,13 +687,13 @@ export function getActiveLanguageCode() {
 }
 
 // Initialize with a default locale synchronously
-setLanguage('en');
+setLanguage('vi');
 
 // Asynchronously load language from chrome.storage.local
 export async function loadLanguage() {
   return new Promise((resolve) => {
     chrome.storage.local.get(['app_lang'], (res) => {
-      const savedLang = res.app_lang || 'en';
+      const savedLang = res.app_lang || 'vi';
       setLanguage(savedLang);
       resolve(savedLang);
     });

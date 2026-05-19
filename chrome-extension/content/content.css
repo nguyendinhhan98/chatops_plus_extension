@@ -19,6 +19,16 @@
   box-shadow: 0 2px 8px rgba(0,0,0,0.12);
   border: 1px solid rgba(0,0,0,0.06);
 }
+#chatops-ext-floating-btn.in-sidebar {
+  position: relative !important;
+  left: auto !important;
+  top: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  margin: 12px auto !important;
+  display: flex !important;
+  transform: none !important;
+}
 
 #chatops-ext-floating-btn:hover {
   transform: scale(1.06);
@@ -87,6 +97,10 @@
 .chatops-quick-note-btn:hover {
   background: rgba(28, 88, 217, 0.1) !important;
   opacity: 1 !important;
+}
+
+.chatops-quick-note-btn.delete-btn:hover {
+  background: rgba(208, 69, 76, 0.1) !important;
 }
 
 /* ─── Quick Note Popover ─── */
@@ -479,6 +493,17 @@ html body #chatops-quick-note-popover textarea#cqn-note-text {
   color: #1a1a1c; 
   line-height: 1.4; 
   word-break: break-word; 
+  white-space: pre-wrap;
+  transition: max-height 0.2s ease;
+}
+.crb-text.collapsed {
+  display: -webkit-box !important;
+  -webkit-line-clamp: 7 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-height: 127px !important; /* 7 lines * 13px * 1.4 */
+  white-space: normal !important;
 }
 .crb-text::-webkit-scrollbar {
   width: 4px;

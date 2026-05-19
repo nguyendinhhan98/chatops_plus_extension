@@ -43,6 +43,11 @@ export function setup(state) {
     });
   }
 
+  const autoExpand = (el) => {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 220) + 'px';
+  };
+
   const updateSaveButtonState = () => {
     const hasText = quickInput.value.trim().length > 0;
     if (hasText) {
@@ -53,7 +58,10 @@ export function setup(state) {
       quickSaveBtn.style.cursor = 'not-allowed';
     }
   };
-  quickInput.addEventListener('input', updateSaveButtonState);
+  quickInput.addEventListener('input', () => {
+    updateSaveButtonState();
+    autoExpand(quickInput);
+  });
   updateSaveButtonState();
 
   const saveNote = async () => {
@@ -94,6 +102,7 @@ export function setup(state) {
     await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
 
     quickInput.value = '';
+    quickInput.style.height = 'auto';
     if (quickTitleInput) {
       quickTitleInput.value = '';
     }
@@ -123,12 +132,110 @@ export function setup(state) {
     });
   }
 
+  // Local Notes Backup (JSON Export & Import)
+  const exportBtn = document.getElementById('btnExportNotes');
+  if (exportBtn) {
+    exportBtn.addEventListener('click', async () => {
+      const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
+      const allMemos = res[STORAGE_KEYS.MEMOS] || [];
+      const notesOnly = allMemos.filter(m => m.type === 'memo');
+      
+      if (notesOnly.length === 0) {
+        alert(language.noNotesToExport || "No notes to export!");
+        return;
+      }
+      
+      const jsonStr = JSON.stringify(notesOnly, null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `mcp_notes_backup_${new Date().toISOString().slice(0,10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+  }
+
+  const importFileInput = document.getElementById('importNotesFileInput');
+  if (importFileInput) {
+    importFileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = async (evt) => {
+        try {
+          const importedData = JSON.parse(evt.target.result);
+          if (!Array.isArray(importedData)) {
+            throw new Error("Invalid format: Must be an array of notes.");
+          }
+          
+          // Validate notes structure
+          const validNotes = importedData.filter(item => item && item.id && item.type === 'memo' && item.note);
+          if (validNotes.length === 0) {
+            alert(language.noValidNotesFound || "No valid notes found in file!");
+            return;
+          }
+          
+          const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
+          const currentMemos = res[STORAGE_KEYS.MEMOS] || [];
+          
+          let importCount = 0;
+          let updateCount = 0;
+          
+          const updatedMemos = [...currentMemos];
+          
+          validNotes.forEach(newNote => {
+            const existingIdx = updatedMemos.findIndex(m => m.id === newNote.id);
+            if (existingIdx !== -1) {
+              // Existing note: update if imported note is newer or equal
+              const existingNote = updatedMemos[existingIdx];
+              if (!existingNote.updatedAt || !newNote.updatedAt || newNote.updatedAt >= existingNote.updatedAt) {
+                updatedMemos[existingIdx] = { ...existingNote, ...newNote };
+                updateCount++;
+              }
+            } else {
+              // New note: insert
+              updatedMemos.push(newNote);
+              importCount++;
+            }
+          });
+          
+          await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: updatedMemos });
+          
+          const successMsg = (language.importSuccess || "🎉 Successfully imported {count} notes!")
+            .replace('{count}', importCount + updateCount);
+          alert(successMsg);
+          
+          importFileInput.value = '';
+          loadMemos();
+        } catch (err) {
+          alert((language.importFailed || "❌ Import failed. Please check the file content.") + "\n" + err.message);
+          importFileInput.value = '';
+        }
+      };
+      reader.readAsText(file);
+    });
+  }
+
   // Event delegation for note list
   document.getElementById('memoNoteList').addEventListener('click', async (e) => {
     // Delete note
     if (e.target.classList.contains('btn-delete-memo')) {
       const id = e.target.dataset.id;
-      const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
+      const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS, STORAGE_KEYS.SETTINGS]);
+      const settings = res[STORAGE_KEYS.SETTINGS] || {};
+      const quickDelete = settings.quickDelete === true;
+      
+      if (!quickDelete) {
+        if (!confirm(language.confirmDeleteNote || "Are you sure you want to delete this note?")) {
+          return;
+        }
+      }
+      
       const memos = (res[STORAGE_KEYS.MEMOS] || []).filter(m => m.id !== id);
       await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
       loadMemos();
@@ -145,6 +252,33 @@ export function setup(state) {
         btn.style.color = 'var(--success)';
         setTimeout(() => { btn.innerHTML = original; btn.style.color = ''; }, 1500);
       } catch {}
+    }
+
+    // Copy single line trigger (click anywhere on the line)
+    const lineItem = e.target.closest('.note-line-item');
+    if (lineItem && !e.target.closest('.post-link')) {
+      e.stopPropagation();
+      const btnCopyLine = lineItem.querySelector('.btn-copy-line');
+      if (btnCopyLine) {
+        const text = btnCopyLine.dataset.text;
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = btnCopyLine.innerHTML;
+          btnCopyLine.innerHTML = `<span style="font-size:9.5px; color:var(--success); font-weight:700; display:inline-flex; align-items:center; justify-content:center;">✓</span>`;
+          btnCopyLine.style.opacity = '1';
+          
+          // Flash background color of the line item to indicate copy success!
+          const originalBg = lineItem.style.background;
+          lineItem.style.background = 'rgba(46, 204, 113, 0.12)';
+          lineItem.style.transition = 'background 0.15s ease';
+          
+          setTimeout(() => {
+            btnCopyLine.innerHTML = original;
+            btnCopyLine.style.opacity = '';
+            lineItem.style.background = originalBg;
+          }, 1000);
+        } catch {}
+      }
     }
 
     // Inline edit trigger
@@ -164,7 +298,7 @@ export function setup(state) {
           contentEl.innerHTML = `
             <div class="inline-edit-form" style="width:100%; display: flex; flex-direction: column; gap: 8px;">
               <input type="text" class="inline-edit-title" placeholder="Title (optional)" value="${escapeHtml(note.title || '')}" style="width: 100%; height: 28px; font-size: 13px; font-weight: 600; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); outline: none; box-sizing: border-box; font-family: inherit;" autocomplete="off">
-              <textarea class="inline-edit-textarea" style="width: 100%; min-height: 60px; padding: 8px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 13px; outline: none; background: #fff; resize: vertical; color: var(--text-1);">${escapeHtml(note.note)}</textarea>
+              <textarea class="inline-edit-textarea" rows="10" style="width: 100%; min-height: 180px; padding: 8px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 13px; outline: none; background: #fff; resize: vertical; color: var(--text-1);">${escapeHtml(note.note)}</textarea>
               <div style="display: flex; gap: 6px; justify-content: flex-end;">
                 <button class="btn btn-secondary inline-edit-cancel" data-id="${id}" style="padding: 4px 10px; font-size: 11.5px; height: 26px; border-radius: 6px; cursor:pointer;">${language.cancel}</button>
                 <button class="btn btn-primary inline-edit-save" data-id="${id}" style="padding: 4px 10px; font-size: 11.5px; height: 26px; border-radius: 6px; cursor:pointer; color:#fff;">${language.save}</button>
@@ -329,8 +463,17 @@ function renderNoteCard(note, categories = ['General', 'Work', 'Personal', 'Idea
     ? makePermalinkSync(note.postId, cachedConfig.chatopsUrl, currentTeam?.name || CHATOPS_CONFIG.DEFAULT_TEAM)
     : null;
 
-  const escapedText = formatRichText(note.note || language.memoEmptyNote);
   const rawText = note.note || '';
+  const lines = rawText.split('\n');
+  const escapedText = lines.map((line) => {
+    if (!line.trim()) {
+      return `<div class="note-line-blank"></div>`;
+    }
+    const escapedLine = formatRichText(line);
+    const rawLineEscaped = line.replace(/"/g, '&quot;');
+    return `<div class="note-line-item" style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 2px;" title="${language.clickToCopyLine || 'Click to copy this line'}"><span class="note-line-text">${escapedLine}</span><button class="btn-copy-line" data-text="${rawLineEscaped}" title="${language.clickToCopyLine || 'Click to copy this line'}" style="background: none; border: none; padding: 2px; cursor: pointer; color: var(--text-3); opacity: 0; transition: opacity 0.2s; display: inline-flex; align-items: center; justify-content: center; height: 18px; width: 18px; margin-top: 2px;"><svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg></button></div>`;
+  }).join('');
+  
   const hasOriginalPost = note.postId && note.postText && note.postText !== note.note;
   
   const categoryLabel = note.category || 'General';

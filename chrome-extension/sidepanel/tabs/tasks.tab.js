@@ -126,6 +126,11 @@ export function setup(state) {
     }
   }
 
+  const autoExpand = (el) => {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 220) + 'px';
+  };
+
   const updateSaveButtonState = () => {
     const hasText = quickInput.value.trim().length > 0;
     if (hasText) {
@@ -136,7 +141,10 @@ export function setup(state) {
       quickSaveBtn.style.cursor = 'not-allowed';
     }
   };
-  quickInput.addEventListener('input', updateSaveButtonState);
+  quickInput.addEventListener('input', () => {
+    updateSaveButtonState();
+    autoExpand(quickInput);
+  });
   updateSaveButtonState();
 
   const saveTask = async () => {
@@ -152,6 +160,7 @@ export function setup(state) {
       return;
     }
 
+    const taskCat = document.getElementById('quickTaskCategory')?.value || 'normal';
     const id = `task_${Date.now()}`;
     const item = {
       id,
@@ -164,7 +173,11 @@ export function setup(state) {
       done: false,
       reminder: reminderInput?.value || null,
       status: 'pending',
-      teamName: _state.getTeam()?.name || CHATOPS_CONFIG.DEFAULT_TEAM
+      teamName: _state.getTeam()?.name || CHATOPS_CONFIG.DEFAULT_TEAM,
+      taskCategory: taskCat,
+      checklist: taskCat === 'checklist'
+        ? text.split('\n').filter(l => l.trim()).map((lineText, idx) => ({ id: `${id}_line_${idx}`, text: lineText.trim(), done: false }))
+        : []
     };
 
     const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS, STORAGE_KEYS.SETTINGS]);
@@ -174,8 +187,13 @@ export function setup(state) {
     await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
 
     quickInput.value = '';
+    quickInput.style.height = 'auto';
     if (quickTitleInput) {
       quickTitleInput.value = '';
+    }
+    const taskCatSelect = document.getElementById('quickTaskCategory');
+    if (taskCatSelect) {
+      taskCatSelect.value = 'normal';
     }
     if (fpQuick) {
       fpQuick.clear();
@@ -250,7 +268,16 @@ export function setup(state) {
     // Delete item
     if (e.target.classList.contains('btn-delete-task')) {
       const id = e.target.dataset.id;
-      const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
+      const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS, STORAGE_KEYS.SETTINGS]);
+      const settings = res[STORAGE_KEYS.SETTINGS] || {};
+      const quickDelete = settings.quickDelete === true;
+      
+      if (!quickDelete) {
+        if (!confirm(language.confirmDeleteTask || "Are you sure you want to delete this task?")) {
+          return;
+        }
+      }
+      
       const memos = (res[STORAGE_KEYS.MEMOS] || []).filter(m => m.id !== id);
       await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
       chrome.alarms.clear(id);
@@ -267,6 +294,14 @@ export function setup(state) {
       if (task) {
         task.done = e.target.checked;
         task.doneAt = e.target.checked ? Date.now() : null;
+        
+        // If task is checked done, check all checklist items done
+        if (task.taskCategory === 'checklist' && task.checklist) {
+          task.checklist.forEach(item => {
+            item.done = e.target.checked;
+          });
+        }
+        
         await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
         if (e.target.checked) {
           chrome.alarms.clear(id);
@@ -274,6 +309,41 @@ export function setup(state) {
           const snoozeMins = settings.snoozeMinutes || 5;
           chrome.runtime.sendMessage({ type: MESSAGE_TYPES.SET_TASK_ALARM, taskId: id, time: Date.now() + snoozeMins * 60 * 1000 });
         }
+        loadTasks();
+      }
+    }
+
+    // Checklist item toggle
+    if (e.target.classList.contains('task-checklist-item-checkbox')) {
+      const taskId = e.target.dataset.taskId;
+      const itemIdx = parseInt(e.target.dataset.itemIdx);
+      const isChecked = e.target.checked;
+      
+      const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS, STORAGE_KEYS.SETTINGS]);
+      const memos = res[STORAGE_KEYS.MEMOS] || [];
+      const settings = res[STORAGE_KEYS.SETTINGS] || { snoozeMinutes: 5 };
+      const task = memos.find(m => m.id === taskId);
+      
+      if (task && task.checklist && task.checklist[itemIdx]) {
+        task.checklist[itemIdx].done = isChecked;
+        
+        // Check if all checklist items are completed
+        const allDone = task.checklist.every(item => item.done === true);
+        if (allDone) {
+          task.done = true;
+          task.doneAt = Date.now();
+          chrome.alarms.clear(taskId);
+        } else {
+          // If task was previously done but now a checklist item is unchecked, mark task as not done
+          if (task.done) {
+            task.done = false;
+            task.doneAt = null;
+            const snoozeMins = settings.snoozeMinutes || 5;
+            chrome.runtime.sendMessage({ type: MESSAGE_TYPES.SET_TASK_ALARM, taskId, time: Date.now() + snoozeMins * 60 * 1000 });
+          }
+        }
+        
+        await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
         loadTasks();
       }
     }
@@ -295,7 +365,7 @@ export function setup(state) {
           contentEl.innerHTML = `
             <div class="inline-edit-form" style="margin-top: 4px; display: flex; flex-direction: column; gap: 8px;">
               <input type="text" class="inline-edit-title" placeholder="Title (optional)" value="${escapeHtml(task.title || '')}" style="width: 100%; height: 28px; font-size: 13px; font-weight: 600; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); outline: none; box-sizing: border-box; font-family: inherit;" autocomplete="off">
-              <textarea class="inline-edit-textarea" style="width: 100%; min-height: 60px; padding: 8px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 13px; outline: none; background: #fff; resize: vertical; color: var(--text-1);">${escapeHtml(task.note)}</textarea>
+              <textarea class="inline-edit-textarea" rows="10" style="width: 100%; min-height: 180px; padding: 8px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 13px; outline: none; background: #fff; resize: vertical; color: var(--text-1);">${escapeHtml(task.note)}</textarea>
               <div style="display: flex; gap: 6px; justify-content: flex-end;">
                 <button class="btn btn-secondary inline-edit-cancel" data-id="${id}" style="padding: 4px 10px; font-size: 11.5px; height: 26px; border-radius: 6px; cursor:pointer;">${language.cancel}</button>
                 <button class="btn btn-primary inline-edit-save" data-id="${id}" style="padding: 4px 10px; font-size: 11.5px; height: 26px; border-radius: 6px; cursor:pointer; color:#fff;">${language.save}</button>
@@ -329,9 +399,36 @@ export function setup(state) {
           const memos = res[STORAGE_KEYS.MEMOS] || [];
           const taskIndex = memos.findIndex(m => m.id === id);
           if (taskIndex !== -1) {
-            memos[taskIndex].title = newTitle;
-            memos[taskIndex].note = newText;
-            memos[taskIndex].updatedAt = Date.now();
+            const task = memos[taskIndex];
+            task.title = newTitle;
+            task.note = newText;
+            task.updatedAt = Date.now();
+            
+            if (task.taskCategory === 'checklist') {
+              const newLines = newText.split('\n').filter(l => l.trim());
+              const oldChecklist = task.checklist || [];
+              
+              task.checklist = newLines.map((lineText, idx) => {
+                const trimmedText = lineText.trim();
+                const matchedOld = oldChecklist.find(oldItem => oldItem.text === trimmedText);
+                return {
+                  id: `${id}_line_${idx}`,
+                  text: trimmedText,
+                  done: matchedOld ? matchedOld.done : false
+                };
+              });
+              
+              // Recalculate done status of the whole task
+              const allDone = task.checklist.every(item => item.done === true);
+              task.done = allDone;
+              if (allDone) {
+                task.doneAt = Date.now();
+                chrome.alarms.clear(id);
+              } else {
+                task.doneAt = null;
+              }
+            }
+            
             await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
           }
           loadTasks();
@@ -467,13 +564,32 @@ function renderTaskCard(task, now) {
   // Only show postText if it's different from the note (to avoid duplication)
   const hasOriginalPost = task.postId && task.postText && task.postText !== task.note;
 
+  let taskBodyHtml = '';
+  if (task.taskCategory === 'checklist' && task.checklist && task.checklist.length > 0) {
+    taskBodyHtml = task.checklist.map((item, idx) => {
+      return `
+        <div class="task-checklist-line" style="display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; font-size: 13px;">
+          <label class="memo-checkbox-container" style="margin: 0; padding: 0; width: 14px; height: 14px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; position: relative; top: 2px;" title="Mark done">
+            <input type="checkbox" class="task-checklist-item-checkbox" data-task-id="${task.id}" data-item-idx="${idx}" ${item.done ? 'checked' : ''}>
+            <span class="memo-checkmark-custom" style="width: 14px; height: 14px; border-radius: 4px; border: 1.5px solid var(--border);"></span>
+          </label>
+          <span class="task-checklist-text" style="flex: 1; color: ${item.done ? 'var(--text-3)' : 'var(--text-1)'}; text-decoration: ${item.done ? 'line-through' : 'none'}; transition: all 0.2s;">
+            ${formatRichText(item.text)}
+          </span>
+        </div>
+      `;
+    }).join('');
+  } else {
+    taskBodyHtml = formatRichText(task.note || language.taskNoContent);
+  }
+
   return `
     <div class="memo-item task-item ${task.done ? 'memo-done' : ''} ${isOverdue ? 'memo-overdue' : ''}" id="item_${task.id}">
       <div class="memo-item-header" style="display:flex; align-items:flex-start; gap:8px;">
         <div class="memo-content" style="flex:1; min-width:0;">
           ${task.title ? `<div class="memo-item-title" style="font-weight:700; font-size:13.5px; color:var(--text-1); margin-bottom:4px; letter-spacing:-0.1px;">${escapeHtml(task.title)}</div>` : ''}
           ${hasOriginalPost ? `<div class="memo-post-preview post-preview" style="display:none; margin-bottom:4px;">📌 ${escapeHtml(task.postText)}</div>` : ''}
-          <div class="memo-note-text task-text collapsible-body collapsed" style="margin-top:0;">${formatRichText(task.note || language.taskNoContent)}</div>
+          <div class="memo-note-text task-text collapsible-body collapsed" style="margin-top:0;">${taskBodyHtml}</div>
         </div>
         <button class="collapse-btn" data-id="${task.id}" style="flex-shrink:0; margin:0;" title="${language.expandCollapseBtn}">▶</button>
       </div>

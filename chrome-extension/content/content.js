@@ -111,10 +111,61 @@ async function handleNotificationJump(postId, taskTeamName) {
 }
 
 /**
+ * Plays a premium dual-tone sound alert using Web Audio API
+ */
+function playNotificationSound() {
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
+    // First Beep: Tone D5 (587.33 Hz)
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(587.33, audioCtx.currentTime);
+    gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+    oscillator.start(audioCtx.currentTime);
+    oscillator.stop(audioCtx.currentTime + 0.15);
+
+    // Second Beep: Tone A5 (880.00 Hz) after 150ms delay
+    setTimeout(() => {
+      try {
+        const audioCtx2 = new (window.AudioContext || window.webkitAudioContext)();
+        const osc2 = audioCtx2.createOscillator();
+        const gain2 = audioCtx2.createGain();
+        osc2.connect(gain2);
+        gain2.connect(audioCtx2.destination);
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(880.00, audioCtx2.currentTime);
+        gain2.gain.setValueAtTime(0.15, audioCtx2.currentTime);
+        gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx2.currentTime + 0.25);
+        osc2.start(audioCtx2.currentTime);
+        osc2.stop(audioCtx2.currentTime + 0.25);
+      } catch (e2) {}
+    }, 150);
+  } catch (err) {
+    console.warn('[ChatOps Ext] Sound synthesis failed:', err);
+  }
+}
+
+/**
  * Displays a reminder banner at the top of the page
  */
 async function showReminderBanner(text, taskId, isTask = false, postId = null, taskTeamName = null) {
   await injectDynamicTheme();
+
+  // Play notification sound if enabled
+  try {
+    const resSettings = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS]);
+    const settings = resSettings[STORAGE_KEYS.SETTINGS] || {};
+    if (settings.soundNotification) {
+      playNotificationSound();
+    }
+  } catch (err) {
+    console.warn('[ChatOps Ext] Failed to read sound settings:', err);
+  }
 
   let container = document.getElementById('chatops-banner-container');
   if (!container) {
@@ -137,14 +188,17 @@ async function showReminderBanner(text, taskId, isTask = false, postId = null, t
           <div class="crb-title" style="margin-bottom:0;">${isTask ? language.reminderTaskTitle : language.reminderTitle}</div>
           ${isLongText ? `<button class="crb-collapse-btn collapse-btn" style="width:16px; height:16px; font-size:7px; margin-left:8px;" title="Expand/Collapse">▶</button>` : ''}
         </div>
-        <div class="crb-text ${isLongText ? 'collapsible-body collapsed' : ''}" style="${isLongText ? 'white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; transition: all 0.2s;' : 'white-space: pre-wrap;'}">${formatRichText(text)}</div>
+        <div class="crb-text ${isLongText ? 'collapsed' : ''}">${formatRichText(text)}</div>
       </div>
       <button class="crb-close" title="${language.memoDelete}">×</button>
     </div>
     ${isTask ? `
-      <div class="crb-task-actions">
-        <button class="crb-done-btn" data-task-id="${taskId}">${language.reminderDoneBtn}</button>
-        ${postId ? `<button class="crb-jump-btn" data-post-id="${postId}">${language.viewMessage}</button>` : ''}
+      <div class="crb-task-actions" style="display: flex; flex-direction: column; gap: 6px;">
+        <div style="display: flex; gap: 6px; width: 100%;">
+          <button class="crb-done-btn" data-task-id="${taskId}" style="flex: 1; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;">${language.reminderDoneBtn}</button>
+          <button class="crb-dismiss-btn" style="padding: 0 12px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 4px; color: #475569; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.14s; height: 32px; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;">${language.cancel}</button>
+        </div>
+        ${postId ? `<button class="crb-jump-btn" data-post-id="${postId}" style="width: 100%; margin-top: 0; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;">${language.viewMessage}</button>` : ''}
       </div>
     ` : ''}
     <div class="crb-progress"></div>
@@ -191,12 +245,6 @@ async function showReminderBanner(text, taskId, isTask = false, postId = null, t
         if (isCollapsed) {
           collBtn.innerHTML = '▶';
           collBtn.classList.remove('expanded');
-          textEl.style.whiteSpace = 'nowrap';
-          textEl.style.overflow = 'hidden';
-          textEl.style.textOverflow = 'ellipsis';
-          textEl.style.maxWidth = '220px';
-          textEl.style.maxHeight = 'none';
-          textEl.style.paddingRight = '0px';
 
           // Reschedule a short auto-close timer (3 seconds) when collapsed back
           if (closeTimer) clearTimeout(closeTimer);
@@ -207,12 +255,6 @@ async function showReminderBanner(text, taskId, isTask = false, postId = null, t
         } else {
           collBtn.innerHTML = '▼';
           collBtn.classList.add('expanded');
-          textEl.style.whiteSpace = 'pre-wrap';
-          textEl.style.overflowY = 'auto';
-          textEl.style.maxHeight = '220px';
-          textEl.style.textOverflow = 'clip';
-          textEl.style.maxWidth = 'none';
-          textEl.style.paddingRight = '12px';
           
           // Reset the close timer to a generous 15 seconds when expanded so it eventually closes
           if (closeTimer) clearTimeout(closeTimer);
@@ -239,6 +281,16 @@ async function showReminderBanner(text, taskId, isTask = false, postId = null, t
       setTimeout(() => banner.remove(), 400);
       showToast(language.reminderTaskCompleted);
     });
+
+    const dismissBtn = banner.querySelector('.crb-dismiss-btn');
+    if (dismissBtn) {
+      dismissBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (closeTimer) clearTimeout(closeTimer);
+        banner.classList.remove('visible');
+        setTimeout(() => banner.remove(), 400);
+      });
+    }
 
     const jumpBtn = banner.querySelector('.crb-jump-btn');
     if (jumpBtn) {
@@ -325,30 +377,31 @@ function showToast(msg) {
     btn.remove();
   });
 
-  document.body.appendChild(btn);
-
   // Function to align the floating button under the last team icon
   function alignButtonToSidebar() {
-    let defaultLeft = '12px';
-    let defaultTop = '240px';
-    
-    // Find Mattermost team sidebar and center the button under the last team icon (RUN)
+    // Find Mattermost team sidebar and place the button inside it natively
     const teamSidebar = document.querySelector('.team-sidebar, #teamSidebar, .team-wrapper, [class*="team-sidebar"]');
     if (teamSidebar) {
-      const teamItems = teamSidebar.querySelectorAll('a, .team-btn, [class*="team-container"], [class*="team-btn"]');
-      if (teamItems && teamItems.length > 0) {
-        const lastTeam = teamItems[teamItems.length - 1];
-        const rect = lastTeam.getBoundingClientRect();
-        // Centered horizontally inside the sidebar, and 12px below the last team item
-        defaultLeft = `${rect.left + (rect.width - 44) / 2}px`;
-        defaultTop = `${rect.bottom + 12}px`;
+      if (btn.parentNode !== teamSidebar) {
+        teamSidebar.appendChild(btn);
       }
+      btn.classList.add('in-sidebar');
+      btn.style.left = '';
+      btn.style.top = '';
+      btn.style.bottom = '';
+      btn.style.right = '';
+      btn.style.transform = '';
+    } else {
+      if (btn.parentNode !== document.body) {
+        document.body.appendChild(btn);
+      }
+      btn.classList.remove('in-sidebar');
+      btn.style.left = '';
+      btn.style.top = '';
+      btn.style.bottom = '80px';
+      btn.style.right = '20px';
+      btn.style.transform = '';
     }
-    
-    btn.style.left = defaultLeft;
-    btn.style.top = defaultTop;
-    btn.style.right = 'auto';
-    btn.style.transform = 'none';
   }
 
   async function updateFloatingBadgeCount() {
@@ -1144,12 +1197,17 @@ function showToast(msg) {
   }
 
   let cachedSettings = { spamEnabled: true, memeEnabled: true, showTabs: { search: true, tasks: true, notes: true, missed: true } };
+  let cachedMemos = [];
 
-  // Fetch initial settings
-  chrome.storage.local.get([STORAGE_KEYS.SETTINGS], (res) => {
+  // Fetch initial settings and memos
+  chrome.storage.local.get([STORAGE_KEYS.SETTINGS, STORAGE_KEYS.MEMOS], (res) => {
     if (res[STORAGE_KEYS.SETTINGS]) {
       cachedSettings = res[STORAGE_KEYS.SETTINGS];
       handleQuickActionButtonsVisibility();
+    }
+    if (res[STORAGE_KEYS.MEMOS]) {
+      cachedMemos = res[STORAGE_KEYS.MEMOS];
+      injectQuickNoteButtons();
     }
   });
 
@@ -1165,7 +1223,9 @@ function showToast(msg) {
         loadCustomImages();
       }
       if (changes[STORAGE_KEYS.MEMOS]) {
+        cachedMemos = changes[STORAGE_KEYS.MEMOS].newValue || [];
         updateFloatingBadgeCount();
+        injectQuickNoteButtons();
       }
     }
   });
@@ -1204,38 +1264,81 @@ function showToast(msg) {
       const actionArea = postEl.querySelector('.post-menu, .post__actions, .dot-menu__container, [class*="post-menu"], .post-action-menu');
       if (!actionArea) return;
 
-      // Inject Task button (🎯) if not present and enabled
-      if (tasksEnabled) {
-        if (!postEl.querySelector('.chatops-quick-note-btn.task-btn')) {
-          const taskBtn = document.createElement('button');
-          taskBtn.className = 'chatops-quick-note-btn task-btn';
-          taskBtn.innerHTML = '🎯';
-          taskBtn.title = language.quickTaskCreate;
-          taskBtn.addEventListener('click', (e) => {
-            e.preventDefault(); e.stopPropagation();
-            openQuickNote(postEl, taskBtn, 'task');
-          });
-          actionArea.appendChild(taskBtn);
-        }
-      } else {
-        postEl.querySelector('.chatops-quick-note-btn.task-btn')?.remove();
-      }
+      const postId = postEl.id ? postEl.id.replace(SELECTORS.POST_ID_PREFIX, '') : '';
+      if (!postId) return;
 
-      // Inject Note button (📝) if not present and enabled
-      if (notesEnabled) {
-        if (!postEl.querySelector('.chatops-quick-note-btn.note-btn')) {
-          const noteBtn = document.createElement('button');
-          noteBtn.className = 'chatops-quick-note-btn note-btn';
-          noteBtn.innerHTML = '📝';
-          noteBtn.title = language.quickNoteCreate;
-          noteBtn.addEventListener('click', (e) => {
+      const savedMemo = cachedMemos.find(m => m.postId === postId);
+
+      if (savedMemo) {
+        // Hide normal create buttons if present
+        postEl.querySelector('.chatops-quick-note-btn.task-btn')?.remove();
+        postEl.querySelector('.chatops-quick-note-btn.note-btn')?.remove();
+
+        // Inject Delete button (🗑️) if not present
+        if (!postEl.querySelector('.chatops-quick-note-btn.delete-btn')) {
+          const deleteBtn = document.createElement('button');
+          deleteBtn.className = 'chatops-quick-note-btn delete-btn';
+          deleteBtn.innerHTML = '🗑️';
+          deleteBtn.title = language.memoDelete;
+          deleteBtn.style.color = '#d0454c';
+          deleteBtn.addEventListener('click', async (e) => {
             e.preventDefault(); e.stopPropagation();
-            openQuickNote(postEl, noteBtn, 'note');
+            const quickDelete = cachedSettings.quickDelete === true;
+            if (!quickDelete) {
+              const confirmMsg = savedMemo.type === 'task' ? language.confirmDeleteTask : language.confirmDeleteNote;
+              if (!confirm(confirmMsg || "Are you sure you want to delete this item?")) {
+                return;
+              }
+            }
+            try {
+              const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
+              const memos = res[STORAGE_KEYS.MEMOS] || [];
+              const updatedMemos = memos.filter(m => m.id !== savedMemo.id);
+              await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: updatedMemos });
+              showToast(savedMemo.type === 'task' ? 'Task deleted' : 'Note deleted');
+            } catch (err) {
+              console.error('[ChatOps Ext] Failed to delete memo:', err);
+            }
           });
-          actionArea.appendChild(noteBtn);
+          actionArea.appendChild(deleteBtn);
         }
       } else {
-        postEl.querySelector('.chatops-quick-note-btn.note-btn')?.remove();
+        // Remove Delete button if not saved anymore
+        postEl.querySelector('.chatops-quick-note-btn.delete-btn')?.remove();
+
+        // Inject Task button (🎯) if not present and enabled
+        if (tasksEnabled) {
+          if (!postEl.querySelector('.chatops-quick-note-btn.task-btn')) {
+            const taskBtn = document.createElement('button');
+            taskBtn.className = 'chatops-quick-note-btn task-btn';
+            taskBtn.innerHTML = '🎯';
+            taskBtn.title = language.quickTaskCreate;
+            taskBtn.addEventListener('click', (e) => {
+              e.preventDefault(); e.stopPropagation();
+              openQuickNote(postEl, taskBtn, 'task');
+            });
+            actionArea.appendChild(taskBtn);
+          }
+        } else {
+          postEl.querySelector('.chatops-quick-note-btn.task-btn')?.remove();
+        }
+
+        // Inject Note button (📝) if not present and enabled
+        if (notesEnabled) {
+          if (!postEl.querySelector('.chatops-quick-note-btn.note-btn')) {
+            const noteBtn = document.createElement('button');
+            noteBtn.className = 'chatops-quick-note-btn note-btn';
+            noteBtn.innerHTML = '📝';
+            noteBtn.title = language.quickNoteCreate;
+            noteBtn.addEventListener('click', (e) => {
+              e.preventDefault(); e.stopPropagation();
+              openQuickNote(postEl, noteBtn, 'note');
+            });
+            actionArea.appendChild(noteBtn);
+          }
+        } else {
+          postEl.querySelector('.chatops-quick-note-btn.note-btn')?.remove();
+        }
       }
 
       // Handle Spam and Retract buttons conditionally!

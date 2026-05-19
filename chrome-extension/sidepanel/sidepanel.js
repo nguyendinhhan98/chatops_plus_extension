@@ -540,7 +540,7 @@ function setupLanguageToggle() {
 
   // Initialize flag display based on active language
   const currentLang = getActiveLanguageCode();
-  btnHeaderLang.textContent = currentLang === 'en' ? '🇺🇸' : '🇻🇳';
+  btnHeaderLang.textContent = currentLang === 'en' ? 'EN' : 'VI';
 
   btnHeaderLang.addEventListener('click', async () => {
     const activeLang = getActiveLanguageCode();
@@ -556,7 +556,7 @@ function setupLanguageToggle() {
     applyI18n();
 
     // 4. Update the flag button display
-    btnHeaderLang.textContent = nextLang === 'en' ? '🇺🇸' : '🇻🇳';
+    btnHeaderLang.textContent = nextLang === 'en' ? 'EN' : 'VI';
 
     // 5. Update custom select trigger text if the settings tab is open/rendered
     document.querySelectorAll('.custom-select-wrapper').forEach(wrapper => {

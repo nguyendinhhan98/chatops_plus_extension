@@ -178,8 +178,13 @@ export function renderMentionItem(post, author, permalink) {
         <span class="post-time" title="${formatUnixMsToVN(post.create_at)}" style="flex-shrink: 0; margin-left: 8px; font-size:11px; color:var(--text-3);">${formatRelativeTime(post.create_at)}</span>
       </div>
       <div class="post-body collapsible-body collapsed" style="margin-top:4px;">${escapedText}</div>
-      <div class="post-actions">
+      <div class="post-actions" style="display: flex; align-items: center; justify-content: space-between; margin-top: 8px;">
         <a href="${permalink}" target="_blank" class="post-jump-link" title="${language.openInChatOps}">↗</a>
+        <div class="mention-reactions-row" style="display: flex; gap: 6px; align-items: center;">
+          <button class="mention-react-btn" data-post-id="${post.id}" data-emoji="white_check_mark" title="React with :white_check_mark:">✅</button>
+          <button class="mention-react-btn" data-post-id="${post.id}" data-emoji="eyes" title="React with :eyes:">👀</button>
+          <button class="mention-react-btn" data-post-id="${post.id}" data-emoji="thumbsup" title="React with :+1:">👍</button>
+        </div>
       </div>
     </div>
   `;

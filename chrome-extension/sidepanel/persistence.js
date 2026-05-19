@@ -20,8 +20,9 @@ export function saveState(selectors) {
     mentions: {
       hours: document.getElementById('spMentionHours')?.value || '24',
       direct: document.getElementById('spMentionDirect')?.checked !== false,
-      here: document.getElementById('spMentionHere')?.checked || false,
-      channel: document.getElementById('spMentionChannel')?.checked || false,
+      here: document.getElementById('spMentionHere')?.checked !== false,
+      channel: document.getElementById('spMentionChannel')?.checked !== false,
+      dms: document.getElementById('spMentionDMs')?.checked !== false,
       channels: selectors.mentionChannelMS ? selectors.mentionChannelMS.getSelected() : []
     }
   };
@@ -60,13 +61,16 @@ export function restoreState(selectors) {
       if (hoursEl) hoursEl.value = s.mentions.hours || '24';
       
       const directEl = document.getElementById('spMentionDirect');
-      if (directEl) directEl.checked = s.mentions.direct;
+      if (directEl) directEl.checked = s.mentions.direct !== false;
       
       const hereEl = document.getElementById('spMentionHere');
-      if (hereEl) hereEl.checked = s.mentions.here;
+      if (hereEl) hereEl.checked = s.mentions.here !== false;
       
       const channelEl = document.getElementById('spMentionChannel');
-      if (channelEl) channelEl.checked = s.mentions.channel;
+      if (channelEl) channelEl.checked = s.mentions.channel !== false;
+
+      const dmsEl = document.getElementById('spMentionDMs');
+      if (dmsEl) dmsEl.checked = s.mentions.dms !== false;
       
       if (s.mentions.channels && selectors.mentionChannelMS) {
         selectors.mentionChannelMS.setSelected(s.mentions.channels);

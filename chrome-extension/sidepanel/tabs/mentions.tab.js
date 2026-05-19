@@ -10,7 +10,8 @@ import {
   getPostReactions, 
   getUsersByIds, 
   getMyChannels, 
-  searchChannels 
+  searchChannels,
+  addPostReaction
 } from '../../src/api/index.js';
 import { setupMultiSelect } from '../multiselect.js';
 import { 
@@ -266,6 +267,31 @@ async function scanMentionsDeep() {
     }
 
     resultsEl.innerHTML = html;
+
+    // Bind reaction buttons click event
+    resultsEl.querySelectorAll('.mention-react-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const postId = btn.getAttribute('data-post-id');
+        const emoji = btn.getAttribute('data-emoji');
+        const userId = currentUser.id;
+
+        btn.style.opacity = '0.5';
+        btn.style.pointerEvents = 'none';
+
+        try {
+          await addPostReaction(userId, postId, emoji);
+          btn.style.opacity = '1';
+          btn.classList.add('reacted');
+        } catch (err) {
+          console.error('[ChatOps Ext] Failed to add reaction:', err);
+          btn.style.opacity = '1';
+          btn.style.pointerEvents = 'auto';
+        }
+      });
+    });
 
     // Only show collapse button if the text actually overflows
     resultsEl.querySelectorAll('.post-item').forEach(card => {

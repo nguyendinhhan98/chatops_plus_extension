@@ -10,8 +10,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="flatpickr.css">
   <link rel="stylesheet" href="sidepanel.css">
-  <script src="flatpickr.js"></script>
   <script src="polyfill.js"></script>
+  <script src="flatpickr.js"></script>
 </head>
 
 <body>
@@ -31,12 +31,19 @@
         </div>
       </div>
       <!-- Language Toggle Flag Button -->
-      <button id="btnHeaderLang" data-i18n-title="langToggleTooltip" title="Switch to Vietnamese 🇻🇳">
-        🇺🇸
+      <!-- Language Toggle Flag Button -->
+      <button id="btnHeaderLang" data-i18n-title="langToggleTooltip" title="Switch to Vietnamese" style="font-size: 11px; font-weight: 700; color: var(--accent);">
+        EN
       </button>
       <!-- Coffee Icon Button to open Donate Modal -->
-      <button id="btnHeaderCoffee" data-i18n-title="supportVibecodingTitle" title="Support Vibecoding ☕">
-        ☕
+      <button id="btnHeaderCoffee" data-i18n-title="supportVibecodingTitle" title="Support Vibecoding">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: block;">
+          <path d="M18 8h1a4 4 0 0 1 0 8h-1"></path>
+          <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path>
+          <line x1="6" y1="1" x2="6" y2="4"></line>
+          <line x1="10" y1="1" x2="10" y2="4"></line>
+          <line x1="14" y1="1" x2="14" y2="4"></line>
+        </svg>
       </button>
     </div>
 
@@ -168,6 +175,14 @@
               style="width: 100%; min-height: 110px; resize: vertical; box-sizing: border-box;"></textarea>
           </div>
 
+          <div style="margin-bottom: 12px; display:flex; align-items:center; gap:8px; width:100%;">
+            <span style="font-size:12.5px; color:var(--text-2); font-weight:600; white-space:nowrap;" data-i18n="taskCategoryLabel">📁 Category:</span>
+            <select id="quickTaskCategory" class="custom-select" style="width: 140px; height: 32px; font-size: 12.5px; border-radius: 6px; cursor: pointer; outline: none; box-sizing: border-box; padding: 2px 24px 2px 8px; margin: 0; line-height: 1;">
+              <option value="normal" data-i18n="categoryNormal" selected>Normal</option>
+              <option value="checklist" data-i18n="categoryChecklist">Checklist</option>
+            </select>
+          </div>
+
           <div class="task-reminder-wrapper"
             style="margin-bottom: 12px; display:flex; align-items:center; gap:6px; width:100%;">
             <div class="task-reminder-row" id="quickTaskReminderRow"
@@ -220,7 +235,7 @@
       <div id="taskList" class="memo-panel active" style="flex:1;overflow-y:auto;padding:12px;"></div>
 
       <!-- Floating Action Button for Tasks -->
-      <button id="btnFabAddTask" class="sp-fab" data-i18n-title="taskAddBtn" title="Add Task">🎯</button>
+      <button id="btnFabAddTask" class="sp-fab" data-i18n-title="taskAddBtn" title="Add Task">+</button>
     </div>
 
     <!-- ─── Tab: Notes ─── -->
@@ -233,14 +248,33 @@
             style="width: 100%; display: flex !important; background: var(--bg-1) !important; border: 1px solid var(--border) !important; border-radius: 6px !important; padding: 2px !important; margin: 0 !important; box-shadow: none !important; gap: 4px 2px !important; flex-wrap: wrap !important;">
             <!-- Categories as sub-tabs rendered dynamically -->
           </div>
-          <button id="syncBadgeNotes" class="sync-badge-btn" data-i18n-title="syncTooltip" title="Click to backup or restore data via Google account">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8"
-              stroke-linecap="round" stroke-linejoin="round" class="sync-icon-svg"
-              style="transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);">
-              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
-            </svg>
-            <span data-i18n="syncText">Sync</span>
-          </button>
+          <div style="display: flex; gap: 6px; align-items: center;">
+            <button id="btnExportNotes" class="sync-badge-btn" style="background: rgba(28, 88, 217, 0.05); border-color: rgba(28, 88, 217, 0.2); color: var(--accent); display: inline-flex; align-items: center; gap: 4px;" data-i18n-title="exportNotesBtnTitle" title="Export notes to JSON file">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: block;">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+              <span data-i18n="exportNotesBtn">Export</span>
+            </button>
+            <button id="btnImportNotes" class="sync-badge-btn" style="background: rgba(28, 88, 217, 0.05); border-color: rgba(28, 88, 217, 0.2); color: var(--accent); position: relative; overflow: hidden; display: inline-flex; align-items: center; gap: 4px;" data-i18n-title="importNotesBtnTitle" title="Import notes from JSON file">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: block;">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              <span data-i18n="importNotesBtn">Import</span>
+              <input type="file" id="importNotesFileInput" accept=".json" style="position: absolute; top: 0; left: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer;">
+            </button>
+            <button id="syncBadgeNotes" class="sync-badge-btn" data-i18n-title="syncTooltip" title="Click to backup or restore data via Google account">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8"
+                stroke-linecap="round" stroke-linejoin="round" class="sync-icon-svg"
+                style="transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);">
+                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+              </svg>
+              <span data-i18n="syncText">Sync</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -293,7 +327,7 @@
       <div id="memoNoteList" class="memo-panel active" style="flex:1;overflow-y:auto;padding:12px;"></div>
 
       <!-- Floating Action Button for Notes -->
-      <button id="btnFabAddNote" class="sp-fab" data-i18n-title="memoAddBtn" title="Add Note">📝</button>
+      <button id="btnFabAddNote" class="sp-fab" data-i18n-title="memoAddBtn" title="Add Note">+</button>
     </div>
 
     <!-- ─── Tab: Missed Mentions ─── -->
@@ -324,11 +358,11 @@
               <span data-i18n="mentionDirect">Direct mention (@you)</span>
             </div>
             <div class="checkbox-label">
-              <input type="checkbox" id="spMentionHere">
+              <input type="checkbox" id="spMentionHere" checked>
               <span data-i18n="mentionHere">Group mention (@here)</span>
             </div>
             <div class="checkbox-label">
-              <input type="checkbox" id="spMentionChannel">
+              <input type="checkbox" id="spMentionChannel" checked>
               <span data-i18n="mentionChannel">Channel mention (@channel / @all)</span>
             </div>
             <div class="checkbox-label">
@@ -505,7 +539,7 @@
 
           <!-- Introduction Card -->
           <div class="settings-group"
-            style="padding: 16px; background: var(--bg-1); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); margin-bottom: 16px;">
+            style="padding: 16px; background: var(--bg-1); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); max-width: 480px; margin: 0 auto 16px auto;">
             <p style="color: var(--text-1); font-size: 14px; font-weight: 600; margin: 0 0 12px 0; line-height: 1.45;" data-i18n-html="settingsOverviewWelcome">
               Welcome to <strong style="color: var(--accent); font-weight: 700;">ChatOps++</strong>! Your productivity
               toolkit:
@@ -552,7 +586,7 @@
 
           <!-- Security & Privacy Commitment -->
           <div class="settings-group"
-            style="padding: 16px; background: rgba(46, 204, 113, 0.04); border: 1px dashed var(--success); border-radius: 12px; margin-bottom: 16px; display: flex; gap: 10px; align-items: flex-start;">
+            style="padding: 16px; background: rgba(46, 204, 113, 0.04); border: 1px dashed var(--success); border-radius: 12px; max-width: 480px; margin: 0 auto 16px auto; display: flex; gap: 10px; align-items: flex-start;">
             <div style="font-size: 20px; color: var(--success); line-height: 1; margin-top: 2px;">🛡️</div>
             <div>
               <h3 class="settings-title"
@@ -566,7 +600,7 @@
 
           <!-- Support & Feedback -->
           <div class="settings-group"
-            style="padding: 16px; background: rgba(52, 152, 219, 0.04); border: 1px dashed #3498db; border-radius: 12px; margin-bottom: 16px; display: flex; gap: 10px; align-items: flex-start;">
+            style="padding: 16px; background: rgba(52, 152, 219, 0.04); border: 1px dashed #3498db; border-radius: 12px; max-width: 480px; margin: 0 auto 16px auto; display: flex; gap: 10px; align-items: flex-start;">
             <div style="font-size: 20px; color: #3498db; line-height: 1; margin-top: 2px;">💬</div>
             <div>
               <h3 class="settings-title" style="color: #3498db; font-size: 14px; font-weight: 700; margin: 0 0 6px 0;" data-i18n="overviewSupportTitle">Support & Feedback</h3>
@@ -634,6 +668,11 @@
                   <input type="checkbox" id="settingMemeEnabled" class="settings-toggle" checked>
                   <span class="toggle-slider"></span>
                 </label>
+                <label class="settings-toggle-row">
+                  <span data-i18n="settingQuickDelete">Quick Delete (No confirmation popup)</span>
+                  <input type="checkbox" id="settingQuickDelete" class="settings-toggle">
+                  <span class="toggle-slider"></span>
+                </label>
               </div>
             </div>
           </div>
@@ -668,6 +707,13 @@
                   style="padding: 8px 14px; background: var(--accent); color: #fff; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.2s; white-space: nowrap; height: 34px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 4px rgba(28, 88, 217, 0.15);">
                   🔔 Test Notification
                 </button>
+              </div>
+              <div class="settings-toggle-list" style="margin-top: 16px; border-top: 1px dashed var(--border); padding-top: 16px;">
+                <label class="settings-toggle-row" style="margin-bottom:0;">
+                  <span data-i18n="settingSoundNotification">Play sound for notifications</span>
+                  <input type="checkbox" id="settingSoundNotification" class="settings-toggle">
+                  <span class="toggle-slider"></span>
+                </label>
               </div>
 
               <!-- Guidance Box -->
@@ -709,7 +755,7 @@
 
             <!-- Color Preset Selectors -->
             <div class="settings-color-grid"
-              style="display: flex; flex-direction: column; gap: 16px; margin: 0; max-width: 480px;">
+              style="display: flex; flex-direction: column; gap: 16px; margin: 0 auto; max-width: 480px; width: 100%;">
               <div class="settings-color-item"
                 style="border: 1px solid var(--border); padding: 12px; border-radius: 10px; background: var(--bg-1); box-shadow: 0 2px 4px rgba(0,0,0,0.01);">
                 <span
@@ -738,6 +784,10 @@
                   <button class="color-preset" data-color="#1e293b"
                     style="background: #1e293b; width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"
                     title="Slate"></button>
+                  <div class="color-preset-custom-wrapper" style="position: relative; width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--border); cursor: pointer; transition: all 0.2s; background: linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet); display: flex; align-items: center; justify-content: center; overflow: hidden; box-sizing: border-box;" data-i18n-title="customColorLabel" title="Custom...">
+                    <input type="color" class="custom-color-picker-input" data-key="headerColor" style="position: absolute; top: -5px; left: -5px; width: 38px; height: 38px; border: 0; padding: 0; cursor: pointer; opacity: 0;">
+                    <span style="font-size: 11px; font-weight: 700; color: white; pointer-events: none; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">🎨</span>
+                  </div>
                 </div>
               </div>
 
@@ -769,6 +819,10 @@
                   <button class="color-preset" data-color="#1e293b"
                     style="background: #1e293b; width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"
                     title="Slate"></button>
+                  <div class="color-preset-custom-wrapper" style="position: relative; width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--border); cursor: pointer; transition: all 0.2s; background: linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet); display: flex; align-items: center; justify-content: center; overflow: hidden; box-sizing: border-box;" data-i18n-title="customColorLabel" title="Custom...">
+                    <input type="color" class="custom-color-picker-input" data-key="navColor" style="position: absolute; top: -5px; left: -5px; width: 38px; height: 38px; border: 0; padding: 0; cursor: pointer; opacity: 0;">
+                    <span style="font-size: 11px; font-weight: 700; color: white; pointer-events: none; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">🎨</span>
+                  </div>
                 </div>
               </div>
 
@@ -800,13 +854,17 @@
                   <button class="color-preset" data-color="#1e293b"
                     style="background: #1e293b; width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"
                     title="Slate"></button>
+                  <div class="color-preset-custom-wrapper" style="position: relative; width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--border); cursor: pointer; transition: all 0.2s; background: linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet); display: flex; align-items: center; justify-content: center; overflow: hidden; box-sizing: border-box;" data-i18n-title="customColorLabel" title="Custom...">
+                    <input type="color" class="custom-color-picker-input" data-key="accentColor" style="position: absolute; top: -5px; left: -5px; width: 38px; height: 38px; border: 0; padding: 0; cursor: pointer; opacity: 0;">
+                    <span style="font-size: 11px; font-weight: 700; color: white; pointer-events: none; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">🎨</span>
+                  </div>
                 </div>
               </div>
             </div>
 
             <!-- Padding Density Control -->
             <div class="settings-color-item"
-              style="border: 1px solid var(--border); padding: 12px; border-radius: 10px; background: var(--bg-1); box-shadow: 0 2px 4px rgba(0,0,0,0.01); margin-top: 16px; max-width: 480px;">
+              style="border: 1px solid var(--border); padding: 12px; border-radius: 10px; background: var(--bg-1); box-shadow: 0 2px 4px rgba(0,0,0,0.01); margin: 16px auto 0 auto; max-width: 480px; width: 100%; box-sizing: border-box;">
               <span
                 style="font-weight: 600; font-size: 13px; color: var(--text-1); display: block; margin-bottom: 4px;" data-i18n="themePaddingTitle">Layout
                 Spacing (Padding)</span>
