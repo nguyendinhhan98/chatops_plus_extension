@@ -29,7 +29,7 @@ async function init() {
   try {
     const settings = await getSettings();
     applyThemeToDOM(settings);
-    applyTabVisibilityToDOM(settings.showTabs);
+    applyTabVisibilityToDOM(settings.showTabs, settings.memeEnabled);
   } catch (settingsErr) {
     console.error('[ChatOps Ext] Failed to load settings:', settingsErr);
   }

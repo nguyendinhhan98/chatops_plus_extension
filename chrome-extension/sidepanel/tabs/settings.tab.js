@@ -402,7 +402,7 @@ async function loadAndApplySettings() {
   renderSidepanelMemes();
 
   applyThemeToDOM(settings);
-  applyTabVisibilityToDOM(settings.showTabs);
+  applyTabVisibilityToDOM(settings.showTabs, settings.memeEnabled);
   
   // Update snooze hint text dynamically
   const snoozeHint = document.getElementById('snoozeHintText');
@@ -643,6 +643,10 @@ function setupEventListeners() {
         configArea.style.opacity = e.target.checked ? '1' : '0.5';
         configArea.style.pointerEvents = e.target.checked ? 'auto' : 'none';
       }
+      
+      const settings = await getSettings();
+      applyTabVisibilityToDOM(settings.showTabs, settings.memeEnabled);
+      
       chrome.runtime.sendMessage({ type: 'SETTINGS_UPDATED' });
     });
   }
@@ -672,7 +676,7 @@ function setupEventListeners() {
         if (!settings.showTabs) settings.showTabs = {};
         settings.showTabs[key] = e.target.checked;
         await updateSettings({ showTabs: settings.showTabs });
-        applyTabVisibilityToDOM(settings.showTabs);
+        applyTabVisibilityToDOM(settings.showTabs, settings.memeEnabled);
         updateFloatingCheckboxesSync(settings);
         showAutoSaveFeedback();
       });
@@ -1599,18 +1603,19 @@ export function applyThemeToDOM(settings) {
   if (mockAccentBtn) mockAccentBtn.style.background = accentColor;
 }
 
-export function applyTabVisibilityToDOM(showTabs) {
+export function applyTabVisibilityToDOM(showTabs, memeEnabled) {
   const navMap = {
     'search': 'search',
     'tasks': 'tasks',
     'notes': 'memo',
-    'missed': 'mentions'
+    'missed': 'mentions',
+    'reactions': 'reactions'
   };
   
   // Find first active visible tab
   let firstVisibleTabId = 'tasks';
   for (const [key, tabId] of Object.entries(navMap)) {
-    const isVisible = showTabs[key] !== false;
+    const isVisible = (key === 'reactions') ? (memeEnabled !== false) : (showTabs[key] !== false);
     if (isVisible) {
       firstVisibleTabId = tabId;
       break;
@@ -1620,7 +1625,7 @@ export function applyTabVisibilityToDOM(showTabs) {
   for (const [key, tabId] of Object.entries(navMap)) {
     const btn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
     if (btn) {
-      const isVisible = showTabs[key] !== false;
+      const isVisible = (key === 'reactions') ? (memeEnabled !== false) : (showTabs[key] !== false);
       btn.style.display = isVisible ? 'flex' : 'none';
       
       // If the currently active tab is hidden, switch to the first visible tab
