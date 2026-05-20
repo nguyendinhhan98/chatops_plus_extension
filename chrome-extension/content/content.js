@@ -1400,6 +1400,15 @@ function showToast(msg) {
       const postId = cleanPostId(postEl);
       if (!postId) return;
 
+      const isPostDeleted = postEl.classList.contains('post--deleted') || 
+                            postEl.querySelector('.post--deleted') ||
+                            postEl.textContent.includes('(message deleted)') || 
+                            postEl.textContent.includes('(tin nhắn đã bị xóa)');
+      if (isPostDeleted) {
+        postEl.querySelectorAll('.chatops-quick-note-btn').forEach(el => el.remove());
+        return;
+      }
+
       const savedMemo = cachedMemos.find(m => m.postId === postId);
       const currentStatus = savedMemo ? savedMemo.type : 'none';
 

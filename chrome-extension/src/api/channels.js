@@ -41,3 +41,4 @@ export async function searchChannels(teamId, term) {
 export async function getMyChannelMembers(teamId) {
   return request(`/users/me/teams/${teamId}/channels/members`);
 }
+

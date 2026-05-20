@@ -1060,6 +1060,16 @@ textarea.search-form-textarea {
   padding: 12px; font-size: 12px;
   color: var(--text-3); text-align: center;
 }
+.search-performance-warning {
+  font-size: 11px;
+  font-weight: 500;
+  color: #d97706;
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  line-height: 1.4;
+}
 
 /* Mini inside autocomplete */
 .autocomplete-item .user-card,
@@ -2185,22 +2195,6 @@ input:checked + .toggle-slider:before { transform: translateX(16px); }
 }
 
 /* ─── Premium Easing & Micro-Animations ─── */
-
-/* Fade-In & Slide-Up tab content transitions */
-.tab-content.active {
-  animation: tabFadeInUp 0.52s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-@keyframes tabFadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
 
 /* Fade-In & Scale-In for individual items/cards */
 .memo-item, 

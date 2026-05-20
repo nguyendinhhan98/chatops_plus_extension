@@ -103,8 +103,11 @@
               <input type="text" id="spSearchFrom" class="autocomplete-input" data-i18n-placeholder="searchUserPlaceholder" placeholder="Search user..."
                 autocomplete="off">
             </div>
-            <div style="display:flex; flex-direction:column; gap:4px;">
-              <div id="spSearchIn" data-placeholder="Search channel..."></div>
+            <div style="display:flex; flex-direction:column; gap:4px; flex:1;">
+              <div id="spSearchIn" data-i18n-placeholder="searchChannelPlaceholder" data-placeholder="Search channel..."></div>
+              <div class="search-performance-warning" data-i18n="searchPerformanceNotice">
+                ⚠️ Select specific channels to optimize performance.
+              </div>
               <div class="checkbox-label" style="margin-left: 2px;">
                 <input type="checkbox" id="chkSearchIncludeDM">
                 <span style="font-size: 12.5px;" data-i18n="searchIncludeDM">Include Direct Messages</span>
@@ -349,11 +352,13 @@
             <select id="spMentionHours" class="custom-select" style="flex:1">
               <option value="24" data-i18n="last24Hours" selected>Last 24 hours</option>
               <option value="48" data-i18n="last48Hours">Last 48 hours</option>
-              <option value="168" data-i18n="last7Days">Last 7 days</option>
-              <option value="336" data-i18n="last14Days">Last 14 days</option>
+              <option value="72" data-i18n="last72Hours">Last 72 hours</option>
             </select>
             <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
-              <div id="spMentionChannelsMS" data-placeholder="Search channel..."></div>
+              <div id="spMentionChannelsMS" data-i18n-placeholder="searchChannelPlaceholder" data-placeholder="Search channel..."></div>
+              <div class="search-performance-warning" data-i18n="searchPerformanceNotice">
+                ⚠️ Select specific channels to optimize performance.
+              </div>
               <div class="checkbox-label" style="margin-left:2px">
                 <input type="checkbox" id="spMentionIncludeDM">
                 <span style="font-size:11px" data-i18n="searchIncludeDM">Include Direct Messages</span>
@@ -375,7 +380,7 @@
               <span data-i18n="mentionChannel">Channel mention (@channel / @all)</span>
             </div>
             <div class="checkbox-label">
-              <input type="checkbox" id="spMentionDMs" checked>
+              <input type="checkbox" id="spMentionDMs">
               <span data-i18n="mentionDMs">Direct Messages (DM / GM)</span>
             </div>
           </div>
@@ -1099,12 +1104,11 @@
       <!-- Content -->
       <h3
         style="color: #ffffff; font-size: 18px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; justify-content: center; margin-bottom: 8px; margin-top: 10px; width: 100%;" data-i18n="supportVibecodingTitle">
-        ☕ Support Vibecoding!
+        ☕ Support Development!
       </h3>
       <p
         style="color: #94a3b8; font-size: 14px; line-height: 1.55; text-align: center; margin: 0 0 20px 0; font-weight: 500;" data-i18n="supportVibecodingDesc">
-        If this extension makes your work more productive and enjoyable, feel free to buy the developer a coffee to
-        support further AI vibecoding! 🚀
+        If this extension has been helpful to you, consider buying the developer a coffee to support future projects 🚀
       </p>
 
       <!-- Large QR Code Card -->

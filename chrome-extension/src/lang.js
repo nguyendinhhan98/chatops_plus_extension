@@ -11,6 +11,7 @@ const en = {
   // Common
   loading: 'Loading...',
   loadingMore: 'Loading more...',
+  loadMoreBtn: 'Load More',
   searching: 'Searching...',
   errorLoading: 'Error loading data',
   noResults: 'No results found',
@@ -32,6 +33,8 @@ const en = {
   // Sidepanel Search Tab
   search: 'Search',
   searchEmptyState: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">How to use?</h4><p class="card-desc">Click the floating search button (🔍) in the bottom-right to customize filters and search messages!</p></div></div>',
+  searchChannelPlaceholder: 'Search channel...',
+  searchPerformanceNotice: 'Select specific channels to optimize scanning performance.',
   searchCriteriaRequired: 'Please enter at least 1 search criteria',
   searchHelpTooltip: 'Search messages by keyword, sender, channel, and date range.',
   searchKeywordHelper: 'Keyword should be 2 or more characters.',
@@ -83,7 +86,7 @@ const en = {
 
   // Sidepanel Memo (Notes) Tab
   memoTasksEmpty: 'No tasks yet.',
-  memoNotesEmpty: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">How to use?</h4><p class="card-desc">Click the floating button <span style="display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; width: 15px; height: 15px; border-radius: 50%; font-size: 10px; font-weight: bold; line-height: 1; margin: 0 2px; vertical-align: middle; position: relative; top: -1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">+</span> in the bottom-right to add a note, or hover over any message in ChatOps and click the 📝 button to pin it as a note!<br><br>💡 <strong>Pro Tip:</strong> You can click on any individual line inside a note to copy only that line instantly!</p></div></div>',
+  memoNotesEmpty: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">How to use?</h4><p class="card-desc">Click the floating button <span style="display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; width: 15px; height: 15px; border-radius: 50%; font-size: 10px; font-weight: bold; line-height: 1; margin: 0 2px; vertical-align: middle; position: relative; top: -1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">+</span> in the bottom-right to add a note, or hover over any message in ChatOps and click the 📝 button to pin it as a note!</p></div></div>',
   memoClickHint: '📝 Pin notes in ChatOps or click the floating <span style="display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; width: 14px; height: 14px; border-radius: 50%; font-size: 9px; font-weight: bold; line-height: 1; margin: 0 2px; vertical-align: middle; position: relative; top: -1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">+</span> button in the bottom-right.',
   memoPending: 'Pending',
   memoCompleted: 'Completed',
@@ -197,8 +200,8 @@ const en = {
 
   // HTML Static Texts
   workspaceLabel: 'WORKSPACE:',
-  supportVibecodingTitle: '☕ Support Vibecoding!',
-  supportVibecodingDesc: 'If this extension makes your work more enjoyable and productive, feel free to support the developer with a coffee to fuel more AI vibecoding! 🚀',
+  supportVibecodingTitle: '☕ Support Development!',
+  supportVibecodingDesc: 'If this extension has been helpful to you, consider buying the developer a coffee to support future projects 🚀',
   memoNotesLabel: 'Notes',
   missedTabLabel: 'Missed',
   reactionsTabLabel: 'Images',
@@ -221,6 +224,7 @@ const en = {
   memoAddBtn: '📝 Add Note',
   last24Hours: 'Last 24 hours',
   last48Hours: 'Last 48 hours',
+  last72Hours: 'Last 72 hours',
   last14Days: 'Last 14 Days',
   mentionDirect: 'Direct mention (@you)',
   mentionHere: 'Group mention (@here)',
@@ -363,6 +367,7 @@ const vi = {
   // Common
   loading: 'Đang tải...',
   loadingMore: 'Đang tải thêm...',
+  loadMoreBtn: 'Tải thêm',
   searching: 'Đang tìm kiếm...',
   errorLoading: 'Lỗi khi tải dữ liệu',
   noResults: 'Không tìm thấy kết quả',
@@ -384,6 +389,8 @@ const vi = {
   // Sidepanel Search Tab
   search: 'Tìm kiếm',
   searchEmptyState: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">Hướng dẫn sử dụng</h4><p class="card-desc">Nhấp vào nút tìm kiếm (🔍) ở góc dưới cùng bên phải để tùy chỉnh bộ lọc và tìm kiếm tin nhắn!</p></div></div>',
+  searchChannelPlaceholder: 'Tìm kiếm kênh...',
+  searchPerformanceNotice: 'Chọn kênh cụ thể để tối ưu hiệu suất quét.',
   searchCriteriaRequired: 'Vui lòng nhập ít nhất 1 tiêu chí tìm kiếm',
   searchHelpTooltip: 'Tìm kiếm tin nhắn theo từ khóa, người gửi, kênh và khoảng thời gian.',
   searchKeywordHelper: 'Từ khóa phải có từ 2 ký tự trở lên.',
@@ -435,7 +442,7 @@ const vi = {
 
   // Sidepanel Memo (Notes) Tab
   memoTasksEmpty: 'Chưa có công việc nào.',
-  memoNotesEmpty: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">Hướng dẫn sử dụng</h4><p class="card-desc">Nhấp vào nút <span style="display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; width: 15px; height: 15px; border-radius: 50%; font-size: 10px; font-weight: bold; line-height: 1; margin: 0 2px; vertical-align: middle; position: relative; top: -1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">+</span> ở góc dưới cùng bên phải để thêm ghi chú, hoặc di chuột qua bất kỳ tin nhắn nào trong ChatOps và nhấp vào biểu tượng 📝 để ghim thành ghi chú!<br><br>💡 <strong>Mẹo nhỏ:</strong> Bạn có thể nhấp vào bất kỳ dòng nào trong ghi chú để sao chép nhanh duy nhất dòng đó!</p></div></div>',
+  memoNotesEmpty: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">Hướng dẫn sử dụng</h4><p class="card-desc">Nhấp vào nút <span style="display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; width: 15px; height: 15px; border-radius: 50%; font-size: 10px; font-weight: bold; line-height: 1; margin: 0 2px; vertical-align: middle; position: relative; top: -1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">+</span> ở góc dưới cùng bên phải để thêm ghi chú, hoặc di chuột qua bất kỳ tin nhắn nào trong ChatOps và nhấp vào biểu tượng 📝 để ghim thành ghi chú!</p></div></div>',
   memoClickHint: '📝 Ghim ghi chú trong ChatOps hoặc nhấp vào nút <span style="display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; width: 14px; height: 14px; border-radius: 50%; font-size: 9px; font-weight: bold; line-height: 1; margin: 0 2px; vertical-align: middle; position: relative; top: -1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">+</span> ở góc dưới cùng bên phải.',
   memoPending: 'Chờ xử lý',
   memoCompleted: 'Đã hoàn thành',
@@ -549,8 +556,8 @@ const vi = {
 
   // HTML Static Texts
   workspaceLabel: 'KHÔNG GIAN:',
-  supportVibecodingTitle: '☕ Hỗ trợ Vibecoding!',
-  supportVibecodingDesc: 'Nếu tiện ích mở rộng này giúp công việc của bạn hiệu quả và thú vị hơn, hãy mời nhà phát triển một tách cà phê để tiếp thêm năng lượng cho nhiều dự án AI vibecoding hơn nhé! 🚀',
+  supportVibecodingTitle: '☕ Hỗ trợ phát triển!',
+  supportVibecodingDesc: 'Nếu tiện ích này hữu ích với bạn, hãy mời nhà phát triển một tách cà phê để tiếp thêm động lực cho những dự án mới nhé 🚀',
   memoNotesLabel: 'Ghi chú',
   missedTabLabel: 'Bỏ lỡ',
   reactionsTabLabel: 'Hình ảnh',
@@ -573,6 +580,7 @@ const vi = {
   memoAddBtn: '📝 Thêm ghi chú',
   last24Hours: '24 giờ qua',
   last48Hours: '48 giờ qua',
+  last72Hours: '72 giờ qua',
   last14Days: '14 ngày qua',
   mentionDirect: 'Nhắc tên trực tiếp (@bạn)',
   mentionHere: 'Nhắc tên nhóm (@here)',
@@ -765,6 +773,10 @@ export function applyI18n(container = document) {
     const key = el.getAttribute('data-i18n-placeholder');
     if (language[key] !== undefined) {
       el.setAttribute('placeholder', language[key]);
+      const childInput = el.querySelector('input');
+      if (childInput) {
+        childInput.placeholder = language[key];
+      }
     }
   });
 

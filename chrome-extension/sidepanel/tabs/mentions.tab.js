@@ -31,6 +31,10 @@ import { language } from '../../src/lang.js';
 let _state = null;
 let mentionChannelMS = null;
 let _joinedChannelsCache = null;
+let scannedResults = [];
+let allScannedUsersMap = {};
+let currentMentionPage = 0;
+let isScanning = false;
 
 /**
  * Initializes the Mentions Tab
@@ -92,18 +96,177 @@ export function setup(state) {
     (channel) => channel.id,
     (channel) => getChannelLabel(channel)
   );
+
+  // Implement infinite scroll for mention results
+  const resultsEl = document.getElementById('spMentionResults');
+  if (resultsEl) {
+    resultsEl.addEventListener('scroll', (e) => {
+      const el = e.target;
+      if (el.scrollHeight - el.scrollTop <= el.clientHeight + 50) {
+        const totalMissed = scannedResults.reduce((sum, r) => sum + r.posts.length, 0);
+        const maxPosts = (currentMentionPage + 1) * 20;
+        if (totalMissed > maxPosts && !isScanning) {
+          currentMentionPage++;
+          renderScannedMentions(true);
+        }
+      }
+    });
+  }
+}
+
+/**
+ * Clears the scan results and resets the tab state
+ */
+export function clearResults() {
+  scannedResults = [];
+  allScannedUsersMap = {};
+  currentMentionPage = 0;
+  isScanning = false;
+  const resultsEl = document.getElementById('spMentionResults');
+  if (resultsEl) {
+    resultsEl.innerHTML = `<div class="empty-state">${language.scanMentionsStart}</div>`;
+  }
 }
 
 /**
  * Resets the UI state of the tab
  */
 export function reset() {
+  _joinedChannelsCache = null;
   if (mentionChannelMS) mentionChannelMS.reset();
-  document.getElementById('spMentionResults').innerHTML = `<div class="empty-state">${language.scanMentionsStart}</div>`;
+  clearResults();
 }
 
 export function getSelects() {
   return { mentionChannelMS };
+}
+
+/**
+ * Renders the scanned mentions with pagination (20 items at a time)
+ * @param {boolean} isLoadMore 
+ */
+function renderScannedMentions(isLoadMore = false) {
+  const resultsEl = document.getElementById('spMentionResults');
+  const cachedConfig = _state.getConfig();
+  const currentTeam = _state.getTeam();
+  const currentUser = _state.getUser();
+
+  const totalMissed = scannedResults.reduce((sum, r) => sum + r.posts.length, 0);
+  const maxPosts = (currentMentionPage + 1) * 20;
+
+  // Slice results up to maxPosts
+  let postCount = 0;
+  const paginatedResults = [];
+  for (const group of scannedResults) {
+    if (postCount >= maxPosts) break;
+    const remaining = maxPosts - postCount;
+    if (group.posts.length <= remaining) {
+      paginatedResults.push(group);
+      postCount += group.posts.length;
+    } else {
+      paginatedResults.push({
+        channelLabel: group.channelLabel,
+        posts: group.posts.slice(0, remaining)
+      });
+      postCount += remaining;
+    }
+  }
+
+  let html = '';
+  if (!isLoadMore) {
+    html += `
+      <div class="result-header">
+        <div class="result-count">⚠️ ${language.mentionsFound.replace('{count}', totalMissed).replace('{channels}', scannedResults.length)}</div>
+        <button class="btn-clear-search" id="btnClearMentions">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style="margin-right: 4px;">
+            <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+          </svg>
+          ${language.clearResults}
+        </button>
+      </div>
+      <div id="mentionPostList">
+    `;
+  }
+
+  let postsHtml = '';
+  for (const group of paginatedResults) {
+    postsHtml += `<div class="mention-channel-group">`;
+    postsHtml += `<div class="mention-channel-label">${escapeHtml(group.channelLabel)}</div>`;
+    postsHtml += group.posts.map((post) => {
+      const author = allScannedUsersMap[post.user_id];
+      const permalink = makePermalinkSync(post.id, cachedConfig.chatopsUrl, currentTeam.name);
+      return renderMentionItem(post, author, permalink);
+    }).join('');
+    postsHtml += `</div>`;
+  }
+
+  if (!isLoadMore) {
+    html += postsHtml;
+    html += `</div>`;
+    resultsEl.innerHTML = html;
+    document.getElementById('btnClearMentions')?.addEventListener('click', clearResults);
+  } else {
+    const listEl = document.getElementById('mentionPostList');
+    if (listEl) {
+      listEl.innerHTML = postsHtml;
+    }
+  }
+
+  // Remove existing Load More button if any
+  document.getElementById('btnLoadMoreMentions')?.remove();
+
+  // Show Load More button if there are more posts to load
+  const hasMore = totalMissed > maxPosts;
+  if (hasMore) {
+    resultsEl.insertAdjacentHTML('beforeend', `
+      <div class="loading-state" id="btnLoadMoreMentions" style="cursor: pointer; padding: 12px; text-align: center; font-weight: 600; color: var(--accent); border: 1px dashed var(--border); margin-top: 12px; border-radius: 8px; background: rgba(28, 88, 217, 0.04); transition: all 0.2s ease; font-size: 13.5px;" onmouseover="this.style.background='rgba(28, 88, 217, 0.08)'" onmouseout="this.style.background='rgba(28, 88, 217, 0.04)'">
+        ${language.loadMoreBtn || 'Load More'}
+      </div>
+    `);
+    document.getElementById('btnLoadMoreMentions')?.addEventListener('click', () => {
+      currentMentionPage++;
+      renderScannedMentions(true);
+    });
+  }
+
+  // Bind reaction buttons click event
+  resultsEl.querySelectorAll('.mention-react-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const postId = btn.getAttribute('data-post-id');
+      const emoji = btn.getAttribute('data-emoji');
+      const userId = currentUser.id;
+
+      btn.style.opacity = '0.5';
+      btn.style.pointerEvents = 'none';
+
+      try {
+        await addPostReaction(userId, postId, emoji);
+        btn.style.opacity = '1';
+        btn.classList.add('reacted');
+      } catch (err) {
+        console.error('[ChatOps Ext] Failed to add reaction:', err);
+        btn.style.opacity = '1';
+        btn.style.pointerEvents = 'auto';
+      }
+    });
+  });
+
+  // Only show collapse button if the text actually overflows
+  setTimeout(() => {
+    resultsEl.querySelectorAll('.post-item').forEach(card => {
+      const textEl = card.querySelector('.post-body');
+      const collapseBtn = card.querySelector('.collapse-btn');
+      if (textEl && collapseBtn) {
+        const isOverflowing = textEl.scrollHeight > textEl.clientHeight + 1;
+        if (!isOverflowing) {
+          collapseBtn.style.display = 'none';
+        }
+      }
+    });
+  }, 100);
 }
 
 /**
@@ -112,7 +275,6 @@ export function getSelects() {
 async function scanMentionsDeep() {
   const currentUser = _state.getUser();
   const currentTeam = _state.getTeam();
-  const cachedConfig = _state.getConfig();
   const resultsEl = document.getElementById('spMentionResults');
 
   if (!currentUser) {
@@ -144,6 +306,8 @@ async function scanMentionsDeep() {
     </div>
   `;
  
+  isScanning = true;
+
   try {
     const allChannels = await getMyChannels(currentTeam.id).catch(() => []);
     const channelsMap = Object.fromEntries(allChannels.map(c => [c.id, c]));
@@ -164,7 +328,7 @@ async function scanMentionsDeep() {
       }
     }
 
-    const results = [];
+    const scanResults = [];
     let processed = 0;
 
     // Scan in batches to avoid overwhelming the API
@@ -236,7 +400,7 @@ async function scanMentionsDeep() {
 
             if (trulyMissed.length > 0) {
               const channelLabel = channelInfo ? getChannelLabel(channelInfo) : language.unknown;
-              results.push({ channelLabel, posts: trulyMissed });
+              scanResults.push({ channelLabel, posts: trulyMissed });
             }
           } catch {}
         })
@@ -248,70 +412,25 @@ async function scanMentionsDeep() {
       if (progressEl) progressEl.style.width = `${progress}%`;
     }
 
-    if (results.length === 0) {
+    isScanning = false;
+
+    if (scanResults.length === 0) {
       resultsEl.innerHTML = `<div class="empty-state">✅ ${language.noMissedMentions.replace('{hours}', hours)}</div>`;
       return;
     }
 
-    const totalMissed = results.reduce((sum, r) => sum + r.posts.length, 0);
-    const allUserIds = [...new Set(results.flatMap((r) => r.posts.map((p) => p.user_id)))];
+    const allUserIds = [...new Set(scanResults.flatMap((r) => r.posts.map((p) => p.user_id)))];
     const users = await getUsersByIds(allUserIds);
-    const usersMap = Object.fromEntries(users.map((u) => [u.id, u]));
+    
+    // Store in module scoped variables for pagination rendering
+    scannedResults = scanResults;
+    allScannedUsersMap = Object.fromEntries(users.map((u) => [u.id, u]));
+    currentMentionPage = 0;
 
-    let html = `<div class="mention-summary">⚠️ ${language.mentionsFound.replace('{count}', totalMissed).replace('{channels}', results.length)}</div>`;
+    renderScannedMentions(false);
 
-    for (const group of results) {
-      html += `<div class="mention-channel-group">`;
-      html += `<div class="mention-channel-label">${escapeHtml(group.channelLabel)}</div>`;
-      html += group.posts.map((post) => {
-        const author = usersMap[post.user_id];
-        const permalink = makePermalinkSync(post.id, cachedConfig.chatopsUrl, currentTeam.name);
-        return renderMentionItem(post, author, permalink);
-      }).join('');
-      html += `</div>`;
-    }
-
-    resultsEl.innerHTML = html;
-
-    // Bind reaction buttons click event
-    resultsEl.querySelectorAll('.mention-react-btn').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-
-        const postId = btn.getAttribute('data-post-id');
-        const emoji = btn.getAttribute('data-emoji');
-        const userId = currentUser.id;
-
-        btn.style.opacity = '0.5';
-        btn.style.pointerEvents = 'none';
-
-        try {
-          await addPostReaction(userId, postId, emoji);
-          btn.style.opacity = '1';
-          btn.classList.add('reacted');
-        } catch (err) {
-          console.error('[ChatOps Ext] Failed to add reaction:', err);
-          btn.style.opacity = '1';
-          btn.style.pointerEvents = 'auto';
-        }
-      });
-    });
-
-    // Only show collapse button if the text actually overflows
-    setTimeout(() => {
-      resultsEl.querySelectorAll('.post-item').forEach(card => {
-        const textEl = card.querySelector('.post-body');
-        const collapseBtn = card.querySelector('.collapse-btn');
-        if (textEl && collapseBtn) {
-          const isOverflowing = textEl.scrollHeight > textEl.clientHeight + 1;
-          if (!isOverflowing) {
-            collapseBtn.style.display = 'none';
-          }
-        }
-      });
-    }, 100);
   } catch (err) {
+    isScanning = false;
     showError(resultsEl, err.message);
   }
 }
