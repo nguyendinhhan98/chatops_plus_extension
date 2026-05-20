@@ -237,6 +237,7 @@ const DEFAULT_SETTINGS = {
   memoCategories: ['General', 'Work', 'Personal', 'Ideas'],
   spamEnabled: true,
   memeEnabled: true,
+  giphyApiKey: '',
   spamEmojis: ['thumbsup', 'heart', 'fire', 'rocket', 'laughing'],
   autoCleanupDays: 30,
   notificationType: 'in-page',
@@ -297,6 +298,11 @@ async function loadAndApplySettings() {
 
   // Apply inputs
   document.getElementById('settingSnoozeMinutes').value = settings.snoozeMinutes;
+
+  const giphyApiKeyInput = document.getElementById('settingGiphyApiKey');
+  if (giphyApiKeyInput) {
+    giphyApiKeyInput.value = settings.giphyApiKey || '';
+  }
   
   const autoCleanupSelect = document.getElementById('settingsAutoCleanupDays');
   if (autoCleanupSelect) {
@@ -418,6 +424,40 @@ async function loadAndApplySettings() {
     window.convertToCustomDropdown('settingNotificationType', '220px');
     window.convertToCustomDropdown('settingAppPadding', '200px');
   }
+
+  // Validate Giphy API Key on load
+  if (settings.giphyApiKey) {
+    validateGiphyApiKey(settings.giphyApiKey);
+  }
+}
+
+async function validateGiphyApiKey(key) {
+  const statusEl = document.getElementById('settingGiphyApiKeyStatus');
+  if (!statusEl) return;
+
+  if (!key) {
+    statusEl.style.display = 'none';
+    statusEl.textContent = '';
+    return;
+  }
+
+  statusEl.textContent = language.giphyCheckingKey;
+  statusEl.style.color = 'var(--text-3)';
+  statusEl.style.display = 'block';
+
+  try {
+    const res = await fetch(`https://api.giphy.com/v1/gifs/trending?api_key=${key}&limit=1`);
+    if (res.ok) {
+      statusEl.textContent = language.giphyValidKey;
+      statusEl.style.color = '#10b981'; // Green
+    } else {
+      statusEl.textContent = language.giphyInvalidKey;
+      statusEl.style.color = '#ef4444'; // Red
+    }
+  } catch (err) {
+    statusEl.textContent = language.giphyConnectionError;
+    statusEl.style.color = '#ef4444'; // Red
+  }
 }
 
 function setupEventListeners() {
@@ -531,6 +571,16 @@ function setupEventListeners() {
     }
     showAutoSaveFeedback();
   });
+
+  const giphyApiKeyInput = document.getElementById('settingGiphyApiKey');
+  if (giphyApiKeyInput) {
+    giphyApiKeyInput.addEventListener('change', async (e) => {
+      const val = e.target.value.trim();
+      await updateSettings({ giphyApiKey: val });
+      showAutoSaveFeedback();
+      validateGiphyApiKey(val);
+    });
+  }
 
   const notificationTypeSelect = document.getElementById('settingNotificationType');
   if (notificationTypeSelect) {
@@ -907,8 +957,51 @@ function setupEventListeners() {
         targetPanel.style.display = 'block';
         targetPanel.classList.add('active');
       }
+
+      if (sectionId === 'gif') {
+        fetchGiphyGifs(document.getElementById('gifSearchInput')?.value || '');
+      }
     }
   });
+
+  // Giphy GIFs Search Debounce
+  const gifSearchInput = document.getElementById('gifSearchInput');
+  if (gifSearchInput) {
+    gifSearchInput.addEventListener('input', (e) => {
+      clearTimeout(giphyTimeout);
+      giphyTimeout = setTimeout(() => {
+        fetchGiphyGifs(e.target.value);
+      }, 300);
+    });
+  }
+
+  // Giphy Grid Interactions
+  const giphyGifsGrid = document.getElementById('giphy-gifs-grid');
+  if (giphyGifsGrid) {
+    giphyGifsGrid.addEventListener('click', async (e) => {
+      const sendBtn = e.target.closest('.btn-send');
+      if (sendBtn) {
+        const url = sendBtn.dataset.url;
+        const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (activeTab) {
+          chrome.tabs.sendMessage(activeTab.id, { type: 'INSERT_IMAGE_TO_CHAT', url });
+        }
+        return;
+      }
+
+      const previewBtn = e.target.closest('.btn-preview');
+      const clickedImg = e.target.closest('img');
+      if (previewBtn || (clickedImg && !e.target.closest('.gif-item-btn'))) {
+        const url = previewBtn ? previewBtn.dataset.url : e.target.closest('.gif-item').dataset.fullUrl;
+        const modal = document.getElementById('imagePreviewModal');
+        const previewImg = document.getElementById('imgPreviewTarget');
+        if (modal && previewImg) {
+          previewImg.src = url;
+          modal.style.display = 'flex';
+        }
+      }
+    });
+  }
 
   // Handle click on sub-tabs inside panels (Reactions & Sync)
   document.querySelectorAll('.settings-subtab-bar').forEach(bar => {
@@ -1852,3 +1945,85 @@ export function updateFloatingCheckboxesSync(settings) {
     }
   }
 }
+
+let giphyTimeout = null;
+let cachedTrendingGifs = [];
+let cachedTrendingApiKey = '';
+
+function renderGifItems(data, container) {
+  container.innerHTML = data.map(gif => {
+    const url = gif.images.fixed_height.url;
+    return `
+      <div class="gif-item" data-full-url="${url}">
+        <img src="${url}" alt="${gif.title}" loading="lazy">
+        <div class="gif-item-overlay">
+          <button class="gif-item-btn btn-send" data-url="${url}">⚡ Send</button>
+          <button class="gif-item-btn btn-preview" data-url="${url}">🔍 View</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function fetchGiphyGifs(query = '') {
+  const container = document.getElementById('giphy-gifs-grid');
+  if (!container) return;
+
+  const settings = await getSettings();
+  const apiKey = settings.giphyApiKey || '';
+
+  if (!apiKey) {
+    container.innerHTML = `
+      <div style="grid-column: span 2; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; min-height:200px; text-align:center; padding:20px;">
+        <p style="font-size:13px; color:var(--text-2); margin:0;">${language.giphyNoApiKey}</p>
+        <a href="#" class="settings-subtab-link" data-subtab="features-gif"
+          style="font-size:13px; color:var(--accent); font-weight:600; text-decoration:none;">
+          ${language.giphySetupLink} ↗
+        </a>
+      </div>
+    `;
+    return;
+  }
+
+  // If trending (empty query) and we have a valid cache for same key → reuse
+  if (query.trim() === '' && cachedTrendingGifs.length > 0 && cachedTrendingApiKey === apiKey) {
+    renderGifItems(cachedTrendingGifs, container);
+    return;
+  }
+
+  container.innerHTML = '<div style="grid-column: span 2; display:flex; align-items:center; justify-content:center; min-height: 200px;"><span class="spinner"></span></div>';
+
+  try {
+    let url;
+    if (query.trim() === '') {
+      url = `https://api.giphy.com/v1/gifs/trending?api_key=${apiKey}&limit=20&rating=g`;
+    } else {
+      url = `https://api.giphy.com/v1/gifs/search?api_key=${apiKey}&q=${encodeURIComponent(query)}&limit=20&offset=0&rating=g&lang=en`;
+    }
+
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status} — kiểm tra API Key hoặc thử lại sau (giới hạn 100 req/h)`);
+    }
+    const result = await response.json();
+    if (result.data && result.data.length > 0) {
+      // Cache trending results
+      if (query.trim() === '') {
+        cachedTrendingGifs = result.data;
+        cachedTrendingApiKey = apiKey;
+      }
+      renderGifItems(result.data, container);
+    } else {
+      container.innerHTML = '<div style="grid-column: span 2; display:flex; align-items:center; justify-content:center; color: var(--text-3); font-size:13px; min-height:200px;">Không tìm thấy GIF nào</div>';
+    }
+  } catch (error) {
+    console.error('Failed to fetch GIFs:', error);
+    container.innerHTML = `
+      <div style="grid-column: span 2; display:flex; flex-direction:column; align-items:center; justify-content:center; color: #ef4444; font-size:12.5px; padding: 20px; text-align:center; min-height:200px; gap:8px;">
+        <span>❌ Không tải được GIF.</span>
+        <span style="font-size:11px; color:var(--text-3);">${error.message}</span>
+      </div>
+    `;
+  }
+}
+

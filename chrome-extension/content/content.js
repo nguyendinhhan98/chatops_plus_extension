@@ -11,6 +11,7 @@ let quickNotePopover = null;
 let quickNoteBackdrop = null;
 let imagePickerEl = null;
 let observer = null;
+let globalInsertImageToChat = null;
 
 function runWithObserverDisabled(fn) {
   if (observer) {
@@ -63,6 +64,10 @@ chrome.runtime.onMessage.addListener(async (message) => {
     if (imagePickerEl) {
       imagePickerEl.remove();
       imagePickerEl = null;
+    }
+  } else if (message.type === 'INSERT_IMAGE_TO_CHAT') {
+    if (typeof globalInsertImageToChat === 'function') {
+      globalInsertImageToChat(message.url);
     }
   }
 });
@@ -744,23 +749,47 @@ function showToast(msg) {
       imagePickerEl = document.createElement('div');
       imagePickerEl.className = 'chatops-image-picker hidden';
       imagePickerEl.innerHTML = `
-        <div class="chatops-image-picker-header">
-          <span>${language.imageLibrary}</span>
-          <button type="button" id="chatops-image-close" class="chatops-image-close-btn">✕</button>
-        </div>
-        <div class="chatops-image-upload-area">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
-            <div style="display:flex; flex-direction:column; line-height: 1.2;">
-              <span id="chatops-your-images-header" style="font-size:11px; font-weight:700; color:#555; text-transform:uppercase; letter-spacing:0.5px;">${language.yourImages}</span>
-              <span id="chatops-your-images-size" style="font-size:10px; color:#888; margin-top:2px;">(0 KB / 10 MB)</span>
-            </div>
-            <label for="chatops-image-upload-input" class="chatops-image-upload-btn">
-              ${language.uploadImageBtn}
-            </label>
-            <input type="file" id="chatops-image-upload-input" accept="image/*" style="display:none;" multiple />
+        <div class="chatops-image-picker-header" style="display: flex; flex-direction: column; align-items: stretch; gap: 8px; border-bottom: 1px solid #e0e0e5; padding: 10px 12px 6px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <span style="font-weight: 700; font-size: 13px; color: #1c58d9;">${language.imageLibrary}</span>
+            <button type="button" id="chatops-image-close" class="chatops-image-close-btn">✕</button>
           </div>
-          <div id="chatops-custom-images-grid" class="chatops-custom-images-grid-container">
-            <span class="chatops-image-empty">${language.noImagesHint}</span>
+          <div class="chatops-picker-sub-tabs">
+            <button type="button" class="chatops-picker-sub-tab active" data-tab="library">${language.imageLibraryTab}</button>
+            <button type="button" class="chatops-picker-sub-tab" data-tab="gifs">${language.gifLibraryTab}</button>
+          </div>
+        </div>
+        
+        <!-- Panel 1: Library -->
+        <div id="chatops-picker-panel-library" class="chatops-picker-panel active">
+          <div class="chatops-image-upload-area">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
+              <div style="display:flex; flex-direction:column; line-height: 1.2;">
+                <span id="chatops-your-images-header" style="font-size:11px; font-weight:700; color:#555; text-transform:uppercase; letter-spacing:0.5px;">${language.yourImages}</span>
+                <span id="chatops-your-images-size" style="font-size:10px; color:#888; margin-top:2px;">(0 KB / 10 MB)</span>
+              </div>
+              <label for="chatops-image-upload-input" class="chatops-image-upload-btn">
+                ${language.uploadImageBtn}
+              </label>
+              <input type="file" id="chatops-image-upload-input" accept="image/*" style="display:none;" multiple />
+            </div>
+            <div id="chatops-custom-images-grid" class="chatops-custom-images-grid-container">
+              <span class="chatops-image-empty">${language.noImagesHint}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel 2: GIFs -->
+        <div id="chatops-picker-panel-gifs" class="chatops-picker-panel">
+          <div style="padding: 6px 12px 10px; display: flex; flex-direction: column; gap: 6px; flex: 1;">
+            <div id="chatops-picker-gif-search-area" class="chatops-gif-search-area" style="position: relative; display: flex; align-items: center; width: 100%;">
+              <input type="text" id="chatops-picker-gif-search" placeholder="${language.searchGifPlaceholder}"
+                style="width: 100%; padding: 6px 28px 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 11px; outline: none; font-family: inherit; background:#fff; box-sizing:border-box;">
+              <span style="position: absolute; right: 8px; font-size: 11px; color: #888; pointer-events: none;">🔍</span>
+            </div>
+            <div id="chatops-picker-gifs-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; max-height: 220px; overflow-y: auto; padding: 2px 2px;">
+              <!-- GIFs rendered here dynamically -->
+            </div>
           </div>
         </div>
       `;
@@ -775,6 +804,53 @@ function showToast(msg) {
           imagePickerEl.classList.add('hidden');
         }
       });
+
+      // Tab switching listeners
+      imagePickerEl.querySelectorAll('.chatops-picker-sub-tab').forEach(tabBtn => {
+        tabBtn.addEventListener('click', (e) => {
+          imagePickerEl.querySelectorAll('.chatops-picker-sub-tab').forEach(b => b.classList.remove('active'));
+          e.target.classList.add('active');
+
+          const tabName = e.target.dataset.tab;
+          imagePickerEl.querySelectorAll('.chatops-picker-panel').forEach(p => p.classList.remove('active'));
+          
+          const targetPanel = imagePickerEl.querySelector(`#chatops-picker-panel-${tabName}`);
+          if (targetPanel) {
+            targetPanel.classList.add('active');
+          }
+
+          if (tabName === 'gifs') {
+            loadPickerGifs('');
+          }
+        });
+      });
+
+      // GIF search input keyup/input listener
+      const pickerGifSearchInput = document.getElementById('chatops-picker-gif-search');
+      if (pickerGifSearchInput) {
+        let pickerGifTimeout = null;
+        pickerGifSearchInput.addEventListener('input', (e) => {
+          clearTimeout(pickerGifTimeout);
+          pickerGifTimeout = setTimeout(() => {
+            loadPickerGifs(e.target.value);
+          }, 300);
+        });
+      }
+
+      // GIF Grid interactions
+      const pickerGifsGrid = document.getElementById('chatops-picker-gifs-grid');
+      if (pickerGifsGrid) {
+        pickerGifsGrid.addEventListener('click', (e) => {
+          const clickedImg = e.target.closest('img');
+          const clickedItem = e.target.closest('.chatops-picker-meme-item');
+          if (clickedImg && clickedItem) {
+            const url = clickedItem.dataset.url;
+            insertImageToChat(url);
+            imagePickerEl.classList.add('hidden');
+          }
+        });
+      }
+
       loadCustomImages();
       registerCustomImageEvents();
     }
@@ -783,6 +859,16 @@ function showToast(msg) {
 
     const isHidden = imagePickerEl.classList.contains('hidden');
     if (isHidden) {
+      // Revert to active tab (library) when opening
+      imagePickerEl.querySelectorAll('.chatops-picker-sub-tab').forEach(b => {
+        if (b.dataset.tab === 'library') b.classList.add('active');
+        else b.classList.remove('active');
+      });
+      imagePickerEl.querySelectorAll('.chatops-picker-panel').forEach(p => {
+        if (p.id === 'chatops-picker-panel-library') p.classList.add('active');
+        else p.classList.remove('active');
+      });
+
       loadCustomImages();
       const rect = anchorBtn.getBoundingClientRect();
       imagePickerEl.style.bottom = `${window.innerHeight - rect.top + 10}px`;
@@ -790,6 +876,133 @@ function showToast(msg) {
       imagePickerEl.classList.remove('hidden');
     } else {
       imagePickerEl.classList.add('hidden');
+    }
+  }
+
+  let cachedPickerTrendingGifs = [];
+  let cachedPickerTrendingApiKey = '';
+
+  async function loadPickerGifs(query = '') {
+    const grid = document.getElementById('chatops-picker-gifs-grid');
+    if (!grid) return;
+
+    const searchArea = document.getElementById('chatops-picker-gif-search-area');
+
+    try {
+      const resSettings = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS]);
+      const settings = resSettings[STORAGE_KEYS.SETTINGS] || {};
+      const apiKey = settings.giphyApiKey || '';
+
+      // No API key configured — show setup hint and hide search box
+      if (!apiKey) {
+        if (searchArea) searchArea.style.display = 'none';
+        grid.innerHTML = `
+          <div style="grid-column: span 3; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; min-height: 120px; padding: 0px 6px 12px 6px; text-align:center;">
+            <span class="chatops-image-empty" style="color:var(--text-3); font-size:12px;">${language.giphyNoApiKey}</span>
+            <a href="#" id="chatops-gif-setup-link" style="font-size:12px; color:#1c58d9; font-weight:600; text-decoration:none;">${language.giphySetupLink} ↗</a>
+          </div>
+        `;
+        // Open sidepanel and navigate to Settings → GIFs
+        const setupLink = grid.querySelector('#chatops-gif-setup-link');
+        if (setupLink) {
+          setupLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            chrome.storage.local.set({
+              [STORAGE_KEYS.SIDEPANEL_TAB]: 'settings',
+              sidePanelSubTab: 'features-gif'
+            });
+            chrome.runtime.sendMessage({ type: MESSAGE_TYPES.OPEN_SIDE_PANEL }).catch(() => {});
+          });
+        }
+        return;
+      }
+
+      // If key is present, show search box by default
+      if (searchArea) searchArea.style.display = 'flex';
+
+      // Reuse trending cache for same API key
+      if (query.trim() === '' && cachedPickerTrendingGifs.length > 0 && cachedPickerTrendingApiKey === apiKey) {
+        grid.innerHTML = cachedPickerTrendingGifs.map(gif => {
+          const gifUrl = gif.images.fixed_height.url;
+          return `<div class="chatops-picker-meme-item" data-url="${gifUrl}" title="${gif.title}"><img src="${gifUrl}" alt="${gif.title}" loading="lazy"></div>`;
+        }).join('');
+        return;
+      }
+
+      grid.innerHTML = '<div style="grid-column: span 3; display:flex; align-items:center; justify-content:center; min-height: 100px;"><span class="chatops-image-empty">Loading GIFs...</span></div>';
+
+      let url;
+      if (query.trim() === '') {
+        url = `https://api.giphy.com/v1/gifs/trending?api_key=${apiKey}&limit=21&rating=g`;
+      } else {
+        url = `https://api.giphy.com/v1/gifs/search?api_key=${apiKey}&q=${encodeURIComponent(query)}&limit=21&offset=0&rating=g&lang=en`;
+      }
+
+      const response = await fetch(url);
+      if (response.ok) {
+        const result = await response.json();
+        if (result.data && result.data.length > 0) {
+          if (query.trim() === '') {
+            cachedPickerTrendingGifs = result.data;
+            cachedPickerTrendingApiKey = apiKey;
+          }
+          grid.innerHTML = result.data.map(gif => {
+            const gifUrl = gif.images.fixed_height.url;
+            return `<div class="chatops-picker-meme-item" data-url="${gifUrl}" title="${gif.title}"><img src="${gifUrl}" alt="${gif.title}" loading="lazy"></div>`;
+          }).join('');
+          return;
+        }
+      }
+      
+      // If API query fails (invalid key or rate limit) on initial load, hide search bar and show setup link
+      if (query.trim() === '') {
+        if (searchArea) searchArea.style.display = 'none';
+        grid.innerHTML = `
+          <div style="grid-column: span 3; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; min-height: 120px; padding: 12px 6px; text-align:center;">
+            <span class="chatops-image-empty" style="color:#ef4444; font-size:12px;">${language.giphyInvalidKey}</span>
+            <a href="#" id="chatops-gif-setup-link" style="font-size:12px; color:#1c58d9; font-weight:600; text-decoration:none;">${language.giphySetupLink} ↗</a>
+          </div>
+        `;
+        const setupLink = grid.querySelector('#chatops-gif-setup-link');
+        if (setupLink) {
+          setupLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            chrome.storage.local.set({
+              [STORAGE_KEYS.SIDEPANEL_TAB]: 'settings',
+              sidePanelSubTab: 'features-gif'
+            });
+            chrome.runtime.sendMessage({ type: MESSAGE_TYPES.OPEN_SIDE_PANEL }).catch(() => {});
+          });
+        }
+        return;
+      }
+
+      grid.innerHTML = '<div style="grid-column: span 3; display:flex; align-items:center; justify-content:center; min-height: 100px;"><span class="chatops-image-empty">No GIFs found</span></div>';
+    } catch (err) {
+      console.error('Failed to load GIFs in picker:', err);
+      // Hide search bar if it is initial load error
+      if (query.trim() === '') {
+        if (searchArea) searchArea.style.display = 'none';
+        grid.innerHTML = `
+          <div style="grid-column: span 3; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; min-height: 120px; padding: 12px 6px; text-align:center;">
+            <span class="chatops-image-empty" style="color:#ef4444; font-size:12px;">${language.giphyConnectionError}</span>
+            <a href="#" id="chatops-gif-setup-link" style="font-size:12px; color:#1c58d9; font-weight:600; text-decoration:none;">${language.giphySetupLink} ↗</a>
+          </div>
+        `;
+        const setupLink = grid.querySelector('#chatops-gif-setup-link');
+        if (setupLink) {
+          setupLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            chrome.storage.local.set({
+              [STORAGE_KEYS.SIDEPANEL_TAB]: 'settings',
+              sidePanelSubTab: 'features-gif'
+            });
+            chrome.runtime.sendMessage({ type: MESSAGE_TYPES.OPEN_SIDE_PANEL }).catch(() => {});
+          });
+        }
+        return;
+      }
+      grid.innerHTML = '<div style="grid-column: span 3; display:flex; align-items:center; justify-content:center; min-height: 100px;"><span class="chatops-image-empty">Failed to load GIFs</span></div>';
     }
   }
 
@@ -805,6 +1018,7 @@ function showToast(msg) {
   }
 
   function insertImageToChat(url) {
+    globalInsertImageToChat = insertImageToChat;
     const targetId = imagePickerEl?.dataset.activeTextbox || 'post_textbox';
     let textarea = document.getElementById(targetId);
     if (!textarea) {
@@ -1323,6 +1537,7 @@ function showToast(msg) {
     if (areaName === 'local') {
       if (changes[STORAGE_KEYS.SETTINGS]) {
         const raw = changes[STORAGE_KEYS.SETTINGS].newValue || {};
+        const old = changes[STORAGE_KEYS.SETTINGS].oldValue || {};
         cachedSettings = {
           ...DEFAULT_SETTINGS,
           ...raw,
@@ -1333,6 +1548,19 @@ function showToast(msg) {
           handleQuickActionButtonsVisibility();
           injectDynamicTheme();
         });
+
+        // Real-time update of GIF picker in ChatOps on API key save
+        if (raw.giphyApiKey !== old.giphyApiKey) {
+          cachedPickerTrendingGifs = [];
+          cachedPickerTrendingApiKey = '';
+          const pickerEl = document.querySelector('.chatops-image-picker');
+          if (pickerEl && !pickerEl.classList.contains('hidden')) {
+            const activeSubTab = pickerEl.querySelector('.chatops-picker-sub-tab.active');
+            if (activeSubTab && activeSubTab.dataset.tab === 'gifs') {
+              loadPickerGifs('');
+            }
+          }
+        }
       }
       if (changes.custom_memes) {
         loadCustomImages();
