@@ -438,9 +438,11 @@ async function validateGiphyApiKey(key) {
   if (!key) {
     statusEl.style.display = 'none';
     statusEl.textContent = '';
+    statusEl.removeAttribute('data-i18n');
     return;
   }
 
+  statusEl.setAttribute('data-i18n', 'giphyCheckingKey');
   statusEl.textContent = language.giphyCheckingKey;
   statusEl.style.color = 'var(--text-3)';
   statusEl.style.display = 'block';
@@ -448,13 +450,16 @@ async function validateGiphyApiKey(key) {
   try {
     const res = await fetch(`https://api.giphy.com/v1/gifs/trending?api_key=${key}&limit=1`);
     if (res.ok) {
+      statusEl.setAttribute('data-i18n', 'giphyValidKey');
       statusEl.textContent = language.giphyValidKey;
       statusEl.style.color = '#10b981'; // Green
     } else {
+      statusEl.setAttribute('data-i18n', 'giphyInvalidKey');
       statusEl.textContent = language.giphyInvalidKey;
       statusEl.style.color = '#ef4444'; // Red
     }
   } catch (err) {
+    statusEl.setAttribute('data-i18n', 'giphyConnectionError');
     statusEl.textContent = language.giphyConnectionError;
     statusEl.style.color = '#ef4444'; // Red
   }
@@ -2003,7 +2008,7 @@ async function fetchGiphyGifs(query = '') {
 
     const response = await fetch(url);
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status} — kiểm tra API Key hoặc thử lại sau (giới hạn 100 req/h)`);
+      throw new Error(language.giphyHttpError.replace('{status}', response.status));
     }
     const result = await response.json();
     if (result.data && result.data.length > 0) {
@@ -2014,13 +2019,13 @@ async function fetchGiphyGifs(query = '') {
       }
       renderGifItems(result.data, container);
     } else {
-      container.innerHTML = '<div style="grid-column: span 2; display:flex; align-items:center; justify-content:center; color: var(--text-3); font-size:13px; min-height:200px;">Không tìm thấy GIF nào</div>';
+      container.innerHTML = `<div style="grid-column: span 2; display:flex; align-items:center; justify-content:center; color: var(--text-3); font-size:13px; min-height:200px;">${language.giphyNotFound}</div>`;
     }
   } catch (error) {
     console.error('Failed to fetch GIFs:', error);
     container.innerHTML = `
       <div style="grid-column: span 2; display:flex; flex-direction:column; align-items:center; justify-content:center; color: #ef4444; font-size:12.5px; padding: 20px; text-align:center; min-height:200px; gap:8px;">
-        <span>❌ Không tải được GIF.</span>
+        <span>❌ ${language.giphyLoadError}</span>
         <span style="font-size:11px; color:var(--text-3);">${error.message}</span>
       </div>
     `;

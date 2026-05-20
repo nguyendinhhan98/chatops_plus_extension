@@ -423,7 +423,7 @@
         <div class="memo-sub-tabs" id="reactionsSubTabs"
           style="width: 100%; display: flex !important; background: var(--bg-1) !important; border: 1px solid var(--border) !important; border-radius: 6px !important; padding: 2px !important; margin: 0 !important; box-shadow: none !important; gap: 4px 2px !important; flex-wrap: wrap !important;">
           <button class="memo-sub-tab active" data-section="meme" data-i18n="imageLibraryTab">My Library</button>
-          <button class="memo-sub-tab" data-section="gif" data-i18n="gifLibraryTab">GIFs</button>
+          <button class="memo-sub-tab" data-section="picker" data-i18n="reactionSpammerTab">Reactions</button>
         </div>
       </div>
 
@@ -477,28 +477,6 @@
             <div id="sidepanel-memes-grid"
               style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; padding:12px; background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius-sm); min-height:300px; margin-top:8px;">
               <!-- Personal memes rendered here dynamically -->
-            </div>
-          </div>
-        </div>
-
-        <!-- Content: Giphy GIFs -->
-        <div id="reactions-section-gif" class="reactions-tab-panel" style="display:none">
-          <div class="settings-group" style="padding-bottom: 16px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px;">
-              <h3 class="settings-title" style="margin: 0;" data-i18n="giphyGifSearch">Giphy GIFs</h3>
-            </div>
-
-            <!-- Search input for GIFs -->
-            <div class="gif-search-wrapper" style="position:relative; margin-bottom: 12px; display:flex; align-items:center; width: 100%;">
-              <input type="text" id="gifSearchInput" data-i18n-placeholder="searchGifPlaceholder" placeholder="Search GIFs on Giphy..."
-                style="flex:1; padding:8px 36px 8px 12px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:13px; outline:none; background:var(--bg-1); color:var(--text-1); font-family:inherit; width: 100%;">
-              <span class="gif-search-icon" style="position:absolute; right:12px; color:var(--text-3); pointer-events:none; font-size:14px;">🔍</span>
-            </div>
-
-            <!-- Grid display of GIFs -->
-            <div id="giphy-gifs-grid"
-              style="display:grid; grid-template-columns: repeat(2, 1fr); gap:10px; padding:12px; background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius-sm); min-height:300px; max-height: 450px; overflow-y: auto; margin-top:8px;">
-              <!-- GIFs rendered here dynamically -->
             </div>
           </div>
         </div>
