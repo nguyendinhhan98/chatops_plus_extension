@@ -6,7 +6,7 @@ import { state } from './state.js';
 import { setup as setupSearch, reset as resetSearch, getSelects as getSearchSelects } from './tabs/search.tab.js';
 import { setup as setupMentions, reset as resetMentions, getSelects as getMentionsSelects } from './tabs/mentions.tab.js';
 
-import { setup as setupMemo, loadMemos } from './tabs/memo.tab.js';
+import { setup as setupMemo, loadMemos, renderCategories } from './tabs/memo.tab.js';
 import { setup as setupTasks, loadTasks } from './tabs/tasks.tab.js';
 import { setup as setupSettings, getSettings, applyThemeToDOM, applyTabVisibilityToDOM, runAutoCleanup, renderSidepanelMemes } from './tabs/settings.tab.js';
 import { getMyProfile, getMyTeams, getConfig } from '../src/api/index.js';
@@ -333,6 +333,7 @@ function setupStateHandlers() {
       loadTasks();
     } else if (msg.type === 'APP_LANG_CHANGED') {
       applyI18n();
+      renderCategories();
       loadMemos();
       loadTasks();
       renderSidepanelMemes();
@@ -605,6 +606,7 @@ function setupLanguageToggle() {
     });
 
     // 6. Refresh active views to render correct dynamic translations
+    renderCategories();
     if (typeof loadMemos === 'function') loadMemos();
     if (typeof loadTasks === 'function') loadTasks();
     if (typeof renderSidepanelMemes === 'function') renderSidepanelMemes();

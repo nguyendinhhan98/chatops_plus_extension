@@ -8,14 +8,9 @@ import { CHATOPS_CONFIG, STORAGE_KEYS, TABS } from '../../src/constants.js';
 import { language } from '../../src/lang.js';
 
 function getCategoryDisplayName(cat) {
-  switch (cat.toLowerCase()) {
-    case 'all': return language.categoryAll;
-    case 'general': return language.categoryGeneral;
-    case 'work': return language.categoryWork;
-    case 'personal': return language.categoryPersonal;
-    case 'ideas': return language.categoryIdeas;
-    default: return cat;
-  }
+  if (!cat) return '';
+  if (cat.toLowerCase() === 'all') return language.categoryAll;
+  return cat;
 }
 
 let _state = null;
@@ -457,7 +452,7 @@ export function setup(state) {
 /**
  * Renders categories to the selects
  */
-async function renderCategories() {
+export async function renderCategories() {
   const res = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS]);
   const categories = res[STORAGE_KEYS.SETTINGS]?.memoCategories || ['General', 'Work', 'Personal', 'Ideas'];
   

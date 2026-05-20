@@ -220,8 +220,11 @@ let _state = null;
 const DEFAULT_SETTINGS = {
   snoozeMinutes: 30,
   headerColor: '#1c58d9',
+  headerTextColor: '#ffffff',
   navColor: '#1153ab',
+  tabTextColor: '#ffffff',
   accentColor: '#1c58d9',
+  accentTextColor: '#ffffff',
   showTabs: {
     search: true,
     tasks: true, // Always true
@@ -320,7 +323,7 @@ async function loadAndApplySettings() {
   }
   
   // Apply colors to pickers
-  const colorKeys = ['headerColor', 'navColor', 'accentColor'];
+  const colorKeys = ['headerColor', 'headerTextColor', 'navColor', 'tabTextColor', 'accentColor', 'accentTextColor'];
   colorKeys.forEach(key => {
     const row = document.querySelector(`.color-presets-row[data-key="${key}"]`);
     if (row) {
@@ -649,8 +652,11 @@ function setupEventListeners() {
         // Auto-save structural color
         const newSettings = {
           headerColor: document.querySelector('.color-presets-row[data-key="headerColor"] .color-preset.active, .color-presets-row[data-key="headerColor"] .color-preset-custom-wrapper.active')?.dataset.color,
+          headerTextColor: document.querySelector('.color-presets-row[data-key="headerTextColor"] .color-preset.active, .color-presets-row[data-key="headerTextColor"] .color-preset-custom-wrapper.active')?.dataset.color,
           navColor: document.querySelector('.color-presets-row[data-key="navColor"] .color-preset.active, .color-presets-row[data-key="navColor"] .color-preset-custom-wrapper.active')?.dataset.color,
-          accentColor: document.querySelector('.color-presets-row[data-key="accentColor"] .color-preset.active, .color-presets-row[data-key="accentColor"] .color-preset-custom-wrapper.active')?.dataset.color
+          tabTextColor: document.querySelector('.color-presets-row[data-key="tabTextColor"] .color-preset.active, .color-presets-row[data-key="tabTextColor"] .color-preset-custom-wrapper.active')?.dataset.color,
+          accentColor: document.querySelector('.color-presets-row[data-key="accentColor"] .color-preset.active, .color-presets-row[data-key="accentColor"] .color-preset-custom-wrapper.active')?.dataset.color,
+          accentTextColor: document.querySelector('.color-presets-row[data-key="accentTextColor"] .color-preset.active, .color-presets-row[data-key="accentTextColor"] .color-preset-custom-wrapper.active')?.dataset.color
         };
         updateSettings(newSettings);
         applyThemeToDOM(newSettings);
@@ -674,8 +680,11 @@ function setupEventListeners() {
         // Auto-save structural color
         const newSettings = {
           headerColor: document.querySelector('.color-presets-row[data-key="headerColor"] .color-preset.active, .color-presets-row[data-key="headerColor"] .color-preset-custom-wrapper.active')?.dataset.color,
+          headerTextColor: document.querySelector('.color-presets-row[data-key="headerTextColor"] .color-preset.active, .color-presets-row[data-key="headerTextColor"] .color-preset-custom-wrapper.active')?.dataset.color,
           navColor: document.querySelector('.color-presets-row[data-key="navColor"] .color-preset.active, .color-presets-row[data-key="navColor"] .color-preset-custom-wrapper.active')?.dataset.color,
-          accentColor: document.querySelector('.color-presets-row[data-key="accentColor"] .color-preset.active, .color-presets-row[data-key="accentColor"] .color-preset-custom-wrapper.active')?.dataset.color
+          tabTextColor: document.querySelector('.color-presets-row[data-key="tabTextColor"] .color-preset.active, .color-presets-row[data-key="tabTextColor"] .color-preset-custom-wrapper.active')?.dataset.color,
+          accentColor: document.querySelector('.color-presets-row[data-key="accentColor"] .color-preset.active, .color-presets-row[data-key="accentColor"] .color-preset-custom-wrapper.active')?.dataset.color,
+          accentTextColor: document.querySelector('.color-presets-row[data-key="accentTextColor"] .color-preset.active, .color-presets-row[data-key="accentTextColor"] .color-preset-custom-wrapper.active')?.dataset.color
         };
         await updateSettings(newSettings);
         applyThemeToDOM(newSettings);
@@ -1626,14 +1635,22 @@ export function applyThemeToDOM(settings) {
   // Header Block
   const headerColor = settings.headerColor || '#1c58d9';
   root.style.setProperty('--header-bg', headerColor);
+  const headerTextColor = settings.headerTextColor || '#ffffff';
+  root.style.setProperty('--header-text-color', headerTextColor);
   
   // Nav Block
   const navColor = settings.navColor || '#1153ab';
   root.style.setProperty('--nav-bg', navColor);
+
+  // Tab Text Color
+  const tabTextColor = settings.tabTextColor || '#ffffff';
+  root.style.setProperty('--tab-text-color', tabTextColor);
   
   // Accent Block (Primary color for buttons, etc)
   const accentColor = settings.accentColor || '#1c58d9';
   root.style.setProperty('--accent', accentColor);
+  const accentTextColor = settings.accentTextColor || '#ffffff';
+  root.style.setProperty('--accent-text-color', accentTextColor);
 
   // App Padding
   const appPaddingVal = settings.appPadding || '12px';
@@ -1692,13 +1709,24 @@ export function applyThemeToDOM(settings) {
 
   // Dynamic Live Preview Mockup Update
   const mockHeader = document.getElementById('mockupHeader');
-  if (mockHeader) mockHeader.style.background = headerColor;
+  if (mockHeader) {
+    mockHeader.style.background = headerColor;
+    mockHeader.style.color = headerTextColor;
+  }
 
   const mockNav = document.getElementById('mockupNav');
-  if (mockNav) mockNav.style.background = navColor;
+  if (mockNav) {
+    mockNav.style.background = navColor;
+    mockNav.querySelectorAll('.mock-tab-btn').forEach(btn => {
+      btn.style.color = tabTextColor;
+    });
+  }
 
   const mockAccentBtn = document.getElementById('mockupAccentBtn');
-  if (mockAccentBtn) mockAccentBtn.style.background = accentColor;
+  if (mockAccentBtn) {
+    mockAccentBtn.style.background = accentColor;
+    mockAccentBtn.style.color = accentTextColor;
+  }
 }
 
 export function applyTabVisibilityToDOM(showTabs, memeEnabled) {

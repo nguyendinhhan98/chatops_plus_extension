@@ -88,6 +88,8 @@ async function injectDynamicTheme() {
   
   const accentColor = settings.accentColor || settings.themeColor || '#1c58d9';
   const headerColor = settings.headerColor || settings.themeColor || '#1c58d9';
+  const accentTextColor = settings.accentTextColor || '#ffffff';
+  const headerTextColor = settings.headerTextColor || '#ffffff';
   
   let styleEl = document.getElementById('chatops-dynamic-theme');
   if (!styleEl) {
@@ -103,7 +105,7 @@ async function injectDynamicTheme() {
     .chatops-reminder-banner { border-top-color: var(--chatops-accent) !important; }
     .crb-title { color: var(--chatops-accent) !important; }
     .crb-progress { background: var(--chatops-accent) !important; }
-    .btn-primary { background: var(--chatops-accent) !important; color: #ffffff !important; }
+    .btn-primary { background: var(--chatops-accent) !important; color: ${accentTextColor} !important; }
     .cqn-mode-btn.active { color: var(--chatops-accent) !important; border-color: var(--chatops-accent) !important; background: rgba(0,0,0,0.05) !important; }
     .cqn-preview { border-left-color: var(--chatops-accent) !important; }
   `;
@@ -1164,14 +1166,9 @@ function showToast(msg) {
   });
 
   function getCategoryDisplayName(cat) {
-    switch (cat.toLowerCase()) {
-      case 'all': return language.categoryAll;
-      case 'general': return language.categoryGeneral;
-      case 'work': return language.categoryWork;
-      case 'personal': return language.categoryPersonal;
-      case 'ideas': return language.categoryIdeas;
-      default: return cat;
-    }
+    if (!cat) return '';
+    if (cat.toLowerCase() === 'all') return language.categoryAll;
+    return cat;
   }
 
   function getOrCreatePopover() {
