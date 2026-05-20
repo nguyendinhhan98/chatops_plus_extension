@@ -299,16 +299,18 @@ async function scanMentionsDeep() {
     });
 
     // Only show collapse button if the text actually overflows
-    resultsEl.querySelectorAll('.post-item').forEach(card => {
-      const textEl = card.querySelector('.post-body');
-      const collapseBtn = card.querySelector('.collapse-btn');
-      if (textEl && collapseBtn) {
-        const isOverflowing = textEl.scrollHeight > textEl.clientHeight + 1;
-        if (!isOverflowing) {
-          collapseBtn.style.display = 'none';
+    setTimeout(() => {
+      resultsEl.querySelectorAll('.post-item').forEach(card => {
+        const textEl = card.querySelector('.post-body');
+        const collapseBtn = card.querySelector('.collapse-btn');
+        if (textEl && collapseBtn) {
+          const isOverflowing = textEl.scrollHeight > textEl.clientHeight + 1;
+          if (!isOverflowing) {
+            collapseBtn.style.display = 'none';
+          }
         }
-      }
-    });
+      });
+    }, 100);
   } catch (err) {
     showError(resultsEl, err.message);
   }

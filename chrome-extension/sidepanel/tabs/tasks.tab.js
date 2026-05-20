@@ -423,7 +423,7 @@ export function setup(state) {
 
     const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS, STORAGE_KEYS.SETTINGS]);
     const memos = res[STORAGE_KEYS.MEMOS] || [];
-    const settings = res[STORAGE_KEYS.SETTINGS] || { snoozeMinutes: 5 };
+    const settings = res[STORAGE_KEYS.SETTINGS] || { snoozeMinutes: 30 };
     memos.unshift(item);
     await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
 
@@ -515,7 +515,7 @@ export function setup(state) {
       const id = e.target.dataset.id;
       const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS, STORAGE_KEYS.SETTINGS]);
       const memos = res[STORAGE_KEYS.MEMOS] || [];
-      const settings = res[STORAGE_KEYS.SETTINGS] || { snoozeMinutes: 5 };
+      const settings = res[STORAGE_KEYS.SETTINGS] || { snoozeMinutes: 30 };
       const task = memos.find(m => m.id === id);
       if (task) {
         task.done = e.target.checked;
@@ -532,7 +532,7 @@ export function setup(state) {
         if (e.target.checked) {
           chrome.alarms.clear(id);
         } else {
-          const snoozeMins = settings.snoozeMinutes || 5;
+          const snoozeMins = settings.snoozeMinutes || 30;
           chrome.runtime.sendMessage({ type: MESSAGE_TYPES.SET_TASK_ALARM, taskId: id, time: Date.now() + snoozeMins * 60 * 1000 });
         }
         loadTasks();
@@ -557,7 +557,7 @@ export function setup(state) {
 
       const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS, STORAGE_KEYS.SETTINGS]);
       const memos = res[STORAGE_KEYS.MEMOS] || [];
-      const settings = res[STORAGE_KEYS.SETTINGS] || { snoozeMinutes: 5 };
+      const settings = res[STORAGE_KEYS.SETTINGS] || { snoozeMinutes: 30 };
       const task = memos.find(m => m.id === taskId);
       
       if (task && task.checklist && task.checklist[itemIdx]) {
@@ -583,7 +583,7 @@ export function setup(state) {
             task.done = false;
             task.doneAt = null;
             statusChanged = true;
-            const snoozeMins = settings.snoozeMinutes || 5;
+            const snoozeMins = settings.snoozeMinutes || 30;
             chrome.runtime.sendMessage({ type: MESSAGE_TYPES.SET_TASK_ALARM, taskId, time: Date.now() + snoozeMins * 60 * 1000 });
           }
           
@@ -628,10 +628,10 @@ export function setup(state) {
               <input type="text" class="inline-edit-title" placeholder="Title (optional)" value="${escapeHtml(task.title || '')}" style="width: 100%; height: 28px; font-size: 13px; font-weight: 600; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); outline: none; box-sizing: border-box; font-family: inherit;" autocomplete="off">
               <textarea class="inline-edit-textarea" rows="10" style="width: 100%; min-height: 180px; padding: 8px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 13px; outline: none; background: #fff; resize: vertical; color: var(--text-1);">${escapeHtml(task.note)}</textarea>
               <div style="display:flex; align-items:center; gap:8px;">
-                <span style="font-size:12px; font-weight:600; color:var(--text-2);">Category:</span>
+                <span style="font-size:12px; font-weight:600; color:var(--text-2);">${language.categoryLabel || 'Category:'}</span>
                 <select class="sp-compact-select inline-edit-category" style="max-width:120px; margin:0;">
-                  <option value="normal" ${task.taskCategory !== 'checklist' ? 'selected' : ''}>Normal</option>
-                  <option value="checklist" ${task.taskCategory === 'checklist' ? 'selected' : ''}>Checklist</option>
+                  <option value="normal" ${task.taskCategory !== 'checklist' ? 'selected' : ''}>${language.categoryNormal || 'Normal'}</option>
+                  <option value="checklist" ${task.taskCategory === 'checklist' ? 'selected' : ''}>${language.categoryChecklist || 'Checklist'}</option>
                 </select>
               </div>
               <div style="display: flex; gap: 6px; justify-content: flex-end;">
@@ -826,7 +826,7 @@ export async function loadTasks() {
           await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
           
           const settingsRes = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS]);
-          const snoozeMins = settingsRes[STORAGE_KEYS.SETTINGS]?.snoozeMinutes || 5;
+          const snoozeMins = settingsRes[STORAGE_KEYS.SETTINGS]?.snoozeMinutes || 30;
           
           if (dateStr) {
             chrome.runtime.sendMessage({
@@ -901,8 +901,8 @@ function renderTaskCard(task, now) {
           </label>
           <span class="sp-card-date">${formatRelativeTime(task.createdAt)}</span>
           <select class="sp-compact-select task-edit-category" data-id="${task.id}" style="max-width: 95px; margin: 0; font-size: 11.5px; font-weight: 400;">
-            <option value="normal" ${task.taskCategory !== 'checklist' ? 'selected' : ''}>Normal</option>
-            <option value="checklist" ${task.taskCategory === 'checklist' ? 'selected' : ''}>Checklist</option>
+            <option value="normal" ${task.taskCategory !== 'checklist' ? 'selected' : ''}>${language.categoryNormal || 'Normal'}</option>
+            <option value="checklist" ${task.taskCategory === 'checklist' ? 'selected' : ''}>${language.categoryChecklist || 'Checklist'}</option>
           </select>
           ${task.repeatDaily ? `
             <span class="repeat-daily-badge" style="font-size:10px; font-weight:700; color:var(--accent); background:rgba(28,88,217,0.08); padding:1px 5px; border-radius:4px; display:inline-flex; align-items:center; gap:2px;" title="${language.taskRemindDailyLabel}">

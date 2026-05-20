@@ -200,7 +200,7 @@ async function showReminderBanner(text, taskId, isTask = false, postId = null, t
       <div class="crb-content" style="display:flex; flex-direction:column; min-width:0; flex:1;">
         <div style="display:flex; align-items:center; justify-content:space-between; width:100%; margin-bottom: 3px;">
           <div class="crb-title" style="margin-bottom:0;">${isTask ? language.reminderTaskTitle : language.reminderTitle}</div>
-          ${isLongText ? `<button class="crb-collapse-btn collapse-btn" style="width:16px; height:16px; font-size:7px; margin-left:8px;" title="Expand/Collapse">▶</button>` : ''}
+          ${isLongText ? `<button class="crb-collapse-btn collapse-btn" style="margin-left:8px;" title="Expand/Collapse"><svg class="crb-arrow-icon" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" style="transition: transform 0.2s ease; transform: rotate(-90deg);"><path d="M6 9l6 6 6-6"/></svg></button>` : ''}
         </div>
         <div class="crb-text ${isLongText ? 'collapsed' : ''}">${formatRichText(text)}</div>
       </div>
@@ -252,12 +252,21 @@ async function showReminderBanner(text, taskId, isTask = false, postId = null, t
     const collBtn = banner.querySelector('.crb-collapse-btn');
     const textEl = banner.querySelector('.crb-text');
     if (collBtn && textEl) {
+      setTimeout(() => {
+        const isOverflowing = textEl.scrollHeight > textEl.clientHeight + 1;
+        if (!isOverflowing) {
+          collBtn.style.display = 'none';
+          textEl.classList.remove('collapsed');
+        }
+      }, 20);
+
       collBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         const isCollapsed = textEl.classList.toggle('collapsed');
+        const arrowSvg = collBtn.querySelector('svg');
         if (isCollapsed) {
-          collBtn.innerHTML = '▶';
           collBtn.classList.remove('expanded');
+          if (arrowSvg) arrowSvg.style.transform = 'rotate(-90deg)';
 
           // Reschedule a short auto-close timer (3 seconds) when collapsed back
           if (closeTimer) clearTimeout(closeTimer);
@@ -266,8 +275,8 @@ async function showReminderBanner(text, taskId, isTask = false, postId = null, t
             setTimeout(() => banner.remove(), 400);
           }, 3000);
         } else {
-          collBtn.innerHTML = '▼';
           collBtn.classList.add('expanded');
+          if (arrowSvg) arrowSvg.style.transform = 'rotate(0deg)';
           
           // Reset the close timer to a generous 15 seconds when expanded so it eventually closes
           if (closeTimer) clearTimeout(closeTimer);
@@ -419,6 +428,7 @@ function showToast(msg) {
   }
 
   async function updateFloatingBadgeCount() {
+    if (!chrome.runtime?.id) return;
     try {
       const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
       const allItems = res[STORAGE_KEYS.MEMOS] || [];
@@ -436,6 +446,9 @@ function showToast(msg) {
         }
       }
     } catch (err) {
+      if (err.message && err.message.includes('Extension context invalidated')) {
+        return;
+      }
       console.error('[ChatOps Ext] Failed to update badge count:', err);
     }
   }
@@ -466,7 +479,8 @@ function showToast(msg) {
 
   // --- Image Integration into Main & RHS Chat UI ---
   function injectImageButton() {
-    const memeEnabled = cachedSettings.memeEnabled !== false;
+    const floatingButtons = cachedSettings.floatingButtons || { quickNote: true, quickTask: true, spamReactions: true, imagePicker: true };
+    const memeEnabled = (cachedSettings.memeEnabled !== false) && (floatingButtons.imagePicker !== false);
     
     const targets = [
       { id: 'emojiPickerButton', textboxId: 'post_textbox', btnId: 'chatops-ext-image-btn' },
@@ -1213,7 +1227,7 @@ function showToast(msg) {
       saveBtn.innerHTML = '🎯 ' + language.taskAddBtn;
       if (hintEl) {
         const res = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS]);
-        const settings = res[STORAGE_KEYS.SETTINGS] || { snoozeMinutes: 5 };
+        const settings = res[STORAGE_KEYS.SETTINGS] || { snoozeMinutes: 30 };
         hintEl.innerHTML = language.taskReminderHint.replace('{minutes}', settings.snoozeMinutes);
       }
     }
@@ -1254,7 +1268,7 @@ function showToast(msg) {
 
     const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS, STORAGE_KEYS.SETTINGS]);
     const memos = res[STORAGE_KEYS.MEMOS] || [];
-    const settings = res[STORAGE_KEYS.SETTINGS] || { snoozeMinutes: 5 };
+    const settings = res[STORAGE_KEYS.SETTINGS] || { snoozeMinutes: 30 };
     memos.unshift(item);
     await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
     chrome.runtime.sendMessage({ type: MESSAGE_TYPES.MEMO_UPDATED });
@@ -1268,14 +1282,26 @@ function showToast(msg) {
     quickNoteBackdrop.classList.remove('visible');
   }
 
-  let cachedSettings = { spamEnabled: true, memeEnabled: true, showTabs: { search: true, tasks: true, notes: true, missed: true } };
+  const DEFAULT_SETTINGS = {
+    spamEnabled: true,
+    memeEnabled: true,
+    showTabs: { search: true, tasks: true, notes: true, missed: true },
+    floatingButtons: { quickNote: true, quickTask: true, spamReactions: true, imagePicker: true }
+  };
+  let cachedSettings = { ...DEFAULT_SETTINGS };
   let cachedMemos = [];
   let myUserId = '';
 
   // Fetch initial settings and memos
   chrome.storage.local.get([STORAGE_KEYS.SETTINGS, STORAGE_KEYS.MEMOS], (res) => {
     if (res[STORAGE_KEYS.SETTINGS]) {
-      cachedSettings = res[STORAGE_KEYS.SETTINGS];
+      const raw = res[STORAGE_KEYS.SETTINGS];
+      cachedSettings = {
+        ...DEFAULT_SETTINGS,
+        ...raw,
+        showTabs: { ...DEFAULT_SETTINGS.showTabs, ...raw.showTabs },
+        floatingButtons: { ...DEFAULT_SETTINGS.floatingButtons, ...raw.floatingButtons }
+      };
     }
     if (res[STORAGE_KEYS.MEMOS]) {
       cachedMemos = res[STORAGE_KEYS.MEMOS];
@@ -1296,7 +1322,13 @@ function showToast(msg) {
   chrome.storage.onChanged.addListener((changes, areaName) => {
     if (areaName === 'local') {
       if (changes[STORAGE_KEYS.SETTINGS]) {
-        cachedSettings = changes[STORAGE_KEYS.SETTINGS].newValue || { spamEnabled: true, showTabs: { search: true, tasks: true, notes: true, missed: true } };
+        const raw = changes[STORAGE_KEYS.SETTINGS].newValue || {};
+        cachedSettings = {
+          ...DEFAULT_SETTINGS,
+          ...raw,
+          showTabs: { ...DEFAULT_SETTINGS.showTabs, ...raw.showTabs },
+          floatingButtons: { ...DEFAULT_SETTINGS.floatingButtons, ...raw.floatingButtons }
+        };
         runWithObserverDisabled(() => {
           handleQuickActionButtonsVisibility();
           injectDynamicTheme();
@@ -1325,9 +1357,10 @@ function showToast(msg) {
     });
 
     const showTabs = cachedSettings.showTabs || { search: true, tasks: true, notes: true, missed: true };
-    const tasksEnabled = showTabs.tasks !== false;
-    const notesEnabled = showTabs.notes !== false;
-    const spamEnabled = cachedSettings.spamEnabled !== false;
+    const floatingButtons = cachedSettings.floatingButtons || { quickNote: true, quickTask: true, spamReactions: true, imagePicker: true };
+    const tasksEnabled = (showTabs.tasks !== false) && (floatingButtons.quickTask !== false);
+    const notesEnabled = (showTabs.notes !== false) && (floatingButtons.quickNote !== false);
+    const spamEnabled = (floatingButtons.spamReactions !== false);
 
     if (!tasksEnabled) {
       document.querySelectorAll('.chatops-quick-note-btn.task-btn').forEach(el => el.remove());
@@ -1358,9 +1391,10 @@ function showToast(msg) {
     const posts = document.querySelectorAll(`.post, [id^="post_"], [class*="post-message"]`);
     
     const showTabs = cachedSettings.showTabs || { search: true, tasks: true, notes: true, missed: true };
-    const tasksEnabled = showTabs.tasks !== false;
-    const notesEnabled = showTabs.notes !== false;
-    const spamEnabled = cachedSettings.spamEnabled !== false;
+    const floatingButtons = cachedSettings.floatingButtons || { quickNote: true, quickTask: true, spamReactions: true, imagePicker: true };
+    const tasksEnabled = (showTabs.tasks !== false) && (floatingButtons.quickTask !== false);
+    const notesEnabled = (showTabs.notes !== false) && (floatingButtons.quickNote !== false);
+    const spamEnabled = (floatingButtons.spamReactions !== false);
 
     posts.forEach(postEl => {
       const postId = cleanPostId(postEl);

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ChatOps++",
-  "version": "1.1.6",
+  "version": "2.0.0",
   "description": "ChatOps++ is a comprehensive browser utility extension for ChatOps users.",
   "permissions": [
     "storage",

@@ -218,7 +218,7 @@ const STANDARD_EMOJIS = [
 let _state = null;
 
 const DEFAULT_SETTINGS = {
-  snoozeMinutes: 5,
+  snoozeMinutes: 30,
   headerColor: '#1c58d9',
   navColor: '#1153ab',
   accentColor: '#1c58d9',
@@ -227,6 +227,12 @@ const DEFAULT_SETTINGS = {
     tasks: true, // Always true
     notes: true,
     missed: true
+  },
+  floatingButtons: {
+    quickNote: true,
+    quickTask: true,
+    spamReactions: true,
+    imagePicker: true
   },
   memoCategories: ['General', 'Work', 'Personal', 'Ideas'],
   spamEnabled: true,
@@ -251,7 +257,13 @@ export async function setup(state) {
 
 export async function getSettings() {
   const res = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS]);
-  const settings = { ...DEFAULT_SETTINGS, ...res[STORAGE_KEYS.SETTINGS] };
+  const rawSettings = res[STORAGE_KEYS.SETTINGS] || {};
+  const settings = { 
+    ...DEFAULT_SETTINGS, 
+    ...rawSettings,
+    showTabs: { ...DEFAULT_SETTINGS.showTabs, ...rawSettings.showTabs },
+    floatingButtons: { ...DEFAULT_SETTINGS.floatingButtons, ...rawSettings.floatingButtons }
+  };
 
   // Auto-migrate old Vietnamese default categories to English
   if (settings.memoCategories) {
@@ -338,6 +350,15 @@ async function loadAndApplySettings() {
   document.getElementById('settingShowNotes').checked = settings.showTabs.notes !== false;
   document.getElementById('settingShowMissed').checked = settings.showTabs.missed !== false;
 
+  // Apply floating buttons checkboxes
+  document.getElementById('settingFloatingQuickTask').checked = settings.floatingButtons?.quickTask !== false;
+  document.getElementById('settingFloatingQuickNote').checked = settings.floatingButtons?.quickNote !== false;
+  document.getElementById('settingFloatingSpamReactions').checked = settings.floatingButtons?.spamReactions !== false;
+  document.getElementById('settingFloatingImagePicker').checked = settings.floatingButtons?.imagePicker !== false;
+
+  // Sync disabled/dimmed states
+  updateFloatingCheckboxesSync(settings);
+
   // Apply categories
   renderCategoryList(settings.memoCategories || []);
 
@@ -345,15 +366,13 @@ async function loadAndApplySettings() {
   const config = await getConfig();
   chatopsUrl = config.chatopsUrl || CHATOPS_CONFIG.DEFAULT_URL;
 
-  // Apply spam reactions toggle
-  const chkSpamEnabled = document.getElementById('settingSpamEnabled');
-  if (chkSpamEnabled) {
-    chkSpamEnabled.checked = settings.spamEnabled !== false;
-    const configArea = document.getElementById('reactionsConfigArea');
-    if (configArea) {
-      configArea.style.opacity = chkSpamEnabled.checked ? '1' : '0.5';
-      configArea.style.pointerEvents = chkSpamEnabled.checked ? 'auto' : 'none';
-    }
+  // Apply spam reactions configuration area state based on the floating button toggle
+  const chkFloatingSpam = document.getElementById('settingFloatingSpamReactions');
+  const configArea = document.getElementById('reactionsConfigArea');
+  if (configArea) {
+    const isSpamEnabled = chkFloatingSpam ? chkFloatingSpam.checked : (settings.floatingButtons?.spamReactions !== false);
+    configArea.style.opacity = isSpamEnabled ? '1' : '0.5';
+    configArea.style.pointerEvents = isSpamEnabled ? 'auto' : 'none';
   }
 
   // Apply personal memes toggle
@@ -612,18 +631,7 @@ function setupEventListeners() {
     input.addEventListener('change', handleCustomColorChange);
   });
 
-  const chkSpamEnabled = document.getElementById('settingSpamEnabled');
-  if (chkSpamEnabled) {
-    chkSpamEnabled.addEventListener('change', async (e) => {
-      await updateSettings({ spamEnabled: e.target.checked });
-      showAutoSaveFeedback();
-      const configArea = document.getElementById('reactionsConfigArea');
-      if (configArea) {
-        configArea.style.opacity = e.target.checked ? '1' : '0.5';
-        configArea.style.pointerEvents = e.target.checked ? 'auto' : 'none';
-      }
-    });
-  }
+
 
   const chkMemeEnabled = document.getElementById('settingMemeEnabled');
   if (chkMemeEnabled) {
@@ -665,6 +673,7 @@ function setupEventListeners() {
         settings.showTabs[key] = e.target.checked;
         await updateSettings({ showTabs: settings.showTabs });
         applyTabVisibilityToDOM(settings.showTabs);
+        updateFloatingCheckboxesSync(settings);
         showAutoSaveFeedback();
       });
     }
@@ -674,6 +683,33 @@ function setupEventListeners() {
   bindTabToggle('settingShowTasks', 'tasks');
   bindTabToggle('settingShowNotes', 'notes');
   bindTabToggle('settingShowMissed', 'missed');
+
+  // Floating buttons toggle saving
+  const bindFloatingToggle = (checkboxId, key) => {
+    const chk = document.getElementById(checkboxId);
+    if (chk) {
+      chk.addEventListener('change', async (e) => {
+        const settings = await getSettings();
+        if (!settings.floatingButtons) settings.floatingButtons = {};
+        settings.floatingButtons[key] = e.target.checked;
+        await updateSettings({ floatingButtons: settings.floatingButtons });
+        showAutoSaveFeedback();
+
+        if (key === 'spamReactions') {
+          const configArea = document.getElementById('reactionsConfigArea');
+          if (configArea) {
+            configArea.style.opacity = e.target.checked ? '1' : '0.5';
+            configArea.style.pointerEvents = e.target.checked ? 'auto' : 'none';
+          }
+        }
+      });
+    }
+  };
+
+  bindFloatingToggle('settingFloatingQuickTask', 'quickTask');
+  bindFloatingToggle('settingFloatingQuickNote', 'quickNote');
+  bindFloatingToggle('settingFloatingSpamReactions', 'spamReactions');
+  bindFloatingToggle('settingFloatingImagePicker', 'imagePicker');
 
   const btnTabStd = document.getElementById('emojiTabStandard');
   const btnTabCustom = document.getElementById('emojiTabCustom');
@@ -1177,26 +1213,56 @@ async function updateStorageUsageDisplay() {
   }
 }
 
+let autoSaveTimeoutId = null;
+
 function showAutoSaveFeedback() {
-  // Empty to remove auto-save feedback notice
+  const fb = document.getElementById('settingsStatus');
+  if (!fb) return;
+
+  if (autoSaveTimeoutId) {
+    clearTimeout(autoSaveTimeoutId);
+  }
+
+  fb.style.background = '#10b981';
+  fb.style.boxShadow = '0 10px 25px -5px rgba(16, 185, 129, 0.4), 0 8px 10px -6px rgba(16, 185, 129, 0.4)';
+  fb.innerHTML = `
+    <span style="font-size: 15px;">✓</span>
+    <span>${language.settingsSaved || 'Saved automatically'}</span>
+  `;
+
+  fb.style.opacity = '1';
+  fb.style.transform = 'translateX(-50%) translateY(0)';
+
+  autoSaveTimeoutId = setTimeout(() => {
+    fb.style.opacity = '0';
+    fb.style.transform = 'translateX(-50%) translateY(20px)';
+    autoSaveTimeoutId = null;
+  }, 2000);
 }
 
 function showErrorFeedback(message) {
   const fb = document.getElementById('settingsStatus');
-  if (fb) {
-    fb.style.display = 'block';
-    fb.style.color = '#e74c3c';
-    fb.style.background = 'rgba(231, 76, 60, 0.12)';
-    fb.style.border = 'none';
-    fb.style.borderTop = '1px solid rgba(231, 76, 60, 0.2)';
-    fb.style.borderRadius = '0 0 12px 12px';
-    fb.style.padding = '10px 14px';
-    fb.style.marginTop = '0';
-    fb.style.boxSizing = 'border-box';
-    fb.style.fontFamily = 'inherit';
-    fb.textContent = message;
-    setTimeout(() => { fb.style.display = 'none'; }, 3000);
+  if (!fb) return;
+
+  if (autoSaveTimeoutId) {
+    clearTimeout(autoSaveTimeoutId);
   }
+
+  fb.style.background = '#ef4444';
+  fb.style.boxShadow = '0 10px 25px -5px rgba(239, 68, 68, 0.4), 0 8px 10px -6px rgba(239, 68, 68, 0.4)';
+  fb.innerHTML = `
+    <span style="font-size: 15px;">✗</span>
+    <span>${escapeHtml(message)}</span>
+  `;
+
+  fb.style.opacity = '1';
+  fb.style.transform = 'translateX(-50%) translateY(0)';
+
+  autoSaveTimeoutId = setTimeout(() => {
+    fb.style.opacity = '0';
+    fb.style.transform = 'translateX(-50%) translateY(20px)';
+    autoSaveTimeoutId = null;
+  }, 3000);
 }
 
 function escapeHtml(str) {
@@ -1216,6 +1282,20 @@ function renderSelectedEmojis(settings) {
   let currentList = settings.spamEmojis || [];
   if (typeof currentList === 'string') {
     currentList = currentList.split(',').map(e => e.trim()).filter(Boolean);
+  }
+
+  const countBadge = document.getElementById('selectedEmojisCountBadge');
+  if (countBadge) {
+    countBadge.textContent = `${currentList.length} / 20`;
+    if (currentList.length >= 20) {
+      countBadge.style.background = '#fde8e8';
+      countBadge.style.color = '#e02424';
+      countBadge.style.borderColor = '#f8b4b4';
+    } else {
+      countBadge.style.background = 'var(--bg-3)';
+      countBadge.style.color = 'var(--text-2)';
+      countBadge.style.borderColor = 'var(--border)';
+    }
   }
 
   if (currentList.length === 0) {
@@ -1402,6 +1482,20 @@ async function toggleEmojiSelection(emojiName) {
 function renderCategoryList(categories) {
   const listEl = document.getElementById('settingCategoryList');
   if (!listEl) return;
+
+  const countBadge = document.getElementById('categoriesCountBadge');
+  if (countBadge) {
+    countBadge.textContent = `${categories.length} / 5`;
+    if (categories.length >= 5) {
+      countBadge.style.background = '#fde8e8';
+      countBadge.style.color = '#e02424';
+      countBadge.style.borderColor = '#f8b4b4';
+    } else {
+      countBadge.style.background = 'var(--bg-3)';
+      countBadge.style.color = 'var(--text-2)';
+      countBadge.style.borderColor = 'var(--border)';
+    }
+  }
   listEl.innerHTML = categories.map(cat => `
     <li style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:var(--bg-2); border-radius:6px; border:1px solid var(--border);">
       <span style="font-size:14.5px; font-weight:600; color:var(--text-1);">${escapeHtml(cat)}</span>
@@ -1720,4 +1814,36 @@ export async function runAutoCleanupForce() {
     chrome.runtime.sendMessage({ type: MESSAGE_TYPES.MEMO_UPDATED });
   }
   return deletedCount;
+}
+
+export function updateFloatingCheckboxesSync(settings) {
+  const rowTask = document.getElementById('rowFloatingQuickTask');
+  const chkTask = document.getElementById('settingFloatingQuickTask');
+  const showTasks = settings.showTabs.tasks !== false;
+  if (rowTask && chkTask) {
+    if (!showTasks) {
+      chkTask.disabled = true;
+      rowTask.style.opacity = '0.5';
+      rowTask.style.pointerEvents = 'none';
+    } else {
+      chkTask.disabled = false;
+      rowTask.style.opacity = '1.0';
+      rowTask.style.pointerEvents = 'auto';
+    }
+  }
+
+  const rowNote = document.getElementById('rowFloatingQuickNote');
+  const chkNote = document.getElementById('settingFloatingQuickNote');
+  const showNotes = settings.showTabs.notes !== false;
+  if (rowNote && chkNote) {
+    if (!showNotes) {
+      chkNote.disabled = true;
+      rowNote.style.opacity = '0.5';
+      rowNote.style.pointerEvents = 'none';
+    } else {
+      chkNote.disabled = false;
+      rowNote.style.opacity = '1.0';
+      rowNote.style.pointerEvents = 'auto';
+    }
+  }
 }

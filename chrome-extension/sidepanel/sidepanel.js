@@ -381,10 +381,9 @@ function setupStateHandlers() {
   document.addEventListener('click', (e) => {
     const btn = e.target.closest('.collapse-btn');
     if (btn) {
-      const id = btn.dataset.id;
-      const cardEl = document.getElementById(`item_${id}`);
+      const cardEl = btn.closest('.post-item') || btn.closest('.memo-item');
       if (cardEl) {
-        const bodyEl = cardEl.querySelector('.collapsible-body');
+        const bodyEl = cardEl.querySelector('.collapsible-body') || cardEl.querySelector('.memo-note-text');
         const postPreviewEl = cardEl.querySelector('.post-preview');
         
         btn.classList.toggle('expanded');
@@ -579,6 +578,29 @@ function setupLanguageToggle() {
             trigger.textContent = language[i18nKey];
           }
         }
+      }
+    });
+
+    // Update custom dropdown elements (created by convertToCustomDropdown)
+    document.querySelectorAll('.custom-dropdown-container').forEach(container => {
+      const select = container.previousElementSibling;
+      if (select && select.tagName === 'SELECT') {
+        const toggleSpan = container.querySelector('.custom-dropdown-selected-text');
+        if (toggleSpan) {
+          const activeOpt = select.options[select.selectedIndex];
+          if (activeOpt) {
+            toggleSpan.textContent = activeOpt.textContent;
+          }
+        }
+        // Also update the options list text
+        const items = container.querySelectorAll('.custom-dropdown-item');
+        items.forEach(item => {
+          const val = item.getAttribute('data-value');
+          const opt = select.querySelector(`option[value="${val}"]`);
+          if (opt) {
+            item.textContent = opt.textContent;
+          }
+        });
       }
     });
 
