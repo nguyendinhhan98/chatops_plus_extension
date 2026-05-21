@@ -45,6 +45,10 @@
           <line x1="14" y1="1" x2="14" y2="4"></line>
         </svg>
       </button>
+      <!-- Help / Guide Button -->
+      <button id="btnHeaderHelp" title="System Help & Tips" style="font-weight: 700; color: var(--accent); font-size: 15px; font-family: monospace;">
+        ?
+      </button>
     </div>
 
     <!-- ─── Tab Navigation (5 tabs) ─── -->
@@ -1256,7 +1260,7 @@
       }
     }
 
-    #btnHeaderCoffee, #btnHeaderLang {
+    #btnHeaderCoffee, #btnHeaderLang, #btnHeaderHelp {
       background: #ffffff;
       border: none;
       border-radius: 50%;
@@ -1274,13 +1278,13 @@
       margin-left: 4px;
     }
 
-    #btnHeaderCoffee:hover, #btnHeaderLang:hover {
+    #btnHeaderCoffee:hover, #btnHeaderLang:hover, #btnHeaderHelp:hover {
       background: #ffffff !important;
       transform: scale(1.18) rotate(12deg);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
 
-    #btnHeaderCoffee:active, #btnHeaderLang:active {
+    #btnHeaderCoffee:active, #btnHeaderLang:active, #btnHeaderHelp:active {
       transform: scale(0.95);
     }
 
@@ -1295,6 +1299,13 @@
       border-color: var(--accent) !important;
     }
   </style>
+
+  <!-- Hidden user guide placeholders for ModalManager -->
+  <div id="spUserGuidePlaceholder" style="display:none;">
+    <div id="formUserGuide" style="display:flex; flex-direction:column; gap:12px; max-height:70vh; overflow-y:auto; padding-right:4px;">
+      <!-- Populated dynamically via JS -->
+    </div>
+  </div>
 
   <!-- ─── Action Modal Overlay ─── -->
   <div id="spGlobalModal" class="sp-modal-backdrop" style="display: none;">

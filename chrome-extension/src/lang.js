@@ -403,6 +403,75 @@ const en = {
   taskRemindDailyLabel: 'Repeat daily at selected time',
   repeatDailyBadgeText: 'Daily',
   collapseBtnBottom: 'Collapse',
+  userGuideTitle: 'System Guide & Power Tips 💡',
+  userGuideHTML: `
+    <div style="font-family: inherit; color: var(--text-1); line-height: 1.5; font-size: 13px; display: flex; flex-direction: column; gap: 12px;">
+      
+      <!-- Section 1: Features -->
+      <div>
+        <h4 style="margin: 0 0 4px 0; color: var(--accent); font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px;">🔍 1. Search & Analysis</h4>
+        <p style="margin: 0; color: var(--text-2);">Find keywords, filter by sender (From) or specific channels (In) across ChatOps workspace history.</p>
+      </div>
+
+      <div>
+        <h4 style="margin: 0 0 4px 0; color: var(--accent); font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px;">🎯 2. Tasks & Notes</h4>
+        <p style="margin: 0; color: var(--text-2);">Manage personal checklists and persistent note cards. Categorize them and schedule automated repeating reminders.</p>
+      </div>
+
+      <div>
+        <h4 style="margin: 0 0 4px 0; color: var(--accent); font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px;">💬 3. Chatbox Powerups</h4>
+        <p style="margin: 0; color: var(--text-2);">Inject quick buttons directly beside Emoji Picker to search GIFs/Memes, send Emoji Spams, or capture screenshots inside ChatOps instantly.</p>
+      </div>
+
+      <div>
+        <h4 style="margin: 0 0 4px 0; color: var(--accent); font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px;">⚙️ 4. Advanced Settings</h4>
+        <ul style="margin: 0; padding-left: 18px; color: var(--text-2); display: flex; flex-direction: column; gap: 3px;">
+          <li><strong>Tab Visibility:</strong> Toggle primary tabs (Search, Tasks, Notes, Mentions) on/off to simplify your panel interface.</li>
+          <li><strong>Interface & Spacing:</strong> Personalize preset theme colors and layout densities to match your comfort.</li>
+          <li><strong>Reactions & Image Setup:</strong> Configure your custom Emoji Spam quick list and manage your personal Image Library or Giphy API Key.</li>
+          <li><strong>Auto-Cleanup:</strong> Automatically purge ancient notes/tasks older than X days to keep the local database fast.</li>
+          <li><strong>Notifications & Sounds:</strong> Enable desktop/tab alerts and dynamic audio cues for overdue tasks or new reminders.</li>
+          <li><strong>Custom Categories:</strong> Create and delete custom folders to dynamically catalog and filter your personal Notes.</li>
+        </ul>
+      </div>
+
+      <div>
+        <h4 style="margin: 0 0 4px 0; color: var(--accent); font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px;">⚡ 5. Hover Quick Actions on Messages</h4>
+        <p style="margin: 0 0 4px 0; color: var(--text-2);">Hover over any chat message in ChatOps to trigger instant productivity shortcuts:</p>
+        <ul style="margin: 0; padding-left: 18px; color: var(--text-2); display: flex; flex-direction: column; gap: 3px;">
+          <li><strong>🎯 Create Task:</strong> Creates a task containing that message's permalink and text contents.</li>
+          <li><strong>📝 Add Note:</strong> Adds the message content as a quick memo under your catalog.</li>
+          <li><strong>🔥 Emoji Spam:</strong> Automatically spam multiple reactions instantly with 1-click.</li>
+          <li><strong>↩️ Clear Reactions:</strong> Instantly clear all reactions you added to that post.</li>
+          <li><strong>🗑️ Quick Delete:</strong> Red trash can icon appears on your own messages to instantly delete them without double confirmations.</li>
+        </ul>
+      </div>
+
+      <!-- Section 2: Unified Tips & Shortcuts -->
+      <div style="border-top: 1px dashed var(--border); padding-top: 10px; margin-top: 4px;">
+        <h4 style="margin: 0 0 6px 0; color: var(--text-1); font-weight: 800; font-size: 13.5px; text-transform: uppercase; letter-spacing: 0.5px;">💡 Combined Power Tips & Shortcuts</h4>
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          
+          <div style="background: rgba(28,88,217,0.04); border-left: 3px solid var(--accent); padding: 6px 8px; border-radius: 4px;">
+            <strong style="color: var(--accent);">⚡ Double-Click Shortcut:</strong>
+            <span style="color: var(--text-2);"> Double-click any navigation tab (Search, Tasks, Notes, Mentions) at the top of the sidepanel to instantly pop open the corresponding modal form!</span>
+          </div>
+
+          <div style="background: rgba(28,88,217,0.04); border-left: 3px solid var(--accent); padding: 6px 8px; border-radius: 4px;">
+            <strong style="color: var(--accent);">✂️ Note Line Copying:</strong>
+            <span style="color: var(--text-2);"> Hover over any line of text in an expanded Note card, then click the small gray clipboard icon to copy *only that specific line* instantly!</span>
+          </div>
+
+          <div style="background: rgba(28,88,217,0.04); border-left: 3px solid var(--accent); padding: 6px 8px; border-radius: 4px;">
+            <strong style="color: var(--accent);">🚀 Performance Hack:</strong>
+            <span style="color: var(--text-2);"> Always select a specific target channel in the "In Channel" filter instead of searching the entire workspace to get search results up to 10x faster!</span>
+          </div>
+
+        </div>
+      </div>
+      
+    </div>
+  `,
 };
 
 // Vietnamese Dictionary
@@ -802,6 +871,75 @@ const vi = {
   taskRemindDailyLabel: 'Nhắc nhở hằng ngày vào giờ đã chọn',
   repeatDailyBadgeText: 'Hằng ngày',
   collapseBtnBottom: 'Thu gọn',
+  userGuideTitle: 'Hướng dẫn Hệ thống & Mẹo Năng suất 💡',
+  userGuideHTML: `
+    <div style="font-family: inherit; color: var(--text-1); line-height: 1.5; font-size: 13px; display: flex; flex-direction: column; gap: 12px;">
+      
+      <!-- Section 1: Features -->
+      <div>
+        <h4 style="margin: 0 0 4px 0; color: var(--accent); font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px;">🔍 1. Tìm kiếm & Phân tích</h4>
+        <p style="margin: 0; color: var(--text-2);">Tìm kiếm từ khóa nâng cao, lọc theo người gửi (From) hoặc kênh cụ thể (In) trên lịch sử ChatOps.</p>
+      </div>
+
+      <div>
+        <h4 style="margin: 0 0 4px 0; color: var(--accent); font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px;">🎯 2. Công việc & Ghi chú</h4>
+        <p style="margin: 0; color: var(--text-2);">Quản lý danh sách việc cần làm (Checklist) và ghi chú cá nhân. Thiết lập lịch nhắc nhở lặp lại hàng ngày tiện lợi.</p>
+      </div>
+
+      <div>
+        <h4 style="margin: 0 0 4px 0; color: var(--accent); font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px;">💬 3. Tiện ích Chatbox</h4>
+        <p style="margin: 0; color: var(--text-2);">Chèn trực tiếp các nút cạnh Emoji Picker để tìm GIFs/Memes, gửi nhanh Emoji Spam hoặc chụp màn hình chatbox trong ChatOps tức thì.</p>
+      </div>
+
+      <div>
+        <h4 style="margin: 0 0 4px 0; color: var(--accent); font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px;">⚙️ 4. Khám phá Cài đặt (Settings)</h4>
+        <ul style="margin: 0; padding-left: 18px; color: var(--text-2); display: flex; flex-direction: column; gap: 3px;">
+          <li><strong>Ẩn/Hiện Tab:</strong> Cho phép ẩn hoặc hiển thị các Tab chính (Search, Tasks, Notes, Mentions) để giao diện tối giản, tập trung hơn.</li>
+          <li><strong>Giao diện & Khoảng cách:</strong> Thay đổi bảng màu chủ đạo (Theme) và độ giãn dòng hiển thị theo sở thích.</li>
+          <li><strong>Cài đặt Reactions & Thư viện Ảnh:</strong> Thiết lập danh sách phím tắt Emoji Spam và quản lý thư viện ảnh cá nhân / Giphy API Key để tìm GIFs siêu tốc.</li>
+          <li><strong>Tự Động Dọn Dẹp:</strong> Tự động xóa ghi chú hoặc công việc cũ sau số ngày cấu hình (ví dụ 30 ngày) để cơ sở dữ liệu luôn nhẹ và chạy nhanh.</li>
+          <li><strong>Thông báo & Âm thanh:</strong> Bật hiển thị cảnh báo và phát âm thanh sinh động khi có tin nhắn nhắc nhở mới hoặc công việc đến hạn.</li>
+          <li><strong>Quản lý Danh mục:</strong> Thêm hoặc xóa các danh mục tự chọn để phân loại và sắp xếp thẻ Ghi chú một cách khoa học.</li>
+        </ul>
+      </div>
+
+      <div>
+        <h4 style="margin: 0 0 4px 0; color: var(--accent); font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px;">⚡ 5. Phím tắt Nhanh trên Tin nhắn (Hover Quick Actions)</h4>
+        <p style="margin: 0 0 4px 0; color: var(--text-2);">Di chuột qua bất kỳ tin nhắn chat nào trong ChatOps để sử dụng ngay các phím tắt siêu tốc:</p>
+        <ul style="margin: 0; padding-left: 18px; color: var(--text-2); display: flex; flex-direction: column; gap: 3px;">
+          <li><strong>🎯 Tạo Công việc nhanh:</strong> Click biểu tượng bia bắn để lưu tin nhắn thành công việc cần làm kèm link nhảy ngược về tin nhắn gốc.</li>
+          <li><strong>📝 Lưu Ghi chú nhanh:</strong> Lưu nội dung tin nhắn chat thành một thẻ ghi chú cá nhân tức thì.</li>
+          <li><strong>🔥 Emoji Spam:</strong> Tự động thả hàng loạt cảm xúc cảm xúc đã cài đặt sẵn chỉ với 1-click.</li>
+          <li><strong>↩️ Thu hồi Emoji:</strong> Rút lại toàn bộ các cảm xúc bạn đã thả trên tin nhắn đó trong nháy mắt.</li>
+          <li><strong>🗑️ Xóa nhanh tin nhắn:</strong> Nút thùng rác đỏ hiển thị trên tin nhắn của chính bạn, nhấp chuột để xóa ngay lập tức mà không cần xác nhận rườm rà.</li>
+        </ul>
+      </div>
+
+      <!-- Section 2: Unified Tips & Shortcuts -->
+      <div style="border-top: 1px dashed var(--border); padding-top: 10px; margin-top: 4px;">
+        <h4 style="margin: 0 0 6px 0; color: var(--text-1); font-weight: 800; font-size: 13.5px; text-transform: uppercase; letter-spacing: 0.5px;">💡 Mẹo Năng Suất & Phím Tắt</h4>
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          
+          <div style="background: rgba(28,88,217,0.04); border-left: 3px solid var(--accent); padding: 6px 8px; border-radius: 4px;">
+            <strong style="color: var(--accent);">⚡ Click Đúp Mở Nhanh:</strong>
+            <span style="color: var(--text-2);"> Nhấp đúp (Double-click) chuột trực tiếp vào bất kỳ tab điều hướng nào ở trên cùng Sidepanel (Search, Tasks, Notes, Mentions) để mở ngay form nhập liệu tương ứng!</span>
+          </div>
+
+          <div style="background: rgba(28,88,217,0.04); border-left: 3px solid var(--accent); padding: 6px 8px; border-radius: 4px;">
+            <strong style="color: var(--accent);">✂️ Sao Chép Dòng Ghi Chú:</strong>
+            <span style="color: var(--text-2);"> Di chuột vào từng dòng văn bản bất kỳ ở thẻ Ghi chú (Note) đã mở rộng, nhấp vào biểu tượng Sao chép nhỏ để copy duy nhất dòng đó!</span>
+          </div>
+
+          <div style="background: rgba(28,88,217,0.04); border-left: 3px solid var(--accent); padding: 6px 8px; border-radius: 4px;">
+            <strong style="color: var(--accent);">🚀 Tăng Tốc Tìm Kiếm:</strong>
+            <span style="color: var(--text-2);"> Luôn chọn một kênh chat cụ thể ở bộ lọc "In Channel" thay vì quét toàn bộ workspace để tăng tốc độ tìm kiếm lên đến gấp 10 lần!</span>
+          </div>
+
+        </div>
+      </div>
+      
+    </div>
+  `,
 };
 
 // Swaps the active language dictionary key-value pairs in-place

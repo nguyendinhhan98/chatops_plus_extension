@@ -70,6 +70,17 @@ async function init() {
   restoreState(selectors);
   setupAutoSave(selectors);
   setupStateHandlers();
+
+  // Show guide modal automatically for first-time installation
+  chrome.storage.local.get(['has_read_guide'], (res) => {
+    if (!res.has_read_guide) {
+      setTimeout(() => {
+        const helpBtn = document.getElementById('btnHeaderHelp');
+        if (helpBtn) helpBtn.click();
+        chrome.storage.local.set({ has_read_guide: true });
+      }, 800);
+    }
+  });
 }
 
 /**
@@ -392,6 +403,22 @@ function setupStateHandlers() {
   if (coffeeBtn && donateModal) {
     coffeeBtn.addEventListener('click', () => {
       donateModal.style.display = 'flex';
+    });
+  }
+
+  // Global system user guide help modal listener
+  const helpBtn = document.getElementById('btnHeaderHelp');
+  if (helpBtn) {
+    helpBtn.addEventListener('click', () => {
+      const guideBody = document.getElementById('formUserGuide');
+      if (guideBody) {
+        guideBody.innerHTML = language.userGuideHTML || '';
+      }
+      window.ModalManager.open(
+        language.userGuideTitle || 'User Guide',
+        'formUserGuide',
+        'spUserGuidePlaceholder'
+      );
     });
   }
 
