@@ -10,11 +10,6 @@ export async function handleMentionCheck() {
   try {
     const config = await getConfig();
     if (!config.cookie && !config.csrf) return;
-
-    // Skip if user has paused scanning
-    const pauseRes = await chrome.storage.local.get([STORAGE_KEYS.SCAN_PAUSED]);
-    if (pauseRes[STORAGE_KEYS.SCAN_PAUSED] === true) return;
-
     const me = await getMyProfile();
     const team = await getTeamByName(config.teamName || CHATOPS_CONFIG.DEFAULT_TEAM);
     const members = await getMyChannelMembers(team.id);

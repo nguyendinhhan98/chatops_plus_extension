@@ -359,8 +359,13 @@ function showToast(msg) {
 (async function () {
   await loadLanguage();
   injectDynamicTheme();
-  // Prevent duplicate injections
-  if (document.getElementById('chatops-ext-floating-btn')) return;
+
+  // Clean up any legacy extension elements left over from previous script runs to avoid duplicates
+  const oldBtn = document.getElementById('chatops-ext-floating-btn');
+  if (oldBtn) oldBtn.remove();
+  const oldBadge = document.getElementById('chatops-ext-floating-badge');
+  if (oldBadge) oldBadge.remove();
+  document.querySelectorAll('.chatops-ext-image-picker-btn, .chatops-image-picker, .chatops-action-group').forEach(el => el.remove());
 
   const btn = document.createElement('div');
   btn.id = 'chatops-ext-floating-btn';
@@ -472,14 +477,28 @@ function showToast(msg) {
     updateFloatingBadgeCount();
   }, 1500); // 1.5s robust fallback
 
-  btn.addEventListener('click', () => {
+  const handleFloatingBtnClick = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     try {
       chrome.runtime.sendMessage({ type: MESSAGE_TYPES.TOGGLE_SIDE_PANEL });
     } catch (err) {
-      if (err.message.includes('Extension context invalidated')) {
+      if (err.message && err.message.includes('Extension context invalidated')) {
         alert(language.extensionUpdated);
       }
     }
+  };
+
+  btn.addEventListener('click', handleFloatingBtnClick);
+  btn.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  });
+  btn.addEventListener('mouseup', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
   });
 
   console.log('[ChatOps Ext] Floating button injected.');
@@ -514,19 +533,27 @@ function showToast(msg) {
       }
 
       if (!emojiBtn) {
-        // Cleanup if they vanished
-        const existingBtn = document.getElementById(target.btnId);
-        if (existingBtn) existingBtn.remove();
         return;
       }
 
-      const existingBtn = document.getElementById(target.btnId);
+      const parent = emojiBtn.parentNode;
+      if (!parent) return;
+
+      const existingBtn = parent.querySelector('.chatops-ext-image-picker-btn');
+
       if (!memeEnabled) {
         if (existingBtn) existingBtn.remove();
+        delete emojiBtn.dataset.chatopsImageInjected;
         return;
       }
 
-      if (existingBtn) return;
+      if (existingBtn || emojiBtn.dataset.chatopsImageInjected === 'true') {
+        emojiBtn.dataset.chatopsImageInjected = 'true';
+        if (existingBtn && !existingBtn.id) {
+          existingBtn.id = target.btnId;
+        }
+        return;
+      }
 
       const imageBtn = document.createElement('button');
       imageBtn.id = target.btnId;
@@ -535,7 +562,9 @@ function showToast(msg) {
       imageBtn.innerHTML = '🖼️';
       imageBtn.title = 'Quick Image Picker';
       imageBtn.dataset.targetTextbox = target.textboxId;
-      emojiBtn.parentNode.insertBefore(imageBtn, emojiBtn.nextSibling);
+      parent.insertBefore(imageBtn, emojiBtn.nextSibling);
+
+      emojiBtn.dataset.chatopsImageInjected = 'true';
 
       imageBtn.addEventListener('click', (e) => {
         e.preventDefault();
@@ -783,13 +812,13 @@ function showToast(msg) {
 
         <!-- Panel 2: GIFs -->
         <div id="chatops-picker-panel-gifs" class="chatops-picker-panel">
-          <div style="padding: 6px 12px 10px; display: flex; flex-direction: column; gap: 6px; flex: 1;">
+          <div style="padding: 6px 12px 10px; display: flex; flex-direction: column; gap: 6px; flex: 1; overflow: hidden; height: 100%; box-sizing: border-box;">
             <div id="chatops-picker-gif-search-area" class="chatops-gif-search-area" style="position: relative; display: flex; align-items: center; width: 100%;">
               <input type="text" id="chatops-picker-gif-search" placeholder="${language.searchGifPlaceholder}"
                 style="width: 100%; padding: 6px 28px 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 11px; outline: none; font-family: inherit; background:#fff; box-sizing:border-box;">
               <span style="position: absolute; right: 8px; font-size: 11px; color: #888; pointer-events: none;">🔍</span>
             </div>
-            <div id="chatops-picker-gifs-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; max-height: 220px; overflow-y: auto; padding: 2px 2px;">
+            <div id="chatops-picker-gifs-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; flex: 1; overflow-y: auto; padding: 2px 2px;">
               <!-- GIFs rendered here dynamically -->
             </div>
           </div>
@@ -899,9 +928,9 @@ function showToast(msg) {
       if (!apiKey) {
         if (searchArea) searchArea.style.display = 'none';
         grid.innerHTML = `
-          <div style="grid-column: span 3; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; min-height: 120px; padding: 0px 6px 12px 6px; text-align:center;">
-            <span class="chatops-image-empty" style="color:var(--text-3); font-size:12px;">${language.giphyNoApiKey}</span>
-            <a href="#" id="chatops-gif-setup-link" style="font-size:12px; color:#1c58d9; font-weight:600; text-decoration:none;">${language.giphySetupLink} ↗</a>
+          <div style="grid-column: span 3; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; min-height: 180px; padding: 12px; text-align:center; box-sizing:border-box;">
+            <span style="color:var(--text-3); font-size:12px; display:block; margin:0; padding:0;">${language.giphyNoApiKey}</span>
+            <a href="#" id="chatops-gif-setup-link" style="font-size:12px; color:#1c58d9; font-weight:600; text-decoration:none; margin-top:2px;">${language.giphySetupLink} ↗</a>
           </div>
         `;
         // Open sidepanel and navigate to Settings → GIFs
@@ -960,9 +989,9 @@ function showToast(msg) {
       if (query.trim() === '') {
         if (searchArea) searchArea.style.display = 'none';
         grid.innerHTML = `
-          <div style="grid-column: span 3; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; min-height: 120px; padding: 12px 6px; text-align:center;">
-            <span class="chatops-image-empty" style="color:#ef4444; font-size:12px;">${language.giphyInvalidKey}</span>
-            <a href="#" id="chatops-gif-setup-link" style="font-size:12px; color:#1c58d9; font-weight:600; text-decoration:none;">${language.giphySetupLink} ↗</a>
+          <div style="grid-column: span 3; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; min-height: 180px; padding: 12px; text-align:center; box-sizing:border-box;">
+            <span style="color:#ef4444; font-size:12px; display:block; margin:0; padding:0;">${language.giphyInvalidKey}</span>
+            <a href="#" id="chatops-gif-setup-link" style="font-size:12px; color:#1c58d9; font-weight:600; text-decoration:none; margin-top:2px;">${language.giphySetupLink} ↗</a>
           </div>
         `;
         const setupLink = grid.querySelector('#chatops-gif-setup-link');
@@ -986,9 +1015,9 @@ function showToast(msg) {
       if (query.trim() === '') {
         if (searchArea) searchArea.style.display = 'none';
         grid.innerHTML = `
-          <div style="grid-column: span 3; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; min-height: 120px; padding: 12px 6px; text-align:center;">
-            <span class="chatops-image-empty" style="color:#ef4444; font-size:12px;">${language.giphyConnectionError}</span>
-            <a href="#" id="chatops-gif-setup-link" style="font-size:12px; color:#1c58d9; font-weight:600; text-decoration:none;">${language.giphySetupLink} ↗</a>
+          <div style="grid-column: span 3; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; min-height: 180px; padding: 12px; text-align:center; box-sizing:border-box;">
+            <span style="color:#ef4444; font-size:12px; display:block; margin:0; padding:0;">${language.giphyConnectionError}</span>
+            <a href="#" id="chatops-gif-setup-link" style="font-size:12px; color:#1c58d9; font-weight:600; text-decoration:none; margin-top:2px;">${language.giphySetupLink} ↗</a>
           </div>
         `;
         const setupLink = grid.querySelector('#chatops-gif-setup-link');
@@ -1129,6 +1158,25 @@ function showToast(msg) {
       });
 
       const isVisible = menuList.style.display === 'block';
+
+      if (!isVisible) {
+        // Auto-direction layout logic (open upwards if close to viewport bottom edge)
+        const rect = toggleBtn.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const menuHeight = 220; // Maximum allowed dropdown menu height (from CSS/inline style)
+        if (spaceBelow < menuHeight) {
+          menuList.style.top = 'auto';
+          menuList.style.bottom = '100%';
+          menuList.style.marginTop = '0px';
+          menuList.style.marginBottom = '6px';
+        } else {
+          menuList.style.top = '100%';
+          menuList.style.bottom = 'auto';
+          menuList.style.marginTop = '6px';
+          menuList.style.marginBottom = '0px';
+        }
+      }
+
       menuList.style.display = isVisible ? 'none' : 'block';
       arrowSpan.style.transform = isVisible ? 'rotate(0deg)' : 'rotate(180deg)';
     });
@@ -1371,15 +1419,22 @@ function showToast(msg) {
     const popover = getOrCreatePopover();
     popover.dataset.mode = mode;
 
-    // Load categories dynamically from settings
     try {
-      const resSettings = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS]);
+      const resSettings = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS, 'activeMemoCategory']);
       const categories = resSettings[STORAGE_KEYS.SETTINGS]?.memoCategories || ['General', 'Work', 'Personal', 'Ideas'];
+      const activeFilter = resSettings['activeMemoCategory'] || 'all';
       const cqnCategorySelect = document.getElementById('cqn-category');
       if (cqnCategorySelect) {
         cqnCategorySelect.innerHTML = categories.map(c => `
           <option value="${c}">📁 ${getCategoryDisplayName(c)}</option>
         `).join('');
+        
+        if (activeFilter !== 'all' && categories.includes(activeFilter)) {
+          cqnCategorySelect.value = activeFilter;
+        } else if (categories.length > 0) {
+          cqnCategorySelect.value = categories[0];
+        }
+        
         convertToCustomDropdown(cqnCategorySelect);
       }
     } catch (err) {
@@ -1565,12 +1620,6 @@ function showToast(msg) {
       if (changes[STORAGE_KEYS.MEMOS]) {
         cachedMemos = changes[STORAGE_KEYS.MEMOS].newValue || [];
         updateFloatingBadgeCount();
-        runWithObserverDisabled(() => {
-          document.querySelectorAll('.post, [id^="post_"], [class*="post-message"]').forEach(el => {
-            delete el.dataset.chatopsStatus;
-          });
-          injectQuickNoteButtons();
-        });
       }
     }
   });
@@ -1578,7 +1627,10 @@ function showToast(msg) {
   function handleQuickActionButtonsVisibility() {
     // Clear post processing cache so buttons are properly re-evaluated
     document.querySelectorAll('.post, [id^="post_"], [class*="post-message"]').forEach(el => {
-      delete el.dataset.chatopsStatus;
+      delete el.dataset.chatopsInjected;
+    });
+    document.querySelectorAll('#emojiPickerButton, #rhsEmojiPickerButton, button[aria-label*="emoji" i], button[aria-label*="Emoji"], button[class*="emoji" i], .emoji-picker__container button, button[id*="Emoji"]').forEach(el => {
+      delete el.dataset.chatopsImageInjected;
     });
 
     const showTabs = cachedSettings.showTabs || { search: true, tasks: true, notes: true, missed: true };
@@ -1634,9 +1686,6 @@ function showToast(msg) {
         return;
       }
 
-      const savedMemo = cachedMemos.find(m => m.postId === postId);
-      const currentStatus = savedMemo ? savedMemo.type : 'none';
-
       // Guard: skip if post no longer in DOM (fixes bug after quick add from outside ChatOps)
       if (!postEl.isConnected) return;
 
@@ -1644,91 +1693,84 @@ function showToast(msg) {
       const actionArea = postEl.querySelector('.post-menu, .post__actions, .dot-menu__container, [class*="post-menu"], .post-action-menu');
       if (!actionArea) return;
 
-      if (postEl.dataset.chatopsStatus === currentStatus) {
+      // Get or create a dedicated container for ChatOps buttons
+      let chatopsGroup = actionArea.querySelector('.chatops-action-group');
+      if (postEl.dataset.chatopsInjected === 'true' && chatopsGroup) {
         return;
       }
-      postEl.dataset.chatopsStatus = currentStatus;
+      postEl.dataset.chatopsInjected = 'true';
+      const position = cachedSettings.customButtonsPosition || 'before';
 
-      // Get or create a dedicated container for ChatOps buttons, prepended BEFORE native actions
-      let chatopsGroup = actionArea.querySelector('.chatops-action-group');
       if (!chatopsGroup) {
         chatopsGroup = document.createElement('span');
         chatopsGroup.className = 'chatops-action-group';
-        chatopsGroup.style.cssText = 'display:inline-flex; align-items:center; gap:0;';
-        // Prepend so our buttons appear BEFORE Reply, Emoji, Bookmark etc.
-        actionArea.insertBefore(chatopsGroup, actionArea.firstChild);
-      }
+        
+        // Apply position-based CSS styling
+        if (position === 'above') {
+          chatopsGroup.style.cssText = 'position: absolute; bottom: 100%; right: 0; display: inline-flex; align-items: center; gap: 0; margin-bottom: 2px; padding: 2px 4px; background: var(--bg-1, #ffffff); border: 1px solid var(--border, #e5e5e5); border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); z-index: 10;';
+        } else {
+          chatopsGroup.style.cssText = 'display: inline-flex; align-items: center; gap: 0;';
+        }
 
-      if (savedMemo) {
-        // Hide normal create buttons if present
-        chatopsGroup.querySelector('.chatops-quick-note-btn.task-btn')?.remove();
-        chatopsGroup.querySelector('.chatops-quick-note-btn.note-btn')?.remove();
-
-        // Inject Delete button (🗑️) if not present
-        if (!chatopsGroup.querySelector('.chatops-quick-note-btn.delete-btn')) {
-          const deleteBtn = document.createElement('button');
-          deleteBtn.className = 'chatops-quick-note-btn delete-btn';
-          deleteBtn.innerHTML = '🗑️';
-          deleteBtn.title = language.memoDelete;
-          deleteBtn.style.color = '#d0454c';
-          deleteBtn.addEventListener('click', async (e) => {
-            e.preventDefault(); e.stopPropagation();
-            const quickDelete = cachedSettings.quickDelete === true;
-            if (!quickDelete) {
-              const confirmMsg = savedMemo.type === 'task' ? language.confirmDeleteTask : language.confirmDeleteNote;
-              if (!confirm(confirmMsg || "Are you sure you want to delete this item?")) {
-                return;
-              }
-            }
-            try {
-              const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
-              const memos = res[STORAGE_KEYS.MEMOS] || [];
-              const updatedMemos = memos.filter(m => m.id !== savedMemo.id);
-              await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: updatedMemos });
-            } catch (err) {
-              console.error('[ChatOps Ext] Failed to delete memo:', err);
-            }
-          });
-          chatopsGroup.appendChild(deleteBtn);
+        // Insert at the configured position relative to native action menu
+        if (position === 'after') {
+          actionArea.appendChild(chatopsGroup);
+        } else {
+          actionArea.insertBefore(chatopsGroup, actionArea.firstChild);
         }
       } else {
-        // Remove Delete button if not saved anymore
-        chatopsGroup.querySelector('.chatops-quick-note-btn.delete-btn')?.remove();
-
-        // Inject Task button (🎯) if not present and enabled
-        if (tasksEnabled) {
-          if (!chatopsGroup.querySelector('.chatops-quick-note-btn.task-btn')) {
-            const taskBtn = document.createElement('button');
-            taskBtn.className = 'chatops-quick-note-btn task-btn';
-            taskBtn.innerHTML = '🎯';
-            taskBtn.title = language.quickTaskCreate;
-            taskBtn.addEventListener('click', (e) => {
-              e.preventDefault(); e.stopPropagation();
-              openQuickNote(postEl, taskBtn, 'task');
-            });
-            chatopsGroup.appendChild(taskBtn);
-          }
+        // Update styling and layout order in case setting changed dynamically
+        if (position === 'above') {
+          chatopsGroup.style.cssText = 'position: absolute; bottom: 100%; right: 0; display: inline-flex; align-items: center; gap: 0; margin-bottom: 2px; padding: 2px 4px; background: var(--bg-1, #ffffff); border: 1px solid var(--border, #e5e5e5); border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); z-index: 10;';
         } else {
-          chatopsGroup.querySelector('.chatops-quick-note-btn.task-btn')?.remove();
+          chatopsGroup.style.cssText = 'display: inline-flex; align-items: center; gap: 0;';
         }
 
-        // Inject Note button (📝) if not present and enabled
-        if (notesEnabled) {
-          if (!chatopsGroup.querySelector('.chatops-quick-note-btn.note-btn')) {
-            const noteBtn = document.createElement('button');
-            noteBtn.className = 'chatops-quick-note-btn note-btn';
-            noteBtn.innerHTML = '📝';
-            noteBtn.title = language.quickNoteCreate;
-            noteBtn.addEventListener('click', (e) => {
-              e.preventDefault(); e.stopPropagation();
-              openQuickNote(postEl, noteBtn, 'note');
-            });
-            chatopsGroup.appendChild(noteBtn);
-          }
+        if (position === 'after') {
+          actionArea.appendChild(chatopsGroup);
         } else {
-          chatopsGroup.querySelector('.chatops-quick-note-btn.note-btn')?.remove();
+          actionArea.insertBefore(chatopsGroup, actionArea.firstChild);
         }
       }
+
+      // Inject/Update Task button (🎯) if enabled
+      if (tasksEnabled) {
+        let taskBtn = chatopsGroup.querySelector('.chatops-quick-note-btn.task-btn');
+        if (!taskBtn) {
+          taskBtn = document.createElement('button');
+          taskBtn.className = 'chatops-quick-note-btn task-btn';
+          taskBtn.innerHTML = '🎯';
+          taskBtn.title = language.quickTaskCreate;
+          taskBtn.addEventListener('click', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            openQuickNote(postEl, taskBtn, 'task');
+          });
+          chatopsGroup.appendChild(taskBtn);
+        }
+      } else {
+        chatopsGroup.querySelector('.chatops-quick-note-btn.task-btn')?.remove();
+      }
+
+      // Inject/Update Note button (📝) if enabled
+      if (notesEnabled) {
+        let noteBtn = chatopsGroup.querySelector('.chatops-quick-note-btn.note-btn');
+        if (!noteBtn) {
+          noteBtn = document.createElement('button');
+          noteBtn.className = 'chatops-quick-note-btn note-btn';
+          noteBtn.innerHTML = '📝';
+          noteBtn.title = language.quickNoteCreate;
+          noteBtn.addEventListener('click', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            openQuickNote(postEl, noteBtn, 'note');
+          });
+          chatopsGroup.appendChild(noteBtn);
+        }
+      } else {
+        chatopsGroup.querySelector('.chatops-quick-note-btn.note-btn')?.remove();
+      }
+
+          // Remove delete association button (🗑️) as it is no longer needed on ChatOps
+      chatopsGroup.querySelector('.chatops-quick-note-btn.delete-btn')?.remove();
 
       // Handle Spam and Retract buttons conditionally!
       if (spamEnabled) {
@@ -1858,6 +1900,17 @@ function showToast(msg) {
 
   let observerTimeout = null;
   observer = new MutationObserver((mutations) => {
+    // Prevent orphaned scripts from continuing to run after extension update/reload
+    try {
+      if (!chrome.runtime || !chrome.runtime.id) {
+        observer.disconnect();
+        return;
+      }
+    } catch (err) {
+      try { observer.disconnect(); } catch (e) {}
+      return;
+    }
+
     let shouldUpdate = false;
     for (const m of mutations) {
       if (m.addedNodes.length > 0) {

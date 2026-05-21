@@ -493,9 +493,20 @@ export function setup(state) {
   const btnClearAllTasks = document.getElementById('btnClearAllTasks');
   if (btnClearAllTasks) {
     btnClearAllTasks.addEventListener('click', async () => {
-      if (!confirm(language.confirmClearAllTasks || 'Delete ALL tasks? This cannot be undone.')) return;
+      const confirmMsg = currentFilter === 'pending'
+        ? language.confirmClearPendingTasks
+        : language.confirmClearCompletedTasks;
+      if (!confirm(confirmMsg)) return;
       const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
-      const memos = (res[STORAGE_KEYS.MEMOS] || []).filter(m => m.type !== 'task');
+      const allMemos = res[STORAGE_KEYS.MEMOS] || [];
+      const memos = allMemos.filter(m => {
+        if (m.type !== 'task') return true;
+        if (currentFilter === 'pending') {
+          return m.done; // Keep completed tasks, remove pending
+        } else {
+          return !m.done; // Keep pending tasks, remove completed
+        }
+      });
       await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
       loadTasks();
     });
@@ -794,13 +805,20 @@ export async function loadTasks() {
   const done = tasks.filter(t => t.done);
   let html = '';
 
+  const btnClearAllTasks = document.getElementById('btnClearAllTasks');
   if (currentFilter === 'pending') {
+    if (btnClearAllTasks) {
+      btnClearAllTasks.style.display = pending.length > 0 ? 'inline-flex' : 'none';
+    }
     if (pending.length === 0) {
       html = `<div class="empty-state">${language.taskEmpty}</div>`;
     } else {
       html += pending.map(task => renderTaskCard(task, now)).join('');
     }
   } else {
+    if (btnClearAllTasks) {
+      btnClearAllTasks.style.display = done.length > 0 ? 'inline-flex' : 'none';
+    }
     if (done.length === 0) {
       html = `<div class="empty-state">${language.noCompletedTasks}</div>`;
     } else {

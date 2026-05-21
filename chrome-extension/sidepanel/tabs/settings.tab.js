@@ -246,7 +246,8 @@ const DEFAULT_SETTINGS = {
   notificationType: 'in-page',
   appPadding: '12px',
   quickDelete: false,
-  soundNotification: false
+  soundNotification: false,
+  customButtonsPosition: 'before'
 };
 
 /**
@@ -405,6 +406,11 @@ async function loadAndApplySettings() {
     chkSoundNotification.checked = settings.soundNotification === true;
   }
 
+  const customButtonsPosSelect = document.getElementById('settingCustomButtonsPosition');
+  if (customButtonsPosSelect) {
+    customButtonsPosSelect.value = settings.customButtonsPosition || 'before';
+  }
+
   // Pre-load selected, standard grid, and personal memes
   renderSelectedEmojis(settings);
   renderStandardEmojiGrid(settings);
@@ -426,6 +432,7 @@ async function loadAndApplySettings() {
     window.convertToCustomDropdown('settingsAutoCleanupDays');
     window.convertToCustomDropdown('settingNotificationType', '220px');
     window.convertToCustomDropdown('settingAppPadding', '200px');
+    window.convertToCustomDropdown('settingCustomButtonsPosition', '180px');
   }
 
   // Validate Giphy API Key on load
@@ -603,6 +610,14 @@ function setupEventListeners() {
     appPaddingSelect.addEventListener('change', async (e) => {
       await updateSettings({ appPadding: e.target.value });
       applyThemeToDOM(await getSettings());
+      showAutoSaveFeedback();
+    });
+  }
+
+  const customButtonsPosSelect = document.getElementById('settingCustomButtonsPosition');
+  if (customButtonsPosSelect) {
+    customButtonsPosSelect.addEventListener('change', async (e) => {
+      await updateSettings({ customButtonsPosition: e.target.value });
       showAutoSaveFeedback();
     });
   }
@@ -904,6 +919,99 @@ function setupEventListeners() {
 
   if (listCat) {
     listCat.addEventListener('click', async (e) => {
+      // Edit button click -> switch to edit mode
+      const btnEdit = e.target.closest('.btn-edit-cat');
+      if (btnEdit) {
+        const li = btnEdit.closest('li');
+        const cat = btnEdit.dataset.cat;
+        const idx = btnEdit.dataset.idx;
+        
+        li.innerHTML = `
+          <div class="cat-edit-mode" style="display:flex; align-items:center; gap:8px; width:100%;">
+            <input type="text" class="edit-cat-input" value="${escapeHtml(cat)}" style="flex:1; height:28px; font-size:13px; font-weight:600; padding:4px 8px; border-radius:6px; border:1px solid var(--border); outline:none; box-sizing:border-box; background:var(--bg-1); color:var(--text-1);" autocomplete="off">
+            <button class="btn-save-cat-edit" data-idx="${idx}" data-old="${escapeHtml(cat)}" title="Save" style="background:none; border:none; padding:4px 6px; cursor:pointer; color:var(--success); font-size:14px; font-weight:bold; display:inline-flex; align-items:center; justify-content:center;">✓</button>
+            <button class="btn-cancel-cat-edit" title="Cancel" style="background:none; border:none; padding:4px 6px; cursor:pointer; color:var(--danger); font-size:14px; font-weight:bold; display:inline-flex; align-items:center; justify-content:center;">✗</button>
+          </div>
+        `;
+        
+        const input = li.querySelector('.edit-cat-input');
+        input.focus();
+        input.select();
+        
+        input.addEventListener('keydown', (evt) => {
+          if (evt.key === 'Enter') {
+            li.querySelector('.btn-save-cat-edit').click();
+          } else if (evt.key === 'Escape') {
+            li.querySelector('.btn-cancel-cat-edit').click();
+          }
+        });
+        return;
+      }
+
+      // Cancel edit click
+      const btnCancel = e.target.closest('.btn-cancel-cat-edit');
+      if (btnCancel) {
+        const settings = await getSettings();
+        renderCategoryList(settings.memoCategories || []);
+        return;
+      }
+
+      // Save edit click
+      const btnSave = e.target.closest('.btn-save-cat-edit');
+      if (btnSave) {
+        const idx = parseInt(btnSave.dataset.idx, 10);
+        const oldCat = btnSave.dataset.old;
+        const li = btnSave.closest('li');
+        const input = li.querySelector('.edit-cat-input');
+        const newVal = input.value.trim();
+        
+        if (!newVal) {
+          showErrorFeedback("Category name cannot be empty!");
+          return;
+        }
+        
+        const settings = await getSettings();
+        const categories = settings.memoCategories || [];
+        
+        // Check duplicate case-insensitively, ignoring current index
+        const isDuplicate = categories.some((c, i) => i !== idx && c.toLowerCase() === newVal.toLowerCase());
+        if (isDuplicate) {
+          showErrorFeedback("This category already exists!");
+          return;
+        }
+        
+        categories[idx] = newVal;
+        settings.memoCategories = categories;
+        await updateSettings({ memoCategories: categories });
+        
+        // Update category name in existing memos
+        const resMemos = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
+        const memos = resMemos[STORAGE_KEYS.MEMOS] || [];
+        let memosChanged = false;
+        
+        memos.forEach(m => {
+          if (m.type === 'memo' && (m.category || 'General') === oldCat) {
+            m.category = newVal;
+            memosChanged = true;
+          }
+        });
+        
+        if (memosChanged) {
+          await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
+        }
+        
+        // If edited category was activeMemoCategory, update it as well
+        const activeRes = await chrome.storage.local.get(['activeMemoCategory']);
+        if (activeRes.activeMemoCategory === oldCat) {
+          await chrome.storage.local.set({ activeMemoCategory: newVal });
+        }
+        
+        renderCategoryList(categories);
+        showAutoSaveFeedback();
+        chrome.runtime.sendMessage({ type: 'MEMO_CATEGORIES_UPDATED' });
+        return;
+      }
+
       const btn = e.target.closest('.btn-delete-cat');
       if (btn) {
         const cat = btn.dataset.cat;
@@ -919,7 +1027,12 @@ function setupEventListeners() {
         }
         
         const settings = await getSettings();
-        settings.memoCategories = (settings.memoCategories || []).filter(c => c !== cat);
+        const categories = settings.memoCategories || [];
+        if (categories.length <= 1) {
+          showErrorFeedback(language.atLeastOneCategoryRequired || "At least one category must exist!");
+          return;
+        }
+        settings.memoCategories = categories.filter(c => c !== cat);
         await updateSettings({ memoCategories: settings.memoCategories });
         renderCategoryList(settings.memoCategories);
         showAutoSaveFeedback();
@@ -1607,12 +1720,17 @@ function renderCategoryList(categories) {
       countBadge.style.borderColor = 'var(--border)';
     }
   }
-  listEl.innerHTML = categories.map(cat => `
-    <li style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:var(--bg-2); border-radius:6px; border:1px solid var(--border);">
-      <span style="font-size:14.5px; font-weight:600; color:var(--text-1);">${escapeHtml(cat)}</span>
-      <button class="btn-delete-cat btn-delete-memo" data-cat="${escapeHtml(cat)}" title="Delete">
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style="pointer-events:none;"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>
-      </button>
+  listEl.innerHTML = categories.map((cat, idx) => `
+    <li data-cat="${escapeHtml(cat)}" style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:var(--bg-2); border-radius:6px; border:1px solid var(--border); margin-bottom: 8px;">
+      <span class="cat-name" style="font-size:14.5px; font-weight:600; color:var(--text-1);">${escapeHtml(cat)}</span>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <button class="btn-edit-cat btn-edit-memo" data-idx="${idx}" data-cat="${escapeHtml(cat)}" title="Edit" style="background:none; border:none; padding:4px; cursor:pointer; color:var(--text-3); display:inline-flex; align-items:center;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+        </button>
+        <button class="btn-delete-cat btn-delete-memo" data-cat="${escapeHtml(cat)}" title="Delete" style="background:none; border:none; padding:4px; cursor:pointer; color:var(--text-3); display:inline-flex; align-items:center;">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style="pointer-events:none;"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>
+        </button>
+      </div>
     </li>
   `).join('');
 

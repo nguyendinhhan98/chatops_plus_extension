@@ -79,6 +79,27 @@
   display: none !important;
 }
 
+/* Hide ChatOps action group by default and only display it when hovering over the post */
+.chatops-action-group {
+  display: none !important;
+}
+/* Show custom action group when the post is hovered */
+.post:hover .chatops-action-group,
+[id^="post_"]:hover .chatops-action-group,
+[id^="rhsPost_"]:hover .chatops-action-group,
+[id^="rhs_post_"]:hover .chatops-action-group,
+.post-row:hover .chatops-action-group {
+  display: inline-flex !important;
+}
+
+/* Hide custom action groups inside nested replies that are NOT currently hovered */
+.post:hover .post:not(:hover) .chatops-action-group,
+[id^="post_"]:hover [id^="post_"]:not(:hover) .chatops-action-group,
+[id^="rhsPost_"]:hover [id^="rhsPost_"]:not(:hover) .chatops-action-group,
+[id^="rhs_post_"]:hover [id^="rhs_post_"]:not(:hover) .chatops-action-group {
+  display: none !important;
+}
+
 /* ─── Quick Note Inject Button ─── */
 .chatops-quick-note-btn {
   background: none !important;
@@ -87,12 +108,9 @@
   font-size: 14px !important;
   padding: 2px 6px !important;
   border-radius: 4px !important;
-  opacity: 0;
-  transition: opacity 0.12s, background 0.12s !important;
+  opacity: 1 !important;
+  transition: background 0.12s !important;
 }
-
-.post:hover .chatops-quick-note-btn,
-[id^="post_"]:hover .chatops-quick-note-btn { opacity: 1 !important; }
 
 .chatops-quick-note-btn:hover {
   background: rgba(28, 88, 217, 0.1) !important;
@@ -593,7 +611,7 @@ html body #chatops-quick-note-popover textarea#cqn-note-text {
 /* ─── Image Library Picker ─── */
 .chatops-image-picker {
   position: absolute; bottom: 50px; right: 0;
-  width: 320px; max-height: 480px;
+  width: 320px; height: 380px !important;
   background: #ffffff; border: 1px solid #e0e0e5;
   border-radius: 10px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.15);
@@ -628,8 +646,10 @@ html body #chatops-quick-note-popover textarea#cqn-note-text {
 .chatops-image-upload-area {
   padding: 10px 12px;
   background: #fafafa;
-  border-bottom: 1px solid #e0e0e5;
-  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
 }
 .chatops-image-upload-btn {
   font-size: 12px;
@@ -661,8 +681,7 @@ html body #chatops-quick-note-popover textarea#cqn-note-text {
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
   padding: 8px 0;
-  min-height: 100px;
-  max-height: 360px;
+  flex: 1;
   overflow-y: auto;
 }
 .chatops-custom-image-cell {

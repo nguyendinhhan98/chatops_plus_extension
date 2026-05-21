@@ -317,8 +317,34 @@ export async function performSpSearch(isLoadMore = false) {
     searchState.originalKeyword = terms; // Save for highlighting
     searchState.page = 0;
     searchState.hasMore = true;
+    searchState.isCancelled = false; // Reset cancellation flag
     
-    showLoading(resultsEl, language.searching);
+    resultsEl.innerHTML = `
+      <div class="loading-state" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; height: 100%; min-height: 150px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="spinner"></span> <span>${language.searching}</span>
+        </div>
+        <button id="btnStopSearch" class="btn-stop-search">
+          <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor">
+            <rect width="12" height="12" x="2" y="2" rx="1.5" />
+          </svg>
+          ${language.stopSearch}
+        </button>
+      </div>
+    `;
+
+    document.getElementById('btnStopSearch')?.addEventListener('click', () => {
+      searchState.isCancelled = true;
+      searchState.isSearching = false;
+      btnSearch.classList.remove('loading');
+      btnSearch.innerHTML = `
+        <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+        </svg>
+      `;
+      clearResults();
+    });
+
     btnSearch.classList.add('loading');
     btnSearch.innerHTML = `<span class="spinner"></span>`;
   } else {
@@ -338,6 +364,8 @@ export async function performSpSearch(isLoadMore = false) {
       per_page: UI_CONFIG.SEARCH_PAGE_SIZE
     });
 
+    if (searchState.isCancelled) return;
+
     const posts = result.order.map((id) => result.posts[id]).filter(Boolean);
     
     if (posts.length < UI_CONFIG.SEARCH_PAGE_SIZE) searchState.hasMore = false;
@@ -352,15 +380,21 @@ export async function performSpSearch(isLoadMore = false) {
     // Fetch related authors and channels info
     const userIds = [...new Set(posts.map((p) => p.user_id))];
     const users = await getUsersByIds(userIds);
+    if (searchState.isCancelled) return;
+
     const usersMap = Object.fromEntries(users.map((u) => [u.id, u]));
 
     const channelIds = [...new Set(posts.map((p) => p.channel_id))];
     const channelsMap = {};
     await Promise.all(
       channelIds.map(async (cid) => {
-        try { channelsMap[cid] = await getChannelById(cid); } catch {}
+        try { 
+          if (searchState.isCancelled) return;
+          channelsMap[cid] = await getChannelById(cid); 
+        } catch {}
       })
     );
+    if (searchState.isCancelled) return;
 
     const html = renderPostList(posts, usersMap, config.chatopsUrl, team.name, channelsMap, searchState.originalKeyword);
     

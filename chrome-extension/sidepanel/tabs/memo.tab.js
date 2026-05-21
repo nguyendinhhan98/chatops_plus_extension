@@ -32,9 +32,25 @@ export function setup(state) {
   const btnClearAllNotes = document.getElementById('btnClearAllNotes');
   if (btnClearAllNotes) {
     btnClearAllNotes.addEventListener('click', async () => {
-      if (!confirm(language.confirmClearAllNotes || 'Delete ALL notes? This cannot be undone.')) return;
+      const activeTab = document.querySelector('#memoCategoryTabs .memo-sub-tab.active');
+      const filter = activeTab ? activeTab.dataset.category : 'all';
+      
+      const confirmMsg = filter === 'all'
+        ? language.confirmClearAllNotes
+        : language.confirmClearCategoryNotes.replace('{category}', filter);
+
+      if (!confirm(confirmMsg)) return;
+
       const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
-      const memos = (res[STORAGE_KEYS.MEMOS] || []).filter(m => m.type !== 'memo');
+      const allMemos = res[STORAGE_KEYS.MEMOS] || [];
+      const memos = allMemos.filter(m => {
+        if (m.type !== 'memo') return true;
+        if (filter === 'all') {
+          return false; // Remove all memos of type 'memo'
+        } else {
+          return (m.category || 'General') !== filter; // Keep memos of other categories
+        }
+      });
       await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
       loadMemos();
     });
@@ -440,11 +456,28 @@ export function setup(state) {
   });
 
   // Category filter delegation
-  document.getElementById('memoCategoryTabs')?.addEventListener('click', (e) => {
+  document.getElementById('memoCategoryTabs')?.addEventListener('click', async (e) => {
     if (e.target.classList.contains('memo-sub-tab')) {
       document.querySelectorAll('#memoCategoryTabs .memo-sub-tab').forEach(b => b.classList.remove('active'));
       e.target.classList.add('active');
+      const filter = e.target.dataset.category || 'all';
+      await chrome.storage.local.set({ activeMemoCategory: filter });
       loadMemos();
+      
+      // Sync quickNoteCategory dropdown
+      const res = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS]);
+      const categories = res[STORAGE_KEYS.SETTINGS]?.memoCategories || ['General', 'Work', 'Personal', 'Ideas'];
+      const quickSelect = document.getElementById('quickNoteCategory');
+      if (quickSelect) {
+        if (filter !== 'all' && categories.includes(filter)) {
+          quickSelect.value = filter;
+        } else if (categories.length > 0) {
+          quickSelect.value = categories[0];
+        }
+        if (typeof window.convertToCustomDropdown === 'function') {
+          window.convertToCustomDropdown('quickNoteCategory', '140px');
+        }
+      }
     }
   });
 
@@ -465,24 +498,32 @@ export function setup(state) {
  * Renders categories to the selects
  */
 export async function renderCategories() {
-  const res = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS]);
+  const res = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS, 'activeMemoCategory']);
   const categories = res[STORAGE_KEYS.SETTINGS]?.memoCategories || ['General', 'Work', 'Personal', 'Ideas'];
+  const activeMemoCategory = res['activeMemoCategory'] || 'all';
   
   const quickSelect = document.getElementById('quickNoteCategory');
   const tabsContainer = document.getElementById('memoCategoryTabs');
   
   if (quickSelect) {
     quickSelect.innerHTML = categories.map(c => `<option value="${c}">📁 ${getCategoryDisplayName(c)}</option>`).join('');
+    
+    // Set default value based on active category sub-tab
+    if (activeMemoCategory !== 'all' && categories.includes(activeMemoCategory)) {
+      quickSelect.value = activeMemoCategory;
+    } else if (categories.length > 0) {
+      quickSelect.value = categories[0];
+    }
+    
     if (typeof window.convertToCustomDropdown === 'function') {
       window.convertToCustomDropdown('quickNoteCategory', '140px');
     }
   }
   
   if (tabsContainer) {
-    const currentActive = tabsContainer.querySelector('.memo-sub-tab.active')?.dataset.category || 'all';
-    let html = `<button class="memo-sub-tab ${currentActive === 'all' ? 'active' : ''}" data-category="all">${getCategoryDisplayName('all').toUpperCase()}</button>`;
+    let html = `<button class="memo-sub-tab ${activeMemoCategory === 'all' ? 'active' : ''}" data-category="all">${getCategoryDisplayName('all').toUpperCase()}</button>`;
     html += categories.map(c => `
-      <button class="memo-sub-tab ${currentActive === c ? 'active' : ''}" data-category="${c}">${getCategoryDisplayName(c).toUpperCase()}</button>
+      <button class="memo-sub-tab ${activeMemoCategory === c ? 'active' : ''}" data-category="${c}">${getCategoryDisplayName(c).toUpperCase()}</button>
     `).join('');
     tabsContainer.innerHTML = html;
   }
@@ -511,6 +552,11 @@ export async function loadMemos() {
   if (noteBadge) {
     const totalNotes = allItems.filter(m => m.type === 'memo').length;
     noteBadge.textContent = totalNotes > 0 ? totalNotes : '';
+  }
+
+  const btnClearAllNotes = document.getElementById('btnClearAllNotes');
+  if (btnClearAllNotes) {
+    btnClearAllNotes.style.display = notes.length > 0 ? 'inline-flex' : 'none';
   }
 
   if (notes.length === 0) {

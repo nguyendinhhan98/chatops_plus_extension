@@ -269,6 +269,8 @@ function renderScannedMentions(isLoadMore = false) {
   }, 100);
 }
 
+let isCancelled = false;
+
 /**
  * Performs a deep scan for missed mentions across channels
  */
@@ -276,6 +278,7 @@ async function scanMentionsDeep() {
   const currentUser = _state.getUser();
   const currentTeam = _state.getTeam();
   const resultsEl = document.getElementById('spMentionResults');
+  const btnScan = document.getElementById('btnSpScanMentions');
 
   if (!currentUser) {
     showError(resultsEl, language.notConnected);
@@ -293,24 +296,47 @@ async function scanMentionsDeep() {
   const channelFlag = document.getElementById('spMentionChannel').checked;
   const scanDMs = document.getElementById('spMentionDMs').checked;
   const mentionChannels = mentionChannelMS ? mentionChannelMS.getSelected() : [];
-  
   const sinceMs = Date.now() - hours * 60 * 60 * 1000;
- 
+  
   resultsEl.innerHTML = `
     <div class="progress-bar"><div class="progress-fill" id="mentionProgress" style="width:0%"></div></div>
-    <div class="loading-state" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
-      <span class="spinner"></span> <span data-i18n="scanningChannels">${language.scanningChannels}</span>
+    <div class="loading-state" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; height: 100%; min-height: 150px;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span class="spinner"></span> <span>${language.scanningChannels}</span>
+      </div>
+      <button id="btnStopMentionScan" class="btn-stop-search">
+        <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor">
+          <rect width="12" height="12" x="2" y="2" rx="1.5" />
+        </svg>
+        ${language.stopScanning}
+      </button>
     </div>
     <div style="font-size: 12.5px; color: var(--text-2); text-align: center; margin-top: 14px; padding: 0 16px; line-height: 1.45; font-style: italic;">
       💡 <span data-i18n="scanTimeNotice">${language.scanTimeNotice}</span>
     </div>
   `;
+
+  document.getElementById('btnStopMentionScan')?.addEventListener('click', () => {
+    isCancelled = true;
+    isScanning = false;
+    if (btnScan) {
+      btnScan.classList.remove('loading');
+      btnScan.disabled = false;
+      btnScan.style.opacity = '1';
+    }
+    clearResults();
+  });
  
   isScanning = true;
+  isCancelled = false;
+  if (btnScan) {
+    btnScan.classList.add('loading');
+  }
 
   try {
     const allChannels = await getMyChannels(currentTeam.id).catch(() => []);
     const channelsMap = Object.fromEntries(allChannels.map(c => [c.id, c]));
+    if (isCancelled) return;
  
     let targetChannels = [];
     if (mentionChannels.length > 0) {
@@ -333,20 +359,24 @@ async function scanMentionsDeep() {
 
     // Scan in batches to avoid overwhelming the API
     for (let i = 0; i < targetChannels.length; i += UI_CONFIG.MENTION_BATCH_SIZE) {
+      if (isCancelled) return;
       const batch = targetChannels.slice(i, i + UI_CONFIG.MENTION_BATCH_SIZE);
       await Promise.all(
         batch.map(async (member) => {
           try {
+            if (isCancelled) return;
             const postList = await getChannelPosts(member.channel_id, {
               since: sinceMs,
               per_page: 200,
             });
+            if (isCancelled) return;
 
             let channelInfo = channelsMap[member.channel_id];
             if (!channelInfo) {
               channelInfo = await getChannelById(member.channel_id).catch(() => null);
               if (channelInfo) channelsMap[member.channel_id] = channelInfo;
             }
+            if (isCancelled) return;
 
             const isDm = channelInfo && channelInfo.type === 'D';
             const isDmOrGm = channelInfo && (channelInfo.type === 'D' || channelInfo.type === 'G' || (channelInfo.name && channelInfo.name.includes('__')));
@@ -365,12 +395,15 @@ async function scanMentionsDeep() {
               });
 
             if (mentionedPosts.length === 0) return;
+            if (isCancelled) return;
 
             const trulyMissed = [];
             for (const post of mentionedPosts) {
+              if (isCancelled) return;
               if (isDmOrGm) {
                 // For DMs/GMs, check if reacted or if user sent any message in this channel after
                 const reactions = await getPostReactions(post.id).catch(() => []);
+                if (isCancelled) return;
                 const reacted = Array.isArray(reactions) && reactions.some((r) => r.user_id === currentUser.id);
                 
                 const hasRepliedInChannel = Object.values(postList.posts).some(
@@ -386,6 +419,7 @@ async function scanMentionsDeep() {
                   getPostThread(post.id).catch(() => ({ posts: {} })),
                   getPostReactions(post.id).catch(() => []),
                 ]);
+                if (isCancelled) return;
 
                 const replied = Object.values(thread.posts).some(
                   (p) => p.user_id === currentUser.id && p.id !== post.id
@@ -398,7 +432,7 @@ async function scanMentionsDeep() {
               }
             }
 
-            if (trulyMissed.length > 0) {
+            if (trulyMissed.length > 0 && !isCancelled) {
               const channelLabel = channelInfo ? getChannelLabel(channelInfo) : language.unknown;
               scanResults.push({ channelLabel, posts: trulyMissed });
             }
@@ -406,22 +440,28 @@ async function scanMentionsDeep() {
         })
       );
 
+      if (isCancelled) return;
       processed += batch.length;
       const progress = Math.min(100, Math.round((processed / targetChannels.length) * 100));
       const progressEl = document.getElementById('mentionProgress');
       if (progressEl) progressEl.style.width = `${progress}%`;
     }
 
+    if (isCancelled) return;
     isScanning = false;
 
     if (scanResults.length === 0) {
+      isScanning = false;
       resultsEl.innerHTML = `<div class="empty-state">✅ ${language.noMissedMentions.replace('{hours}', hours)}</div>`;
       return;
     }
 
     const allUserIds = [...new Set(scanResults.flatMap((r) => r.posts.map((p) => p.user_id)))];
     const users = await getUsersByIds(allUserIds);
+    if (isCancelled) return;
     
+    isScanning = false;
+
     // Store in module scoped variables for pagination rendering
     scannedResults = scanResults;
     allScannedUsersMap = Object.fromEntries(users.map((u) => [u.id, u]));
@@ -430,8 +470,14 @@ async function scanMentionsDeep() {
     renderScannedMentions(false);
 
   } catch (err) {
-    isScanning = false;
-    showError(resultsEl, err.message);
+    if (!isCancelled) {
+      isScanning = false;
+      showError(resultsEl, err.message);
+    }
+  } finally {
+    if (btnScan) {
+      btnScan.classList.remove('loading');
+    }
   }
 }
 

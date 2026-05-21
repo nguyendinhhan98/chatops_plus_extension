@@ -140,6 +140,25 @@ window.convertToCustomDropdown = function(selectId, width = null, height = null)
     });
 
     const isVisible = menuList.style.display === 'block';
+    
+    if (!isVisible) {
+      // Auto-direction layout logic (open upwards if close to viewport bottom edge)
+      const rect = toggleBtn.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const menuHeight = 220; // Maximum allowed dropdown menu height (from CSS/inline style)
+      if (spaceBelow < menuHeight) {
+        menuList.style.top = 'auto';
+        menuList.style.bottom = '100%';
+        menuList.style.marginTop = '0px';
+        menuList.style.marginBottom = '6px';
+      } else {
+        menuList.style.top = '100%';
+        menuList.style.bottom = 'auto';
+        menuList.style.marginTop = '6px';
+        menuList.style.marginBottom = '0px';
+      }
+    }
+
     menuList.style.display = isVisible ? 'none' : 'block';
     arrowSpan.style.transform = isVisible ? 'rotate(0deg)' : 'rotate(180deg)';
   });

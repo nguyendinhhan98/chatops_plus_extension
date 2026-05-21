@@ -62,7 +62,6 @@ async function init() {
   setupTabs();
   setupModalListeners();
   setupLanguageToggle();
-  setupPauseScan();
   
   // Background silent auto cleanup
   runAutoCleanup().catch(e => console.error('[ChatOps Ext] Auto cleanup error:', e));
@@ -623,42 +622,4 @@ function setupLanguageToggle() {
     });
   });
 }
-/**
- * Sets up the Pause/Resume Scan toggle buttons for Search and Mentions tabs
- */
-async function setupPauseScan() {
-  const btnSearch = document.getElementById('btnPauseScanSearch');
-  const btnMentions = document.getElementById('btnPauseScanMentions');
-  const labelSearch = document.getElementById('scanPausedLabelSearch');
-  const labelMentions = document.getElementById('scanPausedLabelMentions');
 
-  // Apply current state to both buttons
-  async function applyScanPauseState() {
-    const res = await chrome.storage.local.get([STORAGE_KEYS.SCAN_PAUSED]);
-    const paused = res[STORAGE_KEYS.SCAN_PAUSED] === true;
-
-    if (btnSearch) {
-      btnSearch.textContent = paused ? language.scanResume : language.scanPause;
-      btnSearch.style.color = paused ? 'var(--accent)' : '';
-    }
-    if (btnMentions) {
-      btnMentions.textContent = paused ? language.scanResume : language.scanPause;
-      btnMentions.style.color = paused ? 'var(--accent)' : '';
-    }
-    if (labelSearch) labelSearch.style.display = paused ? 'inline' : 'none';
-    if (labelMentions) labelMentions.style.display = paused ? 'inline' : 'none';
-  }
-
-  async function toggleScanPause() {
-    const res = await chrome.storage.local.get([STORAGE_KEYS.SCAN_PAUSED]);
-    const current = res[STORAGE_KEYS.SCAN_PAUSED] === true;
-    await chrome.storage.local.set({ [STORAGE_KEYS.SCAN_PAUSED]: !current });
-    await applyScanPauseState();
-  }
-
-  btnSearch?.addEventListener('click', toggleScanPause);
-  btnMentions?.addEventListener('click', toggleScanPause);
-
-  // Restore initial state
-  await applyScanPauseState();
-}
