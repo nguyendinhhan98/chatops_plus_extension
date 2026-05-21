@@ -402,6 +402,7 @@ const en = {
   checklistMinError: 'Please enter at least one checklist item.',
   taskRemindDailyLabel: 'Repeat daily at selected time',
   repeatDailyBadgeText: 'Daily',
+  collapseBtnBottom: 'Collapse',
 };
 
 // Vietnamese Dictionary
@@ -800,6 +801,7 @@ const vi = {
   checklistMinError: 'Vui lòng nhập ít nhất một dòng checklist.',
   taskRemindDailyLabel: 'Nhắc nhở hằng ngày vào giờ đã chọn',
   repeatDailyBadgeText: 'Hằng ngày',
+  collapseBtnBottom: 'Thu gọn',
 };
 
 // Swaps the active language dictionary key-value pairs in-place

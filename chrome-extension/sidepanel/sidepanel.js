@@ -169,7 +169,37 @@ function switchTab(id) {
  * Handles tab switching UI logic
  */
 function setupTabs() {
-  document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+    btn.addEventListener('dblclick', () => {
+      const tab = btn.dataset.tab;
+      if (tab === 'search') {
+        window.ModalManager.open(
+          language.modalSearchTitle,
+          'spSearchForm',
+          'spSearchFormPlaceholder'
+        );
+      } else if (tab === 'tasks') {
+        window.ModalManager.open(
+          language.modalAddTaskTitle,
+          'spTasksForm',
+          'spTaskFormPlaceholder'
+        );
+      } else if (tab === 'memo') {
+        window.ModalManager.open(
+          language.modalAddNoteTitle,
+          'spMemoForm',
+          'spMemoFormPlaceholder'
+        );
+      } else if (tab === 'mentions') {
+        window.ModalManager.open(
+          language.modalScannerFiltersTitle,
+          'spMentionsForm',
+          'spMentionsFormPlaceholder'
+        );
+      }
+    });
+  });
   
   // Handle sync badge clicks to navigate to settings sync section
   ['syncBadgeTasks', 'syncBadgeNotes'].forEach(badgeId => {
@@ -396,6 +426,17 @@ function setupStateHandlers() {
           btn.innerHTML = '▶';
           if (bodyEl) bodyEl.classList.add('collapsed');
           if (postPreviewEl) postPreviewEl.style.display = 'none';
+        }
+      }
+    }
+    const bottomCollapseBtn = e.target.closest('.btn-collapse-bottom');
+    if (bottomCollapseBtn) {
+      const cardEl = bottomCollapseBtn.closest('.memo-item');
+      if (cardEl) {
+        const topCollapseBtn = cardEl.querySelector('.collapse-btn');
+        if (topCollapseBtn && topCollapseBtn.classList.contains('expanded')) {
+          topCollapseBtn.click();
+          cardEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
       }
     }

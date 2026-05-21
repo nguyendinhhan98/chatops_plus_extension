@@ -2909,4 +2909,26 @@ span.flatpickr-weekday {
   transform: scale(0.98) !important;
 }
 
+/* Bottom Collapse Button Bar */
+.collapse-bottom-bar {
+  display: none;
+}
+
+.collapsible-body:not(.collapsed) + .collapse-bottom-bar {
+  display: flex !important;
+}
+
+.btn-collapse-bottom {
+  transition: all var(--transition, 0.2s) !important;
+}
+
+.btn-collapse-bottom:hover {
+  filter: brightness(0.9);
+  transform: translateY(-1px);
+}
+
+.btn-collapse-bottom:active {
+  transform: translateY(0);
+}
+
 

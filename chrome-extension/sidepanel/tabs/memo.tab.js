@@ -612,18 +612,29 @@ function renderNoteCard(note, categories = ['General', 'Work', 'Personal', 'Idea
 
   return `
     <div class="memo-item note-item cat-${categoryLabel.toLowerCase()}" id="item_${note.id}">
-      <div class="note-content-row" style="display:flex; align-items:flex-start; gap:8px;">
-        <div class="memo-content" style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;">
-          ${note.title ? `<div class="memo-item-title" style="font-weight:700; font-size:13.5px; color:var(--text-1); margin-bottom:2px; letter-spacing:-0.1px;">${escapeHtml(note.title)}</div>` : ''}
-          <div class="memo-note-text note-body collapsible-body collapsed" style="margin-top:0;">${escapedText}</div>
+      <div class="memo-item-header" style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom: 6px;">
+        <div class="memo-content-title-area" style="flex:1; min-width:0;">
+          ${note.title ? `<div class="memo-item-title" style="font-weight:700; font-size:13.5px; color:var(--text-1); letter-spacing:-0.1px; margin:0;">${escapeHtml(note.title)}</div>` : `<div class="memo-item-title" style="font-weight:700; font-size:13.5px; color:var(--text-3); font-style:italic; letter-spacing:-0.1px; margin:0;">${language.memoCopyNote.includes('chú') ? 'Ghi chú' : 'Note'}</div>`}
         </div>
-        <button class="collapse-btn" data-id="${note.id}" style="flex-shrink:0; margin:0;" title="${language.expandCollapseBtn}">▶</button>
-        <button class="btn-copy-note" data-text="${rawText.replace(/"/g, '&quot;')}" title="${language.memoCopyNote}" style="flex-shrink:0; margin:0;">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-            <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
-            <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
-          </svg>
-        </button>
+        <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+          <button class="btn-copy-note" data-text="${rawText.replace(/"/g, '&quot;')}" title="${language.memoCopyNote}" style="background:none; border:none; padding:4px; cursor:pointer; color:var(--text-2); display:inline-flex; align-items:center; justify-content:center; outline:none; transition: color 0.2s; margin:0;">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style="pointer-events:none;">
+              <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+              <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+            </svg>
+          </button>
+          <button class="collapse-btn" data-id="${note.id}" style="margin:0; flex-shrink:0;" title="${language.expandCollapseBtn}">▶</button>
+        </div>
+      </div>
+      <div class="note-content-row" style="width:100%;">
+        <div class="memo-content" style="width:100%; display:flex; flex-direction:column; gap:4px;">
+          <div class="memo-note-text note-body collapsible-body collapsed" style="margin-top:0; width:100%;">${escapedText}</div>
+          <div class="collapse-bottom-bar" style="display:none; justify-content:center; padding: 4px 0; margin-top: 6px; border-top: 1px dashed var(--border); width:100%;">
+            <button class="btn-collapse-bottom" data-id="${note.id}" style="background:none; border:none; color:var(--accent); font-size:11.5px; cursor:pointer; display:flex; align-items:center; gap:4px; font-weight:700; outline:none; margin:0;" title="${language.collapseBtnBottom}">
+              <span>${language.collapseBtnBottom}</span> ▲
+            </button>
+          </div>
+        </div>
       </div>
       ${hasOriginalPost ? `<div class="memo-post-preview post-preview" style="display:none; margin-top:8px;">📌 ${escapeHtml(note.postText)}</div>` : ''}
       <div class="memo-footer">

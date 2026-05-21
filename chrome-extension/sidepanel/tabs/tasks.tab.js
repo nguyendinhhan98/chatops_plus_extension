@@ -915,13 +915,22 @@ function renderTaskCard(task, now) {
 
   return `
     <div class="memo-item task-item ${task.done ? 'memo-done' : ''} ${isOverdue ? 'memo-overdue' : ''}" id="item_${task.id}">
-      <div class="memo-item-header" style="display:flex; align-items:flex-start; gap:8px;">
-        <div class="memo-content" style="flex:1; min-width:0;">
-          ${task.title ? `<div class="memo-item-title" style="font-weight:700; font-size:13.5px; color:var(--text-1); margin-bottom:4px; letter-spacing:-0.1px;">${escapeHtml(task.title)}</div>` : ''}
-          ${hasOriginalPost ? `<div class="memo-post-preview post-preview" style="display:none; margin-bottom:4px;">📌 ${escapeHtml(task.postText)}</div>` : ''}
-          <div class="memo-note-text task-text collapsible-body collapsed" style="margin-top:0;">${taskBodyHtml}</div>
+      <div class="memo-item-header" style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom: 4px;">
+        <div class="memo-content-title-area" style="flex:1; min-width:0;">
+          ${task.title ? `<div class="memo-item-title" style="font-weight:700; font-size:13.5px; color:var(--text-1); letter-spacing:-0.1px; margin:0;">${escapeHtml(task.title)}</div>` : `<div class="memo-item-title" style="font-weight:700; font-size:13.5px; color:var(--text-3); font-style:italic; letter-spacing:-0.1px; margin:0;">${language.confirmDeleteTask.includes('chắc') ? 'Công việc' : 'Task'}</div>`}
         </div>
-        <button class="collapse-btn" data-id="${task.id}" style="flex-shrink:0; margin:0;" title="${language.expandCollapseBtn}">▶</button>
+        <button class="collapse-btn" data-id="${task.id}" style="margin:0; flex-shrink:0;" title="${language.expandCollapseBtn}">▶</button>
+      </div>
+      <div class="task-content-row" style="width:100%;">
+        <div class="memo-content" style="width:100%; display:flex; flex-direction:column; gap:4px;">
+          ${hasOriginalPost ? `<div class="memo-post-preview post-preview" style="display:none; margin-bottom:4px; width:100%;">📌 ${escapeHtml(task.postText)}</div>` : ''}
+          <div class="memo-note-text task-text collapsible-body collapsed" style="margin-top:0; width:100%;">${taskBodyHtml}</div>
+          <div class="collapse-bottom-bar" style="display:none; justify-content:center; padding: 4px 0; margin-top: 6px; border-top: 1px dashed var(--border); width:100%;">
+            <button class="btn-collapse-bottom" data-id="${task.id}" style="background:none; border:none; color:var(--accent); font-size:11.5px; cursor:pointer; display:flex; align-items:center; gap:4px; font-weight:700; outline:none; margin:0;" title="${language.collapseBtnBottom}">
+              <span>${language.collapseBtnBottom}</span> ▲
+            </button>
+          </div>
+        </div>
       </div>
       <div class="memo-footer">
         <div class="memo-meta" style="display:flex; align-items:center; gap:8px;">

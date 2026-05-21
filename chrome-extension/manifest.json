@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ChatOps++",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "ChatOps++ là tiện ích mở rộng toàn diện giúp tăng 200% hiệu suất làm việc cho người dùng ChatOps. Tích hợp thanh Side Panel thông minh và các công cụ phím tắt mạnh mẽ giúp tối ưu hóa công việc của bạn chỉ trong vài click.",
   "permissions": [
     "storage",
