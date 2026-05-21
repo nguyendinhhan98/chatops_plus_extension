@@ -10,6 +10,7 @@ export const STORAGE_KEYS = {
   SETTINGS: 'chatops_settings',
   BTN_POSITION: 'chatops_ext_btn_pos',
   SIDEPANEL_TAB: 'sidePanelTab',
+  SCAN_PAUSED: 'scan_paused',
 };
 
 export const CHATOPS_CONFIG = {

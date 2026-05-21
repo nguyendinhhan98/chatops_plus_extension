@@ -28,6 +28,18 @@ export function setup(state) {
 
   renderCategories();
 
+  // Clear All Notes
+  const btnClearAllNotes = document.getElementById('btnClearAllNotes');
+  if (btnClearAllNotes) {
+    btnClearAllNotes.addEventListener('click', async () => {
+      if (!confirm(language.confirmClearAllNotes || 'Delete ALL notes? This cannot be undone.')) return;
+      const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
+      const memos = (res[STORAGE_KEYS.MEMOS] || []).filter(m => m.type !== 'memo');
+      await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
+      loadMemos();
+    });
+  }
+
   // Handle toggle collapse
   const btnToggle = document.getElementById('btnToggleMemo');
   const memoForm = document.getElementById('spMemoForm');

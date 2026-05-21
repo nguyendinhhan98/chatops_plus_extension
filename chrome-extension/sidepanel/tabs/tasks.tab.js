@@ -489,6 +489,18 @@ export function setup(state) {
     });
   });
 
+  // Clear All Tasks
+  const btnClearAllTasks = document.getElementById('btnClearAllTasks');
+  if (btnClearAllTasks) {
+    btnClearAllTasks.addEventListener('click', async () => {
+      if (!confirm(language.confirmClearAllTasks || 'Delete ALL tasks? This cannot be undone.')) return;
+      const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
+      const memos = (res[STORAGE_KEYS.MEMOS] || []).filter(m => m.type !== 'task');
+      await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
+      loadTasks();
+    });
+  }
+
   // Event delegation for task list
   document.getElementById('taskList').addEventListener('click', async (e) => {
     // Delete item

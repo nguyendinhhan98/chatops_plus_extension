@@ -1588,18 +1588,18 @@ function showToast(msg) {
     const spamEnabled = (floatingButtons.spamReactions !== false);
 
     if (!tasksEnabled) {
-      document.querySelectorAll('.chatops-quick-note-btn.task-btn').forEach(el => el.remove());
+      document.querySelectorAll('.chatops-action-group .chatops-quick-note-btn.task-btn').forEach(el => el.remove());
     }
     if (!notesEnabled) {
-      document.querySelectorAll('.chatops-quick-note-btn.note-btn').forEach(el => el.remove());
+      document.querySelectorAll('.chatops-action-group .chatops-quick-note-btn.note-btn').forEach(el => el.remove());
     }
     if (!spamEnabled) {
-      document.querySelectorAll('.chatops-quick-note-btn.spam-btn, .chatops-quick-note-btn.retract-btn').forEach(el => el.remove());
+      document.querySelectorAll('.chatops-action-group .chatops-quick-note-btn.spam-btn, .chatops-action-group .chatops-quick-note-btn.retract-btn').forEach(el => el.remove());
     }
     
     const isQuickDeleteEnabled = cachedSettings.quickDelete === true;
     if (!isQuickDeleteEnabled) {
-      document.querySelectorAll('.chatops-quick-note-btn.msg-delete-btn').forEach(el => el.remove());
+      document.querySelectorAll('.chatops-action-group .chatops-quick-note-btn.msg-delete-btn').forEach(el => el.remove());
     }
     
     injectQuickNoteButtons();
@@ -1637,6 +1637,9 @@ function showToast(msg) {
       const savedMemo = cachedMemos.find(m => m.postId === postId);
       const currentStatus = savedMemo ? savedMemo.type : 'none';
 
+      // Guard: skip if post no longer in DOM (fixes bug after quick add from outside ChatOps)
+      if (!postEl.isConnected) return;
+
       // Find the action bar within this post
       const actionArea = postEl.querySelector('.post-menu, .post__actions, .dot-menu__container, [class*="post-menu"], .post-action-menu');
       if (!actionArea) return;
@@ -1646,13 +1649,23 @@ function showToast(msg) {
       }
       postEl.dataset.chatopsStatus = currentStatus;
 
+      // Get or create a dedicated container for ChatOps buttons, prepended BEFORE native actions
+      let chatopsGroup = actionArea.querySelector('.chatops-action-group');
+      if (!chatopsGroup) {
+        chatopsGroup = document.createElement('span');
+        chatopsGroup.className = 'chatops-action-group';
+        chatopsGroup.style.cssText = 'display:inline-flex; align-items:center; gap:0;';
+        // Prepend so our buttons appear BEFORE Reply, Emoji, Bookmark etc.
+        actionArea.insertBefore(chatopsGroup, actionArea.firstChild);
+      }
+
       if (savedMemo) {
         // Hide normal create buttons if present
-        postEl.querySelector('.chatops-quick-note-btn.task-btn')?.remove();
-        postEl.querySelector('.chatops-quick-note-btn.note-btn')?.remove();
+        chatopsGroup.querySelector('.chatops-quick-note-btn.task-btn')?.remove();
+        chatopsGroup.querySelector('.chatops-quick-note-btn.note-btn')?.remove();
 
         // Inject Delete button (🗑️) if not present
-        if (!postEl.querySelector('.chatops-quick-note-btn.delete-btn')) {
+        if (!chatopsGroup.querySelector('.chatops-quick-note-btn.delete-btn')) {
           const deleteBtn = document.createElement('button');
           deleteBtn.className = 'chatops-quick-note-btn delete-btn';
           deleteBtn.innerHTML = '🗑️';
@@ -1676,15 +1689,15 @@ function showToast(msg) {
               console.error('[ChatOps Ext] Failed to delete memo:', err);
             }
           });
-          actionArea.appendChild(deleteBtn);
+          chatopsGroup.appendChild(deleteBtn);
         }
       } else {
         // Remove Delete button if not saved anymore
-        postEl.querySelector('.chatops-quick-note-btn.delete-btn')?.remove();
+        chatopsGroup.querySelector('.chatops-quick-note-btn.delete-btn')?.remove();
 
         // Inject Task button (🎯) if not present and enabled
         if (tasksEnabled) {
-          if (!postEl.querySelector('.chatops-quick-note-btn.task-btn')) {
+          if (!chatopsGroup.querySelector('.chatops-quick-note-btn.task-btn')) {
             const taskBtn = document.createElement('button');
             taskBtn.className = 'chatops-quick-note-btn task-btn';
             taskBtn.innerHTML = '🎯';
@@ -1693,15 +1706,15 @@ function showToast(msg) {
               e.preventDefault(); e.stopPropagation();
               openQuickNote(postEl, taskBtn, 'task');
             });
-            actionArea.appendChild(taskBtn);
+            chatopsGroup.appendChild(taskBtn);
           }
         } else {
-          postEl.querySelector('.chatops-quick-note-btn.task-btn')?.remove();
+          chatopsGroup.querySelector('.chatops-quick-note-btn.task-btn')?.remove();
         }
 
         // Inject Note button (📝) if not present and enabled
         if (notesEnabled) {
-          if (!postEl.querySelector('.chatops-quick-note-btn.note-btn')) {
+          if (!chatopsGroup.querySelector('.chatops-quick-note-btn.note-btn')) {
             const noteBtn = document.createElement('button');
             noteBtn.className = 'chatops-quick-note-btn note-btn';
             noteBtn.innerHTML = '📝';
@@ -1710,17 +1723,17 @@ function showToast(msg) {
               e.preventDefault(); e.stopPropagation();
               openQuickNote(postEl, noteBtn, 'note');
             });
-            actionArea.appendChild(noteBtn);
+            chatopsGroup.appendChild(noteBtn);
           }
         } else {
-          postEl.querySelector('.chatops-quick-note-btn.note-btn')?.remove();
+          chatopsGroup.querySelector('.chatops-quick-note-btn.note-btn')?.remove();
         }
       }
 
       // Handle Spam and Retract buttons conditionally!
       if (spamEnabled) {
         // Inject Spam button (🔥) if not present
-        if (!postEl.querySelector('.chatops-quick-note-btn.spam-btn')) {
+        if (!chatopsGroup.querySelector('.chatops-quick-note-btn.spam-btn')) {
           const spamBtn = document.createElement('button');
           spamBtn.className = 'chatops-quick-note-btn spam-btn';
           spamBtn.innerHTML = '🔥';
@@ -1748,11 +1761,11 @@ function showToast(msg) {
               }
             });
           });
-          actionArea.appendChild(spamBtn);
+          chatopsGroup.appendChild(spamBtn);
         }
 
         // Inject Retract button (↩️) if not present
-        if (!postEl.querySelector('.chatops-quick-note-btn.retract-btn')) {
+        if (!chatopsGroup.querySelector('.chatops-quick-note-btn.retract-btn')) {
           const retractBtn = document.createElement('button');
           retractBtn.className = 'chatops-quick-note-btn retract-btn';
           retractBtn.innerHTML = '↩️';
@@ -1780,18 +1793,18 @@ function showToast(msg) {
               }
             });
           });
-          actionArea.appendChild(retractBtn);
+          chatopsGroup.appendChild(retractBtn);
         }
       } else {
         // If not enabled, clean up any existing spam and retract buttons from this post
-        postEl.querySelectorAll('.chatops-quick-note-btn.spam-btn, .chatops-quick-note-btn.retract-btn').forEach(el => el.remove());
+        chatopsGroup.querySelectorAll('.chatops-quick-note-btn.spam-btn, .chatops-quick-note-btn.retract-btn').forEach(el => el.remove());
       }
 
       // Inject Delete Message button (🗑️ with red color) if it's our post and quickDelete is enabled
       const isOurPost = postEl.classList.contains('current--user') || (myUserId && postEl.getAttribute('data-user-id') === myUserId);
       const isQuickDeleteEnabled = cachedSettings.quickDelete === true;
       if (isOurPost && isQuickDeleteEnabled) {
-        if (!postEl.querySelector('.chatops-quick-note-btn.msg-delete-btn')) {
+        if (!chatopsGroup.querySelector('.chatops-quick-note-btn.msg-delete-btn')) {
           const msgDeleteBtn = document.createElement('button');
           msgDeleteBtn.className = 'chatops-quick-note-btn msg-delete-btn';
           msgDeleteBtn.innerHTML = '🗑️';
@@ -1816,10 +1829,10 @@ function showToast(msg) {
               }
             });
           });
-          actionArea.appendChild(msgDeleteBtn);
+          chatopsGroup.appendChild(msgDeleteBtn);
         }
       } else {
-        postEl.querySelector('.chatops-quick-note-btn.msg-delete-btn')?.remove();
+        chatopsGroup.querySelector('.chatops-quick-note-btn.msg-delete-btn')?.remove();
       }
     });
   }
