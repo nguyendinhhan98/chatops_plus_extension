@@ -56,7 +56,7 @@ const en = {
   scanMentionsStart: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">How to use?</h4><p class="card-desc">Click the floating button (🔔) at the bottom to configure filters and scan. It scans for posts where you were mentioned but haven\'t reacted or replied to yet.</p></div></div>',
   scanningChannels: 'Scanning channels...',
   scanTimeNotice: 'This process may take some time. You can explore other tabs/features and come back later to see the results.',
-  noMissedMentions: 'No missed mentions in the last {hours}h! 🎉',
+  noMissedMentions: 'No missed mentions in the last {hours}h!',
   mentionsFound: 'Detected {count} pending mentions in {channels} channels',
   notConnected: 'Not connected. Please check <a href="#" class="settings-subtab-link" data-subtab="features-toggle" style="color: var(--accent); font-weight: 700; text-decoration: underline;">Settings</a>.',
 
@@ -128,6 +128,7 @@ const en = {
 
   // Content Script - Image Picker
   imageLibrary: 'Images',
+  imageLibrarySettingsTitle: 'Image Settings',
   noCustomImages: 'No custom images yet',
   clickToSend: 'Click to send',
   deleteImage: 'Delete image',
@@ -211,9 +212,9 @@ const en = {
   supportVibecodingTitle: '☕ Support Development!',
   supportVibecodingDesc: 'If this extension has been helpful to you, consider buying the developer a coffee to support future projects 🚀',
   memoNotesLabel: 'Notes',
-  toolsTabLabel: 'Tools',
+  toolsTabLabel: 'Other Tools',
   toolsSearchSubTab: 'Search',
-  toolsMentionsSubTab: 'Mentions',
+  toolsMentionsSubTab: 'Missed Messages',
   toolsImagesSubTab: 'Images',
   toolsReactionsSubTab: 'Reactions',
   settingsTabLabel: 'Settings',
@@ -236,7 +237,7 @@ const en = {
   remindInPreset: 'Remind in...',
   noteTextareaPlaceholder: 'Write a note... (Shift + Enter to save)',
   categoryLabelPrefix: '📁 Category:',
-  customizeCategories: '⚙️ Customize Categories',
+  customizeCategories: '➕ Customize Categories',
   memoAddBtn: '📝 Add Note',
   last24Hours: 'Last 24 hours',
   last48Hours: 'Last 48 hours',
@@ -271,7 +272,7 @@ const en = {
   overviewSearchDesc: '<strong>Search Messages:</strong> Instant chat history query.',
   overviewTasksDesc: '<strong>Tasks:</strong> Smart task manager with snooze alerts.',
   overviewNotesDesc: '<strong>Notes:</strong> Category-based quick note-taking with instant click-to-copy individual lines.',
-  overviewMissedDesc: '<strong>Missed Mentions:</strong> Track missed channel messages.',
+  overviewMissedDesc: '<strong>Missed Messages:</strong> Track missed channel messages.',
   overviewSpamDesc: '<strong>Spam Reactions:</strong> Express multiple emojis instantly and retract them easily.',
   overviewImageDesc: '<strong>Images:</strong> Upload and quick-send your favorite personal images.',
   overviewQuickDeleteDesc: '<strong>Quick Delete:</strong> Instantly fade out and delete your own chat messages.',
@@ -291,7 +292,7 @@ const en = {
   giphyRateLimitWarning: '<strong>Giphy Free API Limit: 100 requests/hour</strong><br>To optimize, the extension automatically <strong>caches trending GIFs</strong> — only querying the API when you search. Please use your <strong>own API Key</strong> to avoid sharing the limit with others.',
   giphyApiKeyPlaceholder: 'Paste Giphy API Key here...',
   giphyGuideTitle: '🔑 How to get a free Giphy API Key',
-  giphyGuideStep1: 'Visit <a href="https://developers.giphy.com" target="_blank" style="color:var(--accent); text-decoration:none; font-weight:600;">developers.giphy.com</a>',
+  giphyGuideStep1: 'Visit <a href="https://https://developers.giphy.com/dashboard" target="_blank" style="color:var(--accent); text-decoration:none; font-weight:600;">https://developers.giphy.com/dashboard</a>',
   giphyGuideStep2: 'Click <strong>Create an API key</strong> → choose <strong>API (not SDK)</strong>',
   giphyGuideStep3: 'Enter any app name → click <strong>Next Step</strong>',
   giphyGuideStep4: 'Copy the provided <strong>API Key</strong> → paste it into the field above',
@@ -309,7 +310,6 @@ const en = {
   menuTabsDesc: 'Select which tabs you want to show in the sidepanel navigation. Hiding a tab will also disable its corresponding floating buttons outside ChatOps.',
   floatingButtonsTitle: 'Quick Actions on ChatOps',
   floatingButtonsDesc: 'Floating buttons & position layout',
-  floatingButtonsPerfHint: 'Disabling these floating buttons outside the sidepanel helps reduce CPU usage and page rendering lag on ChatOps.',
   floatingQuickTask: 'Create Task Button (🎯)',
   floatingQuickNote: 'Create Note Button (📝)',
   floatingSpamReactions: 'Spam Reactions Hover Buttons (🔥/↩️)',
@@ -435,7 +435,7 @@ const en = {
       <div>
         <h4 style="margin: 0 0 4px 0; color: var(--accent); font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px;">⚙️ 4. Advanced Settings</h4>
         <ul style="margin: 0; padding-left: 18px; color: var(--text-2); display: flex; flex-direction: column; gap: 3px;">
-          <li><strong>Tab Visibility:</strong> Toggle primary tabs (Search, Tasks, Notes, Mentions) on/off to simplify your panel interface.</li>
+          <li><strong>Tab Visibility:</strong> Toggle primary tabs (Search, Tasks, Notes, Missed Messages) on/off to simplify your panel interface.</li>
           <li><strong>Interface & Spacing:</strong> Personalize preset theme colors and layout densities to match your comfort.</li>
           <li><strong>Reactions & Image Setup:</strong> Configure your custom Emoji Spam quick list and manage your personal Image Library or Giphy API Key.</li>
           <li><strong>Auto-Cleanup:</strong> Automatically purge ancient notes/tasks older than X days to keep the local database fast.</li>
@@ -463,7 +463,7 @@ const en = {
           
           <div style="background: rgba(28,88,217,0.04); border-left: 3px solid var(--accent); padding: 6px 8px; border-radius: 4px;">
             <strong style="color: var(--accent);">⚡ Double-Click Shortcut:</strong>
-            <span style="color: var(--text-2);"> Double-click any navigation tab (Search, Tasks, Notes, Mentions) at the top of the sidepanel to instantly pop open the corresponding modal form!</span>
+            <span style="color: var(--text-2);"> Double-click any navigation tab (Search, Tasks, Notes, Missed Messages) at the top of the sidepanel to instantly pop open the corresponding modal form!</span>
           </div>
 
           <div style="background: rgba(28,88,217,0.04); border-left: 3px solid var(--accent); padding: 6px 8px; border-radius: 4px;">
@@ -547,8 +547,8 @@ const vi = {
   scanMentionsStart: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">Hướng dẫn sử dụng</h4><p class="card-desc">Nhấp vào nút (🔔) ở phía dưới để cấu hình bộ lọc và quét. Hệ thống sẽ quét các bài viết bạn được nhắc đến nhưng chưa phản hồi hoặc phản ứng.</p></div></div>',
   scanningChannels: 'Đang quét các kênh...',
   scanTimeNotice: 'Quá trình này có thể mất nhiều thời gian. Bạn có thể khám phá các tính năng khác rồi quay lại xem kết quả sau.',
-  noMissedMentions: 'Không có nhắc nhở bị bỏ lỡ trong {hours}h qua! 🎉',
-  mentionsFound: 'Phát hiện {count} nhắc nhở đang chờ xử lý trong {channels} kênh',
+  noMissedMentions: 'Không có tin nhắn bị bỏ lỡ trong {hours}h qua!',
+  mentionsFound: 'Phát hiện {count} tin nhắn bỏ lỡ đang chờ xử lý trong {channels} kênh',
   notConnected: 'Chưa kết nối. Vui lòng kiểm tra <a href="#" class="settings-subtab-link" data-subtab="features-toggle" style="color: var(--accent); font-weight: 700; text-decoration: underline;">Cài đặt</a>.',
 
   // Sidepanel Leave Tab
@@ -619,6 +619,7 @@ const vi = {
 
   // Content Script - Image Picker
   imageLibrary: 'Hình ảnh',
+  imageLibrarySettingsTitle: 'Cài đặt hình ảnh',
   noCustomImages: 'Chưa có ảnh tải lên',
   clickToSend: 'Nhấp để gửi',
   deleteImage: 'Xóa ảnh',
@@ -702,9 +703,9 @@ const vi = {
   supportVibecodingTitle: '☕ Hỗ trợ phát triển!',
   supportVibecodingDesc: 'Nếu tiện ích này hữu ích với bạn, hãy mời nhà phát triển một tách cà phê để tiếp thêm động lực cho những dự án mới nhé 🚀',
   memoNotesLabel: 'Ghi chú',
-  toolsTabLabel: 'Công cụ',
+  toolsTabLabel: 'Công cụ khác',
   toolsSearchSubTab: 'Tìm kiếm',
-  toolsMentionsSubTab: 'Nhắc tên',
+  toolsMentionsSubTab: 'Tin nhắn bỏ lỡ',
   toolsImagesSubTab: 'Hình ảnh',
   toolsReactionsSubTab: 'Cảm xúc',
   settingsTabLabel: 'Cài đặt',
@@ -727,7 +728,7 @@ const vi = {
   remindInPreset: 'Nhắc sau...',
   noteTextareaPlaceholder: 'Viết ghi chú... (Shift + Enter để lưu)',
   categoryLabelPrefix: '📁 Danh mục:',
-  customizeCategories: '⚙️ Tùy chỉnh danh mục',
+  customizeCategories: '➕ Tùy chỉnh danh mục',
   memoAddBtn: '📝 Thêm ghi chú',
   last24Hours: '24 giờ qua',
   last48Hours: '48 giờ qua',
@@ -762,7 +763,7 @@ const vi = {
   overviewSearchDesc: '<strong>Tìm kiếm tin nhắn:</strong> Truy vấn lịch sử trò chuyện tức thì.',
   overviewTasksDesc: '<strong>Công việc:</strong> Quản lý công việc thông minh với thông báo nhắc lại.',
   overviewNotesDesc: '<strong>Ghi chú:</strong> Ghi chú nhanh theo phân loại danh mục và hỗ trợ click để sao chép nhanh từng dòng.',
-  overviewMissedDesc: '<strong>Nhắc nhở bỏ lỡ:</strong> Theo dõi các tin nhắn kênh bị bỏ qua.',
+  overviewMissedDesc: '<strong>Tin nhắn bỏ lỡ:</strong> Theo dõi các tin nhắn kênh bị bỏ qua.',
   overviewSpamDesc: '<strong>Spam cảm xúc:</strong> Bày tỏ nhiều cảm xúc cùng lúc tức thì và thu hồi dễ dàng.',
   overviewImageDesc: '<strong>Hình ảnh:</strong> Tải lên và gửi nhanh các hình ảnh cá nhân yêu thích của bạn.',
   overviewQuickDeleteDesc: '<strong>Xóa nhanh tin nhắn:</strong> Xóa ngay lập tức các tin nhắn của chính bạn trên khung chat.',
@@ -782,7 +783,7 @@ const vi = {
   giphyRateLimitWarning: '<strong>Giphy Free API Limit: 100 requests/hour</strong><br>Để tối ưu, extension tự động <strong>cache trending GIFs</strong> — chỉ gọi API khi bạn tìm kiếm. Hãy dùng <strong>API Key riêng</strong> để không bị share giới hạn với người khác.',
   giphyApiKeyPlaceholder: 'Nhập API Key Giphy của bạn tại đây...',
   giphyGuideTitle: '🔑 Cách lấy Giphy API Key miễn phí',
-  giphyGuideStep1: 'Truy cập <a href="https://developers.giphy.com" target="_blank" style="color:var(--accent); text-decoration:none; font-weight:600;">developers.giphy.com</a>',
+  giphyGuideStep1: 'Truy cập <a href="https://developers.giphy.com/dashboard" target="_blank" style="color:var(--accent); text-decoration:none; font-weight:600;">developers.giphy.com/dashboard</a>',
   giphyGuideStep2: 'Nhấn <strong>Create an API key</strong> → chọn <strong>API (not SDK)</strong>',
   giphyGuideStep3: 'Đặt tên app bất kỳ → nhấn <strong>Next Step</strong>',
   giphyGuideStep4: 'Copy <strong>API Key</strong> được cấp → paste vào ô trên',
@@ -797,10 +798,9 @@ const vi = {
   featuresToggleTitle: 'Bật/Tắt Tính năng',
   featuresToggleDesc: 'Chọn mô-đun nào bạn muốn hiển thị trên thanh bên.',
   menuTabsTitle: 'Hiển thị Tab trong Menu',
-  menuTabsDesc: 'Chọn các tab bạn muốn hiển thị trên thanh bên Sidepanel. Ẩn tab sẽ tự động tắt các nút nổi tương ứng ngoài trang ChatOps.',
+  menuTabsDesc: 'Chọn các tab bạn muốn hiển thị trên thanh bên Sidepanel. Ẩn tab sẽ tự động tắt các nút tương tác nhanh tương ứng ngoài trang ChatOps.',
   floatingButtonsTitle: 'Nút tương tác nhanh trên ChatOps',
-  floatingButtonsDesc: 'Nút nổi & vị trí hiển thị',
-  floatingButtonsPerfHint: 'Tắt các nút nổi tương tác ngoài ChatOps sẽ giúp giảm tải CPU, tối ưu hiệu năng và tránh giật lag khi kênh chat có lượng tin nhắn lớn.',
+  floatingButtonsDesc: 'Nút tương tác nhanh & vị trí hiển thị',
   floatingQuickTask: 'Nút Tạo công việc (🎯)',
   floatingQuickNote: 'Nút Tạo ghi chú (📝)',
   floatingSpamReactions: 'Các nút Cảm xúc trên tin nhắn (🔥/↩️)',
@@ -926,7 +926,7 @@ const vi = {
       <div>
         <h4 style="margin: 0 0 4px 0; color: var(--accent); font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px;">⚙️ 4. Khám phá Cài đặt (Settings)</h4>
         <ul style="margin: 0; padding-left: 18px; color: var(--text-2); display: flex; flex-direction: column; gap: 3px;">
-          <li><strong>Ẩn/Hiện Tab:</strong> Cho phép ẩn hoặc hiển thị các Tab chính (Search, Tasks, Notes, Mentions) để giao diện tối giản, tập trung hơn.</li>
+          <li><strong>Ẩn/Hiện Tab:</strong> Cho phép ẩn hoặc hiển thị các Tab chính (Search, Tasks, Notes, Tin nhắn bỏ lỡ) để giao diện tối giản, tập trung hơn.</li>
           <li><strong>Giao diện & Khoảng cách:</strong> Thay đổi bảng màu chủ đạo (Theme) và độ giãn dòng hiển thị theo sở thích.</li>
           <li><strong>Cài đặt Reactions & Thư viện Ảnh:</strong> Thiết lập danh sách phím tắt Emoji Spam và quản lý thư viện ảnh cá nhân / Giphy API Key để tìm GIFs siêu tốc.</li>
           <li><strong>Tự Động Dọn Dẹp:</strong> Tự động xóa ghi chú hoặc công việc cũ sau số ngày cấu hình (ví dụ 30 ngày) để cơ sở dữ liệu luôn nhẹ và chạy nhanh.</li>
@@ -954,7 +954,7 @@ const vi = {
           
           <div style="background: rgba(28,88,217,0.04); border-left: 3px solid var(--accent); padding: 6px 8px; border-radius: 4px;">
             <strong style="color: var(--accent);">⚡ Click Đúp Mở Nhanh:</strong>
-            <span style="color: var(--text-2);"> Nhấp đúp (Double-click) chuột trực tiếp vào bất kỳ tab điều hướng nào ở trên cùng Sidepanel (Search, Tasks, Notes, Mentions) để mở ngay form nhập liệu tương ứng!</span>
+            <span style="color: var(--text-2);"> Nhấp đúp (Double-click) chuột trực tiếp vào bất kỳ tab điều hướng nào ở trên cùng Sidepanel (Search, Tasks, Notes, Tin nhắn bỏ lỡ) để mở ngay form nhập liệu tương ứng!</span>
           </div>
 
           <div style="background: rgba(28,88,217,0.04); border-left: 3px solid var(--accent); padding: 6px 8px; border-radius: 4px;">

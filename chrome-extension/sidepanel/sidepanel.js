@@ -174,6 +174,12 @@ async function setupWorkspaceSelector(teams, dropdownContainer) {
 function switchTab(id) {
   document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === id));
   document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === `tab-${id}`));
+  if (id === 'settings') {
+    document.querySelectorAll('.settings-accordion').forEach(acc => {
+      acc.classList.remove('open');
+      acc.classList.remove('highlighted');
+    });
+  }
 }
 
 /**
@@ -196,8 +202,14 @@ function setupTabs() {
           'spMemoForm',
           'spMemoFormPlaceholder'
         );
+      } else if (tab === 'mentions') {
+        window.ModalManager.open(
+          language.modalScannerFiltersTitle,
+          'spMentionsForm',
+          'spMentionsFormPlaceholder'
+        );
       } else if (tab === 'tools') {
-        // Double clicking Tools opens the filter dialog for active Tools sub-tab (search or mentions)
+        // Double clicking Tools opens the filter dialog for active Tools sub-tab (search)
         const activeSubBtn = document.querySelector('#toolsSubTabs .memo-sub-tab.active');
         const activeSub = activeSubBtn ? activeSubBtn.dataset.section : 'search';
         if (activeSub === 'search') {
@@ -205,12 +217,6 @@ function setupTabs() {
             language.modalSearchTitle,
             'spSearchForm',
             'spSearchFormPlaceholder'
-          );
-        } else if (activeSub === 'mentions') {
-          window.ModalManager.open(
-            language.modalScannerFiltersTitle,
-            'spMentionsForm',
-            'spMentionsFormPlaceholder'
           );
         }
       }
@@ -301,9 +307,9 @@ function setupTabs() {
   function handleStorageRedirect(targetTab, targetSubTab) {
     if (!targetTab) return;
     
-    // Support legacy tab redirects: search/mentions/reactions map to tools
+    // Support legacy tab redirects: search/reactions map to tools
     let mappedTab = targetTab;
-    if (targetTab === 'reactions' || targetTab === 'search' || targetTab === 'mentions') {
+    if (targetTab === 'reactions' || targetTab === 'search') {
       mappedTab = 'tools';
     }
     

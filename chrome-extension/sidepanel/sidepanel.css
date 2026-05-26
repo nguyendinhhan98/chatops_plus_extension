@@ -1347,8 +1347,10 @@ textarea.search-form-textarea {
 }
 
 .memo-sub-tab {
-  flex: 1 1 auto !important;
-  min-width: 60px !important;
+  flex: 1 1 0% !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
   white-space: nowrap !important;
   padding: var(--sub-tab-padding, 5px 10px) !important;
   background: none !important;
@@ -1421,6 +1423,33 @@ textarea.search-form-textarea {
   color: #0f172a !important;
   background: #e2e8f0 !important;
 }
+
+.settings-subtab-link {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid rgba(28, 88, 217, 0.15);
+  background: var(--accent-dim);
+  cursor: pointer;
+  color: var(--accent);
+  transition: all 0.2s ease;
+  outline: none;
+  border-radius: 6px;
+  padding: 0;
+  align-self: center;
+  margin-right: 4px;
+}
+.settings-subtab-link:hover {
+  background: var(--accent);
+  color: #ffffff;
+}
+.settings-subtab-link:hover svg {
+  transform: rotate(90deg);
+}
+
 
 .settings-subtab-btn.active {
   background: var(--accent) !important; /* Solid vibrant theme accent background */
@@ -2947,6 +2976,12 @@ span.flatpickr-weekday {
   transition: box-shadow 0.3s ease;
 }
 
+.settings-accordion.highlighted {
+  background-color: var(--accent-dim) !important;
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 12px var(--accent-dim) !important;
+}
+
 .settings-accordion:hover {
   box-shadow: 0 3px 12px rgba(0,0,0,0.05);
 }
@@ -2994,7 +3029,7 @@ span.flatpickr-weekday {
 }
 
 .settings-accordion-header .accordion-desc {
-  font-size: 11px;
+  font-size: 12.5px;
   color: var(--text-3);
   line-height: 1.3;
   margin-top: 1px;
@@ -3003,7 +3038,7 @@ span.flatpickr-weekday {
 .settings-accordion-header .accordion-arrow {
   font-size: 10px;
   color: var(--text-3);
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s ease;
   flex-shrink: 0;
   width: 22px;
   height: 22px;
@@ -3014,11 +3049,16 @@ span.flatpickr-weekday {
   background: var(--bg-2);
 }
 
+.settings-accordion:not(.open) .settings-accordion-header:hover .accordion-arrow {
+  background: var(--bg-1);
+}
+
 .settings-accordion.open .accordion-arrow {
   transform: rotate(180deg);
   background: var(--accent-dim);
   color: var(--accent);
 }
+
 
 .settings-accordion-body {
   max-height: 0;
@@ -3035,13 +3075,14 @@ span.flatpickr-weekday {
 
 /* Masonry grid classes for personal images synchronization */
 .chatops-custom-images-grid-container {
-  display: flex;
-  flex-direction: row;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
   gap: 12px;
   padding: 8px 0;
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden !important;
+  align-content: start;
 }
 
 .chatops-custom-images-column {
@@ -3057,13 +3098,15 @@ span.flatpickr-weekday {
   overflow: hidden;
   border: 1px solid var(--border);
   width: 100%;
-  background: var(--bg-1);
+  height: 120px;
+  background: var(--bg-3);
   box-sizing: border-box;
 }
 
 .chatops-custom-image-item {
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: cover;
   display: block;
   cursor: pointer;
   transition: opacity 0.15s, transform 0.15s;
@@ -3076,15 +3119,15 @@ span.flatpickr-weekday {
 
 .chatops-custom-image-delete {
   position: absolute;
-  top: 4px;
-  right: 4px;
-  background: rgba(0, 0, 0, 0.65);
+  top: 6px;
+  right: 6px;
+  background: rgba(15, 23, 42, 0.85);
   color: white;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 50%;
-  width: 18px;
-  height: 18px;
-  font-size: 11px;
+  width: 24px;
+  height: 24px;
+  font-size: 13px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3094,7 +3137,8 @@ span.flatpickr-weekday {
   font-weight: bold;
   outline: none;
   opacity: 0;
-  transition: opacity 0.2s, background 0.2s;
+  transition: opacity 0.2s, background 0.2s, transform 0.2s;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
   z-index: 5;
 }
 
@@ -3103,7 +3147,8 @@ span.flatpickr-weekday {
 }
 
 .chatops-custom-image-delete:hover {
-  background: rgba(220, 38, 38, 0.9) !important;
+  background: rgba(220, 38, 38, 0.95) !important;
+  transform: scale(1.1);
 }
 
 .chatops-custom-image-preview {

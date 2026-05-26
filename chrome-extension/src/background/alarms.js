@@ -8,20 +8,8 @@ import { formatDateTime } from '../utils/date.js';
  */
 export async function handleMentionCheck() {
   try {
-    const config = await getConfig();
-    if (!config.cookie && !config.csrf) return;
-    const me = await getMyProfile();
-    const team = await getTeamByName(config.teamName || CHATOPS_CONFIG.DEFAULT_TEAM);
-    const members = await getMyChannelMembers(team.id);
-
-    const totalMentions = members.reduce((sum, m) => sum + (m.mention_count || 0), 0);
-
-    if (totalMentions > 0) {
-      chrome.action.setBadgeText({ text: String(totalMentions) });
-      chrome.action.setBadgeBackgroundColor({ color: '#EF4444' });
-    } else {
-      chrome.action.setBadgeText({ text: '' });
-    }
+    // Disabled setting badge for unread mentions count per user request
+    chrome.action.setBadgeText({ text: '' });
   } catch (err) {
     console.warn('[ChatOps Extension] Mention check failed:', err.message);
   }

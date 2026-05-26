@@ -78,14 +78,6 @@ export function setup(state) {
         syncReminderDimming();
       },
       onOpen: function() {
-        if (presetSelect) {
-          presetSelect.value = '';
-          const customSelect = presetSelect.nextElementSibling;
-          if (customSelect && customSelect.classList.contains('custom-dropdown-container')) {
-            const selectedText = customSelect.querySelector('.custom-dropdown-selected-text');
-            if (selectedText) selectedText.textContent = 'Remind in...';
-          }
-        }
         syncReminderDimming();
       }
     });
@@ -93,14 +85,6 @@ export function setup(state) {
 
   if (reminderRow && fpQuick) {
     reminderRow.addEventListener('click', (e) => {
-      if (presetSelect) {
-        presetSelect.value = '';
-        const customSelect = presetSelect.nextElementSibling;
-        if (customSelect && customSelect.classList.contains('custom-dropdown-container')) {
-          const selectedText = customSelect.querySelector('.custom-dropdown-selected-text');
-          if (selectedText) selectedText.textContent = 'Remind in...';
-        }
-      }
       syncReminderDimming();
       if (e.target !== reminderInput) {
         fpQuick.open();

@@ -476,56 +476,64 @@ async function validateGiphyApiKey(key) {
 function setupEventListeners() {
   const fileInput = document.getElementById('sidepanel-meme-upload');
   if (fileInput) {
-    fileInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
+    fileInput.addEventListener('change', async (e) => {
+      const files = Array.from(e.target.files);
+      if (files.length === 0) return;
 
-      if (!file.type.startsWith('image/')) {
-        alert(language.uploadOnlyImages);
-        fileInput.value = '';
-        return;
-      }
+      const res = await chrome.storage.local.get(['custom_memes']);
+      const customMemes = res.custom_memes || [];
 
-      const processDataUrl = async (dataUrl) => {
-        const res = await chrome.storage.local.get(['custom_memes']);
-        const customMemes = res.custom_memes || [];
-
-        const getBase64Size = (url) => {
-          if (!url) return 0;
-          const base64Part = url.split(',')[1];
-          if (!base64Part) return url.length;
-          const padding = base64Part.endsWith('==') ? 2 : (base64Part.endsWith('=') ? 1 : 0);
-          return (base64Part.length * 3 / 4) - padding;
-        };
-
-        let totalBytes = 0;
-        customMemes.forEach(url => {
-          totalBytes += getBase64Size(url);
-        });
-
-        const newBytes = getBase64Size(dataUrl);
-
-        if (totalBytes + newBytes > 10 * 1024 * 1024) {
-          alert(language.storageLimitExceeded);
-          fileInput.value = '';
-          return;
-        }
-
-        customMemes.unshift(dataUrl);
-        await chrome.storage.local.set({ custom_memes: customMemes });
-        fileInput.value = '';
-        renderSidepanelMemes();
+      const getBase64Size = (url) => {
+        if (!url) return 0;
+        const base64Part = url.split(',')[1];
+        if (!base64Part) return url.length;
+        const padding = base64Part.endsWith('==') ? 2 : (base64Part.endsWith('=') ? 1 : 0);
+        return (base64Part.length * 3 / 4) - padding;
       };
 
-      if (file.type === 'image/gif') {
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-          processDataUrl(ev.target.result);
-        };
-        reader.readAsDataURL(file);
-      } else {
-        compressSidepanelImage(file, 1000, 1000, 0.9, processDataUrl);
+      let totalBytes = 0;
+      customMemes.forEach(url => {
+        totalBytes += getBase64Size(url);
+      });
+
+      let hitLimit = false;
+
+      for (const file of files) {
+        if (!file.type.startsWith('image/')) {
+          alert(`${file.name}: ${language.uploadOnlyImages}`);
+          continue;
+        }
+
+        const dataUrl = await new Promise((resolve) => {
+          if (file.type === 'image/gif') {
+            const reader = new FileReader();
+            reader.onload = (ev) => resolve(ev.target.result);
+            reader.readAsDataURL(file);
+          } else {
+            compressSidepanelImage(file, 1000, 1000, 0.9, (compressedUrl) => {
+              resolve(compressedUrl);
+            });
+          }
+        });
+
+        if (dataUrl) {
+          const newBytes = getBase64Size(dataUrl);
+          if (totalBytes + newBytes > 10 * 1024 * 1024) {
+            hitLimit = true;
+            break;
+          }
+          totalBytes += newBytes;
+          customMemes.unshift(dataUrl);
+        }
       }
+
+      if (hitLimit) {
+        alert(language.storageLimitExceeded);
+      }
+
+      await chrome.storage.local.set({ custom_memes: customMemes });
+      fileInput.value = '';
+      renderSidepanelMemes();
     });
   }
 
@@ -1059,6 +1067,12 @@ function setupEventListeners() {
         targetPanel.style.display = 'block';
         targetPanel.classList.add('active');
       }
+      
+      // Collapse all accordions to not store/remember open states
+      document.querySelectorAll('.settings-accordion').forEach(acc => {
+        acc.classList.remove('open');
+        acc.classList.remove('highlighted');
+      });
     }
   });
 
@@ -1189,9 +1203,12 @@ function setupEventListeners() {
         // Close all other accordions first
         document.querySelectorAll('.settings-accordion').forEach(acc => {
           acc.classList.remove('open');
+          acc.classList.remove('highlighted');
         });
-        // Open target accordion
+        // Open and highlight target accordion
         accordion.classList.add('open');
+        accordion.classList.add('highlighted');
+        
         // Scroll into view
         setTimeout(() => {
           accordion.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1406,7 +1423,11 @@ function setupEventListeners() {
   document.querySelectorAll('.settings-accordion-header').forEach(header => {
     header.addEventListener('click', (e) => {
       if (e.target.closest('input, button, a, select')) return;
-      header.parentElement.classList.toggle('open');
+      const acc = header.parentElement;
+      acc.classList.toggle('open');
+      if (!acc.classList.contains('open')) {
+        acc.classList.remove('highlighted');
+      }
     });
   });
 }
@@ -1873,7 +1894,8 @@ export function applyTabVisibilityToDOM(showTabs, memeEnabled) {
   // Main tabs visibility
   const tasksVisible = showTabs.tasks !== false;
   const notesVisible = showTabs.notes !== false;
-  const toolsVisible = (showTabs.search !== false) || (showTabs.missed !== false) || (memeEnabled !== false);
+  const mentionsVisible = showTabs.missed !== false;
+  const toolsVisible = (showTabs.search !== false) || (memeEnabled !== false);
   const settingsVisible = true; // Settings is always visible
   
   // Set main tab buttons visibility
@@ -1882,6 +1904,9 @@ export function applyTabVisibilityToDOM(showTabs, memeEnabled) {
   
   const notesBtn = document.querySelector('.tab-btn[data-tab="memo"]');
   if (notesBtn) notesBtn.style.display = notesVisible ? 'flex' : 'none';
+  
+  const mentionsBtn = document.querySelector('.tab-btn[data-tab="mentions"]');
+  if (mentionsBtn) mentionsBtn.style.display = mentionsVisible ? 'flex' : 'none';
   
   const toolsBtn = document.querySelector('.tab-btn[data-tab="tools"]');
   if (toolsBtn) toolsBtn.style.display = toolsVisible ? 'flex' : 'none';
@@ -1893,9 +1918,6 @@ export function applyTabVisibilityToDOM(showTabs, memeEnabled) {
   const subSearchBtn = document.querySelector('#toolsSubTabs .memo-sub-tab[data-section="search"]');
   if (subSearchBtn) subSearchBtn.style.display = showTabs.search !== false ? 'block' : 'none';
 
-  const subMentionsBtn = document.querySelector('#toolsSubTabs .memo-sub-tab[data-section="mentions"]');
-  if (subMentionsBtn) subMentionsBtn.style.display = showTabs.missed !== false ? 'block' : 'none';
-
   const subImagesBtn = document.querySelector('#toolsSubTabs .memo-sub-tab[data-section="images"]');
   if (subImagesBtn) subImagesBtn.style.display = memeEnabled !== false ? 'block' : 'none';
 
@@ -1903,6 +1925,7 @@ export function applyTabVisibilityToDOM(showTabs, memeEnabled) {
   let firstVisibleTabId = 'tasks';
   if (tasksVisible) firstVisibleTabId = 'tasks';
   else if (notesVisible) firstVisibleTabId = 'memo';
+  else if (mentionsVisible) firstVisibleTabId = 'mentions';
   else if (toolsVisible) firstVisibleTabId = 'tools';
   else firstVisibleTabId = 'settings';
 
@@ -1914,6 +1937,7 @@ export function applyTabVisibilityToDOM(showTabs, memeEnabled) {
     if (activeTab === 'memo') isCurrentTabVisible = notesVisible;
     else if (activeTab === 'tools') isCurrentTabVisible = toolsVisible;
     else if (activeTab === 'tasks') isCurrentTabVisible = tasksVisible;
+    else if (activeTab === 'mentions') isCurrentTabVisible = mentionsVisible;
     else if (activeTab === 'settings') isCurrentTabVisible = settingsVisible;
 
     if (!isCurrentTabVisible) {
@@ -1928,7 +1952,6 @@ export function applyTabVisibilityToDOM(showTabs, memeEnabled) {
     const activeSub = activeToolsSubBtn.dataset.section;
     let isSubVisible = true;
     if (activeSub === 'search') isSubVisible = showTabs.search !== false;
-    else if (activeSub === 'mentions') isSubVisible = showTabs.missed !== false;
     else if (activeSub === 'images') isSubVisible = memeEnabled !== false;
 
     if (!isSubVisible) {
@@ -2007,41 +2030,29 @@ export async function renderSidepanelMemes() {
     return;
   }
 
-  container.style.display = 'flex';
-  container.style.flexDirection = 'row';
+  container.style.display = 'grid';
+  container.style.gridTemplateColumns = 'repeat(auto-fill, minmax(130px, 1fr))';
   container.style.gap = '12px';
   container.style.minHeight = '300px';
   container.style.background = 'var(--bg-2)';
   container.style.border = '1px solid var(--border)';
   container.style.padding = '12px';
+  container.style.alignContent = 'start';
 
-  let col1Html = '';
-  let col2Html = '';
+  let html = '';
 
   customMemes.forEach((url, idx) => {
     const formattedSize = formatSize(memeSizes[idx]);
-    const cardHtml = `
+    html += `
       <div class="chatops-custom-image-cell">
         <img src="${url}" class="chatops-custom-image-item" loading="lazy" />
         <span class="sidepanel-meme-size" style="bottom: 4px; left: 4px;">${formattedSize}</span>
         <button class="chatops-custom-image-delete" data-idx="${idx}" title="${language.deleteImage || 'Delete Image'}">&times;</button>
       </div>
     `;
-    if (idx % 2 === 0) {
-      col1Html += cardHtml;
-    } else {
-      col2Html += cardHtml;
-    }
   });
 
-  container.innerHTML = `
-    <div class="chatops-custom-images-column">
-      ${col1Html}
-    </div>
-    <div class="chatops-custom-images-column">
-      ${col2Html}
-    </div>
-  `;
+  container.innerHTML = html;
 }
 
 export function compressSidepanelImage(file, maxWidth, maxHeight, quality, callback) {

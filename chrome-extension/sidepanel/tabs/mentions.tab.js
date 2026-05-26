@@ -126,6 +126,10 @@ export function clearResults() {
   if (resultsEl) {
     resultsEl.innerHTML = `<div class="empty-state">${language.scanMentionsStart}</div>`;
   }
+  const mentionBadge = document.getElementById('mentionTabBadge');
+  if (mentionBadge) {
+    mentionBadge.textContent = '';
+  }
 }
 
 /**
@@ -152,6 +156,10 @@ function renderScannedMentions(isLoadMore = false) {
   const currentUser = _state.getUser();
 
   const totalMissed = scannedResults.reduce((sum, r) => sum + r.posts.length, 0);
+  const mentionBadge = document.getElementById('mentionTabBadge');
+  if (mentionBadge) {
+    mentionBadge.textContent = totalMissed > 0 ? totalMissed : '';
+  }
   const maxPosts = (currentMentionPage + 1) * 20;
 
   // Slice results up to maxPosts
@@ -453,7 +461,7 @@ async function scanMentionsDeep() {
 
     if (scanResults.length === 0) {
       isScanning = false;
-      resultsEl.innerHTML = `<div class="empty-state">✅ ${language.noMissedMentions.replace('{hours}', hours)}</div>`;
+      resultsEl.innerHTML = `<div class="empty-state">${language.noMissedMentions.replace('{hours}', hours)}</div>`;
       return;
     }
 

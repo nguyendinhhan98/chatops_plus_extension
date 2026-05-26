@@ -451,7 +451,7 @@ function showToast(msg) {
       btn.classList.remove('in-sidebar');
       btn.style.left = '';
       btn.style.top = '';
-      btn.style.bottom = '80px';
+      btn.style.bottom = '160px';
       btn.style.right = '20px';
       btn.style.transform = '';
     }
@@ -494,6 +494,9 @@ function showToast(msg) {
     alignButtonToSidebar();
     updateFloatingBadgeCount();
   }, 1500); // 1.5s robust fallback
+
+  // Periodically align button to vertical sidebar to survive Mattermost React updates/re-renders
+  setInterval(alignButtonToSidebar, 2000);
 
   const handleFloatingBtnClick = (e) => {
     if (e) {
@@ -640,32 +643,19 @@ function showToast(msg) {
       return;
     }
 
-    let col1Html = '';
-    let col2Html = '';
+    let html = '';
     
     customMemes.forEach((url, idx) => {
-      const cardHtml = `
+      html += `
         <div class="chatops-custom-image-cell">
           <img src="${url}" class="chatops-custom-image-item" loading="lazy" title="${language.clickToSend}" />
           <button class="chatops-custom-image-preview" data-idx="${idx}" title="${language.previewImage || 'Preview full image'}">&#x1F50D;</button>
           <button class="chatops-custom-image-delete" data-idx="${idx}" title="${language.deleteImage}">&times;</button>
         </div>
       `;
-      if (idx % 2 === 0) {
-        col1Html += cardHtml;
-      } else {
-        col2Html += cardHtml;
-      }
     });
 
-    container.innerHTML = `
-      <div class="chatops-custom-images-column">
-        ${col1Html}
-      </div>
-      <div class="chatops-custom-images-column">
-        ${col2Html}
-      </div>
-    `;
+    container.innerHTML = html;
   }
 
   // ─── Image Preview (hover/click) ───
@@ -675,13 +665,25 @@ function showToast(msg) {
       overlay = document.createElement('div');
       overlay.id = 'chatops-image-preview-overlay';
       overlay.className = 'chatops-image-preview-overlay';
-      overlay.innerHTML = `<img id="chatops-image-preview-img" src="" alt="preview" />`;
-      overlay.addEventListener('click', () => overlay.classList.add('hidden'));
+      overlay.innerHTML = `
+        <button id="chatops-image-preview-close" class="chatops-image-preview-close-btn">&times;</button>
+        <div class="chatops-image-preview-wrapper" style="position: relative; display: inline-block;">
+          <img id="chatops-image-preview-img" src="" alt="preview" />
+        </div>
+      `;
+      overlay.addEventListener('click', (e) => {
+        if (e.target.id === 'chatops-image-preview-img') {
+          e.stopPropagation();
+          return;
+        }
+        overlay.classList.add('hidden');
+      });
       document.body.appendChild(overlay);
     }
     overlay.querySelector('#chatops-image-preview-img').src = src;
     overlay.classList.remove('hidden');
   }
+
 
   function compressImage(file, maxWidth, maxHeight, quality, callback) {
     const reader = new FileReader();
@@ -893,6 +895,7 @@ function showToast(msg) {
         imagePickerEl.classList.add('hidden');
       });
       document.addEventListener('click', (e) => {
+        if (!imagePickerEl) return;
         const isClickInside = imagePickerEl.contains(e.target);
         const isClickAnchor = e.target.closest('.chatops-ext-image-picker-btn');
         const isClickPreview = e.target.closest('#chatops-image-preview-overlay') || e.target.closest('.chatops-image-preview-overlay');
@@ -1030,10 +1033,12 @@ function showToast(msg) {
       const resSettings = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS]);
       const settings = resSettings[STORAGE_KEYS.SETTINGS] || {};
       const apiKey = settings.giphyApiKey || '';
+      const hintNotice = document.querySelector('.chatops-gif-hint-notice');
 
       // No API key configured — show setup hint and hide search box
       if (!apiKey) {
         if (searchArea) searchArea.style.display = 'none';
+        if (hintNotice) hintNotice.style.display = 'none';
         grid.innerHTML = `
           <div style="grid-column: span 3; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; min-height: 180px; padding: 12px; text-align:center; box-sizing:border-box;">
             <span style="color:var(--text-3); font-size:12px; display:block; margin:0; padding:0;">${language.giphyNoApiKey}</span>
@@ -1055,8 +1060,11 @@ function showToast(msg) {
         return;
       }
 
-      // If key is present, show search box by default
+      // If key is present, show search box and toggle hint based on search query
       if (searchArea) searchArea.style.display = 'flex';
+      if (hintNotice) {
+        hintNotice.style.display = query.trim() === '' ? 'flex' : 'none';
+      }
 
       // Reuse trending cache for same API key
       if (query.trim() === '' && cachedPickerTrendingGifs.length > 0 && cachedPickerTrendingApiKey === apiKey) {
@@ -1095,6 +1103,7 @@ function showToast(msg) {
       // If API query fails (invalid key or rate limit) on initial load, hide search bar and show setup link
       if (query.trim() === '') {
         if (searchArea) searchArea.style.display = 'none';
+        if (hintNotice) hintNotice.style.display = 'none';
         grid.innerHTML = `
           <div style="grid-column: span 3; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; min-height: 180px; padding: 12px; text-align:center; box-sizing:border-box;">
             <span style="color:#ef4444; font-size:12px; display:block; margin:0; padding:0;">${language.giphyInvalidKey}</span>
@@ -1118,9 +1127,11 @@ function showToast(msg) {
       grid.innerHTML = '<div style="grid-column: span 3; display:flex; align-items:center; justify-content:center; min-height: 100px;"><span class="chatops-image-empty">No GIFs found</span></div>';
     } catch (err) {
       console.error('Failed to load GIFs in picker:', err);
+      const hintNotice = document.querySelector('.chatops-gif-hint-notice');
       // Hide search bar if it is initial load error
       if (query.trim() === '') {
         if (searchArea) searchArea.style.display = 'none';
+        if (hintNotice) hintNotice.style.display = 'none';
         grid.innerHTML = `
           <div style="grid-column: span 3; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; min-height: 180px; padding: 12px; text-align:center; box-sizing:border-box;">
             <span style="color:#ef4444; font-size:12px; display:block; margin:0; padding:0;">${language.giphyConnectionError}</span>
