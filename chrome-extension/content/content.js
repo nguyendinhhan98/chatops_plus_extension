@@ -12,6 +12,7 @@ let quickNoteBackdrop = null;
 let imagePickerEl = null;
 let observer = null;
 let globalInsertImageToChat = null;
+let activeChatTextarea = null;
 
 function runWithObserverDisabled(fn) {
   if (observer) {
@@ -105,9 +106,10 @@ async function injectDynamicTheme() {
     .chatops-reminder-banner { border-top-color: var(--chatops-accent) !important; }
     .crb-title { color: var(--chatops-accent) !important; }
     .crb-progress { background: var(--chatops-accent) !important; }
-    .btn-primary { background: var(--chatops-accent) !important; color: ${accentTextColor} !important; }
+    .chatops-btn-primary { background: var(--chatops-accent) !important; color: ${accentTextColor} !important; }
     .cqn-mode-btn.active { color: var(--chatops-accent) !important; border-color: var(--chatops-accent) !important; background: rgba(0,0,0,0.05) !important; }
     .cqn-preview { border-left-color: var(--chatops-accent) !important; }
+    .chatops-toast { background: var(--chatops-accent) !important; color: ${accentTextColor} !important; border-left: none !important; }
   `;
 }
 
@@ -398,8 +400,17 @@ function showToast(msg) {
   btn.appendChild(badgeEl);
 
   closeIconBtn.addEventListener('click', (e) => {
+    e.preventDefault();
     e.stopPropagation();
     btn.remove();
+  });
+  closeIconBtn.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  });
+  closeIconBtn.addEventListener('mouseup', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
   });
 
   // Function to align the floating button under the last team icon
@@ -620,12 +631,32 @@ function showToast(msg) {
       return;
     }
 
-    container.innerHTML = customMemes.map((url, idx) => `
-      <div class="chatops-custom-image-cell">
-        <img src="${url}" class="chatops-custom-image-item" loading="lazy" title="${language.clickToSend}" />
-        <button class="chatops-custom-image-delete" data-idx="${idx}" title="${language.deleteImage}">&times;</button>
+    let col1Html = '';
+    let col2Html = '';
+    
+    customMemes.forEach((url, idx) => {
+      const cardHtml = `
+        <div class="chatops-custom-image-cell">
+          <img src="${url}" class="chatops-custom-image-item" loading="lazy" title="${language.clickToSend}" />
+          <button class="chatops-custom-image-preview" data-idx="${idx}" title="Preview full image">&#x1F50D;</button>
+          <button class="chatops-custom-image-delete" data-idx="${idx}" title="${language.deleteImage}">&times;</button>
+        </div>
+      `;
+      if (idx % 2 === 0) {
+        col1Html += cardHtml;
+      } else {
+        col2Html += cardHtml;
+      }
+    });
+
+    container.innerHTML = `
+      <div class="chatops-custom-images-column">
+        ${col1Html}
       </div>
-    `).join('');
+      <div class="chatops-custom-images-column">
+        ${col2Html}
+      </div>
+    `;
   }
 
   // ─── Image Preview (hover/click) ───
@@ -761,6 +792,18 @@ function showToast(msg) {
           return;
         }
 
+        const previewBtn = e.target.closest('.chatops-custom-image-preview');
+        if (previewBtn) {
+          e.stopPropagation();
+          const idx = parseInt(previewBtn.dataset.idx, 10);
+          const res = await chrome.storage.local.get(['custom_memes']);
+          const customMemes = res.custom_memes || [];
+          if (customMemes[idx]) {
+            openImagePreview(customMemes[idx]);
+          }
+          return;
+        }
+
         const delBtn = e.target.closest('.chatops-custom-image-delete');
         if (delBtn) {
           e.stopPropagation();
@@ -770,6 +813,15 @@ function showToast(msg) {
           customMemes.splice(idx, 1);
           await chrome.storage.local.set({ custom_memes: customMemes });
           loadCustomImages();
+        }
+      });
+
+      // Double-click to preview custom images
+      container.addEventListener('dblclick', (e) => {
+        const img = e.target.closest('.chatops-custom-image-item');
+        if (img) {
+          e.stopPropagation();
+          openImagePreview(img.src);
         }
       });
     }
@@ -818,6 +870,9 @@ function showToast(msg) {
                 style="width: 100%; padding: 6px 28px 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 11px; outline: none; font-family: inherit; background:#fff; box-sizing:border-box;">
               <span style="position: absolute; right: 8px; font-size: 11px; color: #888; pointer-events: none;">🔍</span>
             </div>
+            <div class="chatops-gif-hint-notice" style="font-size: 11.5px; color: #555; background: #f5f5f7; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 10px; line-height: 1.4; box-sizing: border-box; display: flex; align-items: flex-start; gap: 4px; margin-top: 1px;">
+              <span data-i18n="gifDefaultHint">${language.gifDefaultHint}</span>
+            </div>
             <div id="chatops-picker-gifs-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; flex: 1; overflow-y: auto; padding: 2px 2px;">
               <!-- GIFs rendered here dynamically -->
             </div>
@@ -831,7 +886,8 @@ function showToast(msg) {
       document.addEventListener('click', (e) => {
         const isClickInside = imagePickerEl.contains(e.target);
         const isClickAnchor = e.target.closest('.chatops-ext-image-picker-btn');
-        if (!isClickInside && !isClickAnchor) {
+        const isClickPreview = e.target.closest('#chatops-image-preview-overlay') || e.target.closest('.chatops-image-preview-overlay');
+        if (!isClickInside && !isClickAnchor && !isClickPreview) {
           imagePickerEl.classList.add('hidden');
         }
       });
@@ -880,10 +936,32 @@ function showToast(msg) {
             imagePickerEl.classList.add('hidden');
           }
         });
+
+        // Double-click to preview in full
+        pickerGifsGrid.addEventListener('dblclick', (e) => {
+          const clickedImg = e.target.closest('img');
+          const clickedItem = e.target.closest('.chatops-picker-meme-item');
+          if (clickedImg && clickedItem) {
+            e.stopPropagation();
+            const url = clickedItem.dataset.url;
+            openImagePreview(url);
+          }
+        });
       }
 
       loadCustomImages();
       registerCustomImageEvents();
+    }
+
+    // Set the tracking variables
+    const container = anchorBtn.closest('.post-create-body, .input-container, .post-body__cell, .post-create, form, [class*="post-create"]');
+    if (container) {
+      activeChatTextarea = container.querySelector('textarea');
+    } else {
+      activeChatTextarea = document.getElementById(targetTextboxId) || 
+        (targetTextboxId === 'reply_textbox'
+          ? document.querySelector('#reply_textbox, .sidebar-right textarea, .rhs-thread textarea, .sidebar--right textarea, [placeholder*="reply" i]')
+          : document.querySelector('#post_textbox, .post-create-body textarea, [placeholder*="write" i]'));
     }
 
     imagePickerEl.dataset.activeTextbox = targetTextboxId || 'post_textbox';
@@ -903,7 +981,7 @@ function showToast(msg) {
       loadCustomImages();
       const rect = anchorBtn.getBoundingClientRect();
       imagePickerEl.style.bottom = `${window.innerHeight - rect.top + 10}px`;
-      imagePickerEl.style.left = `${Math.max(10, rect.left - 260)}px`;
+      imagePickerEl.style.left = `${Math.max(10, rect.left - 320)}px`;
       imagePickerEl.classList.remove('hidden');
     } else {
       imagePickerEl.classList.add('hidden');
@@ -1050,13 +1128,16 @@ function showToast(msg) {
 
   function insertImageToChat(url) {
     globalInsertImageToChat = insertImageToChat;
-    const targetId = imagePickerEl?.dataset.activeTextbox || 'post_textbox';
-    let textarea = document.getElementById(targetId);
+    let textarea = activeChatTextarea;
     if (!textarea) {
-      if (targetId === 'reply_textbox') {
-        textarea = document.querySelector('#reply_textbox, .sidebar-right textarea, .rhs-thread textarea, .sidebar--right textarea, [placeholder*="reply" i]');
-      } else {
-        textarea = document.querySelector('#post_textbox, .post-create-body textarea, [placeholder*="write" i]');
+      const targetId = imagePickerEl?.dataset.activeTextbox || 'post_textbox';
+      textarea = document.getElementById(targetId);
+      if (!textarea) {
+        if (targetId === 'reply_textbox') {
+          textarea = document.querySelector('#reply_textbox, .sidebar-right textarea, .rhs-thread textarea, .sidebar--right textarea, [placeholder*="reply" i]');
+        } else {
+          textarea = document.querySelector('#post_textbox, .post-create-body textarea, [placeholder*="write" i]');
+        }
       }
     }
     if (!textarea) return;
@@ -1287,8 +1368,8 @@ function showToast(msg) {
         </div>
 
         <div style="display: flex; gap: 8px; margin-top: 16px; justify-content: flex-end; width: 100%; border-top: 1px solid #cbd5e1; padding-top: 12px; box-sizing: border-box;">
-          <button type="button" id="cqn-cancel" class="btn btn-secondary" style="padding: 0 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid #cbd5e1; background: transparent; height: 36px; color: #475569; display: inline-flex; align-items: center; justify-content: center; margin: 0; box-sizing: border-box;">${language.cancel}</button>
-          <button type="button" id="cqn-save-note" class="btn btn-primary" style="padding: 0 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; background: #1c58d9; color: #fff; border: none; height: 36px; min-width: 90px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 4px rgba(28, 88, 217, 0.2); margin: 0; box-sizing: border-box;">🎯 Add Task</button>
+          <button type="button" id="cqn-cancel" class="chatops-btn chatops-btn-secondary" style="padding: 0 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid #cbd5e1; background: transparent; height: 36px; color: #475569; display: inline-flex; align-items: center; justify-content: center; margin: 0; box-sizing: border-box;">${language.cancel}</button>
+          <button type="button" id="cqn-save-note" class="chatops-btn chatops-btn-primary" style="padding: 0 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; background: #1c58d9; color: #fff; border: none; height: 36px; min-width: 90px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 4px rgba(28, 88, 217, 0.2); margin: 0; box-sizing: border-box;">🎯 Add Task</button>
         </div>
       </div>
     `;
@@ -1310,32 +1391,11 @@ function showToast(msg) {
 
     function syncReminderDimming() {
       const customSelect = cqnReminderSelect?.nextElementSibling;
-      const hasDate = timeInput && timeInput.value.trim() !== '';
-      const hasPreset = cqnReminderSelect && cqnReminderSelect.value !== '';
-
-      if (hasDate) {
-        if (customSelect && customSelect.classList.contains('custom-dropdown-container')) {
-          customSelect.style.opacity = '0.35';
-          customSelect.style.transition = 'opacity 0.2s ease';
-        }
-        if (reminderRow) {
-          reminderRow.style.opacity = '1';
-        }
-      } else if (hasPreset) {
-        if (reminderRow) {
-          reminderRow.style.opacity = '0.35';
-          reminderRow.style.transition = 'opacity 0.2s ease';
-        }
-        if (customSelect && customSelect.classList.contains('custom-dropdown-container')) {
-          customSelect.style.opacity = '1';
-        }
-      } else {
-        if (reminderRow) {
-          reminderRow.style.opacity = '1';
-        }
-        if (customSelect && customSelect.classList.contains('custom-dropdown-container')) {
-          customSelect.style.opacity = '1';
-        }
+      if (reminderRow) {
+        reminderRow.style.opacity = '1';
+      }
+      if (customSelect && customSelect.classList.contains('custom-dropdown-container')) {
+        customSelect.style.opacity = '1';
       }
     }
 
@@ -1349,7 +1409,7 @@ function showToast(msg) {
               const customSelect = cqnReminderSelect.nextElementSibling;
               if (customSelect && customSelect.classList.contains('custom-dropdown-container')) {
                 const selectedText = customSelect.querySelector('.custom-dropdown-selected-text');
-                if (selectedText) selectedText.textContent = 'Remind in...';
+                if (selectedText) selectedText.textContent = language.remindInPreset;
               }
             }
           }
@@ -1361,7 +1421,7 @@ function showToast(msg) {
             const customSelect = cqnReminderSelect.nextElementSibling;
             if (customSelect && customSelect.classList.contains('custom-dropdown-container')) {
               const selectedText = customSelect.querySelector('.custom-dropdown-selected-text');
-              if (selectedText) selectedText.textContent = 'Remind in...';
+              if (selectedText) selectedText.textContent = language.remindInPreset;
             }
           }
           syncReminderDimming();
@@ -1378,7 +1438,7 @@ function showToast(msg) {
           const customSelect = cqnReminderSelect.nextElementSibling;
           if (customSelect && customSelect.classList.contains('custom-dropdown-container')) {
             const selectedText = customSelect.querySelector('.custom-dropdown-selected-text');
-            if (selectedText) selectedText.textContent = 'Remind in...';
+            if (selectedText) selectedText.textContent = language.remindInPreset;
           }
         }
         syncReminderDimming();
@@ -1799,7 +1859,11 @@ function showToast(msg) {
               spamBtn.disabled = false;
 
               if (!res || !res.ok) {
-                showToast(language.spamErrorPrefix + (res?.error || language.unknown));
+                let errMsg = res?.error || language.unknown;
+                if (errMsg.toLowerCase().includes('unable to save reaction')) {
+                  errMsg = language.reactionAlreadyExists;
+                }
+                showToast(language.spamErrorPrefix + errMsg);
               }
             });
           });
@@ -1831,7 +1895,11 @@ function showToast(msg) {
               retractBtn.disabled = false;
 
               if (!res || !res.ok) {
-                showToast(language.undoSpamErrorPrefix + (res?.error || language.unknown));
+                let errMsg = res?.error || language.unknown;
+                if (errMsg.toLowerCase().includes('reaction not found') || errMsg.toLowerCase().includes('no reaction') || errMsg.toLowerCase().includes('unable to')) {
+                  errMsg = language.reactionNotFound;
+                }
+                showToast(language.undoSpamErrorPrefix + errMsg);
               }
             });
           });

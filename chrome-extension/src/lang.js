@@ -167,6 +167,8 @@ const en = {
   undoSpamTitle: 'Undo Spam Reactions',
   undoSpamSuccess: 'Spam reactions removed successfully! ↩️',
   undoSpamErrorPrefix: 'Undo reactions error: ',
+  reactionAlreadyExists: 'You have already spammed/reacted to this post!',
+  reactionNotFound: 'No reactions to retract!',
 
   // Categories
   categoryAll: 'All Categories',
@@ -246,6 +248,7 @@ const en = {
   reactionSpammerTab: 'Reactions',
   giphyGifSearch: 'Giphy GIFs',
   searchGifPlaceholder: 'Search GIFs on Giphy...',
+  gifDefaultHint: '💡 These are trending GIFs. Search above to find more!',
   imageLibraryDesc: 'Click the image icon 🖼️ in the chatbox toolbar to open the picker.',
   usedStorageSpace: 'Used Storage Space',
   howToUseTitle: 'How to use?',
@@ -635,6 +638,8 @@ const vi = {
   undoSpamTitle: 'Hoàn tác spam cảm xúc',
   undoSpamSuccess: 'Xóa spam cảm xúc thành công! ↩️',
   undoSpamErrorPrefix: 'Lỗi hoàn tác cảm xúc: ',
+  reactionAlreadyExists: 'Bạn đã tương tác/spam bài viết này rồi!',
+  reactionNotFound: 'Không có cảm xúc nào để hoàn tác!',
 
   // Categories
   categoryAll: 'Tất cả danh mục',
@@ -714,6 +719,7 @@ const vi = {
   reactionSpammerTab: 'Cảm xúc',
   giphyGifSearch: 'GIFs từ Giphy',
   searchGifPlaceholder: 'Tìm kiếm ảnh GIF...',
+  gifDefaultHint: '💡 Đây là các ảnh GIFs nổi bật mặc định. Nhập từ khóa để tìm thêm nhiều ảnh khác!',
   imageLibraryDesc: 'Nhấp vào biểu tượng ảnh (🖼️) trong thanh công cụ chatbox để mở thư viện.',
   usedStorageSpace: 'Dung lượng đã sử dụng',
   howToUseTitle: 'Hướng dẫn sử dụng',

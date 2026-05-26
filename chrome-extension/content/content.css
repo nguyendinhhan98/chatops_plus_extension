@@ -269,7 +269,7 @@ html body #chatops-quick-note-popover textarea#cqn-note-text {
 }
 
 /* Buttons */
-.btn {
+.chatops-btn {
   padding: 0 16px !important;
   border-radius: 8px !important;
   font-size: 13px !important;
@@ -283,30 +283,30 @@ html body #chatops-quick-note-popover textarea#cqn-note-text {
   transition: all 0.14s !important;
 }
 
-.btn-primary {
+.chatops-btn-primary {
   background: #1c58d9 !important;
   color: #ffffff !important;
   border: none !important;
   box-shadow: 0 2px 4px rgba(28, 88, 217, 0.2) !important;
 }
-.btn-primary:hover {
+.chatops-btn-primary:hover {
   background: #1648b8 !important;
 }
-.btn-primary:active {
+.chatops-btn-primary:active {
   transform: scale(0.98) !important;
 }
 
-.btn-secondary {
+.chatops-btn-secondary {
   background: transparent !important;
   color: #475569 !important;
   border: 1px solid #cbd5e1 !important;
 }
-.btn-secondary:hover {
+.chatops-btn-secondary:hover {
   background: #f8fafc !important;
   color: #1e293b !important;
   border-color: #cbd5e1 !important;
 }
-.btn, .sp-modal-close-btn, #chatops-ext-floating-btn, .crb-close, .crb-done-btn {
+.chatops-btn, .sp-modal-close-btn, #chatops-ext-floating-btn, .crb-close, .crb-done-btn {
   cursor: pointer !important;
 }
 
@@ -611,7 +611,7 @@ html body #chatops-quick-note-popover textarea#cqn-note-text {
 /* ─── Image Library Picker ─── */
 .chatops-image-picker {
   position: absolute; bottom: 50px; right: 0;
-  width: 320px; height: 380px !important;
+  width: 380px; height: 480px !important;
   background: #ffffff; border: 1px solid #e0e0e5;
   border-radius: 10px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.15);
@@ -677,12 +677,19 @@ html body #chatops-quick-note-popover textarea#cqn-note-text {
   transform: translateY(0.5px);
 }
 .chatops-custom-images-grid-container {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
   padding: 8px 0;
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden !important;
+}
+.chatops-custom-images-column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
 }
 .chatops-custom-image-cell {
   position: relative;
@@ -690,16 +697,14 @@ html body #chatops-quick-note-popover textarea#cqn-note-text {
   overflow: hidden;
   border: 1px solid #e0e0e5;
   width: 100%;
-  padding-top: 100%; /* Classic aspect ratio 1:1 box trick */
   background: #f3f4f6;
+  box-sizing: border-box;
 }
 .chatops-custom-image-item {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  object-fit: cover;
-  cursor: pointer;
+  width: 100%;
+  height: auto;
   display: block;
+  cursor: pointer;
   transition: opacity 0.15s, transform 0.15s;
 }
 .chatops-custom-image-item:hover {
@@ -725,6 +730,24 @@ html body #chatops-quick-note-popover textarea#cqn-note-text {
 }
 .chatops-custom-image-cell:hover .chatops-custom-image-delete { opacity: 1; }
 .chatops-custom-image-delete:hover { background: rgba(220, 38, 38, 0.9); }
+.chatops-custom-image-preview {
+  position: absolute; top: 3px; left: 3px;
+  background: rgba(0,0,0,0.65);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 16px; height: 16px;
+  font-size: 8px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  padding: 0; line-height: 1;
+  outline: none;
+  opacity: 0;
+  transition: opacity 0.2s, background 0.2s;
+  z-index: 5;
+}
+.chatops-custom-image-cell:hover .chatops-custom-image-preview { opacity: 1; }
+.chatops-custom-image-preview:hover { background: #1c58d9; }
 .chatops-image-empty {
   font-size: 11.5px;
   color: #999;
@@ -796,6 +819,7 @@ html body #chatops-quick-note-popover textarea#cqn-note-text {
   display: none;
   flex-direction: column;
   flex: 1;
+  overflow: hidden;
 }
 .chatops-picker-panel.active {
   display: flex;

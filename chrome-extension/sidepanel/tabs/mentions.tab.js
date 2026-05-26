@@ -299,6 +299,9 @@ async function scanMentionsDeep() {
   const sinceMs = Date.now() - hours * 60 * 60 * 1000;
   
   resultsEl.innerHTML = `
+    <div style="font-size: 12.5px; color: var(--text-2); text-align: center; margin-bottom: 14px; padding: 0 16px; line-height: 1.45; font-style: italic;">
+      💡 <span data-i18n="scanTimeNotice">${language.scanTimeNotice}</span>
+    </div>
     <div class="progress-bar"><div class="progress-fill" id="mentionProgress" style="width:0%"></div></div>
     <div class="loading-state" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; height: 100%; min-height: 150px;">
       <div style="display: flex; align-items: center; gap: 8px;">
@@ -310,9 +313,6 @@ async function scanMentionsDeep() {
         </svg>
         ${language.stopScanning}
       </button>
-    </div>
-    <div style="font-size: 12.5px; color: var(--text-2); text-align: center; margin-top: 14px; padding: 0 16px; line-height: 1.45; font-style: italic;">
-      💡 <span data-i18n="scanTimeNotice">${language.scanTimeNotice}</span>
     </div>
   `;
 
@@ -385,6 +385,7 @@ async function scanMentionsDeep() {
               .map((id) => postList.posts[id])
               .filter(Boolean)
               .filter((post) => {
+                if (post.create_at < sinceMs) return false; // Strict hours check
                 if (post.user_id === currentUser.id) return false;
                 if (post.type && post.type !== '') return false; // Skip system messages
                 
