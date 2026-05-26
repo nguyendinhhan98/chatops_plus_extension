@@ -209,7 +209,7 @@ async function showReminderBanner(text, taskId, isTask = false, postId = null, t
       <div class="crb-content" style="display:flex; flex-direction:column; min-width:0; flex:1;">
         <div style="display:flex; align-items:center; justify-content:space-between; width:100%; margin-bottom: 3px;">
           <div class="crb-title" style="margin-bottom:0;">${isTask ? language.reminderTaskTitle : language.reminderTitle}</div>
-          ${isLongText ? `<button class="crb-collapse-btn collapse-btn" style="margin-left:8px;" title="Expand/Collapse"><svg class="crb-arrow-icon" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" style="transition: transform 0.2s ease; transform: rotate(-90deg);"><path d="M6 9l6 6 6-6"/></svg></button>` : ''}
+          ${isLongText ? `<button class="crb-collapse-btn collapse-btn" style="margin-left:8px;" title="${language.expandCollapseBtn || 'Expand/Collapse'}"><svg class="crb-arrow-icon" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" style="transition: transform 0.2s ease; transform: rotate(-90deg);"><path d="M6 9l6 6 6-6"/></svg></button>` : ''}
         </div>
         <div class="crb-text ${isLongText ? 'collapsed' : ''}">${formatRichText(text)}</div>
       </div>
@@ -416,9 +416,16 @@ function showToast(msg) {
   // Function to align the floating button under the last team icon
   function alignButtonToSidebar() {
     // Find Mattermost team sidebar scroller or wrapper first, falling back to outer team sidebar
-    const teamSidebar = document.querySelector(
+    let teamSidebar = document.querySelector(
       '.team-sidebar .team-wrapper, [class*="team-sidebar-items"], [class*="team-sidebar__scroller"], .team-wrapper, .team-sidebar, #teamSidebar, [class*="team-sidebar"]'
     );
+    if (teamSidebar) {
+      // Ensure the team sidebar is actually on the left side of the screen (to avoid matching elements inside posts/chatbox)
+      const rect = teamSidebar.getBoundingClientRect();
+      if (rect.left > 200) {
+        teamSidebar = null; // Ignore if not on the left
+      }
+    }
     if (teamSidebar) {
       const teamItems = teamSidebar.querySelectorAll('a, .team-btn, [class*="team-container"], [class*="team-btn"]');
       if (teamItems && teamItems.length > 0) {
@@ -640,7 +647,7 @@ function showToast(msg) {
       const cardHtml = `
         <div class="chatops-custom-image-cell">
           <img src="${url}" class="chatops-custom-image-item" loading="lazy" title="${language.clickToSend}" />
-          <button class="chatops-custom-image-preview" data-idx="${idx}" title="Preview full image">&#x1F50D;</button>
+          <button class="chatops-custom-image-preview" data-idx="${idx}" title="${language.previewImage || 'Preview full image'}">&#x1F50D;</button>
           <button class="chatops-custom-image-delete" data-idx="${idx}" title="${language.deleteImage}">&times;</button>
         </div>
       `;
@@ -1503,7 +1510,7 @@ function showToast(msg) {
 
     try {
       const resSettings = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS, 'activeMemoCategory']);
-      const categories = resSettings[STORAGE_KEYS.SETTINGS]?.memoCategories || ['General', 'Work', 'Personal', 'Ideas'];
+      const categories = resSettings[STORAGE_KEYS.SETTINGS]?.memoCategories || ['General', 'Work'];
       const activeFilter = resSettings['activeMemoCategory'] || 'all';
       const cqnCategorySelect = document.getElementById('cqn-category');
       if (cqnCategorySelect) {

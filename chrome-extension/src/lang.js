@@ -211,8 +211,11 @@ const en = {
   supportVibecodingTitle: '☕ Support Development!',
   supportVibecodingDesc: 'If this extension has been helpful to you, consider buying the developer a coffee to support future projects 🚀',
   memoNotesLabel: 'Notes',
-  missedTabLabel: 'Missed',
-  reactionsTabLabel: 'Images',
+  toolsTabLabel: 'Tools',
+  toolsSearchSubTab: 'Search',
+  toolsMentionsSubTab: 'Mentions',
+  toolsImagesSubTab: 'Images',
+  toolsReactionsSubTab: 'Reactions',
   settingsTabLabel: 'Settings',
   searchTermsPlaceholder: 'Search keyword... (Enter to search)',
   searchUserPlaceholder: 'Search user...',
@@ -261,11 +264,9 @@ const en = {
   emojiTabCustom: 'WORKSPACE',
   searchEmojiPlaceholder: 'Search emoji by name (e.g. fire, heart)...',
   loadingMoreEmojis: 'Loading more emojis...',
-  settingsOverviewTab: 'OVERVIEW',
-  settingsFeaturesTab: 'FEATURES',
-  settingsThemeTab: 'THEME',
-  settingsCategoriesTab: 'CATEGORIES',
-  settingsSyncTab: 'SYNC DATA',
+  settingsSubFeaturesTab: 'Features',
+  settingsSubUITab: 'UI',
+  settingsSubDataTab: 'Data',
   settingsOverviewWelcome: 'Welcome to <strong style="color: var(--accent); font-weight: 700;">ChatOps++</strong>! Your productivity toolkit:',
   overviewSearchDesc: '<strong>Search Messages:</strong> Instant chat history query.',
   overviewTasksDesc: '<strong>Tasks:</strong> Smart task manager with snooze alerts.',
@@ -307,6 +308,7 @@ const en = {
   menuTabsTitle: 'Sidepanel Menu Tabs',
   menuTabsDesc: 'Select which tabs you want to show in the sidepanel navigation. Hiding a tab will also disable its corresponding floating buttons outside ChatOps.',
   floatingButtonsTitle: 'Quick Actions on ChatOps',
+  floatingButtonsDesc: 'Floating buttons & position layout',
   floatingButtonsPerfHint: 'Disabling these floating buttons outside the sidepanel helps reduce CPU usage and page rendering lag on ChatOps.',
   floatingQuickTask: 'Create Task Button (🎯)',
   floatingQuickNote: 'Create Note Button (📝)',
@@ -343,6 +345,10 @@ const en = {
       macOS, or close all windows) for the OS to apply permissions.
     </div>
   `,
+  snoozeAlertDesc: 'Snooze time, alert type & sound',
+  giphyApiDesc: 'API key & rate limit settings',
+  manageCategoriesDesc: 'Manage custom note categories',
+  createCategoryHint: '💡 You can <a href="#" class="settings-subtab-link" data-subtab="categories" style="color: var(--accent); text-decoration: underline; font-weight: 600;">add categories</a> in Settings',
   themeSettingsTitle: 'Theme Settings',
   themeHeaderTitle: 'Header Component',
   themeNavTitle: 'Navigation Bar (Tabs)',
@@ -473,8 +479,22 @@ const en = {
         </div>
       </div>
       
-    </div>
   `,
+  previewImage: 'Preview full image',
+  systemHelpTooltip: 'System Help & Tips',
+  closeModal: 'Close modal',
+  clickToRemove: 'Click to remove',
+  editBtn: 'Edit',
+  deleteBtn: 'Delete',
+  clickToCopyLine: 'Click to copy this line',
+  colorOrange: 'Orange',
+  colorTeal: 'Teal',
+  colorRose: 'Rose',
+  colorSlate: 'Slate',
+  colorWhite: 'White',
+  colorLightGray: 'Light Gray',
+  colorYellow: 'Yellow',
+  colorDark: 'Dark',
 };
 
 // Vietnamese Dictionary
@@ -682,8 +702,11 @@ const vi = {
   supportVibecodingTitle: '☕ Hỗ trợ phát triển!',
   supportVibecodingDesc: 'Nếu tiện ích này hữu ích với bạn, hãy mời nhà phát triển một tách cà phê để tiếp thêm động lực cho những dự án mới nhé 🚀',
   memoNotesLabel: 'Ghi chú',
-  missedTabLabel: 'Bỏ lỡ',
-  reactionsTabLabel: 'Hình ảnh',
+  toolsTabLabel: 'Công cụ',
+  toolsSearchSubTab: 'Tìm kiếm',
+  toolsMentionsSubTab: 'Nhắc tên',
+  toolsImagesSubTab: 'Hình ảnh',
+  toolsReactionsSubTab: 'Cảm xúc',
   settingsTabLabel: 'Cài đặt',
   searchTermsPlaceholder: 'Từ khóa tìm kiếm... (Ấn Enter để tìm)',
   searchUserPlaceholder: 'Tìm kiếm người dùng...',
@@ -732,11 +755,9 @@ const vi = {
   emojiTabCustom: 'WORKSPACE',
   searchEmojiPlaceholder: 'Tìm kiếm emoji theo tên (ví dụ: fire, heart)...',
   loadingMoreEmojis: 'Đang tải thêm emoji...',
-  settingsOverviewTab: 'TỔNG QUAN',
-  settingsFeaturesTab: 'TÍNH NĂNG',
-  settingsThemeTab: 'GIAO DIỆN',
-  settingsCategoriesTab: 'DANH MỤC',
-  settingsSyncTab: 'ĐỒNG BỘ DỮ LIỆU',
+  settingsSubFeaturesTab: 'Chức năng',
+  settingsSubUITab: 'Giao diện',
+  settingsSubDataTab: 'Dữ liệu',
   settingsOverviewWelcome: 'Chào mừng bạn đến với <strong style="color: var(--accent); font-weight: 700;">ChatOps++</strong>! Bộ công cụ tăng năng suất của bạn:',
   overviewSearchDesc: '<strong>Tìm kiếm tin nhắn:</strong> Truy vấn lịch sử trò chuyện tức thì.',
   overviewTasksDesc: '<strong>Công việc:</strong> Quản lý công việc thông minh với thông báo nhắc lại.',
@@ -778,6 +799,7 @@ const vi = {
   menuTabsTitle: 'Hiển thị Tab trong Menu',
   menuTabsDesc: 'Chọn các tab bạn muốn hiển thị trên thanh bên Sidepanel. Ẩn tab sẽ tự động tắt các nút nổi tương ứng ngoài trang ChatOps.',
   floatingButtonsTitle: 'Nút tương tác nhanh trên ChatOps',
+  floatingButtonsDesc: 'Nút nổi & vị trí hiển thị',
   floatingButtonsPerfHint: 'Tắt các nút nổi tương tác ngoài ChatOps sẽ giúp giảm tải CPU, tối ưu hiệu năng và tránh giật lag khi kênh chat có lượng tin nhắn lớn.',
   floatingQuickTask: 'Nút Tạo công việc (🎯)',
   floatingQuickNote: 'Nút Tạo ghi chú (📝)',
@@ -814,6 +836,10 @@ const vi = {
       macOS hoặc đóng tất cả cửa sổ) để hệ điều hành áp dụng quyền.
     </div>
   `,
+  snoozeAlertDesc: 'Thời gian tạm dừng, loại cảnh báo & âm thanh',
+  giphyApiDesc: 'Thiết lập API key & giới hạn tần suất',
+  manageCategoriesDesc: 'Quản lý các danh mục ghi chú tùy chỉnh',
+  createCategoryHint: '💡 Bạn có thể <a href="#" class="settings-subtab-link" data-subtab="categories" style="color: var(--accent); text-decoration: underline; font-weight: 600;">thêm danh mục</a> trong Cài đặt',
   themeSettingsTitle: 'Cài đặt Giao diện',
   themeHeaderTitle: 'Thành phần Header',
   themeNavTitle: 'Thanh điều hướng (Tab)',
@@ -944,8 +970,22 @@ const vi = {
         </div>
       </div>
       
-    </div>
   `,
+  previewImage: 'Xem ảnh kích thước đầy đủ',
+  systemHelpTooltip: 'Hướng dẫn & Trợ giúp hệ thống',
+  closeModal: 'Đóng cửa sổ',
+  clickToRemove: 'Nhấp để xóa',
+  editBtn: 'Chỉnh sửa',
+  deleteBtn: 'Xóa',
+  clickToCopyLine: 'Nhấp để sao chép dòng này',
+  colorOrange: 'Cam',
+  colorTeal: 'Xanh ngọc',
+  colorRose: 'Hồng rose',
+  colorSlate: 'Xám slate',
+  colorWhite: 'Trắng',
+  colorLightGray: 'Xám sáng',
+  colorYellow: 'Vàng',
+  colorDark: 'Tối',
 };
 
 // Swaps the active language dictionary key-value pairs in-place

@@ -237,7 +237,7 @@ const DEFAULT_SETTINGS = {
     spamReactions: true,
     imagePicker: true
   },
-  memoCategories: ['General', 'Work', 'Personal', 'Ideas'],
+  memoCategories: ['General', 'Work'],
   spamEnabled: true,
   memeEnabled: true,
   giphyApiKey: '',
@@ -532,7 +532,7 @@ function setupEventListeners() {
   const memesGrid = document.getElementById('sidepanel-memes-grid');
   if (memesGrid) {
     memesGrid.addEventListener('click', async (e) => {
-      const delBtn = e.target.closest('.sidepanel-meme-delete');
+      const delBtn = e.target.closest('.sidepanel-meme-delete') || e.target.closest('.chatops-custom-image-delete');
       if (delBtn) {
         e.stopPropagation();
         const idx = parseInt(delBtn.dataset.idx, 10);
@@ -544,7 +544,7 @@ function setupEventListeners() {
         return;
       }
 
-      // Preview image when clicking the image
+      // Preview image when clicking the image itself
       const clickedImg = e.target.closest('img');
       if (clickedImg) {
         const modal = document.getElementById('imagePreviewModal');
@@ -927,8 +927,8 @@ function setupEventListeners() {
         li.innerHTML = `
           <div class="cat-edit-mode" style="display:flex; align-items:center; gap:8px; width:100%;">
             <input type="text" class="edit-cat-input" value="${escapeHtml(cat)}" style="flex:1; height:28px; font-size:13px; font-weight:600; padding:4px 8px; border-radius:6px; border:1px solid var(--border); outline:none; box-sizing:border-box; background:var(--bg-1); color:var(--text-1);" autocomplete="off">
-            <button class="btn-save-cat-edit" data-idx="${idx}" data-old="${escapeHtml(cat)}" title="Save" style="background:none; border:none; padding:4px 6px; cursor:pointer; color:var(--success); font-size:14px; font-weight:bold; display:inline-flex; align-items:center; justify-content:center;">✓</button>
-            <button class="btn-cancel-cat-edit" title="Cancel" style="background:none; border:none; padding:4px 6px; cursor:pointer; color:var(--danger); font-size:14px; font-weight:bold; display:inline-flex; align-items:center; justify-content:center;">✗</button>
+            <button class="btn-save-cat-edit" data-idx="${idx}" data-old="${escapeHtml(cat)}" title="${language.saveBtn || 'Save'}" style="background:none; border:none; padding:4px 6px; cursor:pointer; color:var(--success); font-size:14px; font-weight:bold; display:inline-flex; align-items:center; justify-content:center;">✓</button>
+            <button class="btn-cancel-cat-edit" title="${language.cancel || 'Cancel'}" style="background:none; border:none; padding:4px 6px; cursor:pointer; color:var(--danger); font-size:14px; font-weight:bold; display:inline-flex; align-items:center; justify-content:center;">✗</button>
           </div>
         `;
         
@@ -1062,29 +1062,35 @@ function setupEventListeners() {
     }
   });
 
-  // Reactions sub-tabs
-  document.getElementById('reactionsSubTabs')?.addEventListener('click', (e) => {
+  // Tools sub-tabs
+  document.getElementById('toolsSubTabs')?.addEventListener('click', (e) => {
     if (e.target.classList.contains('memo-sub-tab')) {
       const sectionId = e.target.dataset.section;
       if (!sectionId) return;
 
-      // Update tabs
-      document.querySelectorAll('#reactionsSubTabs .memo-sub-tab').forEach(b => b.classList.remove('active'));
-      e.target.classList.add('active');
+      // Update tabs active state
+      document.querySelectorAll('#toolsSubTabs .memo-sub-tab').forEach(b => b.classList.toggle('active', b === e.target));
 
-      // Update panels
-      document.querySelectorAll('.reactions-tab-panel').forEach(p => {
+      // Update panels active state
+      document.querySelectorAll('#tab-tools .tools-tab-panel').forEach(p => {
         p.style.display = 'none';
         p.classList.remove('active');
       });
-      const targetPanel = document.getElementById(`reactions-section-${sectionId}`);
+      const targetPanel = document.getElementById(`tools-section-${sectionId}`);
       if (targetPanel) {
-        targetPanel.style.display = 'block';
+        targetPanel.style.display = 'flex';
         targetPanel.classList.add('active');
       }
 
-      if (sectionId === 'gif') {
+      // Initialize content dynamically
+      if (sectionId === 'images') {
         fetchGiphyGifs(document.getElementById('gifSearchInput')?.value || '');
+        renderSidepanelMemes();
+      } else if (sectionId === 'reactions') {
+        getSettings().then(settings => {
+          renderStandardEmojiGrid(settings);
+          renderCustomEmojiGrid(settings, document.getElementById('customEmojiSearchInput')?.value || '');
+        });
       }
     }
   });
@@ -1162,10 +1168,42 @@ function setupEventListeners() {
     });
   });
 
+  // Global accordion helper to open a specific group by child key/subtab name
+  window.openSettingsAccordion = function(subtabName) {
+    if (!subtabName) return;
+    let elementId = '';
+    if (subtabName === 'features-toggle') {
+      elementId = 'settingShowSearch';
+    } else if (subtabName === 'features-snooze') {
+      elementId = 'settingSnoozeMinutes';
+    } else if (subtabName === 'features-gif') {
+      elementId = 'settingGiphyApiKey';
+    } else if (subtabName === 'categories') {
+      elementId = 'settingNewCategory';
+    }
+
+    if (elementId) {
+      const el = document.getElementById(elementId);
+      const accordion = el ? el.closest('.settings-accordion') : null;
+      if (accordion) {
+        // Close all other accordions first
+        document.querySelectorAll('.settings-accordion').forEach(acc => {
+          acc.classList.remove('open');
+        });
+        // Open target accordion
+        accordion.classList.add('open');
+        // Scroll into view
+        setTimeout(() => {
+          accordion.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+      }
+    }
+  };
+
   // Helper to programmatically navigate to a settings sub-tab
   function navigateToSubtab(subtabName) {
     let sectionId = '';
-    if (subtabName.startsWith('features-')) {
+    if (subtabName.startsWith('features-') || subtabName === 'categories') {
       sectionId = 'features';
     } else if (subtabName.startsWith('reactions-')) {
       sectionId = 'reactions';
@@ -1195,31 +1233,9 @@ function setupEventListeners() {
       }
     }
 
-    // 2. Switch inside subtab panel
-    const subtabBtn = document.querySelector(`.settings-subtab-btn[data-subtab="${subtabName}"]`);
-    if (subtabBtn) {
-      const bar = subtabBtn.closest('.settings-subtab-bar');
-      if (bar) {
-        // Deactivate siblings in sub-tab bar
-        bar.querySelectorAll('.settings-subtab-btn').forEach(b => {
-          b.classList.remove('active');
-        });
-        // Activate clicked button
-        subtabBtn.classList.add('active');
-
-        const panel = bar.closest('.settings-tab-panel');
-        if (panel) {
-          // Hide all sub-tab contents in this panel
-          panel.querySelectorAll('.settings-subtab-content').forEach(content => {
-            content.style.display = 'none';
-          });
-          // Show target sub-tab content
-          const targetContent = panel.querySelector(`#subtab-content-${subtabName}`);
-          if (targetContent) {
-            targetContent.style.display = 'block';
-          }
-        }
-      }
+    // 2. Open corresponding accordion if target section is features
+    if (sectionId === 'features') {
+      window.openSettingsAccordion(subtabName);
     }
   }
 
@@ -1385,6 +1401,14 @@ function setupEventListeners() {
       renderSidepanelMemes();
     }
   });
+
+  // Accordion Toggle
+  document.querySelectorAll('.settings-accordion-header').forEach(header => {
+    header.addEventListener('click', (e) => {
+      if (e.target.closest('input, button, a, select')) return;
+      header.parentElement.classList.toggle('open');
+    });
+  });
 }
 
 async function updateSyncStatusText() {
@@ -1540,7 +1564,7 @@ function renderSelectedEmojis(settings) {
     }
 
     return `
-      <div class="selected-emoji-tag" data-name="${name}" title="Click to remove">
+      <div class="selected-emoji-tag" data-name="${name}" title="${language.clickToRemove || 'Click to remove'}">
         ${content}
         <span class="emoji-tag-remove">&times;</span>
       </div>
@@ -1722,10 +1746,10 @@ function renderCategoryList(categories) {
     <li data-cat="${escapeHtml(cat)}" style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:var(--bg-2); border-radius:6px; border:1px solid var(--border); margin-bottom: 8px;">
       <span class="cat-name" style="font-size:14.5px; font-weight:600; color:var(--text-1);">${escapeHtml(cat)}</span>
       <div style="display:flex; align-items:center; gap:8px;">
-        <button class="btn-edit-cat btn-edit-memo" data-idx="${idx}" data-cat="${escapeHtml(cat)}" title="Edit" style="background:none; border:none; padding:4px; cursor:pointer; color:var(--text-3); display:inline-flex; align-items:center;">
+        <button class="btn-edit-cat btn-edit-memo" data-idx="${idx}" data-cat="${escapeHtml(cat)}" title="${language.editBtn || 'Edit'}" style="background:none; border:none; padding:4px; cursor:pointer; color:var(--text-3); display:inline-flex; align-items:center;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
         </button>
-        <button class="btn-delete-cat btn-delete-memo" data-cat="${escapeHtml(cat)}" title="Delete" style="background:none; border:none; padding:4px; cursor:pointer; color:var(--text-3); display:inline-flex; align-items:center;">
+        <button class="btn-delete-cat btn-delete-memo" data-cat="${escapeHtml(cat)}" title="${language.deleteBtn || 'Delete'}" style="background:none; border:none; padding:4px; cursor:pointer; color:var(--text-3); display:inline-flex; align-items:center;">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style="pointer-events:none;"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>
         </button>
       </div>
@@ -1846,35 +1870,71 @@ export function applyThemeToDOM(settings) {
 }
 
 export function applyTabVisibilityToDOM(showTabs, memeEnabled) {
-  const navMap = {
-    'search': 'search',
-    'tasks': 'tasks',
-    'notes': 'memo',
-    'missed': 'mentions',
-    'reactions': 'reactions'
-  };
+  // Main tabs visibility
+  const tasksVisible = showTabs.tasks !== false;
+  const notesVisible = showTabs.notes !== false;
+  const toolsVisible = (showTabs.search !== false) || (showTabs.missed !== false) || (memeEnabled !== false);
+  const settingsVisible = true; // Settings is always visible
   
+  // Set main tab buttons visibility
+  const tasksBtn = document.querySelector('.tab-btn[data-tab="tasks"]');
+  if (tasksBtn) tasksBtn.style.display = tasksVisible ? 'flex' : 'none';
+  
+  const notesBtn = document.querySelector('.tab-btn[data-tab="memo"]');
+  if (notesBtn) notesBtn.style.display = notesVisible ? 'flex' : 'none';
+  
+  const toolsBtn = document.querySelector('.tab-btn[data-tab="tools"]');
+  if (toolsBtn) toolsBtn.style.display = toolsVisible ? 'flex' : 'none';
+  
+  const settingsBtn = document.querySelector('.tab-btn[data-tab="settings"]');
+  if (settingsBtn) settingsBtn.style.display = settingsVisible ? 'flex' : 'none';
+
+  // Toggle sub-tabs inside Tools based on individual feature switches
+  const subSearchBtn = document.querySelector('#toolsSubTabs .memo-sub-tab[data-section="search"]');
+  if (subSearchBtn) subSearchBtn.style.display = showTabs.search !== false ? 'block' : 'none';
+
+  const subMentionsBtn = document.querySelector('#toolsSubTabs .memo-sub-tab[data-section="mentions"]');
+  if (subMentionsBtn) subMentionsBtn.style.display = showTabs.missed !== false ? 'block' : 'none';
+
+  const subImagesBtn = document.querySelector('#toolsSubTabs .memo-sub-tab[data-section="images"]');
+  if (subImagesBtn) subImagesBtn.style.display = memeEnabled !== false ? 'block' : 'none';
+
   // Find first active visible tab
   let firstVisibleTabId = 'tasks';
-  for (const [key, tabId] of Object.entries(navMap)) {
-    const isVisible = (key === 'reactions') ? (memeEnabled !== false) : (showTabs[key] !== false);
-    if (isVisible) {
-      firstVisibleTabId = tabId;
-      break;
+  if (tasksVisible) firstVisibleTabId = 'tasks';
+  else if (notesVisible) firstVisibleTabId = 'memo';
+  else if (toolsVisible) firstVisibleTabId = 'tools';
+  else firstVisibleTabId = 'settings';
+
+  // Check if current active tab is hidden, if so switch to first visible tab
+  const activeBtn = document.querySelector('.tab-btn.active');
+  if (activeBtn) {
+    const activeTab = activeBtn.dataset.tab;
+    let isCurrentTabVisible = true;
+    if (activeTab === 'memo') isCurrentTabVisible = notesVisible;
+    else if (activeTab === 'tools') isCurrentTabVisible = toolsVisible;
+    else if (activeTab === 'tasks') isCurrentTabVisible = tasksVisible;
+    else if (activeTab === 'settings') isCurrentTabVisible = settingsVisible;
+
+    if (!isCurrentTabVisible) {
+      const fallbackBtn = document.querySelector(`.tab-btn[data-tab="${firstVisibleTabId}"]`);
+      if (fallbackBtn) fallbackBtn.click();
     }
   }
 
-  for (const [key, tabId] of Object.entries(navMap)) {
-    const btn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
-    if (btn) {
-      const isVisible = (key === 'reactions') ? (memeEnabled !== false) : (showTabs[key] !== false);
-      btn.style.display = isVisible ? 'flex' : 'none';
-      
-      // If the currently active tab is hidden, switch to the first visible tab
-      if (!isVisible && btn.classList.contains('active')) {
-        const fallbackBtn = document.querySelector(`.tab-btn[data-tab="${firstVisibleTabId}"]`);
-        if (fallbackBtn) fallbackBtn.click();
-      }
+  // Also auto-switch Tools sub-tab if the active Tools sub-tab is hidden
+  const activeToolsSubBtn = document.querySelector('#toolsSubTabs .memo-sub-tab.active');
+  if (activeToolsSubBtn) {
+    const activeSub = activeToolsSubBtn.dataset.section;
+    let isSubVisible = true;
+    if (activeSub === 'search') isSubVisible = showTabs.search !== false;
+    else if (activeSub === 'mentions') isSubVisible = showTabs.missed !== false;
+    else if (activeSub === 'images') isSubVisible = memeEnabled !== false;
+
+    if (!isSubVisible) {
+      // Find first visible tools subtab
+      const visibleSubBtn = Array.from(document.querySelectorAll('#toolsSubTabs .memo-sub-tab')).find(btn => btn.style.display !== 'none');
+      if (visibleSubBtn) visibleSubBtn.click();
     }
   }
 }
@@ -1936,6 +1996,7 @@ export async function renderSidepanelMemes() {
 
   if (customMemes.length === 0) {
     container.style.display = 'flex';
+    container.style.flexDirection = 'row';
     container.style.minHeight = 'auto';
     container.style.background = 'transparent';
     container.style.border = 'none';
@@ -1946,22 +2007,41 @@ export async function renderSidepanelMemes() {
     return;
   }
 
-  container.style.display = 'grid';
+  container.style.display = 'flex';
+  container.style.flexDirection = 'row';
+  container.style.gap = '12px';
   container.style.minHeight = '300px';
   container.style.background = 'var(--bg-2)';
   container.style.border = '1px solid var(--border)';
   container.style.padding = '12px';
 
-  container.innerHTML = customMemes.map((url, idx) => {
+  let col1Html = '';
+  let col2Html = '';
+
+  customMemes.forEach((url, idx) => {
     const formattedSize = formatSize(memeSizes[idx]);
-    return `
-      <div class="sidepanel-meme-card">
-        <img class="sidepanel-meme-img" src="${url}" />
-        <span class="sidepanel-meme-size">${formattedSize}</span>
-        <button class="sidepanel-meme-delete" data-idx="${idx}">&times;</button>
+    const cardHtml = `
+      <div class="chatops-custom-image-cell">
+        <img src="${url}" class="chatops-custom-image-item" loading="lazy" />
+        <span class="sidepanel-meme-size" style="bottom: 4px; left: 4px;">${formattedSize}</span>
+        <button class="chatops-custom-image-delete" data-idx="${idx}" title="${language.deleteImage || 'Delete Image'}">&times;</button>
       </div>
     `;
-  }).join('');
+    if (idx % 2 === 0) {
+      col1Html += cardHtml;
+    } else {
+      col2Html += cardHtml;
+    }
+  });
+
+  container.innerHTML = `
+    <div class="chatops-custom-images-column">
+      ${col1Html}
+    </div>
+    <div class="chatops-custom-images-column">
+      ${col2Html}
+    </div>
+  `;
 }
 
 export function compressSidepanelImage(file, maxWidth, maxHeight, quality, callback) {

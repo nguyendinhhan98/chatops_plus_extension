@@ -466,7 +466,7 @@ export function setup(state) {
       
       // Sync quickNoteCategory dropdown
       const res = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS]);
-      const categories = res[STORAGE_KEYS.SETTINGS]?.memoCategories || ['General', 'Work', 'Personal', 'Ideas'];
+      const categories = res[STORAGE_KEYS.SETTINGS]?.memoCategories || ['General', 'Work'];
       const quickSelect = document.getElementById('quickNoteCategory');
       if (quickSelect) {
         if (filter !== 'all' && categories.includes(filter)) {
@@ -499,7 +499,7 @@ export function setup(state) {
  */
 export async function renderCategories() {
   const res = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS, 'activeMemoCategory']);
-  const categories = res[STORAGE_KEYS.SETTINGS]?.memoCategories || ['General', 'Work', 'Personal', 'Ideas'];
+  const categories = res[STORAGE_KEYS.SETTINGS]?.memoCategories || ['General', 'Work'];
   const activeMemoCategory = res['activeMemoCategory'] || 'all';
   
   const quickSelect = document.getElementById('quickNoteCategory');
@@ -525,6 +525,18 @@ export async function renderCategories() {
     html += categories.map(c => `
       <button class="memo-sub-tab ${activeMemoCategory === c ? 'active' : ''}" data-category="${c}">${getCategoryDisplayName(c).toUpperCase()}</button>
     `).join('');
+    
+    // Add settings gear button to customize list with hover micro-animations
+    html += `
+      <button class="settings-subtab-link" data-subtab="categories" 
+        style="margin-left: auto; display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border: none; background: transparent; cursor: pointer; color: var(--text-3); transition: all 0.2s; outline: none; border-radius: 4px; padding: 0; align-self: center; margin-right: 4px;" 
+        title="${language.customizeCategories || 'Customize List'}"
+        onmouseenter="this.style.color='var(--accent)'; this.firstElementChild.style.transform='rotate(45deg)';" 
+        onmouseleave="this.style.color='var(--text-3)'; this.firstElementChild.style.transform='rotate(0deg)';"
+      >
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events: none; opacity: 0.7; transition: transform 0.3s ease;"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+      </button>
+    `;
     tabsContainer.innerHTML = html;
   }
 }
@@ -565,7 +577,7 @@ export async function loadMemos() {
   }
 
   const settingsRes = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS]);
-  const categories = settingsRes[STORAGE_KEYS.SETTINGS]?.memoCategories || ['General', 'Work', 'Personal', 'Ideas'];
+  const categories = settingsRes[STORAGE_KEYS.SETTINGS]?.memoCategories || ['General', 'Work'];
 
   noteList.innerHTML = notes.map(note => renderNoteCard(note, categories)).join('');
 
@@ -585,7 +597,7 @@ export async function loadMemos() {
 /**
  * Renders a note card component
  */
-function renderNoteCard(note, categories = ['General', 'Work', 'Personal', 'Ideas']) {
+function renderNoteCard(note, categories = ['General', 'Work']) {
   const cachedConfig = _state.getConfig();
   const currentTeam = _state.getTeam();
   const permalink = note.postId && cachedConfig

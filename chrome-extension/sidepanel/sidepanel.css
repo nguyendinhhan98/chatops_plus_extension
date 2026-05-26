@@ -1889,13 +1889,12 @@ input:checked + .toggle-slider:before { transform: translateX(16px); }
   width: 24px; height: 24px;
   display: flex; align-items: center; justify-content: center;
   border-radius: 4px;
-  transition: all var(--transition);
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
   cursor: pointer;
 }
 .btn-edit-memo:hover {
   background: var(--accent) !important;
   color: #fff !important;
-  transform: scale(1.05);
 }
 
 .btn-delete-memo {
@@ -1905,13 +1904,12 @@ input:checked + .toggle-slider:before { transform: translateX(16px); }
   width: 24px; height: 24px;
   display: flex; align-items: center; justify-content: center;
   border-radius: 4px;
-  transition: all var(--transition);
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
   cursor: pointer;
 }
 .btn-delete-memo:hover {
   background: var(--danger) !important;
   color: #fff !important;
-  transform: scale(1.05);
 }
 
 .memo-actions .post-jump-link {
@@ -2223,7 +2221,14 @@ input:checked + .toggle-slider:before { transform: translateX(16px); }
   }
 }
 
-/* Fade-In & Slide-Up for Sub-tab Panel Switch inside Settings */
+/* Fade-In & Slide-Up for Sub-tab Panel Switch inside Tools and Settings */
+.tools-tab-panel {
+  display: none;
+}
+.tools-tab-panel.active {
+  display: flex !important;
+  animation: subtabFadeIn 0.44s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
 .settings-tab-panel.active {
   animation: subtabFadeIn 0.44s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
@@ -2931,4 +2936,204 @@ span.flatpickr-weekday {
   transform: translateY(0);
 }
 
+/* ─── Settings Accordion Groups ─── */
+.settings-accordion {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+  margin-bottom: 12px;
+  overflow: hidden;
+  transition: box-shadow 0.3s ease;
+}
+
+.settings-accordion:hover {
+  box-shadow: 0 3px 12px rgba(0,0,0,0.05);
+}
+
+.settings-accordion-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s ease;
+  gap: 10px;
+}
+
+.settings-accordion:not(.open) .settings-accordion-header:hover {
+  background: var(--bg-2);
+}
+
+.settings-accordion-header .accordion-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.settings-accordion-header .accordion-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-dim);
+  border-radius: 8px;
+}
+
+.settings-accordion-header .accordion-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-1);
+  line-height: 1.3;
+}
+
+.settings-accordion-header .accordion-desc {
+  font-size: 11px;
+  color: var(--text-3);
+  line-height: 1.3;
+  margin-top: 1px;
+}
+
+.settings-accordion-header .accordion-arrow {
+  font-size: 10px;
+  color: var(--text-3);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--bg-2);
+}
+
+.settings-accordion.open .accordion-arrow {
+  transform: rotate(180deg);
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+.settings-accordion-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1), padding 0.35s ease;
+  padding: 0 16px;
+}
+
+.settings-accordion.open .settings-accordion-body {
+  max-height: 1200px;
+  padding: 0 16px 16px;
+  overflow: visible;
+}
+
+/* Masonry grid classes for personal images synchronization */
+.chatops-custom-images-grid-container {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  padding: 8px 0;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden !important;
+}
+
+.chatops-custom-images-column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+}
+
+.chatops-custom-image-cell {
+  position: relative;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  width: 100%;
+  background: var(--bg-1);
+  box-sizing: border-box;
+}
+
+.chatops-custom-image-item {
+  width: 100%;
+  height: auto;
+  display: block;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.15s;
+}
+
+.chatops-custom-image-item:hover {
+  opacity: 0.85;
+  transform: scale(1.02);
+}
+
+.chatops-custom-image-delete {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(0, 0, 0, 0.65);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  font-weight: bold;
+  outline: none;
+  opacity: 0;
+  transition: opacity 0.2s, background 0.2s;
+  z-index: 5;
+}
+
+.chatops-custom-image-cell:hover .chatops-custom-image-delete {
+  opacity: 1;
+}
+
+.chatops-custom-image-delete:hover {
+  background: rgba(220, 38, 38, 0.9) !important;
+}
+
+.chatops-custom-image-preview {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  background: rgba(0, 0, 0, 0.65);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  outline: none;
+  opacity: 0;
+  transition: opacity 0.2s, background 0.2s;
+  z-index: 5;
+}
+
+.chatops-custom-image-cell:hover .chatops-custom-image-preview {
+  opacity: 1;
+}
+
+.chatops-custom-image-preview:hover {
+  background: var(--accent) !important;
+}
 

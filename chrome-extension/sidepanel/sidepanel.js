@@ -184,13 +184,7 @@ function setupTabs() {
     btn.addEventListener('click', () => switchTab(btn.dataset.tab));
     btn.addEventListener('dblclick', () => {
       const tab = btn.dataset.tab;
-      if (tab === 'search') {
-        window.ModalManager.open(
-          language.modalSearchTitle,
-          'spSearchForm',
-          'spSearchFormPlaceholder'
-        );
-      } else if (tab === 'tasks') {
+      if (tab === 'tasks') {
         window.ModalManager.open(
           language.modalAddTaskTitle,
           'spTasksForm',
@@ -202,12 +196,23 @@ function setupTabs() {
           'spMemoForm',
           'spMemoFormPlaceholder'
         );
-      } else if (tab === 'mentions') {
-        window.ModalManager.open(
-          language.modalScannerFiltersTitle,
-          'spMentionsForm',
-          'spMentionsFormPlaceholder'
-        );
+      } else if (tab === 'tools') {
+        // Double clicking Tools opens the filter dialog for active Tools sub-tab (search or mentions)
+        const activeSubBtn = document.querySelector('#toolsSubTabs .memo-sub-tab.active');
+        const activeSub = activeSubBtn ? activeSubBtn.dataset.section : 'search';
+        if (activeSub === 'search') {
+          window.ModalManager.open(
+            language.modalSearchTitle,
+            'spSearchForm',
+            'spSearchFormPlaceholder'
+          );
+        } else if (activeSub === 'mentions') {
+          window.ModalManager.open(
+            language.modalScannerFiltersTitle,
+            'spMentionsForm',
+            'spMentionsFormPlaceholder'
+          );
+        }
       }
     });
   });
@@ -217,14 +222,10 @@ function setupTabs() {
     document.getElementById(badgeId)?.addEventListener('click', () => {
       switchTab('settings');
       
-      // Select the sync sub-tab in Settings
-      if (typeof window.navigateToSettingsSubtab === 'function') {
-        window.navigateToSettingsSubtab('sync-cloud');
-      } else {
-        const syncSubTabBtn = document.querySelector(`#settingsSubTabs .memo-sub-tab[data-section="sync"]`);
-        if (syncSubTabBtn) {
-          syncSubTabBtn.click();
-        }
+      // Select the data sub-tab (previously sync) in Settings
+      const syncSubTabBtn = document.querySelector(`#settingsSubTabs .memo-sub-tab[data-section="data"]`);
+      if (syncSubTabBtn) {
+        syncSubTabBtn.click();
       }
       
       setTimeout(() => {
@@ -242,7 +243,8 @@ function setupTabs() {
       }, 150);
     });
   });
-  // Handle programmatic links to settings/reactions sub-tabs (e.g. from Tasks, Mentions, etc.)
+
+  // Handle programmatic links to settings/tools sub-tabs (e.g. from Tasks, Mentions, etc.)
   document.addEventListener('click', (e) => {
     const supportLink = e.target.closest('.support-chatops-link');
     if (supportLink) {
@@ -266,73 +268,74 @@ function setupTabs() {
       if (!subtabName) return;
 
       let tabId = 'settings';
+      let sectionId = '';
+
       if (subtabName.startsWith('reactions-')) {
-        tabId = 'reactions';
+        tabId = 'tools';
+        sectionId = subtabName === 'reactions-picker' ? 'reactions' : 'images';
+      } else if (subtabName.startsWith('features-') || subtabName === 'categories') {
+        tabId = 'settings';
+        sectionId = 'features';
+      } else if (subtabName.startsWith('sync-')) {
+        tabId = 'settings';
+        sectionId = 'data';
       }
 
       // 1. Switch to the correct main tab
       switchTab(tabId);
 
       // 2. Switch top-level sub-tab/category
-      let sectionId = '';
-      if (subtabName.startsWith('features-')) {
-        sectionId = 'features';
-      } else if (subtabName.startsWith('reactions-')) {
-        sectionId = subtabName === 'reactions-picker' ? 'picker' : 'meme';
-      } else if (subtabName.startsWith('sync-')) {
-        sectionId = 'sync';
-      } else if (subtabName === 'categories') {
-        sectionId = 'categories';
-      }
-
       if (sectionId) {
-        const selector = tabId === 'settings' ? '#settingsSubTabs' : '#reactionsSubTabs';
+        const selector = tabId === 'settings' ? '#settingsSubTabs' : '#toolsSubTabs';
         const tabBtn = document.querySelector(`${selector} .memo-sub-tab[data-section="${sectionId}"]`);
         if (tabBtn) {
           tabBtn.click();
+          if (tabId === 'settings' && window.openSettingsAccordion) {
+            window.openSettingsAccordion(subtabName);
+          }
         }
-      }
-
-      // 3. Switch inner subtab panel
-      const subtabBtn = document.querySelector(`.settings-subtab-btn[data-subtab="${subtabName}"]`);
-      if (subtabBtn) {
-        subtabBtn.click();
       }
     }
   });
   
   function handleStorageRedirect(targetTab, targetSubTab) {
     if (!targetTab) return;
-    switchTab(targetTab);
+    
+    // Support legacy tab redirects: search/mentions/reactions map to tools
+    let mappedTab = targetTab;
+    if (targetTab === 'reactions' || targetTab === 'search' || targetTab === 'mentions') {
+      mappedTab = 'tools';
+    }
+    
+    switchTab(mappedTab);
     chrome.storage.local.remove(STORAGE_KEYS.SIDEPANEL_TAB);
     
     if (targetSubTab) {
       chrome.storage.local.remove('sidePanelSubTab');
       
-      let tabId = targetTab;
-      if (targetSubTab.startsWith('reactions-')) {
-        tabId = 'reactions';
-      }
-      
+      let tabId = mappedTab;
       let sectionId = '';
-      if (targetSubTab.startsWith('features-')) {
+      if (targetSubTab.startsWith('reactions-')) {
+        tabId = 'tools';
+        sectionId = targetSubTab === 'reactions-picker' ? 'reactions' : 'images';
+      } else if (targetSubTab.startsWith('features-') || targetSubTab === 'categories') {
+        tabId = 'settings';
         sectionId = 'features';
-      } else if (targetSubTab.startsWith('reactions-')) {
-        sectionId = targetSubTab === 'reactions-picker' ? 'picker' : 'meme';
       } else if (targetSubTab.startsWith('sync-')) {
-        sectionId = 'sync';
-      } else if (targetSubTab === 'categories') {
-        sectionId = 'categories';
+        tabId = 'settings';
+        sectionId = 'data';
       }
 
       if (sectionId) {
         setTimeout(() => {
-          const selector = tabId === 'settings' ? '#settingsSubTabs' : '#reactionsSubTabs';
+          const selector = tabId === 'settings' ? '#settingsSubTabs' : '#toolsSubTabs';
           const tabBtn = document.querySelector(`${selector} .memo-sub-tab[data-section="${sectionId}"]`);
-          if (tabBtn) tabBtn.click();
-          
-          const subtabBtn = document.querySelector(`.settings-subtab-btn[data-subtab="${targetSubTab}"]`);
-          if (subtabBtn) subtabBtn.click();
+          if (tabBtn) {
+            tabBtn.click();
+            if (tabId === 'settings' && window.openSettingsAccordion) {
+              window.openSettingsAccordion(targetSubTab);
+            }
+          }
         }, 150);
       }
     }
