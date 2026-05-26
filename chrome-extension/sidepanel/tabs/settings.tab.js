@@ -376,13 +376,11 @@ async function loadAndApplySettings() {
   const config = await getConfig();
   chatopsUrl = config.chatopsUrl || CHATOPS_CONFIG.DEFAULT_URL;
 
-  // Apply spam reactions configuration area state based on the floating button toggle
-  const chkFloatingSpam = document.getElementById('settingFloatingSpamReactions');
+  // Apply spam reactions configuration area state (always active and interactive)
   const configArea = document.getElementById('reactionsConfigArea');
   if (configArea) {
-    const isSpamEnabled = chkFloatingSpam ? chkFloatingSpam.checked : (settings.floatingButtons?.spamReactions !== false);
-    configArea.style.opacity = isSpamEnabled ? '1' : '0.5';
-    configArea.style.pointerEvents = isSpamEnabled ? 'auto' : 'none';
+    configArea.style.opacity = '1';
+    configArea.style.pointerEvents = 'auto';
   }
 
   // Apply personal memes toggle
@@ -391,8 +389,8 @@ async function loadAndApplySettings() {
     chkMemeEnabled.checked = settings.memeEnabled !== false;
     const configArea = document.getElementById('personalMemesConfigArea');
     if (configArea) {
-      configArea.style.opacity = chkMemeEnabled.checked ? '1' : '0.5';
-      configArea.style.pointerEvents = chkMemeEnabled.checked ? 'auto' : 'none';
+      configArea.style.opacity = '1';
+      configArea.style.pointerEvents = 'auto';
     }
   }
 
@@ -719,8 +717,8 @@ function setupEventListeners() {
       showAutoSaveFeedback();
       const configArea = document.getElementById('personalMemesConfigArea');
       if (configArea) {
-        configArea.style.opacity = e.target.checked ? '1' : '0.5';
-        configArea.style.pointerEvents = e.target.checked ? 'auto' : 'none';
+        configArea.style.opacity = '1';
+        configArea.style.pointerEvents = 'auto';
       }
       
       const settings = await getSettings();
@@ -781,8 +779,8 @@ function setupEventListeners() {
         if (key === 'spamReactions') {
           const configArea = document.getElementById('reactionsConfigArea');
           if (configArea) {
-            configArea.style.opacity = e.target.checked ? '1' : '0.5';
-            configArea.style.pointerEvents = e.target.checked ? 'auto' : 'none';
+            configArea.style.opacity = '1';
+            configArea.style.pointerEvents = 'auto';
           }
         }
       });
