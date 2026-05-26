@@ -909,7 +909,11 @@ function showToast(msg) {
           }
 
           if (tabName === 'gifs') {
-            loadPickerGifs('');
+            const pickerGifSearchInput = document.getElementById('chatops-picker-gif-search');
+            const currentQuery = pickerGifSearchInput ? pickerGifSearchInput.value : '';
+            if (currentQuery.trim() === '') {
+              loadPickerGifs('');
+            }
           }
         });
       });
@@ -982,7 +986,23 @@ function showToast(msg) {
 
       loadCustomImages();
       const rect = anchorBtn.getBoundingClientRect();
-      imagePickerEl.style.bottom = `${window.innerHeight - rect.top + 10}px`;
+      
+      // Calculate normal bottom position (so it is 10px above the button)
+      const pickerHeight = 480; // Height of the picker in CSS
+      let bottomValue = window.innerHeight - rect.top + 10;
+      
+      // Prevent picker from going above the top of the viewport
+      // Top position of picker = window.innerHeight - bottomValue - pickerHeight
+      // We want: Top position of picker >= 10px
+      // So: window.innerHeight - bottomValue - pickerHeight >= 10
+      // => bottomValue <= window.innerHeight - pickerHeight - 10
+      const maxBottom = window.innerHeight - pickerHeight - 10;
+      if (bottomValue > maxBottom) {
+        bottomValue = Math.max(10, maxBottom);
+      }
+      
+      imagePickerEl.style.position = 'fixed'; // Ensure fixed viewport-relative positioning
+      imagePickerEl.style.bottom = `${bottomValue}px`;
       imagePickerEl.style.left = `${Math.max(10, rect.left - 320)}px`;
       imagePickerEl.classList.remove('hidden');
     } else {
