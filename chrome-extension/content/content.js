@@ -525,22 +525,24 @@ function showToast(msg) {
     ];
 
     targets.forEach(target => {
-      let emojiBtn = document.getElementById(target.id);
-      
-      // Fallback structural lookup if element is not found by ID (common in RHS or new Mattermost versions)
-      if (!emojiBtn) {
-        const textbox = document.getElementById(target.textboxId) || 
-          (target.textboxId === 'reply_textbox' 
-            ? document.querySelector('#reply_textbox, .sidebar-right textarea, .rhs-thread textarea, .sidebar--right textarea, [placeholder*="reply" i]')
-            : document.querySelector('#post_textbox, .post-create-body textarea, [placeholder*="write" i]'));
+      // Prioritize scoped search inside the specific textbox container to avoid duplicate ID issues
+      const textbox = document.getElementById(target.textboxId) || 
+        (target.textboxId === 'reply_textbox' 
+          ? document.querySelector('#reply_textbox, .sidebar-right textarea, .rhs-thread textarea, .sidebar--right textarea, [placeholder*="reply" i]')
+          : document.querySelector('#post_textbox, .post-create-body textarea, [placeholder*="write" i]'));
 
-        if (textbox) {
-          const container = textbox.closest('.post-create-body, .input-container, .post-body__cell, .post-create, form, [class*="post-create"]');
-          if (container) {
-            // Find any emoji button inside this textbox's container
-            emojiBtn = container.querySelector('#emojiPickerButton, #rhsEmojiPickerButton, button[aria-label*="emoji" i], button[aria-label*="Emoji"], button[class*="emoji" i], .emoji-picker__container button, button[id*="Emoji"]');
-          }
+      let emojiBtn = null;
+      if (textbox) {
+        const container = textbox.closest('.post-create-body, .input-container, .post-body__cell, .post-create, form, [class*="post-create"]');
+        if (container) {
+          // Find the emoji button belonging exclusively to this chatbox container
+          emojiBtn = container.querySelector('#emojiPickerButton, #rhsEmojiPickerButton, button[aria-label*="emoji" i], button[aria-label*="Emoji"], button[class*="emoji" i], .emoji-picker__container button, button[id*="Emoji"]');
         }
+      }
+
+      // Fallback to global ID if scoped lookup is not found
+      if (!emojiBtn) {
+        emojiBtn = document.getElementById(target.id);
       }
 
       if (!emojiBtn) {
@@ -558,9 +560,9 @@ function showToast(msg) {
         return;
       }
 
-      if (existingBtn || emojiBtn.dataset.chatopsImageInjected === 'true') {
+      if (existingBtn) {
         emojiBtn.dataset.chatopsImageInjected = 'true';
-        if (existingBtn && !existingBtn.id) {
+        if (!existingBtn.id) {
           existingBtn.id = target.btnId;
         }
         return;
@@ -2019,4 +2021,12 @@ function showToast(msg) {
     injectImageButton();
     injectQuickNoteButtons();
   });
+
+  // Safety net: periodic injection check every 1 second to handle React DOM recycling and page state changes
+  setInterval(() => {
+    runWithObserverDisabled(() => {
+      injectImageButton();
+      injectQuickNoteButtons();
+    });
+  }, 1000);
 })();
