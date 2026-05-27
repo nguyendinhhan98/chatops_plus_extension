@@ -276,6 +276,19 @@ function setupTabs() {
       return;
     }
 
+    const mainTabLink = e.target.closest('.main-tab-link') || e.target.closest('.main-tab-link-anchor');
+    if (mainTabLink) {
+      e.preventDefault();
+      if (window.ModalManager) {
+        window.ModalManager.close();
+      }
+      const targetTab = mainTabLink.dataset.tab;
+      if (targetTab) {
+        switchTab(targetTab);
+      }
+      return;
+    }
+
     const link = e.target.closest('.settings-subtab-link');
     if (link) {
       e.preventDefault();
@@ -321,6 +334,10 @@ function setupTabs() {
   
   function handleStorageRedirect(targetTab, targetSubTab) {
     if (!targetTab) return;
+    
+    if (window.ModalManager) {
+      window.ModalManager.close();
+    }
     
     // Support legacy tab redirects: search/reactions map to tools
     let mappedTab = targetTab;
@@ -499,18 +516,44 @@ function setupStateHandlers() {
     
     e.preventDefault();
     const url = link.href;
+    const postId = link.dataset.postId;
+    const rootId = link.dataset.rootId;
+
+    const triggerThreadOpen = (tabId) => {
+      if (!postId) return;
+      console.log(`[ChatOps Ext] Sending open_post_thread to tab ${tabId} for post ${postId}`);
+      setTimeout(() => {
+        chrome.tabs.sendMessage(tabId, {
+          action: "open_post_thread",
+          postId: postId,
+          rootId: rootId
+        }, () => {
+          if (chrome.runtime.lastError) {
+            // Ignore
+          }
+        });
+      }, 800);
+    };
 
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       const activeTab = tabs[0];
       if (activeTab?.url?.includes(CHATOPS_CONFIG.DOMAIN)) {
-        chrome.tabs.update(activeTab.id, { url });
+        chrome.tabs.update(activeTab.id, { url }, () => {
+          triggerThreadOpen(activeTab.id);
+        });
       } else {
         chrome.tabs.query({ currentWindow: true }, (allTabs) => {
           const chatOpsTab = allTabs.find(t => t.url?.includes(CHATOPS_CONFIG.DOMAIN));
           if (chatOpsTab) {
-            chrome.tabs.update(chatOpsTab.id, { url, active: true });
+            chrome.tabs.update(chatOpsTab.id, { url, active: true }, () => {
+              triggerThreadOpen(chatOpsTab.id);
+            });
           } else {
-            chrome.tabs.create({ url });
+            chrome.tabs.create({ url }, (newTab) => {
+              setTimeout(() => {
+                triggerThreadOpen(newTab.id);
+              }, 1200);
+            });
           }
         });
       }

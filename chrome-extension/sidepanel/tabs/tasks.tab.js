@@ -940,7 +940,7 @@ function renderTaskCard(task, now) {
           ` : ''}
         </div>
         <div class="memo-actions">
-          ${permalink ? `<a href="${permalink}" class="post-jump-link" title="${language.memoViewOriginal}">↗</a>` : ''}
+          ${permalink ? `<a href="${permalink}" class="post-jump-link" data-post-id="${task.postId || ''}" title="${language.memoViewOriginal}">↗</a>` : ''}
           <button class="btn-edit-memo btn-edit-task" data-id="${task.id}" title="${language.editTask}">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none; opacity:0.85;">
               <path d="M12 20h9"></path>

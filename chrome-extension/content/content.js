@@ -70,8 +70,61 @@ chrome.runtime.onMessage.addListener(async (message) => {
     if (typeof globalInsertImageToChat === 'function') {
       globalInsertImageToChat(message.url);
     }
+  } else if (message.action === 'open_post_thread') {
+    handleOpenPostThread(message.postId, message.rootId);
   }
 });
+
+async function handleOpenPostThread(postId, rootId) {
+  if (!postId) return;
+  console.log(`[ChatOps Ext] Request to open thread for postId: ${postId}, rootId: ${rootId}`);
+  
+  let attempts = 0;
+  const maxAttempts = 30; // 15 seconds max polling
+  
+  const interval = setInterval(() => {
+    attempts++;
+    // Look for post in the DOM
+    const postEl = document.getElementById(`post_${postId}`) || 
+                   document.getElementById(`rhsPost_${postId}`) || 
+                   document.getElementById(`rhs_post_${postId}`) ||
+                   document.querySelector(`[id$="_${postId}"]`) || // generic match
+                   (rootId ? (document.getElementById(`post_${rootId}`) || document.getElementById(`rhsPost_${rootId}`)) : null);
+                   
+    if (postEl) {
+      clearInterval(interval);
+      console.log(`[ChatOps Ext] Found target post element:`, postEl);
+      
+      // Let's find the reply button in this post element
+      // Mattermost reply buttons usually have class `.comment-icon__container`, `[aria-label*="reply" i]`, or `[aria-label*="phản hồi" i]`
+      const replyBtn = postEl.querySelector(
+        'button[aria-label*="reply" i], button[aria-label*="comment" i], button[aria-label*="phản hồi" i], .comment-icon__container, button[class*="reply" i], button[class*="comment" i], [class*="comment-icon" i]'
+      );
+      
+      if (replyBtn) {
+        console.log(`[ChatOps Ext] Clicking reply button:`, replyBtn);
+        replyBtn.click();
+      } else {
+        // Fallback: If no reply button is found inside the post element, let's search in the hover menus or search the post's action menu
+        const postActions = postEl.querySelector('.post-menu, .post__actions, .dot-menu__container, [class*="post-menu"], .post-action-menu');
+        if (postActions) {
+          const actionReplyBtn = postActions.querySelector('button[aria-label*="reply" i], button[aria-label*="comment" i], button[aria-label*="phản hồi" i]');
+          if (actionReplyBtn) {
+            console.log(`[ChatOps Ext] Clicking reply button in post menu:`, actionReplyBtn);
+            actionReplyBtn.click();
+            return;
+          }
+        }
+        console.warn(`[ChatOps Ext] Reply button not found on post.`);
+      }
+    }
+    
+    if (attempts >= maxAttempts) {
+      clearInterval(interval);
+      console.warn(`[ChatOps Ext] Target post ${postId} not found in DOM after 15s.`);
+    }
+  }, 500);
+}
 
 async function injectDynamicTheme() {
   // Inject Google Font Inter so the webpage popover modal has access to the exact same premium font as the sidepanel
@@ -362,6 +415,8 @@ function showToast(msg) {
   await loadLanguage();
   injectDynamicTheme();
 
+  let isFloatingBtnClosed = false;
+
   // Clean up any legacy extension elements left over from previous script runs to avoid duplicates
   const oldBtn = document.getElementById('chatops-ext-floating-btn');
   if (oldBtn) oldBtn.remove();
@@ -402,6 +457,7 @@ function showToast(msg) {
   closeIconBtn.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
+    isFloatingBtnClosed = true;
     btn.remove();
   });
   closeIconBtn.addEventListener('mousedown', (e) => {
@@ -415,6 +471,7 @@ function showToast(msg) {
 
   // Function to align the floating button under the last team icon
   function alignButtonToSidebar() {
+    if (isFloatingBtnClosed) return;
     // Find Mattermost team sidebar scroller or wrapper first, falling back to outer team sidebar
     let teamSidebar = document.querySelector(
       '.team-sidebar .team-wrapper, [class*="team-sidebar-items"], [class*="team-sidebar__scroller"], .team-wrapper, .team-sidebar, #teamSidebar, [class*="team-sidebar"]'

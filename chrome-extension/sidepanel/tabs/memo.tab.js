@@ -652,7 +652,7 @@ function renderNoteCard(note, categories = ['General', 'Work']) {
           </select>
         </div>
         <div class="memo-actions">
-          ${permalink ? `<a href="${permalink}" class="post-jump-link" title="${language.memoViewOriginal}">↗</a>` : ''}
+          ${permalink ? `<a href="${permalink}" class="post-jump-link" data-post-id="${note.postId || ''}" title="${language.memoViewOriginal}">↗</a>` : ''}
           <button class="btn-edit-memo" data-id="${note.id}" title="${language.editNote}">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none; opacity:0.85;">
               <path d="M12 20h9"></path>

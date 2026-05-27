@@ -101,7 +101,7 @@ export function renderPostList(posts, usersMap, baseUrl, teamName, channelsMap, 
         </div>
         <div class="post-body collapsible-body collapsed" style="margin-top:4px;">${contentHtml}</div>
         <div class="post-actions">
-           <a href="${permalink}" class="post-jump-link" title="${language.viewMessage}">↗</a>
+           <a href="${permalink}" class="post-jump-link" data-post-id="${post.id}" data-root-id="${post.root_id || ''}" title="${language.viewMessage}">↗</a>
         </div>
       </div>
     `;
@@ -182,7 +182,7 @@ export function renderMentionItem(post, author, permalink) {
       </div>
       <div class="post-body collapsible-body collapsed" style="margin-top:4px;">${escapedText}</div>
       <div class="post-actions">
-        <a href="${permalink}" target="_blank" class="post-jump-link" title="${language.openInChatOps || 'Open in ChatOps'}">↗</a>
+        <a href="${permalink}" target="_blank" class="post-jump-link" data-post-id="${post.id}" data-root-id="${post.root_id || ''}" title="${language.openInChatOps || 'Open in ChatOps'}">↗</a>
       </div>
       <div class="mention-reactions-row" style="display: flex; gap: 8px; align-items: center; justify-content: flex-end; margin-top: 8px;">
         <button class="mention-react-btn" data-post-id="${post.id}" data-emoji="white_check_mark" title="React with :white_check_mark:">✅</button>

@@ -320,6 +320,10 @@ export async function performSpSearch(isLoadMore = false) {
     searchState.isCancelled = false; // Reset cancellation flag
     
     resultsEl.innerHTML = `
+      <div style="font-size: 12.5px; color: var(--text-2); text-align: center; margin-bottom: 14px; padding: 0 16px; line-height: 1.45; font-style: italic;">
+        💡 <span data-i18n="scanTimeNotice">${language.scanTimeNotice}</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="searchProgress" style="width:15%"></div></div>
       <div class="loading-state" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; height: 100%; min-height: 150px;">
         <div style="display: flex; align-items: center; gap: 8px;">
           <span class="spinner"></span> <span>${language.searching}</span>
@@ -366,6 +370,9 @@ export async function performSpSearch(isLoadMore = false) {
 
     if (searchState.isCancelled) return;
 
+    const progressEl = document.getElementById('searchProgress');
+    if (progressEl) progressEl.style.width = '60%';
+
     const posts = result.order.map((id) => result.posts[id]).filter(Boolean);
     
     if (posts.length < UI_CONFIG.SEARCH_PAGE_SIZE) searchState.hasMore = false;
@@ -395,6 +402,8 @@ export async function performSpSearch(isLoadMore = false) {
       })
     );
     if (searchState.isCancelled) return;
+
+    if (progressEl) progressEl.style.width = '95%';
 
     const html = renderPostList(posts, usersMap, config.chatopsUrl, team.name, channelsMap, searchState.originalKeyword);
     
