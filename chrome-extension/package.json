@@ -1,6 +1,6 @@
 {
   "name": "chatops-extension",
-  "version": "3.0.5",
+  "version": "3.3.3",
   "description": "Chatops++",
   "private": true,
   "type": "module",

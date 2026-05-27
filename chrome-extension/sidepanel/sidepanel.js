@@ -187,6 +187,8 @@ function switchTab(id) {
   document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === id));
   document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === `tab-${id}`));
   if (id === 'settings') {
+    if (window.isRedirectingToSetting) return;
+
     document.querySelectorAll('.settings-accordion').forEach(acc => {
       if (acc.id === 'accordionMenuTabs') {
         chrome.storage.local.get(['accordionMenuTabsOpen'], (res) => {
@@ -310,12 +312,21 @@ function setupTabs() {
       const subtabName = link.dataset.subtab;
       if (!subtabName) return;
 
+      // Set redirection flag to bypass standard accordion resetting
+      window.isRedirectingToSetting = true;
+
       let tabId = 'settings';
       let sectionId = '';
 
-      if (subtabName.startsWith('reactions-')) {
+      if (subtabName.startsWith('reactions-') || subtabName === 'tools-search') {
         tabId = 'tools';
-        sectionId = subtabName === 'reactions-picker' ? 'reactions' : 'images';
+        if (subtabName === 'reactions-picker') {
+          sectionId = 'reactions';
+        } else if (subtabName === 'reactions-images') {
+          sectionId = 'images';
+        } else if (subtabName === 'tools-search') {
+          sectionId = 'search';
+        }
       } else if (subtabName.startsWith('features-') || subtabName === 'categories') {
         tabId = 'settings';
         sectionId = 'features';
@@ -341,6 +352,11 @@ function setupTabs() {
           }
         }
       }
+
+      // Reset redirection flag after call stack and async click animations complete
+      setTimeout(() => {
+        window.isRedirectingToSetting = false;
+      }, 300);
     }
   });
   
@@ -357,6 +373,7 @@ function setupTabs() {
       mappedTab = 'tools';
     }
     
+    window.isRedirectingToSetting = true;
     switchTab(mappedTab);
     chrome.storage.local.remove(STORAGE_KEYS.SIDEPANEL_TAB);
     
@@ -365,9 +382,15 @@ function setupTabs() {
       
       let tabId = mappedTab;
       let sectionId = '';
-      if (targetSubTab.startsWith('reactions-')) {
+      if (targetSubTab.startsWith('reactions-') || targetSubTab === 'tools-search') {
         tabId = 'tools';
-        sectionId = targetSubTab === 'reactions-picker' ? 'reactions' : 'images';
+        if (targetSubTab === 'reactions-picker') {
+          sectionId = 'reactions';
+        } else if (targetSubTab === 'reactions-images') {
+          sectionId = 'images';
+        } else if (targetSubTab === 'tools-search') {
+          sectionId = 'search';
+        }
       } else if (targetSubTab.startsWith('features-') || targetSubTab === 'categories') {
         tabId = 'settings';
         sectionId = 'features';
@@ -386,8 +409,13 @@ function setupTabs() {
               window.openSettingsAccordion(targetSubTab);
             }
           }
+          window.isRedirectingToSetting = false;
         }, 150);
+      } else {
+        window.isRedirectingToSetting = false;
       }
+    } else {
+      window.isRedirectingToSetting = false;
     }
   }
 

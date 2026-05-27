@@ -393,7 +393,7 @@ const en = {
   cleanupNowBtn: 'Cleanup Now',
   confirmDeleteTask: '⚠️ Are you sure you want to delete this task?',
   confirmDeleteNote: '⚠️ Are you sure you want to delete this note?',
-  settingQuickDelete: 'Quick Delete Button',
+  settingQuickDelete: 'Quick Delete Button (🗑️)',
   customButtonsPositionLabel: 'Buttons Position',
   customButtonsPositionSublabel: 'Configure layout relative to ChatOps menu',
   posHorizontalBefore: 'Horizontal - Before Actions',
@@ -422,8 +422,8 @@ const en = {
       
       <!-- Section 1: Interactive Settings Map -->
       <div>
-        <h4 style="margin: 0 0 10px 0; color: var(--text-1); font-weight: 800; font-size: 14px; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">⚙️ INTERACTIVE SETTINGS MAP (Click to navigate directly)</h4>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <h4 style="margin: 0 0 10px 0; color: var(--text-1); font-weight: 800; font-size: 14px; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">⚙️ SYSTEM SETTINGS (Click to navigate directly)</h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
           
           <div class="settings-road-card settings-subtab-link" data-subtab="features-toggle">
             <div style="display: flex; align-items: center; gap: 6px;">
@@ -434,9 +434,9 @@ const en = {
 
           <div class="settings-road-card settings-subtab-link" data-subtab="features-floating">
             <div style="display: flex; align-items: center; gap: 6px;">
-              <a href="#" class="settings-subtab-link" data-subtab="features-floating">Floating Buttons</a>
+              <a href="#" class="settings-subtab-link" data-subtab="features-floating">Quick Interaction Buttons</a>
             </div>
-            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Configure floating buttons (Create Task 🎯, Save Note 📝, Spam Reactions 🔥, Send Image 🖼️) and their physical layouts on ChatOps.</p>
+            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Show/hide quick interaction buttons on ChatOps (Create Task 🎯, Save Note 📝, Spam Reactions 🔥, Capture Image 🖼️, Delete Message 🗑️)</p>
           </div>
 
           <div class="settings-road-card settings-subtab-link" data-subtab="features-snooze">
@@ -444,6 +444,13 @@ const en = {
               <a href="#" class="settings-subtab-link" data-subtab="features-snooze">Reminders & Sound</a>
             </div>
             <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Set default task snooze minutes, choose notification delivery type (OS System alerts / Page Banners), and enable dynamic sound effects.</p>
+          </div>
+
+          <div class="settings-road-card settings-subtab-link" data-subtab="features-gif">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <a href="#" class="settings-subtab-link" data-subtab="features-gif">Giphy API Key (GIFs)</a>
+            </div>
+            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Configure your personal Giphy API Key and rate limits to search and send dynamic GIFs directly on ChatOps.</p>
           </div>
 
           <div class="settings-road-card settings-subtab-link" data-subtab="categories">
@@ -464,7 +471,7 @@ const en = {
             <div style="display: flex; align-items: center; gap: 6px;">
               <a href="#" class="settings-subtab-link" data-subtab="sync-data">Data & Backup</a>
             </div>
-            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Import/export notes to Markdown (.md) or JSON files, and schedule automatic auto-purging of old historical records.</p>
+            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Backup or restore your tasks and notes to the cloud via your Google account, or schedule automatic cleanups of old completed items.</p>
           </div>
 
           <div class="settings-road-card settings-subtab-link" data-subtab="reactions-picker">
@@ -476,9 +483,9 @@ const en = {
 
           <div class="settings-road-card settings-subtab-link" data-subtab="reactions-images">
             <div style="display: flex; align-items: center; gap: 6px;">
-              <a href="#" class="settings-subtab-link" data-subtab="reactions-images">Images & GIFs Library</a>
+              <a href="#" class="settings-subtab-link" data-subtab="reactions-images">Personal Image Library</a>
             </div>
-            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Manage custom image shortcuts, view them in dynamic freestyle masonry grids, and link your private Giphy API Key.</p>
+            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Upload, manage, and use your personal meme images and shortcuts in a freestyle masonry layout.</p>
           </div>
 
         </div>
@@ -513,12 +520,12 @@ const en = {
             <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Track all missed tagged mentions, DMs, or thread discussions on ChatOps. Displays convenient AI-like bullet summaries and 1-click status checking.</p>
           </div>
 
-          <div class="settings-road-card main-tab-link" data-tab="tools">
+          <div class="settings-road-card settings-subtab-link" data-subtab="tools-search">
             <div style="display: flex; align-items: center; gap: 6px;">
-              <span style="font-size: 15px;">⚡</span>
-              <a href="#" class="main-tab-link-anchor" data-tab="tools">Tools (Search & Images)</a>
+              <span style="font-size: 15px;">🔍</span>
+              <a href="#" class="settings-subtab-link" data-subtab="tools-search">Advanced Message Search</a>
             </div>
-            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Includes high-speed multi-channel Search to query conversation histories, and an Images freestyle masonry GIF & memes library to paste with 1-click.</p>
+            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Smart lookup utility to scan chat history, filter by sender, keywords, or time range easily.</p>
           </div>
 
         </div>
@@ -956,7 +963,7 @@ const vi = {
   cleanupNowBtn: 'Dọn dẹp ngay',
   confirmDeleteTask: '⚠️ Bạn có chắc chắn muốn xóa công việc này không?',
   confirmDeleteNote: '⚠️ Bạn có chắc chắn muốn xóa ghi chú này không?',
-  settingQuickDelete: 'Nút xóa tin nhắn nhanh',
+  settingQuickDelete: 'Nút xóa tin nhắn nhanh (🗑️)',
   customButtonsPositionLabel: 'Vị trí các nút',
   customButtonsPositionSublabel: 'Cấu hình vị trí so với menu gốc của ChatOps',
   posHorizontalBefore: 'Nằm ngang - Phía trước',
@@ -985,8 +992,8 @@ const vi = {
       
       <!-- Section 1: Interactive Settings Map -->
       <div>
-        <h4 style="margin: 0 0 10px 0; color: var(--text-1); font-weight: 800; font-size: 14px; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">⚙️ BẢN ĐỒ CÀI ĐẶT NHANH (Click để mở trực tiếp)</h4>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <h4 style="margin: 0 0 10px 0; color: var(--text-1); font-weight: 800; font-size: 14px; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">⚙️ BẢN ĐỒ CÀI ĐẶT HỆ THỐNG (Click để mở trực tiếp)</h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
           
           <div class="settings-road-card settings-subtab-link" data-subtab="features-toggle">
             <div style="display: flex; align-items: center; gap: 6px;">
@@ -997,9 +1004,9 @@ const vi = {
 
           <div class="settings-road-card settings-subtab-link" data-subtab="features-floating">
             <div style="display: flex; align-items: center; gap: 6px;">
-              <a href="#" class="settings-subtab-link" data-subtab="features-floating">Nút Nổi & Phím Tắt</a>
+              <a href="#" class="settings-subtab-link" data-subtab="features-floating">Nút tương tác nhanh</a>
             </div>
-            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Ẩn/hiện phím tắt nhanh (Tạo Task 🎯, Lưu Note 📝, Thả Spam Reactions 🔥, Chụp ảnh 🖼️) cạnh thanh nhập liệu hoặc chọn vị trí hiển thị phím tắt.</p>
+            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Ẩn/hiện nút tương tác nhanh trên ChatOps (Tạo Task 🎯, Lưu Note 📝, Thả Spam Reactions 🔥, Chụp ảnh 🖼️, Xóa tin nhắn 🗑️)</p>
           </div>
 
           <div class="settings-road-card settings-subtab-link" data-subtab="features-snooze">
@@ -1007,6 +1014,13 @@ const vi = {
               <a href="#" class="settings-subtab-link" data-subtab="features-snooze">Nhắc Nhở & Âm Thanh</a>
             </div>
             <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Cấu hình số phút trì hoãn mặc định (Snooze), kiểu hiển thị thông báo (Hệ điều hành / Banner trong trang), phát âm thanh cảnh báo khi đến hạn.</p>
+          </div>
+
+          <div class="settings-road-card settings-subtab-link" data-subtab="features-gif">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <a href="#" class="settings-subtab-link" data-subtab="features-gif">Giphy API Key (GIFs)</a>
+            </div>
+            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Cấu hình API Key Giphy cá nhân và giới hạn lượt gọi để tìm kiếm và gửi các ảnh GIFs động cực nhanh trực tiếp từ thanh công cụ chat.</p>
           </div>
 
           <div class="settings-road-card settings-subtab-link" data-subtab="categories">
@@ -1027,7 +1041,7 @@ const vi = {
             <div style="display: flex; align-items: center; gap: 6px;">
               <a href="#" class="settings-subtab-link" data-subtab="sync-data">Dữ Liệu & Sao Lưu</a>
             </div>
-            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Nhập/Xuất toàn bộ ghi chú ra file Markdown (.md), JSON hoặc tự động dọn dẹp (xóa) các ghi chú/task cũ sau số ngày cấu hình.</p>
+            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Sao lưu hoặc khôi phục dữ liệu lên đám mây thông qua tài khoản Google, hoặc cấu hình tự động dọn dẹp các ghi chú/task cũ để giải phóng dung lượng.</p>
           </div>
 
           <div class="settings-road-card settings-subtab-link" data-subtab="reactions-picker">
@@ -1039,9 +1053,9 @@ const vi = {
 
           <div class="settings-road-card settings-subtab-link" data-subtab="reactions-images">
             <div style="display: flex; align-items: center; gap: 6px;">
-              <a href="#" class="settings-subtab-link" data-subtab="reactions-images">Quản lý Ảnh & GIFs</a>
+              <a href="#" class="settings-subtab-link" data-subtab="reactions-images">Thư viện hình ảnh cá nhân</a>
             </div>
-            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Thêm/xóa các ảnh GIF động cá nhân trong thư viện freestyle masonry hoặc cấu hình Giphy API Key để tìm GIFs cực nhanh.</p>
+            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Tải lên, quản lý và sử dụng kho hình ảnh/meme cá nhân của bạn trong thư viện freestyle masonry.</p>
           </div>
 
         </div>
@@ -1076,12 +1090,12 @@ const vi = {
             <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Theo dõi tập trung tất cả lượt nhắc tên (@mention), tin nhắn riêng (DM) hoặc thảo luận trong thread chưa đọc. Đi kèm tóm tắt ý chính và thả phản hồi cực nhanh.</p>
           </div>
 
-          <div class="settings-road-card main-tab-link" data-tab="tools">
+          <div class="settings-road-card settings-subtab-link" data-subtab="tools-search">
             <div style="display: flex; align-items: center; gap: 6px;">
-              <span style="font-size: 15px;">⚡</span>
-              <a href="#" class="main-tab-link-anchor" data-tab="tools">Tools (Tìm kiếm & Kho ảnh)</a>
+              <span style="font-size: 15px;">🔍</span>
+              <a href="#" class="settings-subtab-link" data-subtab="tools-search">Tìm kiếm tin nhắn nâng cao</a>
             </div>
-            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Gồm tính năng Tìm kiếm siêu tốc các kênh đã tham gia, và Kho ảnh/GIFs freestyle sinh động giúp người dùng gửi nhanh ảnh chế chỉ với 1-click.</p>
+            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Công cụ tìm kiếm thông minh giúp lọc lịch sử chat, tìm theo keyword hoặc người gửi dễ dàng.</p>
           </div>
 
         </div>

@@ -1177,6 +1177,8 @@ function setupEventListeners() {
         targetPanel.classList.add('active');
       }
       
+      if (window.isRedirectingToSetting) return;
+
       // Collapse other accordions but restore the Menu Tabs & Floating Buttons accordion states
       document.querySelectorAll('.settings-accordion').forEach(acc => {
         if (acc.id === 'accordionMenuTabs') {
@@ -1393,18 +1395,6 @@ function setupEventListeners() {
   }
 
   window.navigateToSettingsSubtab = navigateToSubtab;
-
-  // Handle click on custom links that navigate between sub-tabs
-  document.addEventListener('click', (e) => {
-    const link = e.target.closest('.settings-subtab-link');
-    if (link) {
-      e.preventDefault();
-      const subtabName = link.dataset.subtab;
-      if (subtabName) {
-        navigateToSubtab(subtabName);
-      }
-    }
-  });
 
   // Cloud Sync click listeners
   const btnBackup = document.getElementById('btnSyncCloudBackup');
