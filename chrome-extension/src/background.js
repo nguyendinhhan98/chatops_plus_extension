@@ -235,7 +235,7 @@ async function handleSpamReactions(postId, sendResponse) {
     } else if (typeof settings.spamEmojis === 'string') {
       emojis = settings.spamEmojis.split(',').map(e => e.trim()).filter(Boolean);
     } else {
-      emojis = ['thumbsup', 'heart', 'fire', 'rocket', 'laughing'];
+      emojis = ['thumbsup', 'heart', 'fire', 'rocket', 'tada', 'laughing', 'smile', 'wink', 'heart_eyes', 'kissing_heart'];
     }
 
     if (emojis.length === 0) {

@@ -1727,8 +1727,9 @@ function showToast(msg) {
   const DEFAULT_SETTINGS = {
     spamEnabled: true,
     memeEnabled: true,
-    showTabs: { search: true, tasks: true, notes: true, missed: true },
-    floatingButtons: { quickNote: true, quickTask: true, spamReactions: true, imagePicker: true }
+    showTabs: { search: true, tasks: true, notes: true, missed: true, reactions: true },
+    floatingButtons: { quickNote: true, quickTask: true, spamReactions: false, imagePicker: true },
+    spamEmojis: ['thumbsup', 'heart', 'fire', 'rocket', 'tada', 'laughing', 'smile', 'wink', 'heart_eyes', 'kissing_heart']
   };
   let cachedSettings = { ...DEFAULT_SETTINGS };
   let cachedMemos = [];
@@ -1809,11 +1810,11 @@ function showToast(msg) {
       delete el.dataset.chatopsImageInjected;
     });
 
-    const showTabs = cachedSettings.showTabs || { search: true, tasks: true, notes: true, missed: true };
+    const showTabs = cachedSettings.showTabs || { search: true, tasks: true, notes: true, missed: true, reactions: true };
     const floatingButtons = cachedSettings.floatingButtons || { quickNote: true, quickTask: true, spamReactions: true, imagePicker: true };
     const tasksEnabled = (showTabs.tasks !== false) && (floatingButtons.quickTask !== false);
     const notesEnabled = (showTabs.notes !== false) && (floatingButtons.quickNote !== false);
-    const spamEnabled = (floatingButtons.spamReactions !== false);
+    const spamEnabled = (showTabs.reactions !== false) && (floatingButtons.spamReactions !== false);
 
     if (!tasksEnabled) {
       document.querySelectorAll('.chatops-action-group .chatops-quick-note-btn.task-btn').forEach(el => el.remove());
@@ -1843,11 +1844,11 @@ function showToast(msg) {
     // 1. Find all post elements (in main view or RHS thread)
     const posts = document.querySelectorAll(`.post, [id^="post_"], [class*="post-message"]`);
     
-    const showTabs = cachedSettings.showTabs || { search: true, tasks: true, notes: true, missed: true };
+    const showTabs = cachedSettings.showTabs || { search: true, tasks: true, notes: true, missed: true, reactions: true };
     const floatingButtons = cachedSettings.floatingButtons || { quickNote: true, quickTask: true, spamReactions: true, imagePicker: true };
     const tasksEnabled = (showTabs.tasks !== false) && (floatingButtons.quickTask !== false);
     const notesEnabled = (showTabs.notes !== false) && (floatingButtons.quickNote !== false);
-    const spamEnabled = (floatingButtons.spamReactions !== false);
+    const spamEnabled = (showTabs.reactions !== false) && (floatingButtons.spamReactions !== false);
 
     posts.forEach(postEl => {
       const postId = cleanPostId(postEl);

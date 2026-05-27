@@ -573,7 +573,7 @@
           <h2 style="font-size: 15px; font-weight: 600; color: var(--text-1); margin-bottom: 20px;" data-i18n="featureSettingsTitle">Feature Settings</h2>
 
           <!-- Group 1: Sidepanel Tabs & Modules -->
-          <div class="settings-accordion">
+          <div class="settings-accordion" id="accordionMenuTabs">
             <div class="settings-accordion-header">
               <div class="accordion-left">
                 <span class="accordion-icon">📋</span>
@@ -586,37 +586,64 @@
             </div>
             <div class="settings-accordion-body">
               <div class="settings-toggle-list">
+
+                <!-- Tasks (standalone parent tab) -->
                 <label class="settings-toggle-row">
-                  <span data-i18n="search">Search</span>
-                  <input type="checkbox" id="settingShowSearch" class="settings-toggle" checked>
-                  <span class="toggle-slider"></span>
-                </label>
-                <label class="settings-toggle-row">
-                  <span data-i18n="taskTabLabel">Tasks</span>
+                  <span>🎯 <span data-i18n="taskTabLabel">Tasks</span></span>
                   <input type="checkbox" id="settingShowTasks" class="settings-toggle" checked>
                   <span class="toggle-slider"></span>
                 </label>
+
+                <!-- Notes (standalone parent tab) -->
                 <label class="settings-toggle-row">
-                  <span data-i18n="memoNotesLabel">Notes</span>
+                  <span>📝 <span data-i18n="memoNotesLabel">Notes</span></span>
                   <input type="checkbox" id="settingShowNotes" class="settings-toggle" checked>
                   <span class="toggle-slider"></span>
                 </label>
-                <label class="settings-toggle-row">
-                  <span data-i18n="toolsMentionsSubTab">Mentions</span>
-                  <input type="checkbox" id="settingShowMissed" class="settings-toggle" checked>
-                  <span class="toggle-slider"></span>
-                </label>
-                <label class="settings-toggle-row">
-                  <span data-i18n="imageLibrary">Images</span>
-                  <input type="checkbox" id="settingMemeEnabled" class="settings-toggle" checked>
-                  <span class="toggle-slider"></span>
-                </label>
+
+                <!-- Tools (parent tab) + sub-tabs -->
+                <div>
+                  <label class="settings-toggle-row" id="rowShowTools" style="cursor:pointer;">
+                    <span>⚡ <span data-i18n="toolsTabLabel">Other Tools</span></span>
+                    <input type="checkbox" id="settingShowTools" class="settings-toggle" checked>
+                    <span class="toggle-slider"></span>
+                  </label>
+                  <div class="settings-toggle-sub-group expanded" id="toolsSubToggles">
+                    <label class="settings-toggle-row-sub">
+                      <span>🔍 <span data-i18n="toolsSearchSubTab">Search</span></span>
+                      <input type="checkbox" id="settingShowSearch" class="settings-toggle" checked>
+                      <span class="toggle-slider-sm"></span>
+                    </label>
+                    <label class="settings-toggle-row-sub">
+                      <span>🔔 <span data-i18n="toolsMentionsSubTab">Missed Messages</span></span>
+                      <input type="checkbox" id="settingShowMissed" class="settings-toggle" checked>
+                      <span class="toggle-slider-sm"></span>
+                    </label>
+                    <label class="settings-toggle-row-sub">
+                      <span>🖼️ <span data-i18n="toolsImagesSubTab">Images</span></span>
+                      <input type="checkbox" id="settingMemeEnabled" class="settings-toggle" checked>
+                      <span class="toggle-slider-sm"></span>
+                    </label>
+                    <label class="settings-toggle-row-sub">
+                      <span>🔥 <span data-i18n="toolsReactionsSubTab">Spam Reactions</span></span>
+                      <input type="checkbox" id="settingShowReactions" class="settings-toggle" checked>
+                      <span class="toggle-slider-sm"></span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Settings (always visible, no toggle) -->
+                <div class="settings-toggle-row-always-on">
+                  <span>⚙️ <span data-i18n="settingsTabLabel">Settings</span></span>
+                  <span class="toggle-always-on-badge" data-i18n="alwaysOnBadge">Always On</span>
+                </div>
+
               </div>
             </div>
           </div>
 
           <!-- Group 2: Floating Buttons outside ChatOps -->
-          <div class="settings-accordion">
+          <div class="settings-accordion" id="accordionFloatingButtons">
             <div class="settings-accordion-header">
               <div class="accordion-left">
                 <span class="accordion-icon">🚀</span>
@@ -639,12 +666,12 @@
                   <input type="checkbox" id="settingFloatingQuickNote" class="settings-toggle" checked>
                   <span class="toggle-slider"></span>
                 </label>
-                <label class="settings-toggle-row">
+                <label class="settings-toggle-row" id="rowFloatingSpamReactions">
                   <span data-i18n="floatingSpamReactions">Spam Reactions Hover Buttons (🔥/↩️)</span>
                   <input type="checkbox" id="settingFloatingSpamReactions" class="settings-toggle" checked>
                   <span class="toggle-slider"></span>
                 </label>
-                <label class="settings-toggle-row">
+                <label class="settings-toggle-row" id="rowFloatingImagePicker">
                   <span data-i18n="floatingImagePicker">Send Image Button (🖼️)</span>
                   <input type="checkbox" id="settingFloatingImagePicker" class="settings-toggle" checked>
                   <span class="toggle-slider"></span>

@@ -188,7 +188,19 @@ function switchTab(id) {
   document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === `tab-${id}`));
   if (id === 'settings') {
     document.querySelectorAll('.settings-accordion').forEach(acc => {
-      acc.classList.remove('open');
+      if (acc.id === 'accordionMenuTabs') {
+        chrome.storage.local.get(['accordionMenuTabsOpen'], (res) => {
+          const isOpen = res.accordionMenuTabsOpen !== false;
+          acc.classList.toggle('open', isOpen);
+        });
+      } else if (acc.id === 'accordionFloatingButtons') {
+        chrome.storage.local.get(['accordionFloatingButtonsOpen'], (res) => {
+          const isOpen = res.accordionFloatingButtonsOpen !== false;
+          acc.classList.toggle('open', isOpen);
+        });
+      } else {
+        acc.classList.remove('open');
+      }
       acc.classList.remove('highlighted');
     });
   }

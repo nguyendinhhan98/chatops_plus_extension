@@ -229,19 +229,20 @@ const DEFAULT_SETTINGS = {
     search: true,
     tasks: true, // Always true
     notes: true,
-    missed: true
+    missed: true,
+    reactions: true
   },
   floatingButtons: {
     quickNote: true,
     quickTask: true,
-    spamReactions: true,
+    spamReactions: false,
     imagePicker: true
   },
   memoCategories: ['General', 'Work'],
   spamEnabled: true,
   memeEnabled: true,
   giphyApiKey: '',
-  spamEmojis: ['thumbsup', 'heart', 'fire', 'rocket', 'laughing'],
+  spamEmojis: ['thumbsup', 'heart', 'fire', 'rocket', 'tada', 'laughing', 'smile', 'wink', 'heart_eyes', 'kissing_heart'],
   autoCleanupDays: 30,
   notificationType: 'in-page',
   appPadding: '12px',
@@ -359,6 +360,22 @@ async function loadAndApplySettings() {
   document.getElementById('settingShowTasks').checked = settings.showTabs.tasks !== false;
   document.getElementById('settingShowNotes').checked = settings.showTabs.notes !== false;
   document.getElementById('settingShowMissed').checked = settings.showTabs.missed !== false;
+  
+  // Tools parent toggle: on if any sub-tab is enabled
+  const toolsAnyOn = (settings.showTabs.search !== false) || (settings.memeEnabled !== false) || (settings.showTabs.reactions !== false) || (settings.showTabs.missed !== false);
+  const settingShowToolsEl = document.getElementById('settingShowTools');
+  if (settingShowToolsEl) settingShowToolsEl.checked = toolsAnyOn;
+
+  // Reactions sub-toggle
+  const settingShowReactionsEl = document.getElementById('settingShowReactions');
+  if (settingShowReactionsEl) settingShowReactionsEl.checked = settings.showTabs.reactions !== false;
+
+  // Expand/collapse tools sub-group based on Tools parent state
+  const toolsSubGroup = document.getElementById('toolsSubToggles');
+  if (toolsSubGroup) {
+    if (toolsAnyOn) toolsSubGroup.classList.add('expanded');
+    else toolsSubGroup.classList.remove('expanded');
+  }
 
   // Apply floating buttons checkboxes
   document.getElementById('settingFloatingQuickTask').checked = settings.floatingButtons?.quickTask !== false;
@@ -368,6 +385,21 @@ async function loadAndApplySettings() {
 
   // Sync disabled/dimmed states
   updateFloatingCheckboxesSync(settings);
+
+  // Apply Menu Tabs and Floating Buttons accordions open/close state (default open/true)
+  const resAcc = await chrome.storage.local.get(['accordionMenuTabsOpen', 'accordionFloatingButtonsOpen']);
+  
+  const menuTabsOpen = resAcc.accordionMenuTabsOpen !== false;
+  const menuTabsAcc = document.getElementById('accordionMenuTabs');
+  if (menuTabsAcc) {
+    menuTabsAcc.classList.toggle('open', menuTabsOpen);
+  }
+
+  const floatingButtonsOpen = resAcc.accordionFloatingButtonsOpen !== false;
+  const floatingButtonsAcc = document.getElementById('accordionFloatingButtons');
+  if (floatingButtonsAcc) {
+    floatingButtonsAcc.classList.toggle('open', floatingButtonsOpen);
+  }
 
   // Apply categories
   renderCategoryList(settings.memoCategories || []);
@@ -721,17 +753,17 @@ function setupEventListeners() {
   const chkMemeEnabled = document.getElementById('settingMemeEnabled');
   if (chkMemeEnabled) {
     chkMemeEnabled.addEventListener('change', async (e) => {
-      await updateSettings({ memeEnabled: e.target.checked });
+      const isChecked = e.target.checked;
+      await updateSettings({ memeEnabled: isChecked });
       showAutoSaveFeedback();
       const configArea = document.getElementById('personalMemesConfigArea');
       if (configArea) {
         configArea.style.opacity = '1';
         configArea.style.pointerEvents = 'auto';
       }
-      
       const settings = await getSettings();
-      applyTabVisibilityToDOM(settings.showTabs, settings.memeEnabled);
-      
+      applyTabVisibilityToDOM(settings.showTabs, isChecked);
+      updateFloatingCheckboxesSync(settings);
       chrome.runtime.sendMessage({ type: 'SETTINGS_UPDATED' });
     });
   }
@@ -752,18 +784,24 @@ function setupEventListeners() {
     });
   }
 
-  // Dynamic tab toggle saving and sidepanel DOM adjustments
   const bindTabToggle = (checkboxId, key) => {
     const chk = document.getElementById(checkboxId);
     if (chk) {
       chk.addEventListener('change', async (e) => {
+        const isChecked = e.target.checked;
         const settings = await getSettings();
         if (!settings.showTabs) settings.showTabs = {};
-        settings.showTabs[key] = e.target.checked;
-        await updateSettings({ showTabs: settings.showTabs });
+        if (key === 'meme') {
+          await updateSettings({ memeEnabled: isChecked });
+          settings.memeEnabled = isChecked;
+        } else {
+          settings.showTabs[key] = isChecked;
+          await updateSettings({ showTabs: settings.showTabs });
+        }
         applyTabVisibilityToDOM(settings.showTabs, settings.memeEnabled);
         updateFloatingCheckboxesSync(settings);
         showAutoSaveFeedback();
+        chrome.runtime.sendMessage({ type: 'SETTINGS_UPDATED' });
       });
     }
   };
@@ -772,6 +810,49 @@ function setupEventListeners() {
   bindTabToggle('settingShowTasks', 'tasks');
   bindTabToggle('settingShowNotes', 'notes');
   bindTabToggle('settingShowMissed', 'missed');
+  bindTabToggle('settingShowReactions', 'reactions');
+
+  // Tools parent toggle — controls sub-group expand/collapse + all child sub-tabs
+  const chkShowTools = document.getElementById('settingShowTools');
+  if (chkShowTools) {
+    chkShowTools.addEventListener('change', async (e) => {
+      const isOn = e.target.checked;
+      const settings = await getSettings();
+      if (!settings.showTabs) settings.showTabs = {};
+
+      // When turning ON: always restore all sub-tabs to true (default)
+      // When turning OFF: disable all sub-tabs
+      settings.showTabs.search = isOn;
+      settings.showTabs.missed = isOn;
+      settings.showTabs.reactions = isOn;
+      const newMemeEnabled = isOn;
+
+      await updateSettings({ showTabs: settings.showTabs, memeEnabled: newMemeEnabled });
+      settings.memeEnabled = newMemeEnabled;
+
+      // Sync child toggles UI
+      const subSearch = document.getElementById('settingShowSearch');
+      const subMissed = document.getElementById('settingShowMissed');
+      const subImages = document.getElementById('settingMemeEnabled');
+      const subReactions = document.getElementById('settingShowReactions');
+      if (subSearch) subSearch.checked = isOn;
+      if (subMissed) subMissed.checked = isOn;
+      if (subImages) subImages.checked = isOn;
+      if (subReactions) subReactions.checked = isOn;
+
+      // Expand/collapse sub-group
+      const toolsSubGroup = document.getElementById('toolsSubToggles');
+      if (toolsSubGroup) {
+        if (isOn) toolsSubGroup.classList.add('expanded');
+        else toolsSubGroup.classList.remove('expanded');
+      }
+
+      applyTabVisibilityToDOM(settings.showTabs, newMemeEnabled);
+      updateFloatingCheckboxesSync(settings);
+      showAutoSaveFeedback();
+      chrome.runtime.sendMessage({ type: 'SETTINGS_UPDATED' });
+    });
+  }
 
   // Floating buttons toggle saving
   const bindFloatingToggle = (checkboxId, key) => {
@@ -791,6 +872,7 @@ function setupEventListeners() {
             configArea.style.pointerEvents = 'auto';
           }
         }
+        chrome.runtime.sendMessage({ type: 'SETTINGS_UPDATED' });
       });
     }
   };
@@ -1095,9 +1177,21 @@ function setupEventListeners() {
         targetPanel.classList.add('active');
       }
       
-      // Collapse all accordions to not store/remember open states
+      // Collapse other accordions but restore the Menu Tabs & Floating Buttons accordion states
       document.querySelectorAll('.settings-accordion').forEach(acc => {
-        acc.classList.remove('open');
+        if (acc.id === 'accordionMenuTabs') {
+          chrome.storage.local.get(['accordionMenuTabsOpen'], (res) => {
+            const isOpen = res.accordionMenuTabsOpen !== false;
+            acc.classList.toggle('open', isOpen);
+          });
+        } else if (acc.id === 'accordionFloatingButtons') {
+          chrome.storage.local.get(['accordionFloatingButtonsOpen'], (res) => {
+            const isOpen = res.accordionFloatingButtonsOpen !== false;
+            acc.classList.toggle('open', isOpen);
+          });
+        } else {
+          acc.classList.remove('open');
+        }
         acc.classList.remove('highlighted');
       });
     }
@@ -1229,9 +1323,22 @@ function setupEventListeners() {
       const el = document.getElementById(elementId);
       const accordion = el ? el.closest('.settings-accordion') : null;
       if (accordion) {
-        // Close all other accordions first
+        // Close all other accordions first (except restoring Menu Tabs & Floating Buttons states)
         document.querySelectorAll('.settings-accordion').forEach(acc => {
-          acc.classList.remove('open');
+          if (acc === accordion) return;
+          if (acc.id === 'accordionMenuTabs') {
+            chrome.storage.local.get(['accordionMenuTabsOpen'], (res) => {
+              const isOpen = res.accordionMenuTabsOpen !== false;
+              acc.classList.toggle('open', isOpen);
+            });
+          } else if (acc.id === 'accordionFloatingButtons') {
+            chrome.storage.local.get(['accordionFloatingButtonsOpen'], (res) => {
+              const isOpen = res.accordionFloatingButtonsOpen !== false;
+              acc.classList.toggle('open', isOpen);
+            });
+          } else {
+            acc.classList.remove('open');
+          }
           acc.classList.remove('highlighted');
         });
         // Open and highlight target accordion
@@ -1456,6 +1563,15 @@ function setupEventListeners() {
       acc.classList.toggle('open');
       if (!acc.classList.contains('open')) {
         acc.classList.remove('highlighted');
+      }
+
+      // Persist accordion open/close states
+      if (acc.id === 'accordionMenuTabs') {
+        const isOpen = acc.classList.contains('open');
+        chrome.storage.local.set({ accordionMenuTabsOpen: isOpen });
+      } else if (acc.id === 'accordionFloatingButtons') {
+        const isOpen = acc.classList.contains('open');
+        chrome.storage.local.set({ accordionFloatingButtonsOpen: isOpen });
       }
     });
   });
@@ -1924,7 +2040,9 @@ export function applyTabVisibilityToDOM(showTabs, memeEnabled) {
   const tasksVisible = showTabs.tasks !== false;
   const notesVisible = showTabs.notes !== false;
   const mentionsVisible = showTabs.missed !== false;
-  const toolsVisible = (showTabs.search !== false) || (memeEnabled !== false);
+  const reactionsVisible = showTabs.reactions !== false;
+  // Tools tab visible if ANY of its sub-tabs is enabled
+  const toolsVisible = (showTabs.search !== false) || (memeEnabled !== false) || reactionsVisible || mentionsVisible;
   const settingsVisible = true; // Settings is always visible
   
   // Set main tab buttons visibility
@@ -1945,16 +2063,33 @@ export function applyTabVisibilityToDOM(showTabs, memeEnabled) {
 
   // Toggle sub-tabs inside Tools based on individual feature switches
   const subSearchBtn = document.querySelector('#toolsSubTabs .memo-sub-tab[data-section="search"]');
-  if (subSearchBtn) subSearchBtn.style.display = showTabs.search !== false ? 'block' : 'none';
+  if (subSearchBtn) subSearchBtn.style.display = showTabs.search !== false ? '' : 'none';
+
+  const subMentionsBtn = document.querySelector('#toolsSubTabs .memo-sub-tab[data-section="mentions"]');
+  if (subMentionsBtn) subMentionsBtn.style.display = mentionsVisible ? '' : 'none';
 
   const subImagesBtn = document.querySelector('#toolsSubTabs .memo-sub-tab[data-section="images"]');
-  if (subImagesBtn) subImagesBtn.style.display = memeEnabled !== false ? 'block' : 'none';
+  if (subImagesBtn) subImagesBtn.style.display = memeEnabled !== false ? '' : 'none';
+
+  const subReactionsBtn = document.querySelector('#toolsSubTabs .memo-sub-tab[data-section="reactions"]');
+  if (subReactionsBtn) subReactionsBtn.style.display = reactionsVisible ? '' : 'none';
+
+  // Sync Tools parent toggle in settings UI
+  const settingShowToolsEl = document.getElementById('settingShowTools');
+  if (settingShowToolsEl) {
+    const toolsAnyOn = (showTabs.search !== false) || (memeEnabled !== false) || reactionsVisible || mentionsVisible;
+    settingShowToolsEl.checked = toolsAnyOn;
+    const toolsSubGroup = document.getElementById('toolsSubToggles');
+    if (toolsSubGroup) {
+      if (toolsAnyOn) toolsSubGroup.classList.add('expanded');
+      else toolsSubGroup.classList.remove('expanded');
+    }
+  }
 
   // Find first active visible tab
   let firstVisibleTabId = 'tasks';
   if (tasksVisible) firstVisibleTabId = 'tasks';
   else if (notesVisible) firstVisibleTabId = 'memo';
-  else if (mentionsVisible) firstVisibleTabId = 'mentions';
   else if (toolsVisible) firstVisibleTabId = 'tools';
   else firstVisibleTabId = 'settings';
 
@@ -1982,6 +2117,8 @@ export function applyTabVisibilityToDOM(showTabs, memeEnabled) {
     let isSubVisible = true;
     if (activeSub === 'search') isSubVisible = showTabs.search !== false;
     else if (activeSub === 'images') isSubVisible = memeEnabled !== false;
+    else if (activeSub === 'mentions') isSubVisible = mentionsVisible;
+    else if (activeSub === 'reactions') isSubVisible = reactionsVisible;
 
     if (!isSubVisible) {
       // Find first visible tools subtab
@@ -2220,6 +2357,36 @@ export function updateFloatingCheckboxesSync(settings) {
       chkNote.disabled = false;
       rowNote.style.opacity = '1.0';
       rowNote.style.pointerEvents = 'auto';
+    }
+  }
+
+  const rowSpam = document.getElementById('rowFloatingSpamReactions');
+  const chkSpam = document.getElementById('settingFloatingSpamReactions');
+  const showReactions = settings.showTabs.reactions !== false;
+  if (rowSpam && chkSpam) {
+    if (!showReactions) {
+      chkSpam.disabled = true;
+      rowSpam.style.opacity = '0.5';
+      rowSpam.style.pointerEvents = 'none';
+    } else {
+      chkSpam.disabled = false;
+      rowSpam.style.opacity = '1.0';
+      rowSpam.style.pointerEvents = 'auto';
+    }
+  }
+
+  const rowImage = document.getElementById('rowFloatingImagePicker');
+  const chkImage = document.getElementById('settingFloatingImagePicker');
+  const showImages = settings.memeEnabled !== false;
+  if (rowImage && chkImage) {
+    if (!showImages) {
+      chkImage.disabled = true;
+      rowImage.style.opacity = '0.5';
+      rowImage.style.pointerEvents = 'none';
+    } else {
+      chkImage.disabled = false;
+      rowImage.style.opacity = '1.0';
+      rowImage.style.pointerEvents = 'auto';
     }
   }
 }

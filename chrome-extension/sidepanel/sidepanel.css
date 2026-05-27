@@ -1425,7 +1425,7 @@ textarea.search-form-textarea {
   transition: all 0.2s ease !important;
   border-radius: 6px !important;
   text-align: center !important;
-  display: inline-flex !important;
+  display: inline-flex;
   align-items: center !important;
   justify-content: center !important;
   margin: 0 !important;
@@ -1587,14 +1587,15 @@ button.settings-subtab-link:hover svg {
 .settings-toggle-list {
   display: flex;
   flex-direction: column;
-  gap: 8px; /* More spacing */
+  gap: 8px;
 }
 
+/* Parent toggle row (main tab) */
 .settings-toggle-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 14px; /* More padding */
+  padding: 12px 14px;
   background: #ffffff;
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -1604,10 +1605,105 @@ button.settings-subtab-link:hover svg {
   font-weight: 600;
   color: var(--text-1);
 }
+
+/* Sub-toggle group container under parent */
+.settings-toggle-sub-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 0 0 20px;
+  margin: 4px 0 8px 12px;
+  border-left: 2px solid var(--border);
+  overflow: hidden;
+  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease, margin-bottom 0.3s ease;
+  max-height: 0;
+  opacity: 0;
+}
+.settings-toggle-sub-group.expanded {
+  max-height: 350px;
+  opacity: 1;
+}
+
+/* Beautiful child toggle row */
+.settings-toggle-row-sub {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all var(--transition);
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text-2);
+}
+.settings-toggle-row-sub:hover {
+  border-color: var(--accent);
+  background: #ffffff;
+  color: var(--text-1);
+}
+
+/* Small toggle switch design */
+.toggle-slider-sm {
+  position: relative;
+  width: 30px;
+  height: 17px;
+  background-color: var(--border);
+  border-radius: 17px;
+  transition: .25s ease;
+  flex-shrink: 0;
+}
+.toggle-slider-sm:before {
+  content: "";
+  position: absolute;
+  height: 13px;
+  width: 13px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  border-radius: 50%;
+  transition: .25s ease;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+}
+input:checked + .toggle-slider-sm {
+  background-color: var(--accent);
+}
+input:checked + .toggle-slider-sm:before {
+  transform: translateX(13px);
+}
+
+
+/* Always-on row (Settings, non-interactive) */
+.settings-toggle-row-always-on {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--text-3);
+  cursor: default;
+}
+.toggle-always-on-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--success, #3db887);
+  background: rgba(61, 184, 135, 0.1);
+  border: 1px solid rgba(61, 184, 135, 0.3);
+  border-radius: 12px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+
 .settings-toggle { display: none; }
 .toggle-slider {
   position: relative; width: 36px; height: 20px; background-color: var(--border);
-  border-radius: 20px; transition: .3s;
+  border-radius: 20px; transition: .3s; flex-shrink: 0;
 }
 .toggle-slider:before {
   content: ""; position: absolute; height: 16px; width: 16px;
