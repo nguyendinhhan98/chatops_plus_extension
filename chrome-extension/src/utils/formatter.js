@@ -39,6 +39,9 @@ export function formatRichText(unsafe) {
   html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
   html = html.replace(/_([^_]+)_/g, '<em>$1</em>');
   
+  // Parse Markdown images ![alt](url)
+  html = html.replace(/!\[([^\]]*)\]\((https?:\/\/[^\)]+)\)/g, '<img src="$2" alt="$1" class="meme-img" style="max-width: 50%; height: auto; display: block; border-radius: 4px; margin-top: 6px; cursor: zoom-in;" />');
+
   // Parse Markdown links [text](url)
   html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2" target="_blank" class="post-link" style="color:var(--accent);text-decoration:underline;word-break:break-all;">$1</a>');
   

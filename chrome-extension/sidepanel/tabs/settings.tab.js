@@ -896,6 +896,10 @@ function setupEventListeners() {
   const addCategory = async () => {
     const val = inputCat.value.trim();
     if (!val) return;
+    if (val.length > 10) {
+      showErrorFeedback("Category name cannot exceed 10 characters!");
+      return;
+    }
     const settings = await getSettings();
     if (!settings.memoCategories) settings.memoCategories = [];
     
@@ -918,10 +922,23 @@ function setupEventListeners() {
     showAutoSaveFeedback();
     chrome.runtime.sendMessage({ type: 'MEMO_CATEGORIES_UPDATED' });
     inputCat.value = '';
+    const counterEl = document.getElementById('categoryCharCounter');
+    if (counterEl) counterEl.textContent = '0/10';
   };
 
   if (btnAddCat) btnAddCat.addEventListener('click', addCategory);
-  if (inputCat) inputCat.addEventListener('keydown', e => { if (e.key === 'Enter') addCategory(); });
+  if (inputCat) {
+    inputCat.addEventListener('keydown', e => { if (e.key === 'Enter') addCategory(); });
+    inputCat.addEventListener('input', () => {
+      if (inputCat.value.length > 10) {
+        inputCat.value = inputCat.value.slice(0, 10);
+      }
+      const counterEl = document.getElementById('categoryCharCounter');
+      if (counterEl) {
+        counterEl.textContent = `${inputCat.value.length}/10`;
+      }
+    });
+  }
 
   if (listCat) {
     listCat.addEventListener('click', async (e) => {
@@ -934,7 +951,7 @@ function setupEventListeners() {
         
         li.innerHTML = `
           <div class="cat-edit-mode" style="display:flex; align-items:center; gap:8px; width:100%;">
-            <input type="text" class="edit-cat-input" value="${escapeHtml(cat)}" style="flex:1; height:28px; font-size:13px; font-weight:600; padding:4px 8px; border-radius:6px; border:1px solid var(--border); outline:none; box-sizing:border-box; background:var(--bg-1); color:var(--text-1);" autocomplete="off">
+            <input type="text" class="edit-cat-input" maxlength="10" value="${escapeHtml(cat)}" style="flex:1; height:28px; font-size:13px; font-weight:600; padding:4px 8px; border-radius:6px; border:1px solid var(--border); outline:none; box-sizing:border-box; background:var(--bg-1); color:var(--text-1);" autocomplete="off">
             <button class="btn-save-cat-edit" data-idx="${idx}" data-old="${escapeHtml(cat)}" title="${language.saveBtn || 'Save'}" style="background:none; border:none; padding:4px 6px; cursor:pointer; color:var(--success); font-size:14px; font-weight:bold; display:inline-flex; align-items:center; justify-content:center;">✓</button>
             <button class="btn-cancel-cat-edit" title="${language.cancel || 'Cancel'}" style="background:none; border:none; padding:4px 6px; cursor:pointer; color:var(--danger); font-size:14px; font-weight:bold; display:inline-flex; align-items:center; justify-content:center;">✗</button>
           </div>
@@ -943,6 +960,12 @@ function setupEventListeners() {
         const input = li.querySelector('.edit-cat-input');
         input.focus();
         input.select();
+        
+        input.addEventListener('input', () => {
+          if (input.value.length > 10) {
+            input.value = input.value.slice(0, 10);
+          }
+        });
         
         input.addEventListener('keydown', (evt) => {
           if (evt.key === 'Enter') {
@@ -973,6 +996,10 @@ function setupEventListeners() {
         
         if (!newVal) {
           showErrorFeedback("Category name cannot be empty!");
+          return;
+        }
+        if (newVal.length > 10) {
+          showErrorFeedback("Category name cannot exceed 10 characters!");
           return;
         }
         
@@ -1188,6 +1215,8 @@ function setupEventListeners() {
     let elementId = '';
     if (subtabName === 'features-toggle') {
       elementId = 'settingShowSearch';
+    } else if (subtabName === 'features-floating') {
+      elementId = 'settingFloatingQuickTask';
     } else if (subtabName === 'features-snooze') {
       elementId = 'settingSnoozeMinutes';
     } else if (subtabName === 'features-gif') {
@@ -1764,8 +1793,8 @@ function renderCategoryList(categories) {
     }
   }
   listEl.innerHTML = categories.map((cat, idx) => `
-    <li data-cat="${escapeHtml(cat)}" style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:var(--bg-2); border-radius:6px; border:1px solid var(--border); margin-bottom: 8px;">
-      <span class="cat-name" style="font-size:14.5px; font-weight:600; color:var(--text-1);">${escapeHtml(cat)}</span>
+    <li data-cat="${escapeHtml(cat)}" style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:var(--bg-2); border-radius:6px; border:1px solid var(--border); margin-bottom: 8px; min-width: 0; gap: 8px;">
+      <span class="cat-name" style="font-size:14.5px; font-weight:600; color:var(--text-1); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:0; text-align:left;">${escapeHtml(cat)}</span>
       <div style="display:flex; align-items:center; gap:8px;">
         <button class="btn-edit-cat btn-edit-memo" data-idx="${idx}" data-cat="${escapeHtml(cat)}" title="${language.editBtn || 'Edit'}" style="background:none; border:none; padding:4px; cursor:pointer; color:var(--text-3); display:inline-flex; align-items:center;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
@@ -2030,29 +2059,38 @@ export async function renderSidepanelMemes() {
     return;
   }
 
-  container.style.display = 'grid';
-  container.style.gridTemplateColumns = 'repeat(auto-fill, minmax(130px, 1fr))';
-  container.style.gap = '12px';
+  container.style.display = 'flex';
+  container.style.flexDirection = 'row';
+  container.style.gap = '16px';
   container.style.minHeight = '300px';
   container.style.background = 'var(--bg-2)';
   container.style.border = '1px solid var(--border)';
-  container.style.padding = '12px';
-  container.style.alignContent = 'start';
+  container.style.padding = '12px 10px 12px 2px';
+  container.style.alignItems = 'flex-start';
 
-  let html = '';
+  let col1Html = '';
+  let col2Html = '';
 
   customMemes.forEach((url, idx) => {
     const formattedSize = formatSize(memeSizes[idx]);
-    html += `
+    const cellHtml = `
       <div class="chatops-custom-image-cell">
         <img src="${url}" class="chatops-custom-image-item" loading="lazy" />
         <span class="sidepanel-meme-size" style="bottom: 4px; left: 4px;">${formattedSize}</span>
         <button class="chatops-custom-image-delete" data-idx="${idx}" title="${language.deleteImage || 'Delete Image'}">&times;</button>
       </div>
     `;
+    if (idx % 2 === 0) {
+      col1Html += cellHtml;
+    } else {
+      col2Html += cellHtml;
+    }
   });
 
-  container.innerHTML = html;
+  container.innerHTML = `
+    <div class="chatops-custom-images-column" style="display: flex; flex-direction: column; gap: 16px; flex: 1; min-width: 0;">${col1Html}</div>
+    <div class="chatops-custom-images-column" style="display: flex; flex-direction: column; gap: 16px; flex: 1; min-width: 0;">${col2Html}</div>
+  `;
 }
 
 export function compressSidepanelImage(file, maxWidth, maxHeight, quality, callback) {

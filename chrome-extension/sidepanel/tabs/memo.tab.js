@@ -475,7 +475,7 @@ export function setup(state) {
           quickSelect.value = categories[0];
         }
         if (typeof window.convertToCustomDropdown === 'function') {
-          window.convertToCustomDropdown('quickNoteCategory', '140px');
+          window.convertToCustomDropdown('quickNoteCategory', '110px');
         }
       }
     }
@@ -516,7 +516,7 @@ export async function renderCategories() {
     }
     
     if (typeof window.convertToCustomDropdown === 'function') {
-      window.convertToCustomDropdown('quickNoteCategory', '140px');
+      window.convertToCustomDropdown('quickNoteCategory', '110px');
     }
   }
   
@@ -525,15 +525,6 @@ export async function renderCategories() {
     html += categories.map(c => `
       <button class="memo-sub-tab ${activeMemoCategory === c ? 'active' : ''}" data-category="${c}">${getCategoryDisplayName(c).toUpperCase()}</button>
     `).join('');
-    
-    // Add settings gear button to customize list with hover micro-animations
-    html += `
-      <button class="settings-subtab-link" data-subtab="categories" 
-        title="${language.customizeCategories || 'Customize List'}"
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="pointer-events: none; transition: transform 0.3s ease;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-      </button>
-    `;
     tabsContainer.innerHTML = html;
   }
 }
@@ -587,6 +578,13 @@ export async function loadMemos() {
       if (!isOverflowing) {
         collapseBtn.style.display = 'none';
       }
+    }
+  });
+
+  // Convert note card categories to custom premium dropdowns
+  noteList.querySelectorAll('.note-edit-category').forEach(select => {
+    if (typeof window.convertToCustomDropdown === 'function') {
+      window.convertToCustomDropdown(select, '80px', '22px');
     }
   });
 }

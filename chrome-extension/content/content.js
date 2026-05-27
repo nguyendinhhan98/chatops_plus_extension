@@ -643,19 +643,28 @@ function showToast(msg) {
       return;
     }
 
-    let html = '';
+    let col1Html = '';
+    let col2Html = '';
     
     customMemes.forEach((url, idx) => {
-      html += `
+      const cellHtml = `
         <div class="chatops-custom-image-cell">
           <img src="${url}" class="chatops-custom-image-item" loading="lazy" title="${language.clickToSend}" />
           <button class="chatops-custom-image-preview" data-idx="${idx}" title="${language.previewImage || 'Preview full image'}">&#x1F50D;</button>
           <button class="chatops-custom-image-delete" data-idx="${idx}" title="${language.deleteImage}">&times;</button>
         </div>
       `;
+      if (idx % 2 === 0) {
+        col1Html += cellHtml;
+      } else {
+        col2Html += cellHtml;
+      }
     });
 
-    container.innerHTML = html;
+    container.innerHTML = `
+      <div class="chatops-custom-images-column" style="display: flex; flex-direction: column; gap: 16px; flex: 1; min-width: 0;">${col1Html}</div>
+      <div class="chatops-custom-images-column" style="display: flex; flex-direction: column; gap: 16px; flex: 1; min-width: 0;">${col2Html}</div>
+    `;
   }
 
   // ─── Image Preview (hover/click) ───
@@ -1543,13 +1552,23 @@ function showToast(msg) {
 
     const msgBodyEl = postEl.querySelector('.post-message__text, .post__body p, [class*="post-message"]');
     let msgTextFull = msgBodyEl ? msgBodyEl.innerText.trim() : '';
-    if (!msgTextFull) {
-      const imgEl = postEl.querySelector('img.attachment__image, img.markdown-inline-img, .post-image__column img');
-      if (imgEl) {
-        msgTextFull = language.msgPreviewImage;
-      } else {
-        msgTextFull = language.msgPreviewNoText;
+    
+    // Find all images in the post to append as Markdown
+    const imgEls = postEl.querySelectorAll('img.attachment__image, img.markdown-inline-img, .post-image__column img');
+    if (imgEls.length > 0) {
+      const imgUrls = Array.from(imgEls).map(img => img.src).filter(Boolean);
+      if (imgUrls.length > 0) {
+        const imageMarkdown = imgUrls.map(url => `![Image](${url})`).join('\n');
+        if (msgTextFull) {
+          msgTextFull += '\n\n' + imageMarkdown;
+        } else {
+          msgTextFull = imageMarkdown;
+        }
       }
+    }
+
+    if (!msgTextFull) {
+      msgTextFull = language.msgPreviewNoText;
     }
     const postId = cleanPostId(postEl);
     

@@ -172,7 +172,7 @@ const en = {
   reactionNotFound: 'No reactions to retract!',
 
   // Categories
-  categoryAll: 'All Categories',
+  categoryAll: 'All',
   categoryGeneral: 'General',
   categoryWork: 'Work',
   categoryPersonal: 'Personal',
@@ -216,7 +216,7 @@ const en = {
   toolsSearchSubTab: 'Search',
   toolsMentionsSubTab: 'Missed Messages',
   toolsImagesSubTab: 'Images',
-  toolsReactionsSubTab: 'Reactions',
+  toolsReactionsSubTab: 'Spam Reactions',
   settingsTabLabel: 'Settings',
   searchTermsPlaceholder: 'Search keyword... (Enter to search)',
   searchUserPlaceholder: 'Search user...',
@@ -249,7 +249,7 @@ const en = {
   mentionDMs: 'Direct Messages (DM / GM)',
   imageLibraryTab: 'My Library',
   gifLibraryTab: 'GIFs',
-  reactionSpammerTab: 'Reactions',
+  reactionSpammerTab: 'Spam Reactions',
   giphyGifSearch: 'Giphy GIFs',
   searchGifPlaceholder: 'Search GIFs on Giphy...',
   gifDefaultHint: '💡 These are trending GIFs. Search above to find more!',
@@ -414,71 +414,107 @@ const en = {
   collapseBtnBottom: 'Collapse',
   userGuideTitle: 'System Guide & Power Tips 💡',
   userGuideHTML: `
-    <div style="font-family: inherit; color: var(--text-1); line-height: 1.5; font-size: 13px; display: flex; flex-direction: column; gap: 12px;">
+    <div style="font-family: inherit; color: var(--text-1); line-height: 1.5; font-size: 14px; display: flex; flex-direction: column; gap: 16px;">
       
-      <!-- Section 1: Features -->
+      <!-- Section 1: Interactive Settings Map -->
       <div>
-        <h4 style="margin: 0 0 4px 0; color: var(--accent); font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px;">🔍 1. Search & Analysis</h4>
-        <p style="margin: 0; color: var(--text-2);">Find keywords, filter by sender (From) or specific channels (In) across ChatOps workspace history.</p>
-      </div>
-
-      <div>
-        <h4 style="margin: 0 0 4px 0; color: var(--accent); font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px;">🎯 2. Tasks & Notes</h4>
-        <p style="margin: 0; color: var(--text-2);">Manage personal checklists and persistent note cards. Categorize them and schedule automated repeating reminders.</p>
-      </div>
-
-      <div>
-        <h4 style="margin: 0 0 4px 0; color: var(--accent); font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px;">💬 3. Chatbox Powerups</h4>
-        <p style="margin: 0; color: var(--text-2);">Inject quick buttons directly beside Emoji Picker to search GIFs/Memes, send Emoji Spams, or capture screenshots inside ChatOps instantly.</p>
-      </div>
-
-      <div>
-        <h4 style="margin: 0 0 4px 0; color: var(--accent); font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px;">⚙️ 4. Advanced Settings</h4>
-        <ul style="margin: 0; padding-left: 18px; color: var(--text-2); display: flex; flex-direction: column; gap: 3px;">
-          <li><strong>Tab Visibility:</strong> Toggle primary tabs (Search, Tasks, Notes, Missed Messages) on/off to simplify your panel interface.</li>
-          <li><strong>Interface & Spacing:</strong> Personalize preset theme colors and layout densities to match your comfort.</li>
-          <li><strong>Reactions & Image Setup:</strong> Configure your custom Emoji Spam quick list and manage your personal Image Library or Giphy API Key.</li>
-          <li><strong>Auto-Cleanup:</strong> Automatically purge ancient notes/tasks older than X days to keep the local database fast.</li>
-          <li><strong>Notifications & Sounds:</strong> Enable desktop/tab alerts and dynamic audio cues for overdue tasks or new reminders.</li>
-          <li><strong>Custom Categories:</strong> Create and delete custom folders to dynamically catalog and filter your personal Notes.</li>
-        </ul>
-      </div>
-
-      <div>
-        <h4 style="margin: 0 0 4px 0; color: var(--accent); font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px;">⚡ 5. Hover Quick Actions on Messages</h4>
-        <p style="margin: 0 0 4px 0; color: var(--text-2);">Hover over any chat message in ChatOps to trigger instant productivity shortcuts:</p>
-        <ul style="margin: 0; padding-left: 18px; color: var(--text-2); display: flex; flex-direction: column; gap: 3px;">
-          <li><strong>🎯 Create Task:</strong> Creates a task containing that message's permalink and text contents.</li>
-          <li><strong>📝 Add Note:</strong> Adds the message content as a quick memo under your catalog.</li>
-          <li><strong>🔥 Emoji Spam:</strong> Automatically spam multiple reactions instantly with 1-click.</li>
-          <li><strong>↩️ Clear Reactions:</strong> Instantly clear all reactions you added to that post.</li>
-          <li><strong>🗑️ Quick Delete:</strong> Red trash can icon appears on your own messages to instantly delete them without double confirmations.</li>
-        </ul>
-      </div>
-
-      <!-- Section 2: Unified Tips & Shortcuts -->
-      <div style="border-top: 1px dashed var(--border); padding-top: 10px; margin-top: 4px;">
-        <h4 style="margin: 0 0 6px 0; color: var(--text-1); font-weight: 800; font-size: 13.5px; text-transform: uppercase; letter-spacing: 0.5px;">💡 Combined Power Tips & Shortcuts</h4>
-        <div style="display: flex; flex-direction: column; gap: 6px;">
+        <h4 style="margin: 0 0 10px 0; color: var(--text-1); font-weight: 800; font-size: 13.5px; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">⚙️ INTERACTIVE SETTINGS MAP (Click to navigate directly)</h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
           
-          <div style="background: rgba(28,88,217,0.04); border-left: 3px solid var(--accent); padding: 6px 8px; border-radius: 4px;">
-            <strong style="color: var(--accent);">⚡ Double-Click Shortcut:</strong>
-            <span style="color: var(--text-2);"> Double-click any navigation tab (Search, Tasks, Notes, Missed Messages) at the top of the sidepanel to instantly pop open the corresponding modal form!</span>
+          <div style="background: var(--bg-1); border: 1px solid var(--border); padding: 12px; border-radius: 8px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 6px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="font-size: 15px;">📋</span>
+              <a href="#" class="settings-subtab-link" data-subtab="features-toggle" style="color: var(--accent); font-weight: 700; font-size: 14.5px; text-decoration: none; border-bottom: 1px dashed var(--accent);">Menu Tab Toggles</a>
+            </div>
+            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Show/hide primary tabs (Search, Tasks, Notes, Missed, Images) inside the Sidepanel to maintain a focused and minimalist workspace.</p>
           </div>
 
-          <div style="background: rgba(28,88,217,0.04); border-left: 3px solid var(--accent); padding: 6px 8px; border-radius: 4px;">
-            <strong style="color: var(--accent);">✂️ Note Line Copying:</strong>
-            <span style="color: var(--text-2);"> Hover over any line of text in an expanded Note card, then click the small gray clipboard icon to copy *only that specific line* instantly!</span>
+          <div style="background: var(--bg-1); border: 1px solid var(--border); padding: 12px; border-radius: 8px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 6px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="font-size: 15px;">🚀</span>
+              <a href="#" class="settings-subtab-link" data-subtab="features-floating" style="color: var(--accent); font-weight: 700; font-size: 14.5px; text-decoration: none; border-bottom: 1px dashed var(--accent);">Floating Buttons</a>
+            </div>
+            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Configure floating buttons (Create Task 🎯, Save Note 📝, Spam Reactions 🔥, Send Image 🖼️) and their physical layouts on ChatOps.</p>
           </div>
 
-          <div style="background: rgba(28,88,217,0.04); border-left: 3px solid var(--accent); padding: 6px 8px; border-radius: 4px;">
-            <strong style="color: var(--accent);">🚀 Performance Hack:</strong>
-            <span style="color: var(--text-2);"> Always select a specific target channel in the "In Channel" filter instead of searching the entire workspace to get search results up to 10x faster!</span>
+          <div style="background: var(--bg-1); border: 1px solid var(--border); padding: 12px; border-radius: 8px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 6px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="font-size: 15px;">🔔</span>
+              <a href="#" class="settings-subtab-link" data-subtab="features-snooze" style="color: var(--accent); font-weight: 700; font-size: 14.5px; text-decoration: none; border-bottom: 1px dashed var(--accent);">Reminders & Sound</a>
+            </div>
+            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Set default task snooze minutes, choose notification delivery type (OS System alerts / Page Banners), and enable dynamic sound effects.</p>
+          </div>
+
+          <div style="background: var(--bg-1); border: 1px solid var(--border); padding: 12px; border-radius: 8px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 6px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="font-size: 15px;">🏷️</span>
+              <a href="#" class="settings-subtab-link" data-subtab="categories" style="color: var(--accent); font-weight: 700; font-size: 14.5px; text-decoration: none; border-bottom: 1px dashed var(--accent);">Note Categories</a>
+            </div>
+            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Create and manage folder labels (maximum 10-char limit) to easily organize, catalog, and filter your personal Note cards.</p>
+          </div>
+
+          <div style="background: var(--bg-1); border: 1px solid var(--border); padding: 12px; border-radius: 8px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 6px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="font-size: 15px;">🎨</span>
+              <a href="#" class="settings-subtab-link" data-subtab="ui-theme" style="color: var(--accent); font-weight: 700; font-size: 14.5px; text-decoration: none; border-bottom: 1px dashed var(--accent);">Themes & Layout</a>
+            </div>
+            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Switch between preset color palettes (Theme Light/Dark/Rose/Slate...) and change line height densities (Compact/Comfortable).</p>
+          </div>
+
+          <div style="background: var(--bg-1); border: 1px solid var(--border); padding: 12px; border-radius: 8px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 6px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="font-size: 15px;">💾</span>
+              <a href="#" class="settings-subtab-link" data-subtab="sync-data" style="color: var(--accent); font-weight: 700; font-size: 14.5px; text-decoration: none; border-bottom: 1px dashed var(--accent);">Data & Backup</a>
+            </div>
+            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Import/export notes to Markdown (.md) or JSON files, and schedule automatic auto-purging of old historical records.</p>
+          </div>
+
+          <div style="background: var(--bg-1); border: 1px solid var(--border); padding: 12px; border-radius: 8px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 6px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="font-size: 15px;">🔥</span>
+              <a href="#" class="settings-subtab-link" data-subtab="reactions-picker" style="color: var(--accent); font-weight: 700; font-size: 14.5px; text-decoration: none; border-bottom: 1px dashed var(--accent);">Spam Reactions Setup</a>
+            </div>
+            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Customize your quick Spam Reactions list. Instantly inject all configured emojis onto any target message with 1-click.</p>
+          </div>
+
+          <div style="background: var(--bg-1); border: 1px solid var(--border); padding: 12px; border-radius: 8px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 6px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="font-size: 15px;">🖼️</span>
+              <a href="#" class="settings-subtab-link" data-subtab="reactions-images" style="color: var(--accent); font-weight: 700; font-size: 14.5px; text-decoration: none; border-bottom: 1px dashed var(--accent);">Images & GIFs Library</a>
+            </div>
+            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Manage custom image shortcuts, view them in dynamic freestyle masonry grids, and link your private Giphy API Key.</p>
           </div>
 
         </div>
       </div>
-      
+
+      <!-- Section 2: Hover Quick Actions -->
+      <div style="background: var(--bg-1); border: 1px solid var(--border); padding: 12px; border-radius: 8px; display: flex; flex-direction: column; gap: 4px;">
+        <h4 style="margin: 0; color: var(--accent); font-weight: 700; font-size: 13.5px; display: flex; align-items: center; gap: 6px;">⚡ HOVER ACTIONS ON MESSAGES CHATOPS</h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; font-size: 13px; margin-top: 4px;">
+          <div style="display: flex; gap: 6px; align-items: center;"><span style="color: var(--accent);">🎯</span> <span style="color: var(--text-2);">Save message as a pending <strong>Task</strong></span></div>
+          <div style="display: flex; gap: 6px; align-items: center;"><span style="color: var(--accent);">📝</span> <span style="color: var(--text-2);">Save message as a personal <strong>Note card</strong></span></div>
+          <div style="display: flex; gap: 6px; align-items: center;"><span style="color: var(--accent);">🔥</span> <span style="color: var(--text-2);">Dynamic <strong>Spam Reactions</strong> in 1-click</span></div>
+          <div style="display: flex; gap: 6px; align-items: center;"><span style="color: var(--accent);">↩️</span> <span style="color: var(--text-2);"><strong>Instantly clear</strong> all your reactions</span></div>
+          <div style="display: flex; gap: 6px; align-items: center; grid-column: 1 / -1;"><span style="color: #dc2626;">🗑️</span> <span style="color: var(--text-2);"><strong>Delete your own messages</strong> instantly (no confirmation popup)</span></div>
+        </div>
+      </div>
+
+      <!-- Section 3: Power Tips -->
+      <div style="border-top: 1px dashed var(--border); padding-top: 12px; margin-top: 2px;">
+        <h4 style="margin: 0 0 8px 0; color: var(--text-1); font-weight: 800; font-size: 13.5px; text-transform: uppercase; letter-spacing: 0.5px;">💡 DYNAMIC POWER TIPS</h4>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="background: rgba(28,88,217,0.04); border-left: 3px solid var(--accent); padding: 8px 10px; border-radius: 4px; font-size: 13px; line-height: 1.5;">
+            <strong style="color: var(--accent);">⚡ Double-Click Shortcut:</strong>
+            <span style="color: var(--text-2);"> Double-click any navigation tab (Search, Tasks, Notes) at the top of the sidepanel to pop open its entry form instantly!</span>
+          </div>
+          <div style="background: rgba(28,88,217,0.04); border-left: 3px solid var(--accent); padding: 8px 10px; border-radius: 4px; font-size: 13px; line-height: 1.5;">
+            <strong style="color: var(--accent);">✂️ Clipboard Copy:</strong>
+            <span style="color: var(--text-2);"> Hover over any text line in an expanded Note card, click the clipboard icon to copy *only that specific line*!</span>
+          </div>
+        </div>
+      </div>
+    </div>
   `,
   previewImage: 'Preview full image',
   systemHelpTooltip: 'System Help & Tips',
@@ -561,7 +597,7 @@ const vi = {
 
   // Sidepanel Tasks Tab
   taskTabLabel: 'Công việc',
-  taskEmpty: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">Hướng dẫn sử dụng</h4><p class="card-desc">Nhấp vào nút <span style="display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; width: 15px; height: 15px; border-radius: 50%; font-size: 10px; font-weight: bold; line-height: 1; margin: 0 2px; vertical-align: middle; position: relative; top: -1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">+</span> ở góc dưới cùng bên phải để thêm công việc, hoặc di chuột qua bất kỳ tin nhắn nào trong ChatOps và nhấp vào biểu tượng 🎯 để ghim thành công việc!</p></div></div>',
+  taskEmpty: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">Hướng dẫn sử dụng</h4><p class="card-desc">Nhấp vào nút <span style="display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; width: 15px; height: 15px; border-radius: 50%; font-size: 10px; font-weight: bold; line-height: 1; margin: 0 2px; vertical-align: middle; position: relative; top: -1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">+</span> ở góc dưới cùng bên phải để thêm công việc, hoặc di chuột qua bất kỳ tin nhắn nào trong ChatOps và nhấp vào biểu tượng 🎯 để ghim công việc!</p></div></div>',
   taskClickHint: '📌 Ghim tin nhắn trong ChatOps hoặc nhấp vào nút <span style="display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; width: 14px; height: 14px; border-radius: 50%; font-size: 9px; font-weight: bold; line-height: 1; margin: 0 2px; vertical-align: middle; position: relative; top: -1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">+</span> ở góc dưới cùng bên phải.',
   taskPending: 'Chờ xử lý',
   taskCompleted: 'Đã hoàn thành',
@@ -583,7 +619,7 @@ const vi = {
 
   // Sidepanel Memo (Notes) Tab
   memoTasksEmpty: 'Chưa có công việc nào.',
-  memoNotesEmpty: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">Hướng dẫn sử dụng</h4><p class="card-desc">Nhấp vào nút <span style="display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; width: 15px; height: 15px; border-radius: 50%; font-size: 10px; font-weight: bold; line-height: 1; margin: 0 2px; vertical-align: middle; position: relative; top: -1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">+</span> ở góc dưới cùng bên phải để thêm ghi chú, hoặc di chuột qua bất kỳ tin nhắn nào trong ChatOps và nhấp vào biểu tượng 📝 để ghim thành ghi chú!</p></div></div>',
+  memoNotesEmpty: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">Hướng dẫn sử dụng</h4><p class="card-desc">Nhấp vào nút <span style="display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; width: 15px; height: 15px; border-radius: 50%; font-size: 10px; font-weight: bold; line-height: 1; margin: 0 2px; vertical-align: middle; position: relative; top: -1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">+</span> ở góc dưới cùng bên phải để thêm ghi chú, hoặc di chuột qua bất kỳ tin nhắn nào trong ChatOps và nhấp vào biểu tượng 📝 để ghim ghi chú!</p></div></div>',
   memoClickHint: '📝 Ghim ghi chú trong ChatOps hoặc nhấp vào nút <span style="display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; width: 14px; height: 14px; border-radius: 50%; font-size: 9px; font-weight: bold; line-height: 1; margin: 0 2px; vertical-align: middle; position: relative; top: -1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">+</span> ở góc dưới cùng bên phải.',
   memoPending: 'Chờ xử lý',
   memoCompleted: 'Đã hoàn thành',
@@ -663,7 +699,7 @@ const vi = {
   reactionNotFound: 'Không có cảm xúc nào để hoàn tác!',
 
   // Categories
-  categoryAll: 'Tất cả danh mục',
+  categoryAll: 'Tất cả',
   categoryGeneral: 'Chung',
   categoryWork: 'Công việc',
   categoryPersonal: 'Cá nhân',
@@ -707,7 +743,7 @@ const vi = {
   toolsSearchSubTab: 'Tìm kiếm',
   toolsMentionsSubTab: 'Tin nhắn bỏ lỡ',
   toolsImagesSubTab: 'Hình ảnh',
-  toolsReactionsSubTab: 'Cảm xúc',
+  toolsReactionsSubTab: 'Spam Cảm xúc',
   settingsTabLabel: 'Cài đặt',
   searchTermsPlaceholder: 'Từ khóa tìm kiếm... (Ấn Enter để tìm)',
   searchUserPlaceholder: 'Tìm kiếm người dùng...',
@@ -740,7 +776,7 @@ const vi = {
   mentionDMs: 'Tin nhắn trực tiếp (DM / GM)',
   imageLibraryTab: 'Ảnh của tôi',
   gifLibraryTab: 'GIFs',
-  reactionSpammerTab: 'Cảm xúc',
+  reactionSpammerTab: 'Spam Cảm xúc',
   giphyGifSearch: 'GIFs từ Giphy',
   searchGifPlaceholder: 'Tìm kiếm ảnh GIF...',
   gifDefaultHint: '💡 Đây là các ảnh GIFs nổi bật mặc định. Nhập từ khóa để tìm thêm nhiều ảnh khác!',
@@ -905,71 +941,107 @@ const vi = {
   collapseBtnBottom: 'Thu gọn',
   userGuideTitle: 'Hướng dẫn Hệ thống & Mẹo Năng suất 💡',
   userGuideHTML: `
-    <div style="font-family: inherit; color: var(--text-1); line-height: 1.5; font-size: 13px; display: flex; flex-direction: column; gap: 12px;">
+    <div style="font-family: inherit; color: var(--text-1); line-height: 1.5; font-size: 14px; display: flex; flex-direction: column; gap: 16px;">
       
-      <!-- Section 1: Features -->
+      <!-- Section 1: Interactive Settings Map -->
       <div>
-        <h4 style="margin: 0 0 4px 0; color: var(--accent); font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px;">🔍 1. Tìm kiếm & Phân tích</h4>
-        <p style="margin: 0; color: var(--text-2);">Tìm kiếm từ khóa nâng cao, lọc theo người gửi (From) hoặc kênh cụ thể (In) trên lịch sử ChatOps.</p>
-      </div>
-
-      <div>
-        <h4 style="margin: 0 0 4px 0; color: var(--accent); font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px;">🎯 2. Công việc & Ghi chú</h4>
-        <p style="margin: 0; color: var(--text-2);">Quản lý danh sách việc cần làm (Checklist) và ghi chú cá nhân. Thiết lập lịch nhắc nhở lặp lại hàng ngày tiện lợi.</p>
-      </div>
-
-      <div>
-        <h4 style="margin: 0 0 4px 0; color: var(--accent); font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px;">💬 3. Tiện ích Chatbox</h4>
-        <p style="margin: 0; color: var(--text-2);">Chèn trực tiếp các nút cạnh Emoji Picker để tìm GIFs/Memes, gửi nhanh Emoji Spam hoặc chụp màn hình chatbox trong ChatOps tức thì.</p>
-      </div>
-
-      <div>
-        <h4 style="margin: 0 0 4px 0; color: var(--accent); font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px;">⚙️ 4. Khám phá Cài đặt (Settings)</h4>
-        <ul style="margin: 0; padding-left: 18px; color: var(--text-2); display: flex; flex-direction: column; gap: 3px;">
-          <li><strong>Ẩn/Hiện Tab:</strong> Cho phép ẩn hoặc hiển thị các Tab chính (Search, Tasks, Notes, Tin nhắn bỏ lỡ) để giao diện tối giản, tập trung hơn.</li>
-          <li><strong>Giao diện & Khoảng cách:</strong> Thay đổi bảng màu chủ đạo (Theme) và độ giãn dòng hiển thị theo sở thích.</li>
-          <li><strong>Cài đặt Reactions & Thư viện Ảnh:</strong> Thiết lập danh sách phím tắt Emoji Spam và quản lý thư viện ảnh cá nhân / Giphy API Key để tìm GIFs siêu tốc.</li>
-          <li><strong>Tự Động Dọn Dẹp:</strong> Tự động xóa ghi chú hoặc công việc cũ sau số ngày cấu hình (ví dụ 30 ngày) để cơ sở dữ liệu luôn nhẹ và chạy nhanh.</li>
-          <li><strong>Thông báo & Âm thanh:</strong> Bật hiển thị cảnh báo và phát âm thanh sinh động khi có tin nhắn nhắc nhở mới hoặc công việc đến hạn.</li>
-          <li><strong>Quản lý Danh mục:</strong> Thêm hoặc xóa các danh mục tự chọn để phân loại và sắp xếp thẻ Ghi chú một cách khoa học.</li>
-        </ul>
-      </div>
-
-      <div>
-        <h4 style="margin: 0 0 4px 0; color: var(--accent); font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px;">⚡ 5. Phím tắt Nhanh trên Tin nhắn (Hover Quick Actions)</h4>
-        <p style="margin: 0 0 4px 0; color: var(--text-2);">Di chuột qua bất kỳ tin nhắn chat nào trong ChatOps để sử dụng ngay các phím tắt siêu tốc:</p>
-        <ul style="margin: 0; padding-left: 18px; color: var(--text-2); display: flex; flex-direction: column; gap: 3px;">
-          <li><strong>🎯 Tạo Công việc nhanh:</strong> Click biểu tượng bia bắn để lưu tin nhắn thành công việc cần làm kèm link nhảy ngược về tin nhắn gốc.</li>
-          <li><strong>📝 Lưu Ghi chú nhanh:</strong> Lưu nội dung tin nhắn chat thành một thẻ ghi chú cá nhân tức thì.</li>
-          <li><strong>🔥 Emoji Spam:</strong> Tự động thả hàng loạt cảm xúc cảm xúc đã cài đặt sẵn chỉ với 1-click.</li>
-          <li><strong>↩️ Thu hồi Emoji:</strong> Rút lại toàn bộ các cảm xúc bạn đã thả trên tin nhắn đó trong nháy mắt.</li>
-          <li><strong>🗑️ Xóa nhanh tin nhắn:</strong> Nút thùng rác đỏ hiển thị trên tin nhắn của chính bạn, nhấp chuột để xóa ngay lập tức mà không cần xác nhận rườm rà.</li>
-        </ul>
-      </div>
-
-      <!-- Section 2: Unified Tips & Shortcuts -->
-      <div style="border-top: 1px dashed var(--border); padding-top: 10px; margin-top: 4px;">
-        <h4 style="margin: 0 0 6px 0; color: var(--text-1); font-weight: 800; font-size: 13.5px; text-transform: uppercase; letter-spacing: 0.5px;">💡 Mẹo Năng Suất & Phím Tắt</h4>
-        <div style="display: flex; flex-direction: column; gap: 6px;">
+        <h4 style="margin: 0 0 10px 0; color: var(--text-1); font-weight: 800; font-size: 13.5px; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">⚙️ BẢN ĐỒ CÀI ĐẶT NHANH (Click để mở trực tiếp)</h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
           
-          <div style="background: rgba(28,88,217,0.04); border-left: 3px solid var(--accent); padding: 6px 8px; border-radius: 4px;">
-            <strong style="color: var(--accent);">⚡ Click Đúp Mở Nhanh:</strong>
-            <span style="color: var(--text-2);"> Nhấp đúp (Double-click) chuột trực tiếp vào bất kỳ tab điều hướng nào ở trên cùng Sidepanel (Search, Tasks, Notes, Tin nhắn bỏ lỡ) để mở ngay form nhập liệu tương ứng!</span>
+          <div style="background: var(--bg-1); border: 1px solid var(--border); padding: 12px; border-radius: 8px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 6px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="font-size: 15px;">📋</span>
+              <a href="#" class="settings-subtab-link" data-subtab="features-toggle" style="color: var(--accent); font-weight: 700; font-size: 14.5px; text-decoration: none; border-bottom: 1px dashed var(--accent);">Ẩn/Hiện Tab menu</a>
+            </div>
+            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Bật/tắt các tab chính (Tìm kiếm, Tasks, Ghi chú, Tin nhắn bỏ lỡ, Kho ảnh) trên thanh Sidepanel để tối giản hóa không gian làm việc.</p>
           </div>
 
-          <div style="background: rgba(28,88,217,0.04); border-left: 3px solid var(--accent); padding: 6px 8px; border-radius: 4px;">
-            <strong style="color: var(--accent);">✂️ Sao Chép Dòng Ghi Chú:</strong>
-            <span style="color: var(--text-2);"> Di chuột vào từng dòng văn bản bất kỳ ở thẻ Ghi chú (Note) đã mở rộng, nhấp vào biểu tượng Sao chép nhỏ để copy duy nhất dòng đó!</span>
+          <div style="background: var(--bg-1); border: 1px solid var(--border); padding: 12px; border-radius: 8px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 6px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="font-size: 15px;">🚀</span>
+              <a href="#" class="settings-subtab-link" data-subtab="features-floating" style="color: var(--accent); font-weight: 700; font-size: 14.5px; text-decoration: none; border-bottom: 1px dashed var(--accent);">Nút Nổi & Phím Tắt</a>
+            </div>
+            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Ẩn/hiện phím tắt nhanh (Tạo Task 🎯, Lưu Note 📝, Thả Spam Reactions 🔥, Chụp ảnh 🖼️) cạnh thanh nhập liệu hoặc chọn vị trí hiển thị phím tắt.</p>
           </div>
 
-          <div style="background: rgba(28,88,217,0.04); border-left: 3px solid var(--accent); padding: 6px 8px; border-radius: 4px;">
-            <strong style="color: var(--accent);">🚀 Tăng Tốc Tìm Kiếm:</strong>
-            <span style="color: var(--text-2);"> Luôn chọn một kênh chat cụ thể ở bộ lọc "In Channel" thay vì quét toàn bộ workspace để tăng tốc độ tìm kiếm lên đến gấp 10 lần!</span>
+          <div style="background: var(--bg-1); border: 1px solid var(--border); padding: 12px; border-radius: 8px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 6px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="font-size: 15px;">🔔</span>
+              <a href="#" class="settings-subtab-link" data-subtab="features-snooze" style="color: var(--accent); font-weight: 700; font-size: 14.5px; text-decoration: none; border-bottom: 1px dashed var(--accent);">Nhắc Nhở & Âm Thanh</a>
+            </div>
+            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Cấu hình số phút trì hoãn mặc định (Snooze), kiểu hiển thị thông báo (Hệ điều hành / Banner trong trang), phát âm thanh cảnh báo khi đến hạn.</p>
+          </div>
+
+          <div style="background: var(--bg-1); border: 1px solid var(--border); padding: 12px; border-radius: 8px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 6px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="font-size: 15px;">🏷️</span>
+              <a href="#" class="settings-subtab-link" data-subtab="categories" style="color: var(--accent); font-weight: 700; font-size: 14.5px; text-decoration: none; border-bottom: 1px dashed var(--accent);">Danh mục Ghi chú</a>
+            </div>
+            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Quản lý và tạo các nhãn danh mục tự chọn (tối đa 10 ký tự) để phân chia và phân loại nhanh các ghi chú công việc một cách ngăn nắp.</p>
+          </div>
+
+          <div style="background: var(--bg-1); border: 1px solid var(--border); padding: 12px; border-radius: 8px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 6px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="font-size: 15px;">🎨</span>
+              <a href="#" class="settings-subtab-link" data-subtab="ui-theme" style="color: var(--accent); font-weight: 700; font-size: 14.5px; text-decoration: none; border-bottom: 1px dashed var(--accent);">Giao Diện & Màu Sắc</a>
+            </div>
+            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Thay đổi bảng màu chủ đạo (Theme Light/Dark/Rose/Slate...), khoảng cách giãn dòng (Compact/Comfortable) hiển thị ở Sidepanel.</p>
+          </div>
+
+          <div style="background: var(--bg-1); border: 1px solid var(--border); padding: 12px; border-radius: 8px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 6px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="font-size: 15px;">💾</span>
+              <a href="#" class="settings-subtab-link" data-subtab="sync-data" style="color: var(--accent); font-weight: 700; font-size: 14.5px; text-decoration: none; border-bottom: 1px dashed var(--accent);">Dữ Liệu & Sao Lưu</a>
+            </div>
+            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Nhập/Xuất toàn bộ ghi chú ra file Markdown (.md), JSON hoặc tự động dọn dẹp (xóa) các ghi chú/task cũ sau số ngày cấu hình.</p>
+          </div>
+
+          <div style="background: var(--bg-1); border: 1px solid var(--border); padding: 12px; border-radius: 8px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 6px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="font-size: 15px;">🔥</span>
+              <a href="#" class="settings-subtab-link" data-subtab="reactions-picker" style="color: var(--accent); font-weight: 700; font-size: 14.5px; text-decoration: none; border-bottom: 1px dashed var(--accent);">Thiết lập Spam Reactions</a>
+            </div>
+            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Cài đặt danh sách phím tắt các Emoji ưa thích của bạn để khi nhấn phím tắt 🔥 sẽ tự động thả hàng loạt cảm xúc đã cấu hình.</p>
+          </div>
+
+          <div style="background: var(--bg-1); border: 1px solid var(--border); padding: 12px; border-radius: 8px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 6px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="font-size: 15px;">🖼️</span>
+              <a href="#" class="settings-subtab-link" data-subtab="reactions-images" style="color: var(--accent); font-weight: 700; font-size: 14.5px; text-decoration: none; border-bottom: 1px dashed var(--accent);">Quản lý Ảnh & GIFs</a>
+            </div>
+            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Thêm/xóa các ảnh GIF động cá nhân trong thư viện freestyle masonry hoặc cấu hình Giphy API Key để tìm GIFs cực nhanh.</p>
           </div>
 
         </div>
       </div>
-      
+
+      <!-- Section 2: Hover Quick Actions -->
+      <div style="background: var(--bg-1); border: 1px solid var(--border); padding: 12px; border-radius: 8px; display: flex; flex-direction: column; gap: 4px;">
+        <h4 style="margin: 0; color: var(--accent); font-weight: 700; font-size: 13.5px; display: flex; align-items: center; gap: 6px;">⚡ PHÍM TẮT DI CHUỘT TRÊN TIN NHẮN CHATOPS</h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; font-size: 13px; margin-top: 4px;">
+          <div style="display: flex; gap: 6px; align-items: center;"><span style="color: var(--accent);">🎯</span> <span style="color: var(--text-2);">Lưu tin nhắn thành <strong>Công việc cần làm</strong></span></div>
+          <div style="display: flex; gap: 6px; align-items: center;"><span style="color: var(--accent);">📝</span> <span style="color: var(--text-2);">Lưu tin nhắn thành <strong>Ghi chú cá nhân</strong></span></div>
+          <div style="display: flex; gap: 6px; align-items: center;"><span style="color: var(--accent);">🔥</span> <span style="color: var(--text-2);"><strong>Spam Cảm xúc</strong> hàng loạt với 1-click</span></div>
+          <div style="display: flex; gap: 6px; align-items: center;"><span style="color: var(--accent);">↩️</span> <span style="color: var(--text-2);"><strong>Thu hồi nhanh</strong> tất cả cảm xúc đã thả</span></div>
+          <div style="display: flex; gap: 6px; align-items: center; grid-column: 1 / -1;"><span style="color: #dc2626;">🗑️</span> <span style="color: var(--text-2);"><strong>Xóa nhanh tin nhắn</strong> của chính bạn (không cần xác nhận lại)</span></div>
+        </div>
+      </div>
+
+      <!-- Section 3: Power Tips -->
+      <div style="border-top: 1px dashed var(--border); padding-top: 12px; margin-top: 2px;">
+        <h4 style="margin: 0 0 8px 0; color: var(--text-1); font-weight: 800; font-size: 13.5px; text-transform: uppercase; letter-spacing: 0.5px;">💡 MẸO NĂNG SUẤT ĐỈNH CAO</h4>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="background: rgba(28,88,217,0.04); border-left: 3px solid var(--accent); padding: 8px 10px; border-radius: 4px; font-size: 13px; line-height: 1.5;">
+            <strong style="color: var(--accent);">⚡ Click Đúp Mở Nhanh:</strong>
+            <span style="color: var(--text-2);"> Nhấp đúp vào bất kỳ tab điều hướng nào (Search, Tasks, Notes) để mở form nhập liệu tương ứng tức thì!</span>
+          </div>
+          <div style="background: rgba(28,88,217,0.04); border-left: 3px solid var(--accent); padding: 8px 10px; border-radius: 4px; font-size: 13px; line-height: 1.5;">
+            <strong style="color: var(--accent);">✂️ Sao chép dòng:</strong>
+            <span style="color: var(--text-2);"> Di chuột vào dòng văn bản ở thẻ Ghi chú, click icon copy nhỏ để chỉ sao chép riêng dòng đó!</span>
+          </div>
+        </div>
+      </div>
+    </div>
   `,
   previewImage: 'Xem ảnh kích thước đầy đủ',
   systemHelpTooltip: 'Hướng dẫn & Trợ giúp hệ thống',

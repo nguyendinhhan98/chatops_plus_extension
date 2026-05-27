@@ -1336,8 +1336,6 @@ textarea.search-form-textarea {
   gap: 4px 2px !important;
   margin: var(--sub-tabs-margin, 8px 16px) !important;
   flex-wrap: wrap !important;
-  overflow-x: auto !important;
-  scrollbar-width: none !important;
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05) !important;
   flex-shrink: 0 !important;
 }
@@ -1347,12 +1345,12 @@ textarea.search-form-textarea {
 }
 
 .memo-sub-tab {
-  flex: 1 1 0% !important;
+  flex: 1 1 auto !important;
   min-width: 0 !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
   white-space: nowrap !important;
-  padding: var(--sub-tab-padding, 5px 10px) !important;
+  padding: var(--sub-tab-padding, 5px 12px) !important;
   background: none !important;
   border: none !important;
   color: #334155 !important; /* High-contrast Dark Slate for extremely clear readability */
@@ -1424,7 +1422,7 @@ textarea.search-form-textarea {
   background: #e2e8f0 !important;
 }
 
-.settings-subtab-link {
+button.settings-subtab-link {
   margin-left: auto;
   display: inline-flex;
   align-items: center;
@@ -1442,11 +1440,11 @@ textarea.search-form-textarea {
   align-self: center;
   margin-right: 4px;
 }
-.settings-subtab-link:hover {
-  background: var(--accent);
-  color: #ffffff;
+button.settings-subtab-link:hover {
+  background: var(--accent) !important;
+  color: #ffffff !important;
 }
-.settings-subtab-link:hover svg {
+button.settings-subtab-link:hover svg {
   transform: rotate(90deg);
 }
 
@@ -3075,14 +3073,14 @@ span.flatpickr-weekday {
 
 /* Masonry grid classes for personal images synchronization */
 .chatops-custom-images-grid-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-  gap: 12px;
-  padding: 8px 0;
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+  padding: 8px 10px 8px 2px;
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden !important;
-  align-content: start;
+  align-items: flex-start;
 }
 
 .chatops-custom-images-column {
@@ -3098,15 +3096,14 @@ span.flatpickr-weekday {
   overflow: hidden;
   border: 1px solid var(--border);
   width: 100%;
-  height: 120px;
-  background: var(--bg-3);
+  background: var(--bg-1);
   box-sizing: border-box;
+  margin-bottom: 16px;
 }
 
 .chatops-custom-image-item {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: auto;
   display: block;
   cursor: pointer;
   transition: opacity 0.15s, transform 0.15s;

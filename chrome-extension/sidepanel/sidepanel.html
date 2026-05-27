@@ -194,9 +194,15 @@
         style="border-bottom: 1px solid var(--border); padding: 10px var(--app-padding, 16px); background: var(--bg-2); flex-shrink: 0; box-sizing: border-box; width: 100%;">
         <div class="search-form-header"
           style="display: flex; flex-direction: column; gap: 8px; align-items: flex-end; margin-bottom: 0; width: 100%;">
-          <div class="memo-sub-tabs" id="memoCategoryTabs"
-            style="width: 100%; display: flex !important; background: var(--bg-1) !important; border: 1px solid var(--border) !important; border-radius: 6px !important; padding: 2px !important; margin: 0 !important; box-shadow: none !important; gap: 4px 2px !important; flex-wrap: wrap !important;">
-            <!-- Categories as sub-tabs rendered dynamically -->
+          <div class="memo-sub-tabs-container" style="display: flex; align-items: center; width: 100%; gap: 6px;">
+            <div class="memo-sub-tabs" id="memoCategoryTabs"
+              style="flex: 1; display: flex !important; background: var(--bg-1) !important; border: 1px solid var(--border) !important; border-radius: 6px !important; padding: 2px !important; margin: 0 !important; box-shadow: none !important; gap: 4px 2px !important; flex-wrap: wrap !important;">
+              <!-- Categories as sub-tabs rendered dynamically -->
+            </div>
+            <button class="settings-subtab-link" data-subtab="categories" 
+              title="Customize List" style="flex-shrink: 0; margin: 0 !important; width: 26px; height: 26px; border: 1px solid rgba(28, 88, 217, 0.15); background: var(--accent-dim); cursor: pointer; color: var(--accent); border-radius: 6px; padding: 0; display: inline-flex; align-items: center; justify-content: center; align-self: center;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="pointer-events: none; transition: transform 0.3s ease;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            </button>
           </div>
           <div style="display: flex; gap: 6px; align-items: center;">
             <button id="btnExportNotes" class="sync-badge-btn" style="background: rgba(28, 88, 217, 0.05); border-color: rgba(28, 88, 217, 0.2); color: var(--accent); display: none !important; align-items: center; gap: 4px;" data-i18n-title="exportNotesBtnTitle" title="Export notes to JSON file">
@@ -245,17 +251,17 @@
               style="width: 100%; min-height: 110px; resize: vertical; box-sizing: border-box;"></textarea>
           </div>
 
-          <div
-            style="margin-bottom: 12px; display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%;">
-            <div style="display:flex; align-items:center; gap:8px;">
+          <div class="quick-note-category-row"
+            style="margin-bottom: 12px; display:flex; align-items:center; justify-content:space-between; width:100%; gap:8px;">
+            <div style="display:flex; align-items:center; gap:8px; flex:1; min-width:0;">
               <span
                 style="font-size:13px; color:var(--text-2); font-weight:600; display:flex; align-items:center; gap:4px; white-space:nowrap;" data-i18n="categoryLabelPrefix">📁 Category:</span>
               <select id="quickNoteCategory" class="custom-select quick-note-category-select"
-                style="width: 130px; height: 32px; font-size: 12.5px; border-radius: 6px; cursor: pointer; outline: none; box-sizing: border-box; line-height: 1; padding: 2px 24px 2px 8px; margin: 0;">
+                style="width: 110px; height: 32px; font-size: 12.5px; border-radius: 6px; cursor: pointer; outline: none; box-sizing: border-box; line-height: 1; padding: 2px 24px 2px 8px; margin: 0;">
                 <!-- Categories rendered dynamically -->
               </select>
             </div>
-            <div class="input-helper" style="margin: 0; font-size:11.5px; font-weight: 500;"><a href="#"
+            <div class="input-helper" style="margin: 0; font-size:11.5px; font-weight: 500; flex-shrink:0;"><a href="#"
                 class="settings-subtab-link" data-subtab="categories" data-i18n="customizeCategories"
                 style="color: var(--accent); font-weight: 700; text-decoration: underline;">⚙️ Customize List</a></div>
           </div>
@@ -780,9 +786,10 @@
             <div class="settings-accordion-body">
               <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
                 <span id="categoriesCountBadge" class="limit-badge" style="font-size: 11px; font-weight: 600; padding: 2px 6px; border-radius: 10px; background: var(--bg-3); color: var(--text-2); border: 1px solid var(--border);">0 / 5</span>
+                <span id="categoryCharCounter" style="font-size: 11.5px; font-weight: 600; color: var(--text-3); font-family: monospace; background: var(--bg-3); padding: 2px 6px; border-radius: 10px; border: 1px solid var(--border);">0/10</span>
               </div>
               <div class="category-add-row" style="display:flex; gap:8px; margin-bottom:12px;">
-                <input type="text" id="settingNewCategory" data-i18n-placeholder="newCategoryPlaceholder" placeholder="Enter new category... (Enter to save)"
+                <input type="text" id="settingNewCategory" maxlength="10" data-i18n-placeholder="newCategoryPlaceholder" placeholder="Enter new category... (Enter to save)"
                   style="flex:1; padding:8px 12px; border:1px solid var(--border); border-radius:var(--radius-sm); font-family:inherit; font-size:13px; outline:none; background:var(--bg-1); color:var(--text-1);">
                 <button id="btnAddCategory" class="btn btn-primary" data-i18n="addBtn"
                   style="padding:0 16px; font-weight:600; white-space:nowrap; border-radius: 4px;">Add</button>

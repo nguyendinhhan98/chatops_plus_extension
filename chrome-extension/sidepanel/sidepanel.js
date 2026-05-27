@@ -166,6 +166,18 @@ async function setupWorkspaceSelector(teams, dropdownContainer) {
     dropdownContainer?.classList.remove('open');
     optionsEl?.classList.remove('show');
   });
+
+  // Global click listener to show note images in the preview modal
+  document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('meme-img')) {
+      const modal = document.getElementById('imagePreviewModal');
+      const previewImg = document.getElementById('imgPreviewTarget');
+      if (modal && previewImg) {
+        previewImg.src = e.target.src;
+        modal.style.display = 'flex';
+      }
+    }
+  });
 }
 
 /**
@@ -282,6 +294,9 @@ function setupTabs() {
       } else if (subtabName.startsWith('features-') || subtabName === 'categories') {
         tabId = 'settings';
         sectionId = 'features';
+      } else if (subtabName.startsWith('ui-')) {
+        tabId = 'settings';
+        sectionId = 'ui';
       } else if (subtabName.startsWith('sync-')) {
         tabId = 'settings';
         sectionId = 'data';

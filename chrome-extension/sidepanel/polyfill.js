@@ -73,8 +73,8 @@ if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) {
 /**
  * Reusable utility to convert a standard select element into a premium custom dropdown opening downward.
  */
-window.convertToCustomDropdown = function(selectId, width = null, height = null) {
-  const nativeSelect = document.getElementById(selectId);
+window.convertToCustomDropdown = function(selectOrId, width = null, height = null) {
+  const nativeSelect = typeof selectOrId === 'string' ? document.getElementById(selectOrId) : selectOrId;
   if (!nativeSelect) return;
 
   // Remove existing converted container if present to allow dynamic updates
@@ -102,12 +102,18 @@ window.convertToCustomDropdown = function(selectId, width = null, height = null)
   const selectedIndex = nativeSelect.selectedIndex >= 0 ? nativeSelect.selectedIndex : 0;
   const initialText = options[selectedIndex]?.textContent || 'Select...';
 
+  const isCompact = nativeSelect.classList.contains('sp-compact-select');
+  const optionVal = options[selectedIndex]?.value || '';
+  const toggleStyle = isCompact 
+    ? `width: 100%; height: ${selectHeight}; font-size: 11px; font-weight: 600; border-radius: 6px; cursor: pointer; outline: none; display: flex; align-items: center; justify-content: space-between; padding: 0 6px; transition: all 0.2s ease; box-sizing: border-box; background-image: none !important;`
+    : `width: 100%; height: ${selectHeight}; font-size: 11.5px; border-radius: 6px; border: 1px solid var(--border); background: #ffffff; color: var(--text-2); cursor: pointer; outline: none; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; font-weight: 400; transition: all 0.2s ease; box-sizing: border-box;`;
+
   container.innerHTML = `
     <div class="custom-dropdown" style="position: relative; width: 100%; box-sizing: border-box; font-family: var(--font);">
-      <button type="button" class="custom-dropdown-toggle"
-        style="width: 100%; height: ${selectHeight}; font-size: 11.5px; border-radius: 6px; border: 1px solid var(--border); background: #ffffff; color: var(--text-2); cursor: pointer; outline: none; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; font-weight: 400; transition: all 0.2s ease; box-sizing: border-box;">
-        <span class="custom-dropdown-selected-text" style="font-weight: 400; font-size: 11.5px;">${initialText}</span>
-        <span class="custom-dropdown-arrow" style="font-size: 9px; opacity: 0.6; transition: transform 0.2s ease;">▼</span>
+      <button type="button" class="custom-dropdown-toggle ${isCompact ? 'sp-compact-select' : ''}" data-category="${optionVal.toLowerCase()}"
+        style="${toggleStyle}">
+        <span class="custom-dropdown-selected-text" style="font-weight: 600; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; text-align: left;">${initialText}</span>
+        <span class="custom-dropdown-arrow" style="font-size: 8px; opacity: 0.6; transition: transform 0.2s ease; margin-left: 2px; flex-shrink: 0;">▼</span>
       </button>
       <ul class="custom-dropdown-menu"
         style="position: absolute; top: 100%; right: 0; margin-top: 6px; width: 100%; min-width: 120px; background: #ffffff; border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12); padding: 4px 0; list-style: none; display: none; z-index: 1000; max-height: 220px; overflow-y: auto; box-sizing: border-box;">
@@ -171,6 +177,9 @@ window.convertToCustomDropdown = function(selectId, width = null, height = null)
 
       selectedSpan.textContent = text;
       nativeSelect.value = val;
+      if (isCompact) {
+        toggleBtn.setAttribute('data-category', val.toLowerCase());
+      }
       nativeSelect.dispatchEvent(new Event('change'));
 
       menuList.style.display = 'none';
@@ -182,6 +191,9 @@ window.convertToCustomDropdown = function(selectId, width = null, height = null)
     const activeOption = nativeSelect.options[nativeSelect.selectedIndex];
     if (activeOption) {
       selectedSpan.textContent = activeOption.textContent;
+      if (isCompact) {
+        toggleBtn.setAttribute('data-category', activeOption.value.toLowerCase());
+      }
     }
   });
 
