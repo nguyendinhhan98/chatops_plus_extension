@@ -62,8 +62,17 @@ export function setup(state) {
   }
 
   let fpQuick = null;
-  if (reminderInput) {
+  function initQuickFlatpickr(noCalendarMode = false) {
+    if (fpQuick) {
+      try {
+        fpQuick.destroy();
+      } catch (e) {}
+    }
+    if (!reminderInput) return;
     fpQuick = initCommonFlatpickr(reminderInput, {
+      noCalendar: noCalendarMode,
+      enableTime: true,
+      dateFormat: noCalendarMode ? "H:i" : "Y-m-d H:i",
       onChange: function(selectedDates) {
         if (selectedDates.length > 0) {
           if (presetSelect) {
@@ -83,10 +92,46 @@ export function setup(state) {
     });
   }
 
-  if (reminderRow && fpQuick) {
+  const repeatDailyCheckbox = document.getElementById('quickTaskRemindDaily');
+  if (repeatDailyCheckbox && reminderInput) {
+    repeatDailyCheckbox.addEventListener('change', () => {
+      const isChecked = repeatDailyCheckbox.checked;
+      const currentVal = reminderInput.value;
+      
+      initQuickFlatpickr(isChecked);
+      
+      if (currentVal) {
+        if (isChecked) {
+          // If we had a full date, extract only the time
+          const match = currentVal.match(/\d{2}:\d{2}/);
+          if (match) {
+            fpQuick.setDate(match[0], false);
+          } else {
+            fpQuick.clear();
+          }
+        } else {
+          // If we had a time only, default it to today's date with that time
+          const match = currentVal.match(/^(\d{2}):(\d{2})$/);
+          if (match) {
+            const today = new Date();
+            today.setHours(parseInt(match[1], 10), parseInt(match[2], 10), 0, 0);
+            fpQuick.setDate(today, false);
+          } else {
+            fpQuick.clear();
+          }
+        }
+      }
+      syncReminderDimming();
+    });
+  }
+
+  // Initialize Flatpickr initially
+  initQuickFlatpickr(repeatDailyCheckbox ? repeatDailyCheckbox.checked : false);
+
+  if (reminderRow && reminderInput) {
     reminderRow.addEventListener('click', (e) => {
       syncReminderDimming();
-      if (e.target !== reminderInput) {
+      if (e.target !== reminderInput && fpQuick) {
         fpQuick.open();
       }
     });
@@ -279,6 +324,7 @@ export function setup(state) {
         if (repeatDailyCheckbox) {
           repeatDailyCheckbox.checked = false;
         }
+        initQuickFlatpickr(false);
         if (categorySelect) {
           categorySelect.value = 'normal';
           const customSelect = categorySelect.nextElementSibling;
@@ -387,6 +433,25 @@ export function setup(state) {
     const repeatDailyCheckbox = document.getElementById('quickTaskRemindDaily');
     const isRepeatDaily = repeatDailyCheckbox ? repeatDailyCheckbox.checked : false;
 
+    let reminderVal = reminderInput?.value || null;
+    const presetVal = presetSelect?.value;
+    if (!reminderVal && presetVal) {
+      const mins = parseInt(presetVal, 10);
+      if (!isNaN(mins)) {
+        reminderVal = formatDateTime(new Date(Date.now() + mins * 60 * 1000));
+      }
+    }
+
+    if (reminderVal && isRepeatDaily && reminderVal.length === 5 && reminderVal.includes(':')) {
+      const today = new Date();
+      const parts = reminderVal.split(':');
+      today.setHours(parseInt(parts[0], 10), parseInt(parts[1], 10), 0, 0);
+      if (today.getTime() <= Date.now()) {
+        today.setDate(today.getDate() + 1);
+      }
+      reminderVal = formatDateTime(today);
+    }
+
     const id = `task_${Date.now()}`;
     const item = {
       id,
@@ -397,7 +462,7 @@ export function setup(state) {
       note: text,
       createdAt: Date.now(),
       done: false,
-      reminder: reminderInput?.value || null,
+      reminder: reminderVal,
       repeatDaily: isRepeatDaily,
       status: 'pending',
       teamName: _state.getTeam()?.name || CHATOPS_CONFIG.DEFAULT_TEAM,
@@ -405,18 +470,19 @@ export function setup(state) {
       checklist: taskCat === 'checklist' ? checklistItems : []
     };
 
-    const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS, STORAGE_KEYS.SETTINGS]);
+    const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
     const memos = res[STORAGE_KEYS.MEMOS] || [];
-    const settings = res[STORAGE_KEYS.SETTINGS] || { snoozeMinutes: 30 };
     memos.unshift(item);
     await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
 
     resetTaskForm();
 
-    const startTime = item.reminder
-      ? new Date(item.reminder).getTime()
-      : Date.now() + settings.snoozeMinutes * 60 * 1000;
-    chrome.runtime.sendMessage({ type: MESSAGE_TYPES.SET_TASK_ALARM, taskId: id, time: startTime });
+    if (item.reminder) {
+      const startTime = new Date(item.reminder).getTime();
+      if (!isNaN(startTime)) {
+        chrome.runtime.sendMessage({ type: MESSAGE_TYPES.SET_TASK_ALARM, taskId: id, time: startTime });
+      }
+    }
     
     loadTasks();
 
@@ -640,6 +706,10 @@ export function setup(state) {
                   <option value="normal" ${task.taskCategory !== 'checklist' ? 'selected' : ''}>${language.categoryNormal || 'Normal'}</option>
                   <option value="checklist" ${task.taskCategory === 'checklist' ? 'selected' : ''}>${language.categoryChecklist || 'Checklist'}</option>
                 </select>
+                <label style="display:inline-flex; align-items:center; gap:4px; font-size:12px; font-weight:600; color:var(--text-2); margin-left:12px; cursor:pointer;">
+                  <input type="checkbox" class="inline-edit-repeat-daily" ${task.repeatDaily ? 'checked' : ''} style="margin:0; width:13px; height:13px; cursor:pointer;">
+                  <span>🔄 ${language.repeatDailyBadgeText || 'Daily'}</span>
+                </label>
               </div>
               <div style="display: flex; gap: 6px; justify-content: flex-end;">
                 <button class="btn btn-secondary inline-edit-cancel" data-id="${id}" style="padding: 4px 10px; font-size: 11.5px; height: 26px; border-radius: 6px; cursor:pointer;">${language.cancel}</button>
@@ -693,6 +763,33 @@ export function setup(state) {
             const categorySelect = card.querySelector('.inline-edit-category');
             if (categorySelect) {
               task.taskCategory = categorySelect.value;
+            }
+            
+            const repeatDailyCheckbox = card.querySelector('.inline-edit-repeat-daily');
+            const oldRepeatDaily = task.repeatDaily;
+            if (repeatDailyCheckbox) {
+              task.repeatDaily = repeatDailyCheckbox.checked;
+            }
+
+            if (task.repeatDaily !== oldRepeatDaily) {
+              if (task.repeatDaily) {
+                if (task.reminder) {
+                  const originalDate = new Date(task.reminder);
+                  if (!isNaN(originalDate.getTime())) {
+                    const today = new Date();
+                    today.setHours(originalDate.getHours(), originalDate.getMinutes(), 0, 0);
+                    if (today.getTime() <= Date.now()) {
+                      today.setDate(today.getDate() + 1);
+                    }
+                    task.reminder = formatDateTime(today);
+                    chrome.runtime.sendMessage({
+                      type: MESSAGE_TYPES.SET_TASK_ALARM,
+                      taskId: id,
+                      time: today.getTime()
+                    });
+                  }
+                }
+              }
             }
             
             if (task.taskCategory === 'checklist') {
@@ -827,26 +924,35 @@ export async function loadTasks() {
 
   // Initialize Flatpickr on dynamically rendered task card datetime inputs
   taskList.querySelectorAll('.task-update-reminder').forEach(el => {
+    const id = el.dataset.id;
+    const task = tasks.find(t => t.id === id);
+    const isRepeatDaily = task ? task.repeatDaily : false;
+
     initCommonFlatpickr(el, {
+      noCalendar: isRepeatDaily,
+      enableTime: true,
+      dateFormat: isRepeatDaily ? "H:i" : "Y-m-d H:i",
       onChange: async (selectedDates, dateStr) => {
-        const id = el.dataset.id;
         const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
         const memos = res[STORAGE_KEYS.MEMOS] || [];
         const taskIndex = memos.findIndex(m => m.id === id);
         
         if (taskIndex !== -1) {
-          memos[taskIndex].reminder = dateStr || null;
+          let finalReminder = dateStr || null;
+          if (dateStr && isRepeatDaily && dateStr.length === 5 && dateStr.includes(':')) {
+            const todayStr = new Date().toISOString().split('T')[0];
+            finalReminder = `${todayStr} ${dateStr}`;
+          }
+
+          memos[taskIndex].reminder = finalReminder;
           memos[taskIndex].updatedAt = Date.now();
           await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
           
-          const settingsRes = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS]);
-          const snoozeMins = settingsRes[STORAGE_KEYS.SETTINGS]?.snoozeMinutes || 30;
-          
-          if (dateStr) {
+          if (finalReminder) {
             chrome.runtime.sendMessage({
               type: MESSAGE_TYPES.SET_TASK_ALARM,
               taskId: id,
-              time: new Date(dateStr).getTime()
+              time: new Date(finalReminder).getTime()
             });
           } else {
             chrome.alarms.clear(id);
@@ -878,6 +984,14 @@ export async function loadTasks() {
 function renderTaskCard(task, now) {
   const reminderMs = task.reminder ? new Date(task.reminder).getTime() : null;
   const isOverdue = !task.done && reminderMs && reminderMs < now;
+
+  let reminderDisplayVal = task.reminder || '';
+  if (task.repeatDaily && task.reminder) {
+    const match = task.reminder.match(/\d{2}:\d{2}/);
+    if (match) {
+      reminderDisplayVal = match[0];
+    }
+  }
 
   const cachedConfig = _state.getConfig();
   const currentTeam = _state.getTeam();
@@ -929,7 +1043,7 @@ function renderTaskCard(task, now) {
         ${!task.done ? `
           <div class="task-update-reminder-wrapper ${task.reminder ? 'has-reminder' : ''}" style="flex-shrink:0;">
             <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor" class="reminder-clock-icon"><path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/></svg>
-            <input type="text" class="task-update-reminder" data-id="${task.id}" value="${task.reminder || ''}" placeholder="yyyy-mm-dd hh:mm" title="${language.changeReminderTime}" />
+            <input type="text" class="task-update-reminder" data-id="${task.id}" value="${reminderDisplayVal}" placeholder="${task.repeatDaily ? 'hh:mm' : 'yyyy-mm-dd hh:mm'}" title="${language.changeReminderTime}" />
           </div>
         ` : ''}
       </div>

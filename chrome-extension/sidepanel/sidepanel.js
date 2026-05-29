@@ -270,17 +270,6 @@ function setupTabs() {
           'spMentionsForm',
           'spMentionsFormPlaceholder'
         );
-      } else if (tab === 'tools') {
-        // Double clicking Tools opens the filter dialog for active Tools sub-tab (search)
-        const activeSubBtn = document.querySelector('#toolsSubTabs .memo-sub-tab.active');
-        const activeSub = activeSubBtn ? activeSubBtn.dataset.section : 'search';
-        if (activeSub === 'search') {
-          window.ModalManager.open(
-            language.modalSearchTitle,
-            'spSearchForm',
-            'spSearchFormPlaceholder'
-          );
-        }
       }
     });
   });

@@ -418,13 +418,12 @@ html body #chatops-quick-note-popover textarea#cqn-note-text {
 }
 
 #chatops-quick-note-popover input.quick-task-datetime {
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 100% !important;
+  position: static !important;
+  flex: 1 !important;
+  min-width: 0 !important;
   height: 100% !important;
   z-index: 1 !important;
-  padding-left: 92px !important;
+  padding-left: 4px !important;
   box-sizing: border-box !important;
   background: transparent !important;
   border: none !important;
@@ -698,16 +697,24 @@ html body #chatops-quick-note-popover textarea#cqn-note-text {
   overflow: hidden;
   border: 1px solid #e0e0e5;
   width: 100%;
-  background: transparent;
+  background: #f8fafc;
   box-sizing: border-box;
   margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 80px;
 }
 .chatops-custom-image-item {
-  width: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
   height: auto;
   display: block;
   cursor: pointer;
   transition: opacity 0.15s, transform 0.15s;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
 }
 .chatops-custom-image-item:hover {
   opacity: 0.85;
@@ -994,9 +1001,15 @@ html body #chatops-quick-note-popover textarea#cqn-note-text {
   border-radius: 12px !important;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05) !important;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-  width: 260px !important;
   overflow: hidden !important;
   z-index: 100000000 !important;
+  width: 307px !important;
+}
+
+#chatops-quick-note-popover .flatpickr-calendar,
+.flatpickr-calendar.cqn-centered-calendar {
+  left: 50% !important;
+  margin-left: -153.5px !important;
 }
 
 .flatpickr-months {
@@ -1008,6 +1021,8 @@ html body #chatops-quick-note-popover textarea#cqn-note-text {
   border-top-left-radius: 11px !important;
   border-top-right-radius: 11px !important;
   border-bottom: 1px solid #cbd5e1 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 .flatpickr-month {
@@ -1039,8 +1054,8 @@ html body #chatops-quick-note-popover textarea#cqn-note-text {
   background: #f8fafc !important;
   padding: 6px 0 !important;
   display: flex !important;
-  width: 100% !important; /* Spans full inner width perfectly to both borders */
   margin: 0 !important;
+  width: 100% !important;
 }
 
 span.flatpickr-weekday {
@@ -1050,27 +1065,27 @@ span.flatpickr-weekday {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  flex: 1 !important; /* Dynamically spans 1/7th of 294px = 42px exactly */
   text-align: center !important;
+  flex: 1 !important;
 }
 
 .flatpickr-days {
   display: flex !important;
-  width: 100% !important;
   margin: 0 !important;
   justify-content: center !important;
   padding: 2px 0 !important;
+  width: 307px !important;
 }
 
 .dayContainer {
   display: flex !important;
   flex-wrap: wrap !important;
   justify-content: flex-start !important;
-  width: 258px !important;
-  max-width: 258px !important;
-  min-width: 258px !important;
   padding: 0 !important;
   margin: 0 auto !important;
+  width: 307px !important;
+  min-width: 307px !important;
+  max-width: 307px !important;
 }
 
 .flatpickr-day {
@@ -1078,17 +1093,16 @@ span.flatpickr-weekday {
   color: #334155 !important;
   font-weight: 500 !important;
   font-size: 11.5px !important;
-  width: 34px !important;
-  height: 34px !important;
-  line-height: 34px !important;
-  margin: 1px !important;
-  flex: 0 0 34px !important;
-  max-width: 34px !important;
   box-sizing: border-box !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
   transition: all 0.15s ease !important;
+  flex: 0 0 43.85px !important;
+  max-width: 43.85px !important;
+  height: 38px !important;
+  line-height: 38px !important;
+  margin: 0 !important;
 }
 
 .flatpickr-day:hover {
@@ -1229,5 +1243,265 @@ span.flatpickr-weekday {
 
 .flatpickr-calendar.hasTime .flatpickr-time {
   height: 46px !important;
+}
+
+/* Custom Image Resize Button on Cell */
+.chatops-custom-image-resize {
+  position: absolute; bottom: 6px; right: 6px;
+  background: rgba(15, 23, 42, 0.85);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  width: 24px; height: 24px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  padding: 0; line-height: 1;
+  outline: none;
+  opacity: 0;
+  transition: opacity 0.2s, background 0.2s, transform 0.2s;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  z-index: 5;
+}
+.chatops-custom-image-cell:hover .chatops-custom-image-resize { opacity: 1; }
+.chatops-custom-image-resize:hover { background: #1c58d9; transform: scale(1.1); }
+.chatops-custom-image-resize svg { stroke: currentColor; fill: none; }
+
+/* Image Resize Modal Styling */
+.chatops-image-resize-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(12px);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.chatops-image-resize-overlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+.chatops-image-resize-container {
+  background: #ffffff;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 480px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: chatopsSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes chatopsSlideIn {
+  from { transform: translateY(15px) scale(0.98); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+.chatops-image-resize-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.chatops-image-resize-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+.chatops-image-resize-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #64748b;
+  padding: 4px;
+  line-height: 1;
+  border-radius: 6px;
+  transition: background 0.2s, color 0.2s;
+}
+.chatops-image-resize-close:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+.chatops-image-resize-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+  max-height: calc(85vh - 120px);
+}
+.chatops-image-resize-preview-box {
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  min-height: 180px;
+  max-height: 280px;
+  overflow: hidden;
+}
+.chatops-image-resize-preview-img {
+  max-width: 100%;
+  max-height: 250px;
+  object-fit: contain;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  transition: width 0.15s ease-out, height 0.15s ease-out;
+}
+.chatops-image-resize-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.chatops-image-resize-info-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+}
+.chatops-image-resize-slider-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.chatops-image-resize-slider-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #334155;
+}
+.chatops-image-resize-slider {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  outline: none;
+  background: #e2e8f0;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+.chatops-image-resize-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #1c58d9;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+.chatops-image-resize-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+.chatops-image-resize-inputs-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+}
+.chatops-image-resize-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+.chatops-image-resize-input-wrapper span {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #64748b;
+}
+.chatops-image-resize-input {
+  width: 100%;
+  height: 36px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 13px;
+  font-weight: 500;
+  outline: none;
+  box-sizing: border-box;
+  color: #0f172a;
+}
+.chatops-image-resize-input:focus {
+  border-color: #1c58d9;
+  box-shadow: 0 0 0 2.5px rgba(28, 88, 217, 0.15);
+}
+.chatops-image-resize-lock-btn {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #475569;
+  margin-top: 19px;
+  transition: background 0.2s, border-color 0.2s;
+}
+.chatops-image-resize-lock-btn.locked {
+  background: rgba(28, 88, 217, 0.08);
+  border-color: #1c58d9;
+  color: #1c58d9;
+}
+.chatops-image-resize-footer {
+  padding: 16px 20px;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.chatops-image-resize-btn {
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background 0.2s, transform 0.1s;
+}
+.chatops-image-resize-btn:active {
+  transform: scale(0.98);
+}
+.chatops-image-resize-btn-cancel {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+.chatops-image-resize-btn-cancel:hover {
+  background: #e2e8f0;
+}
+.chatops-image-resize-btn-save {
+  background: #f1f5f9;
+  color: #1c58d9;
+  border: 1px solid rgba(28, 88, 217, 0.2);
+}
+.chatops-image-resize-btn-save:hover {
+  background: rgba(28, 88, 217, 0.08);
+}
+.chatops-image-resize-btn-insert {
+  background: #1c58d9;
+  color: #ffffff;
+}
+.chatops-image-resize-btn-insert:hover {
+  background: #1545ad;
 }
 

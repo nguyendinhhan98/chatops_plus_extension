@@ -13,6 +13,8 @@ let imagePickerEl = null;
 let observer = null;
 let globalInsertImageToChat = null;
 let activeChatTextarea = null;
+let updateImagePickerTranslations = null;
+let updateResizeModalTranslations = null;
 
 function runWithObserverDisabled(fn) {
   if (observer) {
@@ -62,10 +64,8 @@ chrome.runtime.onMessage.addListener(async (message) => {
       quickNoteBackdrop.remove();
       quickNoteBackdrop = null;
     }
-    if (imagePickerEl) {
-      imagePickerEl.remove();
-      imagePickerEl = null;
-    }
+    if (updateImagePickerTranslations) updateImagePickerTranslations();
+    if (updateResizeModalTranslations) updateResizeModalTranslations();
   } else if (message.type === 'INSERT_IMAGE_TO_CHAT') {
     if (typeof globalInsertImageToChat === 'function') {
       globalInsertImageToChat(message.url);
@@ -406,6 +406,17 @@ function showToast(msg) {
 }
 
 (async function () {
+  // Inject bridge script to access React Fiber elements in page context
+  function injectMainWorldScript() {
+    const id = 'chatops-main-world-bridge';
+    if (document.getElementById(id)) return;
+    const script = document.createElement('script');
+    script.id = id;
+    script.src = chrome.runtime.getURL('content/inject.js');
+    (document.head || document.documentElement).appendChild(script);
+  }
+  injectMainWorldScript();
+
   await loadLanguage();
   injectDynamicTheme();
 
@@ -666,6 +677,72 @@ function showToast(msg) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   }
 
+  updateImagePickerTranslations = function() {
+    if (!imagePickerEl) return;
+    
+    // Header title
+    const headerTitleEl = imagePickerEl.querySelector('.chatops-image-picker-header span');
+    if (headerTitleEl) headerTitleEl.textContent = language.imageLibrary || 'My Library';
+    
+    // Sub tabs
+    const tabLibraryEl = imagePickerEl.querySelector('.chatops-picker-sub-tab[data-tab="library"]');
+    if (tabLibraryEl) tabLibraryEl.textContent = language.imageLibraryTab || 'My Library';
+    
+    const tabGifsEl = imagePickerEl.querySelector('.chatops-picker-sub-tab[data-tab="gifs"]');
+    if (tabGifsEl) tabGifsEl.textContent = language.gifLibraryTab || 'GIFs';
+    
+    // Your images header
+    const yourImagesHeaderEl = imagePickerEl.querySelector('#chatops-your-images-header');
+    if (yourImagesHeaderEl) yourImagesHeaderEl.textContent = language.yourImages || 'YOUR IMAGES';
+    
+    // Upload image button
+    const uploadLabelEl = imagePickerEl.querySelector('.chatops-image-upload-btn');
+    if (uploadLabelEl) {
+      uploadLabelEl.textContent = language.uploadImageBtn || '+ Upload Image';
+    }
+    
+    // No images hint
+    const emptyHintEl = imagePickerEl.querySelector('.chatops-image-empty');
+    if (emptyHintEl) emptyHintEl.textContent = language.noImagesHint || 'No images found';
+    
+    // GIF search input placeholder
+    const gifSearchInput = imagePickerEl.querySelector('#chatops-picker-gif-search');
+    if (gifSearchInput) gifSearchInput.placeholder = language.searchGifPlaceholder || 'Search GIFs...';
+    
+    // GIF hint notice
+    const gifHintNoticeEl = imagePickerEl.querySelector('.chatops-gif-hint-notice [data-i18n="gifDefaultHint"]');
+    if (gifHintNoticeEl) gifHintNoticeEl.textContent = language.gifDefaultHint || '';
+    
+    // Refresh images grid to update tooltips/titles in the new language
+    loadCustomImages();
+    
+    // Refresh Giphy panel to display translated API status if any
+    const apiStatusNotice = imagePickerEl.querySelector('#chatops-picker-gifs-grid');
+    if (apiStatusNotice && gifSearchInput) {
+      loadPickerGifs(gifSearchInput.value);
+    }
+  };
+
+  updateResizeModalTranslations = function() {
+    const overlay = document.getElementById('chatops-image-resize-overlay');
+    if (!overlay) return;
+    
+    const titleEl = overlay.querySelector('.chatops-image-resize-title');
+    if (titleEl) titleEl.textContent = language.resizeImageTitle || 'Resize Image';
+    
+    const scaleLabelEl = overlay.querySelector('.chatops-image-resize-slider-label span');
+    if (scaleLabelEl) scaleLabelEl.textContent = language.resizeScaleLabel || 'Scale';
+    
+    const cancelBtn = overlay.querySelector('.chatops-image-resize-btn-cancel');
+    if (cancelBtn) cancelBtn.textContent = language.cancel;
+    
+    const saveBtn = overlay.querySelector('.chatops-image-resize-btn-save');
+    if (saveBtn) saveBtn.textContent = language.saveCopy || 'Save';
+    
+    const insertBtn = overlay.querySelector('.chatops-image-resize-btn-insert');
+    if (insertBtn) insertBtn.textContent = language.insertToChat || 'Insert to Chat';
+  };
+
   async function loadCustomImages() {
     const res = await chrome.storage.local.get(['custom_memes']);
     let customMemes = res.custom_memes;
@@ -702,6 +779,9 @@ function showToast(msg) {
         <div class="chatops-custom-image-cell">
           <img src="${url}" class="chatops-custom-image-item" loading="lazy" title="${language.clickToSend}" />
           <button class="chatops-custom-image-preview" data-idx="${idx}" title="${language.previewImage || 'Preview full image'}">&#x1F50D;</button>
+          <button class="chatops-custom-image-resize" data-idx="${idx}" title="${language.resizeImage || 'Resize image'}">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none; display:block;"><path d="M4 14h6v6"></path><path d="M20 10h-6V4"></path><path d="M14 10l7-7"></path><path d="M10 14l-7 7"></path></svg>
+          </button>
           <button class="chatops-custom-image-delete" data-idx="${idx}" title="${language.deleteImage}">&times;</button>
         </div>
       `;
@@ -742,6 +822,208 @@ function showToast(msg) {
     }
     overlay.querySelector('#chatops-image-preview-img').src = src;
     overlay.classList.remove('hidden');
+  }
+
+  function openImageResizeModal(src, index) {
+    let overlay = document.getElementById('chatops-image-resize-overlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'chatops-image-resize-overlay';
+      overlay.className = 'chatops-image-resize-overlay';
+      overlay.innerHTML = `
+        <div class="chatops-image-resize-container">
+          <div class="chatops-image-resize-header">
+            <h3 class="chatops-image-resize-title">${language.resizeImageTitle || 'Resize Image'}</h3>
+            <button class="chatops-image-resize-close">&times;</button>
+          </div>
+          <div class="chatops-image-resize-body">
+            <div class="chatops-image-resize-preview-box">
+              <img class="chatops-image-resize-preview-img" src="" alt="preview" />
+            </div>
+            <div class="chatops-image-resize-controls">
+              <div class="chatops-image-resize-info-row">
+                <span class="chatops-image-resize-orig-size">Original: --</span>
+                <span class="chatops-image-resize-new-size">Estimated: --</span>
+              </div>
+              <div class="chatops-image-resize-slider-group">
+                <div class="chatops-image-resize-slider-label">
+                  <span>${language.resizeScaleLabel || 'Scale'}</span>
+                  <span class="chatops-image-resize-slider-val">100%</span>
+                </div>
+                <input type="range" class="chatops-image-resize-slider" min="10" max="100" step="5" value="100" />
+              </div>
+              <div class="chatops-image-resize-inputs-group">
+                <div class="chatops-image-resize-input-wrapper">
+                  <span>Width (px)</span>
+                  <input type="number" class="chatops-image-resize-input chatops-image-resize-width" min="10" />
+                </div>
+                <button class="chatops-image-resize-lock-btn locked" title="Lock Aspect Ratio">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none; display:block;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                </button>
+                <div class="chatops-image-resize-input-wrapper">
+                  <span>Height (px)</span>
+                  <input type="number" class="chatops-image-resize-input chatops-image-resize-height" min="10" />
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="chatops-image-resize-footer">
+            <button class="chatops-image-resize-btn chatops-image-resize-btn-cancel">${language.cancel}</button>
+            <button class="chatops-image-resize-btn chatops-image-resize-btn-save">${language.saveCopy || 'Save Copy'}</button>
+            <button class="chatops-image-resize-btn chatops-image-resize-btn-insert">${language.insertToChat || 'Insert to Chat'}</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+      
+      // Hook event listeners
+      overlay.querySelector('.chatops-image-resize-close').onclick = () => overlay.classList.remove('visible');
+      overlay.querySelector('.chatops-image-resize-btn-cancel').onclick = () => overlay.classList.remove('visible');
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) overlay.classList.remove('visible');
+      });
+    }
+
+    const previewImg = overlay.querySelector('.chatops-image-resize-preview-img');
+    const origSizeEl = overlay.querySelector('.chatops-image-resize-orig-size');
+    const newSizeEl = overlay.querySelector('.chatops-image-resize-new-size');
+    const slider = overlay.querySelector('.chatops-image-resize-slider');
+    const sliderVal = overlay.querySelector('.chatops-image-resize-slider-val');
+    const widthInput = overlay.querySelector('.chatops-image-resize-width');
+    const heightInput = overlay.querySelector('.chatops-image-resize-height');
+    const lockBtn = overlay.querySelector('.chatops-image-resize-lock-btn');
+    const saveBtn = overlay.querySelector('.chatops-image-resize-btn-save');
+    const insertBtn = overlay.querySelector('.chatops-image-resize-btn-insert');
+
+    // Load original image details
+    const img = new Image();
+    img.onload = () => {
+      const origWidth = img.width;
+      const origHeight = img.height;
+      const aspect = origWidth / origHeight;
+      const origBytes = getBase64Size(src);
+      const mimeType = src.split(';')[0].split(':')[1] || 'image/png';
+      
+      origSizeEl.textContent = `Original: ${origWidth}x${origHeight} (${formatSize(origBytes)})`;
+      slider.value = 100;
+      sliderVal.textContent = '100%';
+      widthInput.value = origWidth;
+      heightInput.value = origHeight;
+      
+      let isAspectRatioLocked = true;
+      lockBtn.className = 'chatops-image-resize-lock-btn locked';
+      
+      lockBtn.onclick = () => {
+        isAspectRatioLocked = !isAspectRatioLocked;
+        lockBtn.classList.toggle('locked', isAspectRatioLocked);
+      };
+
+      // Perform sizing updates
+      function updateCalculatedSize() {
+        const w = parseInt(widthInput.value, 10) || 10;
+        const h = parseInt(heightInput.value, 10) || 10;
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        
+        if (mimeType !== 'image/png') {
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, w, h);
+        }
+        ctx.drawImage(img, 0, 0, w, h);
+        
+        const testDataUrl = canvas.toDataURL(mimeType, 0.9);
+        const newBytes = getBase64Size(testDataUrl);
+        newSizeEl.textContent = `Estimated: ${w}x${h} (${formatSize(newBytes)})`;
+        
+        // Update the preview image source and style dimensions dynamically
+        previewImg.src = testDataUrl;
+        previewImg.style.width = w + 'px';
+        previewImg.style.height = h + 'px';
+        
+        return testDataUrl;
+      }
+
+      slider.oninput = () => {
+        const pct = parseInt(slider.value, 10) / 100;
+        sliderVal.textContent = `${slider.value}%`;
+        widthInput.value = Math.round(origWidth * pct);
+        heightInput.value = Math.round(origHeight * pct);
+        updateCalculatedSize();
+      };
+
+      widthInput.oninput = () => {
+        const w = parseInt(widthInput.value, 10) || 10;
+        if (isAspectRatioLocked) {
+          heightInput.value = Math.round(w / aspect);
+        }
+        // Update slider back to closest match
+        const pct = Math.round((w / origWidth) * 100);
+        slider.value = Math.min(100, Math.max(10, pct));
+        sliderVal.textContent = `${slider.value}%`;
+        updateCalculatedSize();
+      };
+
+      heightInput.oninput = () => {
+        const h = parseInt(heightInput.value, 10) || 10;
+        if (isAspectRatioLocked) {
+          widthInput.value = Math.round(h * aspect);
+        }
+        const pct = Math.round((h / origHeight) * 100);
+        slider.value = Math.min(100, Math.max(10, pct));
+        sliderVal.textContent = `${slider.value}%`;
+        updateCalculatedSize();
+      };
+
+      // Initial update
+      updateCalculatedSize();
+
+      insertBtn.onclick = () => {
+        const resizedUrl = updateCalculatedSize();
+        insertImageToChat(resizedUrl);
+        overlay.classList.remove('visible');
+      };
+
+      saveBtn.onclick = async () => {
+        const resizedUrl = updateCalculatedSize();
+        const res = await chrome.storage.local.get(['custom_memes']);
+        const customMemes = res.custom_memes || [];
+        
+        // Calculate storage size limit (exclude the old image size if we are overwriting it)
+        let totalBytes = 0;
+        customMemes.forEach((url, i) => {
+          if (index !== i) {
+            totalBytes += getBase64Size(url);
+          }
+        });
+        const newBytes = getBase64Size(resizedUrl);
+
+        if (totalBytes + newBytes > 10 * 1024 * 1024) {
+          alert(language.storageLimitExceeded || 'Storage limit exceeded (10MB maximum)! Please delete some old images.');
+          return;
+        }
+
+        if (index !== undefined && index >= 0 && index < customMemes.length) {
+          // Overwrite existing image
+          customMemes[index] = resizedUrl;
+        } else {
+          // Prepend new image
+          customMemes.unshift(resizedUrl);
+        }
+        
+        await chrome.storage.local.set({ custom_memes: customMemes });
+        loadCustomImages();
+        overlay.classList.remove('visible');
+      };
+    };
+
+    previewImg.src = src;
+    img.src = src;
+    overlay.classList.add('visible');
   }
 
 
@@ -795,60 +1077,17 @@ function showToast(msg) {
 
         const hasNonImage = files.some(f => !f.type.startsWith('image/'));
         if (hasNonImage) {
-          alert(language.uploadOnlyImages);
+          alert(language.uploadOnlyImages || 'Please upload image files only.');
           fileInput.value = '';
           return;
         }
 
-        if (files.length > 10) {
-          alert(language.maxUploadLimitError);
-        }
-
-        const filesToProcess = files.slice(0, 10);
-        
-        // Process all images in parallel
-        const compressionPromises = filesToProcess.map(file => {
-          return new Promise((resolve) => {
-            if (file.type === 'image/gif') {
-              const reader = new FileReader();
-              reader.onload = (ev) => resolve(ev.target.result);
-              reader.readAsDataURL(file);
-            } else {
-              compressImage(file, 1000, 1000, 0.9, (dataUrl) => {
-                resolve(dataUrl);
-              });
-            }
-          });
-        });
-
-        const dataUrls = await Promise.all(compressionPromises);
-        const validUrls = dataUrls.filter(Boolean);
-
-        if (validUrls.length > 0) {
-          const res = await chrome.storage.local.get(['custom_memes']);
-          const customMemes = res.custom_memes || [];
-          
-          let totalBytes = 0;
-          customMemes.forEach(url => {
-            totalBytes += getBase64Size(url);
-          });
-          
-          let newBytes = 0;
-          validUrls.forEach(url => {
-            newBytes += getBase64Size(url);
-          });
-          
-          if (totalBytes + newBytes > 10 * 1024 * 1024) {
-            alert(language.storageLimitExceeded);
-            fileInput.value = '';
-            return;
-          }
-          
-          customMemes.unshift(...validUrls);
-          await chrome.storage.local.set({ custom_memes: customMemes });
-          loadCustomImages();
-        }
-        
+        const file = files[0];
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          openImageResizeModal(ev.target.result);
+        };
+        reader.readAsDataURL(file);
         fileInput.value = '';
       });
     }
@@ -871,6 +1110,18 @@ function showToast(msg) {
           const customMemes = res.custom_memes || [];
           if (customMemes[idx]) {
             openImagePreview(customMemes[idx]);
+          }
+          return;
+        }
+
+        const resizeBtn = e.target.closest('.chatops-custom-image-resize');
+        if (resizeBtn) {
+          e.stopPropagation();
+          const idx = parseInt(resizeBtn.dataset.idx, 10);
+          const res = await chrome.storage.local.get(['custom_memes']);
+          const customMemes = res.custom_memes || [];
+          if (customMemes[idx]) {
+            openImageResizeModal(customMemes[idx], idx);
           }
           return;
         }
@@ -959,7 +1210,8 @@ function showToast(msg) {
         const isClickInside = imagePickerEl.contains(e.target);
         const isClickAnchor = e.target.closest('.chatops-ext-image-picker-btn');
         const isClickPreview = e.target.closest('#chatops-image-preview-overlay') || e.target.closest('.chatops-image-preview-overlay');
-        if (!isClickInside && !isClickAnchor && !isClickPreview) {
+        const isClickResize = e.target.closest('#chatops-image-resize-overlay') || e.target.closest('.chatops-image-resize-overlay');
+        if (!isClickInside && !isClickAnchor && !isClickPreview && !isClickResize) {
           imagePickerEl.classList.add('hidden');
         }
       });
@@ -1434,9 +1686,9 @@ function showToast(msg) {
         </div>
 
         <div id="cqn-task-section" style="margin-bottom: 12px; width: 100%;">
-          <div class="task-reminder-wrapper" style="display:flex; align-items:center; gap:6px; width:100%; box-sizing: border-box;">
+          <div class="task-reminder-wrapper" style="display:flex; flex-wrap:wrap; align-items:center; gap:8px; width:100%; box-sizing: border-box;">
             <div class="task-reminder-row" id="cqnReminderRow"
-              style="flex:1; background:#fff; padding:0 10px; border-radius:6px; border:1px solid #cbd5e1; cursor:pointer; display:flex; align-items:center; min-width:0; height:34px; box-sizing:border-box; transition: opacity 0.2s ease;">
+              style="flex:1 1 220px; min-width:220px; background:#fff; padding:0 10px; border-radius:6px; border:1px solid #cbd5e1; cursor:pointer; display:flex; align-items:center; height:34px; box-sizing:border-box; transition: opacity 0.2s ease;">
               <label class="task-reminder-label" for="cqn-reminder-time"
                 style="margin-right:6px; cursor:pointer; display:inline-flex; align-items:center; white-space:nowrap; font-size:12.5px; line-height:1; height:100%; margin-bottom:0;">
                 <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"
@@ -1463,6 +1715,10 @@ function showToast(msg) {
               <option value="360">+6h</option>
               <option value="480">+8h</option>
             </select>
+          </div>
+          <div class="task-reminder-repeat-row" style="margin-top: 8px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+            <input type="checkbox" id="cqnTaskRemindDaily" style="cursor: pointer; width: 14px; height: 14px; margin: 0;">
+            <label for="cqnTaskRemindDaily" style="font-size: 12px; color: #475569; cursor: pointer; user-select: none; font-weight: 500; margin-bottom: 0">${language.taskRemindDailyLabel}</label>
           </div>
           <div class="input-helper" id="cqnSnoozeHintText" style="margin-top: 6px; margin-bottom: 12px;"></div>
         </div>
@@ -1500,8 +1756,18 @@ function showToast(msg) {
     }
 
     let fpCqn = null;
-    if (timeInput) {
+    function initCqnFlatpickr(noCalendarMode = false) {
+      if (fpCqn) {
+        try {
+          fpCqn.destroy();
+        } catch (e) {}
+      }
+      if (!timeInput) return;
       fpCqn = initCommonFlatpickr(timeInput, {
+        noCalendar: noCalendarMode,
+        enableTime: true,
+        dateFormat: noCalendarMode ? "H:i" : "Y-m-d H:i",
+        appendTo: quickNotePopover,
         onChange: function(selectedDates) {
           if (selectedDates.length > 0) {
             if (cqnReminderSelect) {
@@ -1515,7 +1781,10 @@ function showToast(msg) {
           }
           syncReminderDimming();
         },
-        onOpen: function() {
+        onOpen: function(selectedDates, dateStr, instance) {
+          if (instance && instance.calendarContainer) {
+            instance.calendarContainer.classList.add('cqn-centered-calendar');
+          }
           if (cqnReminderSelect) {
             cqnReminderSelect.value = '';
             const customSelect = cqnReminderSelect.nextElementSibling;
@@ -1528,9 +1797,47 @@ function showToast(msg) {
         }
       });
       timeInput._flatpickr = fpCqn;
+      timeInput._initCqnFlatpickr = initCqnFlatpickr;
     }
 
-    if (reminderRow && fpCqn) {
+    const repeatDailyCheckbox = document.getElementById('cqnTaskRemindDaily');
+    if (repeatDailyCheckbox && timeInput) {
+      repeatDailyCheckbox.addEventListener('change', () => {
+        const isChecked = repeatDailyCheckbox.checked;
+        const currentVal = timeInput.value;
+        
+        initCqnFlatpickr(isChecked);
+        
+        if (currentVal) {
+          if (isChecked) {
+            const match = currentVal.match(/\d{2}:\d{2}/);
+            if (fpCqn) {
+              if (match) {
+                fpCqn.setDate(match[0], false);
+              } else {
+                fpCqn.clear();
+              }
+            }
+          } else {
+            const match = currentVal.match(/^(\d{2}):(\d{2})$/);
+            if (fpCqn) {
+              if (match) {
+                const today = new Date();
+                today.setHours(parseInt(match[1], 10), parseInt(match[2], 10), 0, 0);
+                fpCqn.setDate(today, false);
+              } else {
+                fpCqn.clear();
+              }
+            }
+          }
+        }
+        syncReminderDimming();
+      });
+    }
+
+    initCqnFlatpickr(repeatDailyCheckbox ? repeatDailyCheckbox.checked : false);
+
+    if (reminderRow) {
       reminderRow.addEventListener('click', (e) => {
         e.stopPropagation();
         if (cqnReminderSelect) {
@@ -1542,7 +1849,7 @@ function showToast(msg) {
           }
         }
         syncReminderDimming();
-        if (e.target !== timeInput) {
+        if (e.target !== timeInput && fpCqn) {
           fpCqn.open();
         }
       });
@@ -1628,7 +1935,14 @@ function showToast(msg) {
     if (titleInput) titleInput.value = '';
     document.getElementById('cqn-note-text').value = msgTextFull;
     const reminderInput = document.getElementById('cqn-reminder-time');
+    const repeatDailyCheckbox = document.getElementById('cqnTaskRemindDaily');
+    if (repeatDailyCheckbox) {
+      repeatDailyCheckbox.checked = false;
+    }
     if (reminderInput?._flatpickr) {
+      if (typeof reminderInput._initCqnFlatpickr === 'function') {
+        reminderInput._initCqnFlatpickr(false);
+      }
       reminderInput._flatpickr.clear();
     } else if (reminderInput) {
       reminderInput.value = '';
@@ -1678,6 +1992,11 @@ function showToast(msg) {
     textarea.setSelectionRange(textarea.value.length, textarea.value.length);
   }
 
+  function formatDateTimeLocal(date) {
+    const pad = num => String(num).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  }
+
   async function saveTask(popover) {
     const { postId, postText, mode } = popover.dataset;
     const titleText = document.getElementById('cqn-note-title') ? document.getElementById('cqn-note-title').value.trim() : '';
@@ -1687,6 +2006,28 @@ function showToast(msg) {
     const id = `${mode === 'note' ? 'memo_' : ALARMS.TASK_PREFIX}${Date.now()}`;
     const teamName = window.location.pathname.split('/')[1] || '';
     
+    const repeatDailyCheckbox = document.getElementById('cqnTaskRemindDaily');
+    const isRepeatDaily = (mode === 'note') ? false : (repeatDailyCheckbox ? repeatDailyCheckbox.checked : false);
+
+    let reminderVal = (mode === 'note') ? null : (reminderTime || null);
+    const presetVal = document.getElementById('cqnReminderSelect')?.value;
+    if (mode === 'task' && !reminderVal && presetVal) {
+      const mins = parseInt(presetVal, 10);
+      if (!isNaN(mins)) {
+        reminderVal = formatDateTimeLocal(new Date(Date.now() + mins * 60 * 1000));
+      }
+    }
+
+    if (mode === 'task' && reminderVal && isRepeatDaily && reminderVal.length === 5 && reminderVal.includes(':')) {
+      const today = new Date();
+      const parts = reminderVal.split(':');
+      today.setHours(parseInt(parts[0], 10), parseInt(parts[1], 10), 0, 0);
+      if (today.getTime() <= Date.now()) {
+        today.setDate(today.getDate() + 1);
+      }
+      reminderVal = formatDateTimeLocal(today);
+    }
+
     const item = { 
       id, 
       type: mode === 'note' ? 'memo' : 'task', 
@@ -1697,7 +2038,8 @@ function showToast(msg) {
       category: mode === 'note' ? category : 'General',
       createdAt: Date.now(), 
       done: false, 
-      reminder: (mode === 'note') ? null : (reminderTime || null), 
+      reminder: reminderVal,
+      repeatDaily: isRepeatDaily,
       status: 'pending', 
       teamName 
     };
@@ -1709,9 +2051,11 @@ function showToast(msg) {
     await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
     chrome.runtime.sendMessage({ type: MESSAGE_TYPES.MEMO_UPDATED });
     
-    if (mode === 'task') {
-      const startTime = reminderTime ? new Date(reminderTime).getTime() : Date.now() + settings.snoozeMinutes * 60 * 1000;
-      chrome.runtime.sendMessage({ type: MESSAGE_TYPES.SET_TASK_ALARM, taskId: id, time: startTime });
+    if (mode === 'task' && reminderVal) {
+      const startTime = new Date(reminderVal).getTime();
+      if (!isNaN(startTime)) {
+        chrome.runtime.sendMessage({ type: MESSAGE_TYPES.SET_TASK_ALARM, taskId: id, time: startTime });
+      }
     }
     
     popover.classList.remove('visible');
@@ -1837,74 +2181,176 @@ function showToast(msg) {
     injectImageButton();
   }
 
-  function getPostUsername(postEl) {
+  async function getPostUsername(postEl) {
     if (!postEl) return null;
 
-    // Extract login username from a post element.
-    // ONLY returns data-username attribute or profile image alt. NEVER textContent (display name).
-    function extractUsernameFromEl(el) {
-      if (!el) return null;
+    // Helper to request username from main world using React Fiber + Redux store
+    async function getPostUsernameFromReact(postId) {
+      const bridgeResult = await new Promise((resolve) => {
+        const handler = (e) => {
+          if (e.detail.postId === postId) {
+            window.removeEventListener('chatops-username-response', handler);
+            resolve({ username: e.detail.username, userId: e.detail.userId });
+          }
+        };
+        window.addEventListener('chatops-username-response', handler);
 
-      // 1. Check data-username on the element itself
-      if (el.hasAttribute && el.hasAttribute('data-username')) {
-        const val = el.getAttribute('data-username');
-        if (val && val.trim()) return val.trim();
-      }
+        window.dispatchEvent(new CustomEvent('chatops-username-request', {
+          detail: { postId }
+        }));
 
-      // 2. Check any child with data-username (user-popover, status-wrapper, profile button, etc.)
-      const withAttr = el.querySelector('[data-username]');
-      if (withAttr) {
-        const val = withAttr.getAttribute('data-username');
-        if (val && val.trim()) return val.trim();
-      }
+        // Short timeout: 200ms
+        setTimeout(() => {
+          window.removeEventListener('chatops-username-response', handler);
+          resolve({ username: null, userId: null });
+        }, 200);
+      });
 
-      // 3. Check profile image alt text (Mattermost uses "<username> profile image" format)
-      const imgs = el.querySelectorAll('img.Avatar, img[class*="avatar"], .post__img img, .status-wrapper img');
-      for (const img of imgs) {
-        const alt = (img.getAttribute('alt') || '').trim();
-        // Pattern: "username profile image" → extract "username"
-        const match = alt.match(/^(.+?)\s+profile\s+image$/i);
-        if (match && match[1]) return match[1].trim();
+      // Fast path: bridge resolved the username via Redux store
+      if (bridgeResult.username) return bridgeResult.username;
+
+      // Slow path: bridge found userId but not username → resolve via background API
+      if (bridgeResult.userId) {
+        return new Promise((resolve) => {
+          chrome.runtime.sendMessage({
+            type: MESSAGE_TYPES.RESOLVE_USER_ID,
+            userId: bridgeResult.userId
+          }, (response) => {
+            resolve(response && response.ok ? response.username : null);
+          });
+        });
       }
 
       return null;
     }
 
-    // Step 1: Try current post element directly
-    const directUsername = extractUsernameFromEl(postEl);
-    if (directUsername) return directUsername;
+    const postId = cleanPostId(postEl);
+    if (postId) {
+      const reactUsername = await getPostUsernameFromReact(postId);
+      if (reactUsername) return reactUsername;
+    }
 
-    // Step 2: Grouped messages — Mattermost hides headers for consecutive messages by same user.
-    // Walk previous siblings to find the nearest post with a visible username header.
-    let sibling = postEl.previousElementSibling;
+    // Helper to extract login username from a post element
+    function extractUsernameFromEl(el) {
+      if (!el) return null;
+
+      // 1. Check data-username attribute (most direct)
+      const withDataUsername = el.querySelector('[data-username]') || (el.hasAttribute && el.hasAttribute('data-username') ? el : null);
+      if (withDataUsername) {
+        const val = withDataUsername.getAttribute('data-username');
+        if (val && val.trim()) return val.trim();
+      }
+
+      // 2. Check user-popover buttons/links and their IDs
+      const popovers = el.querySelectorAll('.user-popover, [id*="user-popover"], [class*="user-popover"], .post-header__username, .post-profile, [class*="username"]');
+      for (const p of popovers) {
+        const id = p.getAttribute('id') || '';
+        const match = id.match(/user-popover_(.+)$/i) || id.match(/user-popover-(.+)$/i);
+        if (match && match[1]) {
+          const u = match[1].trim();
+          const isUserId = /^[a-z0-9]{26}$/.test(u);
+          if (u && !u.includes('undefined') && !isUserId) return u;
+        }
+        
+        // Sometimes the popover button itself has data-username
+        if (p.hasAttribute('data-username')) {
+          const u = p.getAttribute('data-username');
+          if (u && u.trim()) return u.trim();
+        }
+      }
+
+      // 3. Check profile image alt text (English, Vietnamese, and generic)
+      const imgs = el.querySelectorAll('img.Avatar, img[class*="avatar"], .post__img img, .status-wrapper img, [class*="avatar"] img');
+      for (const img of imgs) {
+        const alt = (img.getAttribute('alt') || '').trim();
+        if (!alt) continue;
+        
+        // 3a. English: "username profile image"
+        let match = alt.match(/^(.+?)\s+profile\s+image$/i);
+        if (match && match[1]) {
+          const u = match[1].trim();
+          if (u !== 'user') return u;
+        }
+
+        // 3b. Vietnamese: "Ảnh hồ sơ của username" or "Ảnh đại diện của username"
+        match = alt.match(/^(Ảnh hồ sơ của|Ảnh đại diện của|Ảnh hồ sơ|Ảnh đại diện)\s+(.+)$/i);
+        if (match && match[2]) {
+          const u = match[2].trim();
+          if (u && u !== 'user') return u;
+        }
+        
+        // 3c. Generic fallback: if alt has no spaces and is not a generic word, it might be the username
+        if (alt && !alt.includes(' ') && !['avatar', 'profile', 'image', 'picture', 'user'].includes(alt.toLowerCase())) {
+          return alt;
+        }
+      }
+
+      return null;
+    }
+
+    // Helper to extract display name from a post element
+    function extractDisplayNameFromEl(el) {
+      if (!el) return null;
+      const popover = el.querySelector('.user-popover, .post-header__username, [class*="username"]');
+      if (popover) {
+        const text = popover.textContent.trim();
+        if (text) return text;
+      }
+      return null;
+    }
+
+    // Helper to resolve display name using background search API
+    async function resolveDisplayName(displayName) {
+      const cleaned = displayName
+        .replace(/\[[^\]]+\]/g, '') // Remove [DN.DU2.DEV] etc.
+        .replace(/\([^)]+\)/g, '')   // Remove (WFH) etc.
+        .trim();
+        
+      if (!cleaned) return null;
+      
+      return new Promise((resolve) => {
+        chrome.runtime.sendMessage({
+          type: MESSAGE_TYPES.RESOLVE_DISPLAY_NAME,
+          displayName: cleaned
+        }, (response) => {
+          if (response && response.ok && response.username) {
+            resolve(response.username);
+          } else {
+            resolve(null);
+          }
+        });
+      });
+    }
+
+    // Helper to find the previous post element in the DOM regardless of wrappers
+    function getPreviousPostElement(el) {
+      const container = el.closest('.sidebar-right, .rhs-thread, .sidebar--right, .post-list__content, .post-list-holder-by-time, #post-list, [class*="post-list"]');
+      const scope = container || document;
+      const allPosts = Array.from(scope.querySelectorAll('.post, [id^="post_"], [id^="rhsPost_"]'));
+      const idx = allPosts.indexOf(el);
+      if (idx > 0) {
+        return allPosts[idx - 1];
+      }
+      return null;
+    }
+
+    // Walk backwards through actual post elements until we find a username or display name
+    let current = postEl;
     let lookback = 0;
-    while (sibling && lookback < 30) {
-      const sibUsername = extractUsernameFromEl(sibling);
-      if (sibUsername) return sibUsername;
-      sibling = sibling.previousElementSibling;
+    while (current && lookback < 30) {
+      // 1. Try to extract username directly (no API call needed)
+      const username = extractUsernameFromEl(current);
+      if (username) return username;
+      
+      // 2. Try to extract display name and resolve it via API
+      const displayName = extractDisplayNameFromEl(current);
+      if (displayName) {
+        const resolved = await resolveDisplayName(displayName);
+        if (resolved) return resolved;
+      }
+      
+      current = getPreviousPostElement(current);
       lookback++;
-    }
-
-    // Step 3: For RHS thread posts, search within the RHS container for any post above current
-    const rhsContainer = postEl.closest('.sidebar-right, .rhs-thread, .sidebar--right, #rhsContainer');
-    if (rhsContainer) {
-      const allPosts = Array.from(rhsContainer.querySelectorAll('[id^="rhsPost_"], .post'));
-      const currentIdx = allPosts.indexOf(postEl);
-      for (let i = (currentIdx > 0 ? currentIdx - 1 : allPosts.length - 1); i >= 0; i--) {
-        const u = extractUsernameFromEl(allPosts[i]);
-        if (u) return u;
-      }
-    }
-
-    // Step 4: Last resort — search the entire visible post list container
-    const postListContainer = postEl.closest('.post-list__content, .post-list-holder-by-time, #post-list');
-    if (postListContainer) {
-      const allPosts = Array.from(postListContainer.querySelectorAll('.post, [id^="post_"]'));
-      const currentIdx = allPosts.indexOf(postEl);
-      for (let i = (currentIdx > 0 ? currentIdx - 1 : allPosts.length - 1); i >= 0; i--) {
-        const u = extractUsernameFromEl(allPosts[i]);
-        if (u) return u;
-      }
     }
 
     return null;
@@ -2169,7 +2615,7 @@ function showToast(msg) {
           replyBtn.className = 'chatops-quick-note-btn quick-reply-btn';
           replyBtn.innerHTML = '💬';
           replyBtn.title = language.quickReplyBtnTooltip || 'Phản hồi nhanh (@)';
-          replyBtn.addEventListener('click', (e) => {
+          replyBtn.addEventListener('click', async (e) => {
             e.preventDefault(); e.stopPropagation();
 
             // Re-entrancy guard: prevent infinite loop if this handler fires again
@@ -2179,7 +2625,7 @@ function showToast(msg) {
             // Auto-clear after 3s safety net
             setTimeout(clearBusy, 3000);
 
-            const username = getPostUsername(postEl);
+            const username = await getPostUsername(postEl);
             if (!username) {
               showToast(language.usernameNotFoundError || 'Không tìm thấy tên người dùng để tag!');
               clearBusy();

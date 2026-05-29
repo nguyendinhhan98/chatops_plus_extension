@@ -2,7 +2,7 @@
  * Background Service Worker — ChatOps Chrome Extension
  */
 
-import { getConfig, getMyProfile, addPostReaction, deletePostReaction, deletePost } from './api/index.js';
+import { getConfig, getMyProfile, addPostReaction, deletePostReaction, deletePost, searchUsers, getUsersByIds } from './api/index.js';
 import { syncCookies, setupCookieSync } from './background/cookie-sync.js';
 import { 
   handleMentionCheck, 
@@ -133,6 +133,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         .catch((err) => sendResponse({ ok: false, error: err.message }));
       return true;
 
+    case MESSAGE_TYPES.RESOLVE_DISPLAY_NAME:
+      handleResolveDisplayName(message.displayName, sendResponse);
+      return true;
+
+    case MESSAGE_TYPES.RESOLVE_USER_ID:
+      handleResolveUserId(message.userId, sendResponse);
+      return true;
+
     case MESSAGE_TYPES.TEST_NOTIFICATION:
       const testType = message.notificationType || 'both';
       loadLanguage().then(() => {
@@ -218,6 +226,61 @@ function handleMarkTaskDone(taskId, sendResponse) {
       sendResponse({ ok: false, error: 'Task not found' });
     }
   });
+}
+
+/**
+ * Resolves a display name to a Mattermost login username by querying the search API
+ */
+async function handleResolveDisplayName(displayName, sendResponse) {
+  try {
+    const term = displayName.trim();
+    if (!term) {
+      sendResponse({ ok: false, error: 'Empty display name' });
+      return;
+    }
+    const users = await searchUsers(term);
+    if (users && users.length > 0) {
+      const cleanTerm = term.toLowerCase();
+      let bestMatch = users[0];
+      for (const u of users) {
+        const full = `${u.first_name || ''} ${u.last_name || ''}`.trim().toLowerCase();
+        const nickname = (u.nickname || '').trim().toLowerCase();
+        const username = (u.username || '').trim().toLowerCase();
+        if (full === cleanTerm || nickname === cleanTerm || username === cleanTerm) {
+          bestMatch = u;
+          break;
+        }
+      }
+      sendResponse({ ok: true, username: bestMatch.username });
+    } else {
+      sendResponse({ ok: false, error: 'User not found' });
+    }
+  } catch (err) {
+    console.error('[ChatOps Ext] handleResolveDisplayName error:', err);
+    sendResponse({ ok: false, error: err.message });
+  }
+}
+
+
+/**
+ * Resolves a Mattermost user ID to a login username
+ */
+async function handleResolveUserId(userId, sendResponse) {
+  try {
+    if (!userId) {
+      sendResponse({ ok: false, error: 'Empty userId' });
+      return;
+    }
+    const users = await getUsersByIds([userId]);
+    if (users && users.length > 0 && users[0].username) {
+      sendResponse({ ok: true, username: users[0].username });
+    } else {
+      sendResponse({ ok: false, error: 'User not found' });
+    }
+  } catch (err) {
+    console.error('[ChatOps Ext] handleResolveUserId error:', err);
+    sendResponse({ ok: false, error: err.message });
+  }
 }
 
 /**
