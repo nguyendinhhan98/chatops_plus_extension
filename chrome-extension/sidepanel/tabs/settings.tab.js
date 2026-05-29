@@ -236,7 +236,9 @@ const DEFAULT_SETTINGS = {
     quickNote: true,
     quickTask: true,
     spamReactions: false,
-    imagePicker: true
+    imagePicker: true,
+    quickReply: true,
+    quickCopy: true
   },
   memoCategories: ['General', 'Work'],
   spamEnabled: true,
@@ -382,6 +384,8 @@ async function loadAndApplySettings() {
   document.getElementById('settingFloatingQuickNote').checked = settings.floatingButtons?.quickNote !== false;
   document.getElementById('settingFloatingSpamReactions').checked = settings.floatingButtons?.spamReactions !== false;
   document.getElementById('settingFloatingImagePicker').checked = settings.floatingButtons?.imagePicker !== false;
+  document.getElementById('settingFloatingQuickReply').checked = settings.floatingButtons?.quickReply !== false;
+  document.getElementById('settingFloatingQuickCopy').checked = settings.floatingButtons?.quickCopy !== false;
 
   // Sync disabled/dimmed states
   updateFloatingCheckboxesSync(settings);
@@ -881,6 +885,8 @@ function setupEventListeners() {
   bindFloatingToggle('settingFloatingQuickNote', 'quickNote');
   bindFloatingToggle('settingFloatingSpamReactions', 'spamReactions');
   bindFloatingToggle('settingFloatingImagePicker', 'imagePicker');
+  bindFloatingToggle('settingFloatingQuickReply', 'quickReply');
+  bindFloatingToggle('settingFloatingQuickCopy', 'quickCopy');
 
   const btnTabStd = document.getElementById('emojiTabStandard');
   const btnTabCustom = document.getElementById('emojiTabCustom');
@@ -1349,7 +1355,16 @@ function setupEventListeners() {
         
         // Scroll into view
         setTimeout(() => {
-          accordion.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          const container = document.getElementById('settingsScrollContainer');
+          if (container) {
+            const containerRect = container.getBoundingClientRect();
+            const accRect = accordion.getBoundingClientRect();
+            const relativeTop = accRect.top - containerRect.top + container.scrollTop;
+            const targetScrollTop = relativeTop - 12; // 12px margin
+            container.scrollTo({ top: targetScrollTop, behavior: 'smooth' });
+          } else {
+            accordion.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
         }, 100);
       }
     }
@@ -1550,9 +1565,35 @@ function setupEventListeners() {
     header.addEventListener('click', (e) => {
       if (e.target.closest('input, button, a, select')) return;
       const acc = header.parentElement;
-      acc.classList.toggle('open');
-      if (!acc.classList.contains('open')) {
+      const isOpening = !acc.classList.contains('open');
+      
+      // Close other accordions first
+      if (isOpening) {
+        document.querySelectorAll('.settings-accordion').forEach(other => {
+          if (other !== acc) {
+            other.classList.remove('open');
+            other.classList.remove('highlighted');
+          }
+        });
+      }
+      
+      acc.classList.toggle('open', isOpening);
+      if (!isOpening) {
         acc.classList.remove('highlighted');
+      } else {
+        acc.classList.add('highlighted');
+        setTimeout(() => {
+          const container = document.getElementById('settingsScrollContainer');
+          if (container) {
+            const containerRect = container.getBoundingClientRect();
+            const accRect = acc.getBoundingClientRect();
+            const relativeTop = accRect.top - containerRect.top + container.scrollTop;
+            const targetScrollTop = relativeTop - 12; // 12px margin
+            container.scrollTo({ top: targetScrollTop, behavior: 'smooth' });
+          } else {
+            acc.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 180);
       }
 
       // Persist accordion open/close states

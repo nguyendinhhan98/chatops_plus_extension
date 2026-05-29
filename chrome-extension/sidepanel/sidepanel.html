@@ -16,41 +16,34 @@
 
 <body>
   <div class="panel-container">
-    <!-- ─── Workspace Header ─── -->
-    <div class="workspace-header" style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
-      <div style="display: flex; align-items: center; gap: 6px; flex: 1;">
-        <div class="workspace-brand" data-i18n="workspaceLabel">WORKSPACE:</div>
-        <div id="spWorkspaceDropdown" class="custom-dropdown" style="flex: 1; min-width: 80px; position: relative;">
-          <div id="spWorkspaceSelected" class="custom-dropdown-selected">
-            <span class="selected-text" data-i18n="loading">Loading...</span>
-            <span class="dropdown-arrow">▼</span>
-          </div>
-          <div id="spWorkspaceOptions" class="custom-dropdown-options">
-            <!-- Populated dynamically via JS -->
-          </div>
-        </div>
+    <!-- ─── Header (compact action bar only) ─── -->
+    <div class="workspace-header" style="display: flex; align-items: center; justify-content: flex-end; gap: 6px;">
+      <!-- Language Toggle Flag Button -->
+      <button id="btnHeaderLang" data-i18n-title="langToggleTooltip" title="Switch to Vietnamese" style="font-size: 11px; font-weight: 700; color: var(--accent); margin: 0;">
+        EN
+      </button>
+      <!-- Coffee Icon Button to open Donate Modal -->
+      <button id="btnHeaderCoffee" data-i18n-title="supportVibecodingTitle" title="Support Vibecoding" style="margin: 0;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: block;">
+          <path d="M18 8h1a4 4 0 0 1 0 8h-1"></path>
+          <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path>
+          <line x1="6" y1="1" x2="6" y2="4"></line>
+          <line x1="10" y1="1" x2="10" y2="4"></line>
+          <line x1="14" y1="1" x2="14" y2="4"></line>
+        </svg>
+      </button>
+      <!-- Help / Guide Button -->
+      <button id="btnHeaderHelp" data-i18n-title="systemHelpTooltip" title="System Help & Tips" style="font-weight: 700; color: var(--accent); font-size: 15px; font-family: monospace; margin: 0;">
+        ?
+      </button>
+    </div>
+    <!-- Workspace Dropdown (hidden, referenced by JS — instances below appear inline in Search/Mentions) -->
+    <div id="spWorkspaceDropdown" class="custom-dropdown" style="display:none; position:relative;">
+      <div id="spWorkspaceSelected" class="custom-dropdown-selected">
+        <span class="selected-text" data-i18n="loading">Loading...</span>
+        <span class="dropdown-arrow">▼</span>
       </div>
-      <!-- Header Actions Flex Container -->
-      <div class="header-actions" style="display: flex; align-items: center; gap: 6px; flex-shrink: 0; padding-right: 0;">
-        <!-- Language Toggle Flag Button -->
-        <button id="btnHeaderLang" data-i18n-title="langToggleTooltip" title="Switch to Vietnamese" style="font-size: 11px; font-weight: 700; color: var(--accent); margin: 0;">
-          EN
-        </button>
-        <!-- Coffee Icon Button to open Donate Modal -->
-        <button id="btnHeaderCoffee" data-i18n-title="supportVibecodingTitle" title="Support Vibecoding" style="margin: 0;">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: block;">
-            <path d="M18 8h1a4 4 0 0 1 0 8h-1"></path>
-            <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path>
-            <line x1="6" y1="1" x2="6" y2="4"></line>
-            <line x1="10" y1="1" x2="10" y2="4"></line>
-            <line x1="14" y1="1" x2="14" y2="4"></line>
-          </svg>
-        </button>
-        <!-- Help / Guide Button -->
-        <button id="btnHeaderHelp" data-i18n-title="systemHelpTooltip" title="System Help & Tips" style="font-weight: 700; color: var(--accent); font-size: 15px; font-family: monospace; margin: 0;">
-          ?
-        </button>
-      </div>
+      <div id="spWorkspaceOptions" class="custom-dropdown-options"></div>
     </div>
 
     <!-- ─── Tab Navigation (4 tabs) ─── -->
@@ -89,15 +82,17 @@
           <button class="memo-sub-tab active" data-filter="pending" data-i18n="taskPending">PENDING</button>
           <button class="memo-sub-tab" data-filter="done" data-i18n="taskCompleted">COMPLETED</button>
         </div>
-        <button id="btnClearAllTasks" class="sync-badge-btn" style="gap:4px; color:#d0454c;" data-i18n="clearAllTasks">🗑️ Xóa tất cả</button>
-        <button id="syncBadgeTasks" class="sync-badge-btn" data-i18n-title="syncTooltip" title="Click to backup or restore data via Google account">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8"
-            stroke-linecap="round" stroke-linejoin="round" class="sync-icon-svg"
-            style="transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);">
-            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
-          </svg>
-          <span data-i18n="syncText">Sync</span>
-        </button>
+        <div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-end; margin-left: 8px; flex-shrink: 0;">
+          <button id="btnClearAllTasks" class="sync-badge-btn" style="gap:4px; color:#d0454c;" data-i18n="clearAllTasks">🗑️ Xóa tất cả</button>
+          <button id="syncBadgeTasks" class="sync-badge-btn" data-i18n-title="syncTooltip" title="Click to backup or restore data via Google account" style="width: 100%; justify-content: center;">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8"
+              stroke-linecap="round" stroke-linejoin="round" class="sync-icon-svg"
+              style="transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);">
+              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+            </svg>
+            <span data-i18n="syncText">Sync</span>
+          </button>
+        </div>
       </div>
 
       <!-- Hidden Quick Add Task Placeholder -->
@@ -222,15 +217,17 @@
               <span data-i18n="importNotesBtn">Import</span>
               <input type="file" id="importNotesFileInput" accept=".md,.txt,.json" style="position: absolute; top: 0; left: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer;">
             </button>
-            <button id="btnClearAllNotes" class="sync-badge-btn" style="gap:4px; color:#d0454c;" data-i18n="clearAllNotes">🗑️ Xóa tất cả</button>
-            <button id="syncBadgeNotes" class="sync-badge-btn" data-i18n-title="syncTooltip" title="Click to backup or restore data via Google account">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8"
-                stroke-linecap="round" stroke-linejoin="round" class="sync-icon-svg"
-                style="transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);">
-                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
-              </svg>
-              <span data-i18n="syncText">Sync</span>
-            </button>
+            <div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-end; margin-left: 8px; flex-shrink: 0;">
+              <button id="btnClearAllNotes" class="sync-badge-btn" style="gap:4px; color:#d0454c;" data-i18n="clearAllNotes">🗑️ Xóa tất cả</button>
+              <button id="syncBadgeNotes" class="sync-badge-btn" data-i18n-title="syncTooltip" title="Click to backup or restore data via Google account" style="width: 100%; justify-content: center;">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8"
+                  stroke-linecap="round" stroke-linejoin="round" class="sync-icon-svg"
+                  style="transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);">
+                  <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+                </svg>
+                <span data-i18n="syncText">Sync</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -307,6 +304,17 @@
         <!-- Hidden Search Form Placeholder -->
         <div id="spSearchFormPlaceholder" style="display: none;">
           <div class="search-form" id="spSearchForm" style="padding: 12px var(--app-padding, 16px) 16px var(--app-padding, 16px); background: white; border-bottom: 1px solid var(--border);">
+            <!-- Workspace row inside Search form -->
+            <div class="workspace-inline-row" id="searchWorkspaceRow">
+              <span class="workspace-inline-label" data-i18n="workspaceLabel">WORKSPACE:</span>
+              <div id="spWorkspaceDropdownSearch" class="custom-dropdown workspace-inline-dropdown">
+                <div id="spWorkspaceSelectedSearch" class="custom-dropdown-selected workspace-inline-selected">
+                  <span class="selected-text" data-i18n="loading">Loading...</span>
+                  <span class="dropdown-arrow">▼</span>
+                </div>
+                <div id="spWorkspaceOptionsSearch" class="custom-dropdown-options"></div>
+              </div>
+            </div>
             <div class="search-main-row" style="display: flex; gap: 8px; align-items: center;">
               <div style="position: relative; flex: 1; display: flex; align-items: center;">
                 <input type="text" id="spSearchTerms" data-i18n-placeholder="searchTermsPlaceholder" placeholder="Search keyword... (Enter to search)"
@@ -488,6 +496,17 @@
       <!-- Hidden Mentions Form Placeholder -->
       <div id="spMentionsFormPlaceholder" style="display: none;">
         <div class="search-form" id="spMentionsForm" style="padding: 12px var(--app-padding, 16px) 16px var(--app-padding, 16px); background: white; border-bottom: 1px solid var(--border);">
+          <!-- Workspace row inside Mentions form -->
+          <div class="workspace-inline-row" id="mentionsWorkspaceRow">
+            <span class="workspace-inline-label" data-i18n="workspaceLabel">WORKSPACE:</span>
+            <div id="spWorkspaceDropdownMentions" class="custom-dropdown workspace-inline-dropdown">
+              <div id="spWorkspaceSelectedMentions" class="custom-dropdown-selected workspace-inline-selected">
+                <span class="selected-text" data-i18n="loading">Loading...</span>
+                <span class="dropdown-arrow">▼</span>
+              </div>
+              <div id="spWorkspaceOptionsMentions" class="custom-dropdown-options"></div>
+            </div>
+          </div>
           <div class="search-filters-row">
             <select id="spMentionHours" class="custom-select" style="flex:1">
               <option value="24" data-i18n="last24Hours" selected>Last 24 hours</option>
@@ -567,7 +586,7 @@
         </div>
       </div>
 
-      <div style="flex:1; overflow-y: auto; padding: var(--app-padding, 16px);">
+      <div id="settingsScrollContainer" style="flex:1; overflow-y: auto; padding: var(--app-padding, 16px);">
         <!-- Section: Features -->
         <div id="settings-section-features" class="settings-tab-panel active">
           <h2 style="font-size: 15px; font-weight: 600; color: var(--text-1); margin-bottom: 20px;" data-i18n="featureSettingsTitle">Feature Settings</h2>
@@ -676,6 +695,16 @@
                   <input type="checkbox" id="settingFloatingImagePicker" class="settings-toggle" checked>
                   <span class="toggle-slider"></span>
                 </label>
+                <label class="settings-toggle-row" id="rowFloatingQuickReply">
+                  <span data-i18n="floatingQuickReply">Quick Reply Tag Button (💬)</span>
+                  <input type="checkbox" id="settingFloatingQuickReply" class="settings-toggle" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+                <label class="settings-toggle-row" id="rowFloatingQuickCopy">
+                  <span data-i18n="floatingQuickCopy">Quick Copy Message Button (📋)</span>
+                  <input type="checkbox" id="settingFloatingQuickCopy" class="settings-toggle" checked>
+                  <span class="toggle-slider"></span>
+                </label>
                 <label class="settings-toggle-row">
                   <span data-i18n="settingQuickDelete">Delete Messages</span>
                   <input type="checkbox" id="settingQuickDelete" class="settings-toggle">
@@ -737,20 +766,7 @@
                     <span class="toggle-slider"></span>
                   </label>
                 </div>
-                <!-- Guidance Box -->
-                <div style="margin-top: 16px; padding: 14px 16px; background: #ffffff; border: 1px solid var(--border); border-radius: 8px; font-size: 13.5px; line-height: 1.6; color: var(--text-2);">
-                  <div style="font-weight: 700; color: var(--text-1); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; font-size: 14px; border-bottom: 1px solid var(--border); padding-bottom: 6px;" data-i18n="alertsHelpTitle">
-                    ℹ️ HOW TO ENABLE SYSTEM NOTIFICATIONS
-                  </div>
-                  <div style="display: flex; flex-direction: column; gap: 8px;" data-i18n-html="alertsHelpDesc">
-                    <div>🍏 <strong>macOS:</strong> Go to <em>System Settings</em> → <em>Notifications</em> → <strong>Google Chrome</strong> → Enable <strong>Allow Notifications</strong> and select <strong>Banners</strong> or <strong>Alerts</strong>.</div>
-                    <div>🪟 <strong>Windows:</strong> Go to <em>Settings</em> → <em>System</em> → <em>Notifications</em> → Ensure general alerts are ON and allow <strong>Google Chrome</strong>.</div>
-                    <div>🪟 <strong>Ubuntu (Linux):</strong> Go to <em>Settings</em> → <em>Notifications</em> → <strong>Google Chrome</strong> → Ensure notifications are enabled.</div>
-                    <div style="border-top: 1px dashed var(--border); margin-top: 6px; padding-top: 8px; font-style: italic; color: var(--accent); font-weight: 500;">
-                      💡 Tip: If notifications do not appear after enabling, restart Google Chrome completely (Cmd+Q on macOS, or close all windows) for the OS to apply permissions.
-                    </div>
-                  </div>
-                </div>
+
               </div>
             </div>
           </div>

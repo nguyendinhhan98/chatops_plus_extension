@@ -84,88 +84,124 @@ async function init() {
 }
 
 /**
- * Sets up the workspace dropdown selector
+ * Sets up the workspace dropdown selector — powering all three instances:
+ * the hidden master, the Search inline row, and the Mentions inline row.
  */
 async function setupWorkspaceSelector(teams, dropdownContainer) {
-  const selectedEl = document.getElementById('spWorkspaceSelected');
-  const optionsEl = document.getElementById('spWorkspaceOptions');
-  const selectedText = selectedEl?.querySelector('.selected-text');
-  
-  if (!teams?.length) { 
-    if (selectedText) {
-      selectedText.textContent = language.noWorkspaces || 'No workspaces'; 
-      selectedText.removeAttribute('data-i18n');
-    }
-    return; 
+  if (!teams?.length) {
+    // Show "no workspaces" in all visible selected-text spans
+    document.querySelectorAll('#spWorkspaceSelected .selected-text, #spWorkspaceSelectedSearch .selected-text, #spWorkspaceSelectedMentions .selected-text').forEach(el => {
+      el.textContent = language.noWorkspaces || 'No workspaces';
+      el.removeAttribute('data-i18n');
+    });
+    return;
   }
 
   const saved = await chrome.storage.local.get([STORAGE_KEYS.CURRENT_TEAM]);
   const config = state.getConfig();
-  let defaultTeam = teams.find(t => String(t.id) === String(saved[STORAGE_KEYS.CURRENT_TEAM])) 
-    || teams.find(t => t.name === (config.teamName || CHATOPS_CONFIG.DEFAULT_TEAM)) 
+  let defaultTeam = teams.find(t => String(t.id) === String(saved[STORAGE_KEYS.CURRENT_TEAM]))
+    || teams.find(t => t.name === (config.teamName || CHATOPS_CONFIG.DEFAULT_TEAM))
     || teams[0];
-  
+
   state.setTeam(defaultTeam);
-  if (selectedText) {
-    selectedText.textContent = defaultTeam.display_name;
-    selectedText.removeAttribute('data-i18n');
+
+  // Helper: set all selected-text spans to the team display name
+  function syncAllSelectedText(team) {
+    document.querySelectorAll('#spWorkspaceSelected .selected-text, #spWorkspaceSelectedSearch .selected-text, #spWorkspaceSelectedMentions .selected-text').forEach(el => {
+      el.textContent = team.display_name;
+      el.removeAttribute('data-i18n');
+    });
   }
 
-  // Render options dynamically
-  if (optionsEl) {
+  // Helper: render options into a given optionsEl
+  function renderOptions(optionsEl, currentTeamId) {
+    if (!optionsEl) return;
     optionsEl.innerHTML = teams.map(t => `
-      <div class="custom-dropdown-option ${t.id === defaultTeam.id ? 'selected' : ''}" data-value="${t.id}">
+      <div class="custom-dropdown-option ${t.id === currentTeamId ? 'selected' : ''}" data-value="${t.id}">
         ${escapeHtml(t.display_name)}
       </div>
     `).join('');
   }
 
-  // Toggle dropdown open/close
-  selectedEl?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const isOpen = dropdownContainer.classList.contains('open');
-    
-    // Close other elements if needed, then toggle this one
-    dropdownContainer.classList.toggle('open', !isOpen);
-    optionsEl?.classList.toggle('show', !isOpen);
-  });
-
-  // Handle option click
-  optionsEl?.addEventListener('click', (e) => {
-    const optionItem = e.target.closest('.custom-dropdown-option');
-    if (!optionItem) return;
-
-    const val = optionItem.dataset.value;
+  // Helper: handle team selection from any dropdown
+  function onTeamSelected(val, ownerDropdown, ownerOptions) {
     const selectedTeam = teams.find(t => String(t.id) === String(val));
     if (!selectedTeam) return;
 
-    if (selectedText) {
-      selectedText.textContent = selectedTeam.display_name;
-      selectedText.removeAttribute('data-i18n');
-    }
-    
-    optionsEl.querySelectorAll('.custom-dropdown-option').forEach(item => {
+    syncAllSelectedText(selectedTeam);
+
+    // Sync selected state in ALL option lists
+    document.querySelectorAll('.workspace-inline-dropdown .custom-dropdown-option, #spWorkspaceOptions .custom-dropdown-option').forEach(item => {
       item.classList.toggle('selected', item.dataset.value === val);
     });
 
     state.setTeam(selectedTeam);
     chrome.storage.local.set({ [STORAGE_KEYS.CURRENT_TEAM]: val });
 
-    // Close the dropdown
-    dropdownContainer.classList.remove('open');
-    optionsEl.classList.remove('show');
+    // Close this dropdown
+    ownerDropdown?.classList.remove('open');
+    ownerOptions?.classList.remove('show');
 
-    // Defer reset to prevent rendering glitches
-    setTimeout(() => {
-      resetAllTabs();
-    }, 50);
+    setTimeout(() => { resetAllTabs(); }, 50);
+  }
+
+  // Initialize all dropdown instances
+  const instances = [
+    {
+      container: document.getElementById('spWorkspaceDropdown'),
+      selectedEl: document.getElementById('spWorkspaceSelected'),
+      optionsEl: document.getElementById('spWorkspaceOptions'),
+    },
+    {
+      container: document.getElementById('spWorkspaceDropdownSearch'),
+      selectedEl: document.getElementById('spWorkspaceSelectedSearch'),
+      optionsEl: document.getElementById('spWorkspaceOptionsSearch'),
+    },
+    {
+      container: document.getElementById('spWorkspaceDropdownMentions'),
+      selectedEl: document.getElementById('spWorkspaceSelectedMentions'),
+      optionsEl: document.getElementById('spWorkspaceOptionsMentions'),
+    },
+  ];
+
+  syncAllSelectedText(defaultTeam);
+
+  instances.forEach(({ container, selectedEl, optionsEl }) => {
+    if (!container || !selectedEl || !optionsEl) return;
+
+    renderOptions(optionsEl, defaultTeam.id);
+
+    // Toggle dropdown open/close
+    selectedEl.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = container.classList.contains('open');
+      // Close all other instances first
+      instances.forEach(i => {
+        if (i.container && i.container !== container) {
+          i.container.classList.remove('open');
+          i.optionsEl?.classList.remove('show');
+        }
+      });
+      container.classList.toggle('open', !isOpen);
+      optionsEl.classList.toggle('show', !isOpen);
+    });
+
+    // Handle option click
+    optionsEl.addEventListener('click', (e) => {
+      const optionItem = e.target.closest('.custom-dropdown-option');
+      if (!optionItem) return;
+      onTeamSelected(optionItem.dataset.value, container, optionsEl);
+    });
   });
 
-  // Close dropdown if clicked outside
+  // Close all dropdowns when clicking outside
   document.addEventListener('click', () => {
-    dropdownContainer?.classList.remove('open');
-    optionsEl?.classList.remove('show');
+    instances.forEach(({ container, optionsEl }) => {
+      container?.classList.remove('open');
+      optionsEl?.classList.remove('show');
+    });
   });
+
 
   // Global click listener to show note images in the preview modal
   document.addEventListener('click', (e) => {

@@ -130,16 +130,18 @@ body {
   overflow: hidden;
 }
 
-/* ─── Workspace Header ─── */
+/* ─── Header (compact action bar) ─── */
 .workspace-header {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 6px 12px;
   background: var(--header-bg, var(--accent));
   border-bottom: 1px solid var(--nav-border);
   flex-shrink: 0;
   box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  min-height: 36px;
 }
 
 .workspace-brand {
@@ -246,6 +248,69 @@ body {
   background: var(--accent-dim, #eff6ff) !important;
   color: var(--accent, #1d4ed8) !important;
   font-weight: 600;
+}
+
+/* ─── Inline Workspace Selector (inside Search / Mentions forms) ─── */
+.workspace-inline-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed var(--border);
+}
+
+.workspace-inline-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.workspace-inline-dropdown {
+  flex: 1;
+  min-width: 0;
+}
+
+.workspace-inline-selected {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 5px 10px;
+  background: var(--bg-2, #f5f5f7);
+  border: 1px solid var(--border, #e0e0e5);
+  border-radius: 6px;
+  color: var(--text-1);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition, 0.2s);
+  user-select: none;
+}
+
+.workspace-inline-selected:hover {
+  border-color: var(--accent);
+  background: var(--accent-dim, #eff6ff);
+  color: var(--accent);
+}
+
+.workspace-inline-dropdown.open .workspace-inline-selected {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.workspace-inline-dropdown .dropdown-arrow {
+  font-size: 9px;
+  opacity: 0.6;
+  transition: transform 0.2s ease;
+}
+
+.workspace-inline-dropdown.open .dropdown-arrow {
+  transform: rotate(180deg);
 }
 
 
@@ -1996,6 +2061,18 @@ input:checked + .toggle-slider:before { transform: translateX(16px); }
   border-color: rgba(106, 106, 108, 0.12);
 }
 
+.task-attributes-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--border);
+  width: 100%;
+  box-sizing: border-box;
+}
+
 .memo-footer {
   display: flex; justify-content: space-between; align-items: center;
   margin-top: 6px; padding-top: 6px;
@@ -3226,11 +3303,18 @@ span.flatpickr-weekday {
 
 .settings-accordion.open {
   overflow: visible !important;
+  border-color: var(--accent) !important;
+  box-shadow: 0 4px 20px rgba(28, 88, 217, 0.1) !important;
+}
+
+.settings-accordion.open .settings-accordion-header {
+  background: var(--accent-dim) !important;
+  border-bottom: 1px dashed rgba(28, 88, 217, 0.15) !important;
 }
 
 .settings-accordion.open .settings-accordion-body {
   max-height: 1200px;
-  padding: 0 16px 16px;
+  padding: 16px;
   overflow: visible;
 }
 
@@ -3341,4 +3425,119 @@ span.flatpickr-weekday {
 .chatops-custom-image-preview:hover {
   background: var(--accent) !important;
 }
+
+/* ─── User Guide Responsive & Typography Styles ─── */
+.guide-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  color: var(--text-1);
+  font-family: inherit;
+}
+
+.guide-section-title {
+  margin: 0 0 10px 0 !important;
+  color: var(--text-1) !important;
+  font-weight: 700 !important;
+  font-size: 12px !important;
+  letter-spacing: 0.3px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  text-transform: uppercase !important;
+}
+
+.guide-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
+  gap: 10px !important;
+  margin-bottom: 16px !important;
+}
+
+/* Let's override the road card inside the modal to make font sizes perfect */
+.sp-modal-body .settings-road-card {
+  padding: 10px !important;
+  gap: 4px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.sp-modal-body .settings-road-card a.settings-subtab-link,
+.sp-modal-body .settings-road-card a.main-tab-link-anchor {
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+}
+
+.sp-modal-body .settings-road-card p {
+  margin: 0 !important;
+  color: var(--text-2) !important;
+  font-size: 12px !important;
+  line-height: 1.4 !important;
+}
+
+.guide-info-box {
+  background: var(--bg-1) !important;
+  border: 1px solid var(--border) !important;
+  padding: 12px !important;
+  border-radius: 8px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+}
+
+.guide-info-title {
+  margin: 0 !important;
+  color: var(--accent) !important;
+  font-weight: 700 !important;
+  font-size: 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  text-transform: uppercase !important;
+}
+
+.guide-info-list {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+  font-size: 11.5px !important;
+  margin-top: 6px !important;
+}
+
+.guide-info-item {
+  display: flex !important;
+  gap: 6px !important;
+  align-items: center !important;
+}
+
+.guide-info-item span {
+  font-size: 12px !important;
+}
+
+.guide-tip-section {
+  border-top: 1px dashed var(--border) !important;
+  padding-top: 12px !important;
+  margin-top: 2px !important;
+}
+
+.guide-tip-box {
+  background: rgba(28,88,217,0.04) !important;
+  border-left: 3px solid var(--accent) !important;
+  padding: 8px 10px !important;
+  border-radius: 4px !important;
+  font-size: 11.5px !important;
+  line-height: 1.4 !important;
+  margin-bottom: 8px !important;
+}
+
+.guide-tip-box strong {
+  color: var(--accent) !important;
+}
+
+.guide-tip-box span {
+  color: var(--text-2) !important;
+}
+
 

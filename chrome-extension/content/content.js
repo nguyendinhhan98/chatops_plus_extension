@@ -262,7 +262,7 @@ async function showReminderBanner(text, taskId, isTask = false, postId = null, t
       <div class="crb-content" style="display:flex; flex-direction:column; min-width:0; flex:1;">
         <div style="display:flex; align-items:center; justify-content:space-between; width:100%; margin-bottom: 3px;">
           <div class="crb-title" style="margin-bottom:0;">${isTask ? language.reminderTaskTitle : language.reminderTitle}</div>
-          ${isLongText ? `<button class="crb-collapse-btn collapse-btn" style="margin-left:8px;" title="${language.expandCollapseBtn || 'Expand/Collapse'}"><svg class="crb-arrow-icon" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" style="transition: transform 0.2s ease; transform: rotate(-90deg);"><path d="M6 9l6 6 6-6"/></svg></button>` : ''}
+          ${isLongText ? `<button class="crb-collapse-btn collapse-btn" style="margin-left:8px;" title="${language.expandCollapseBtn || 'Expand/Collapse'}"></button>` : ''}
         </div>
         <div class="crb-text ${isLongText ? 'collapsed' : ''}">${formatRichText(text)}</div>
       </div>
@@ -325,11 +325,8 @@ async function showReminderBanner(text, taskId, isTask = false, postId = null, t
       collBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         const isCollapsed = textEl.classList.toggle('collapsed');
-        const arrowSvg = collBtn.querySelector('svg');
+        collBtn.classList.toggle('expanded', !isCollapsed);
         if (isCollapsed) {
-          collBtn.classList.remove('expanded');
-          if (arrowSvg) arrowSvg.style.transform = 'rotate(-90deg)';
-
           // Reschedule a short auto-close timer (3 seconds) when collapsed back
           if (closeTimer) clearTimeout(closeTimer);
           closeTimer = setTimeout(() => {
@@ -337,9 +334,6 @@ async function showReminderBanner(text, taskId, isTask = false, postId = null, t
             setTimeout(() => banner.remove(), 400);
           }, 3000);
         } else {
-          collBtn.classList.add('expanded');
-          if (arrowSvg) arrowSvg.style.transform = 'rotate(0deg)';
-          
           // Reset the close timer to a generous 15 seconds when expanded so it eventually closes
           if (closeTimer) clearTimeout(closeTimer);
           closeTimer = setTimeout(() => {
@@ -583,7 +577,7 @@ function showToast(msg) {
 
   // --- Image Integration into Main & RHS Chat UI ---
   function injectImageButton() {
-    const floatingButtons = cachedSettings.floatingButtons || { quickNote: true, quickTask: true, spamReactions: true, imagePicker: true };
+    const floatingButtons = cachedSettings.floatingButtons || { quickNote: true, quickTask: true, spamReactions: true, imagePicker: true, quickReply: true, quickCopy: true };
     const memeEnabled = (cachedSettings.memeEnabled !== false) && (floatingButtons.imagePicker !== false);
     
     const targets = [
@@ -1728,7 +1722,7 @@ function showToast(msg) {
     spamEnabled: true,
     memeEnabled: true,
     showTabs: { search: true, tasks: true, notes: true, missed: true, reactions: true },
-    floatingButtons: { quickNote: true, quickTask: true, spamReactions: false, imagePicker: true },
+    floatingButtons: { quickNote: true, quickTask: true, spamReactions: false, imagePicker: true, quickReply: true, quickCopy: true },
     spamEmojis: ['thumbsup', 'heart', 'fire', 'rocket', 'tada', 'laughing', 'smile', 'wink', 'heart_eyes', 'kissing_heart']
   };
   let cachedSettings = { ...DEFAULT_SETTINGS };
@@ -1811,16 +1805,24 @@ function showToast(msg) {
     });
 
     const showTabs = cachedSettings.showTabs || { search: true, tasks: true, notes: true, missed: true, reactions: true };
-    const floatingButtons = cachedSettings.floatingButtons || { quickNote: true, quickTask: true, spamReactions: true, imagePicker: true };
+    const floatingButtons = cachedSettings.floatingButtons || { quickNote: true, quickTask: true, spamReactions: true, imagePicker: true, quickReply: true, quickCopy: true };
     const tasksEnabled = (showTabs.tasks !== false) && (floatingButtons.quickTask !== false);
     const notesEnabled = (showTabs.notes !== false) && (floatingButtons.quickNote !== false);
     const spamEnabled = (showTabs.reactions !== false) && (floatingButtons.spamReactions !== false);
+    const replyEnabled = floatingButtons.quickReply !== false;
+    const copyEnabled = floatingButtons.quickCopy !== false;
 
     if (!tasksEnabled) {
       document.querySelectorAll('.chatops-action-group .chatops-quick-note-btn.task-btn').forEach(el => el.remove());
     }
     if (!notesEnabled) {
       document.querySelectorAll('.chatops-action-group .chatops-quick-note-btn.note-btn').forEach(el => el.remove());
+    }
+    if (!replyEnabled) {
+      document.querySelectorAll('.chatops-action-group .chatops-quick-note-btn.quick-reply-btn').forEach(el => el.remove());
+    }
+    if (!copyEnabled) {
+      document.querySelectorAll('.chatops-action-group .chatops-quick-note-btn.quick-copy-btn').forEach(el => el.remove());
     }
     if (!spamEnabled) {
       document.querySelectorAll('.chatops-action-group .chatops-quick-note-btn.spam-btn, .chatops-action-group .chatops-quick-note-btn.retract-btn').forEach(el => el.remove());
@@ -1835,6 +1837,217 @@ function showToast(msg) {
     injectImageButton();
   }
 
+  function getPostUsername(postEl) {
+    if (!postEl) return null;
+
+    // Extract login username from a post element.
+    // ONLY returns data-username attribute or profile image alt. NEVER textContent (display name).
+    function extractUsernameFromEl(el) {
+      if (!el) return null;
+
+      // 1. Check data-username on the element itself
+      if (el.hasAttribute && el.hasAttribute('data-username')) {
+        const val = el.getAttribute('data-username');
+        if (val && val.trim()) return val.trim();
+      }
+
+      // 2. Check any child with data-username (user-popover, status-wrapper, profile button, etc.)
+      const withAttr = el.querySelector('[data-username]');
+      if (withAttr) {
+        const val = withAttr.getAttribute('data-username');
+        if (val && val.trim()) return val.trim();
+      }
+
+      // 3. Check profile image alt text (Mattermost uses "<username> profile image" format)
+      const imgs = el.querySelectorAll('img.Avatar, img[class*="avatar"], .post__img img, .status-wrapper img');
+      for (const img of imgs) {
+        const alt = (img.getAttribute('alt') || '').trim();
+        // Pattern: "username profile image" → extract "username"
+        const match = alt.match(/^(.+?)\s+profile\s+image$/i);
+        if (match && match[1]) return match[1].trim();
+      }
+
+      return null;
+    }
+
+    // Step 1: Try current post element directly
+    const directUsername = extractUsernameFromEl(postEl);
+    if (directUsername) return directUsername;
+
+    // Step 2: Grouped messages — Mattermost hides headers for consecutive messages by same user.
+    // Walk previous siblings to find the nearest post with a visible username header.
+    let sibling = postEl.previousElementSibling;
+    let lookback = 0;
+    while (sibling && lookback < 30) {
+      const sibUsername = extractUsernameFromEl(sibling);
+      if (sibUsername) return sibUsername;
+      sibling = sibling.previousElementSibling;
+      lookback++;
+    }
+
+    // Step 3: For RHS thread posts, search within the RHS container for any post above current
+    const rhsContainer = postEl.closest('.sidebar-right, .rhs-thread, .sidebar--right, #rhsContainer');
+    if (rhsContainer) {
+      const allPosts = Array.from(rhsContainer.querySelectorAll('[id^="rhsPost_"], .post'));
+      const currentIdx = allPosts.indexOf(postEl);
+      for (let i = (currentIdx > 0 ? currentIdx - 1 : allPosts.length - 1); i >= 0; i--) {
+        const u = extractUsernameFromEl(allPosts[i]);
+        if (u) return u;
+      }
+    }
+
+    // Step 4: Last resort — search the entire visible post list container
+    const postListContainer = postEl.closest('.post-list__content, .post-list-holder-by-time, #post-list');
+    if (postListContainer) {
+      const allPosts = Array.from(postListContainer.querySelectorAll('.post, [id^="post_"]'));
+      const currentIdx = allPosts.indexOf(postEl);
+      for (let i = (currentIdx > 0 ? currentIdx - 1 : allPosts.length - 1); i >= 0; i--) {
+        const u = extractUsernameFromEl(allPosts[i]);
+        if (u) return u;
+      }
+    }
+
+    return null;
+  }
+
+  function findReplyButton(el) {
+    if (!el) return null;
+
+    // IMPORTANT: Exclude ChatOps extension's own buttons to prevent infinite click loops
+    const EXCLUDE = ':not(.chatops-quick-note-btn):not(.chatops-action-group *)';
+    
+    // Native Mattermost reply button selectors (excluding our own extension buttons)
+    const NATIVE_SELECTORS = [
+      `button[aria-label*="reply" i]${EXCLUDE}`,
+      `button[aria-label*="Reply" i]${EXCLUDE}`,
+      `button[aria-label*="Trả lời" i]${EXCLUDE}`,
+      `button[aria-label*="comment" i]${EXCLUDE}`,
+      `button[aria-label*="phản hồi" i]${EXCLUDE}`,
+      `.comment-icon__container${EXCLUDE}`,
+      `button[data-testid="reply-btn"]${EXCLUDE}`,
+    ].join(', ');
+
+    // 1. Search in hover actions menu first (most reliable)
+    const postMenu = el.querySelector('.post-menu, .post__actions, .dot-menu__container, [class*="post-menu"], .post-action-menu');
+    if (postMenu) {
+      const btn = postMenu.querySelector(NATIVE_SELECTORS);
+      if (btn) return btn;
+    }
+
+    // 2. Direct search inside post element
+    let btn = el.querySelector(NATIVE_SELECTORS);
+    if (btn) return btn;
+
+    // 3. Fallback: If it's a child reply, find the parent/root post in the DOM and click its reply button
+    const parentId = el.getAttribute('data-parent-id') || el.getAttribute('data-root-id');
+    if (parentId) {
+      const rootEl = document.getElementById(`post_${parentId}`) || document.getElementById(`rhsPost_${parentId}`);
+      if (rootEl) {
+        btn = rootEl.querySelector(NATIVE_SELECTORS);
+        if (btn) return btn;
+      }
+    }
+
+    // 4. Broader parent container search if it's a reply message grouped under a parent
+    const centerPostEl = el.closest('.post');
+    if (centerPostEl && centerPostEl !== el) {
+      btn = centerPostEl.querySelector(NATIVE_SELECTORS);
+      if (btn) return btn;
+    }
+
+    return null;
+  }
+
+  function insertTextIntoTextarea(textarea, text) {
+    if (!textarea) return;
+    textarea.focus();
+
+    // For React-controlled textareas (like Mattermost), we MUST use the native
+    // HTMLTextAreaElement value setter to bypass React's controlled component.
+    // Then dispatch an 'input' event so React picks up the change in its state.
+    const nativeSetter = Object.getOwnPropertyDescriptor(
+      window.HTMLTextAreaElement.prototype, 'value'
+    )?.set;
+
+    if (nativeSetter) {
+      const currentVal = textarea.value;
+      const start = textarea.selectionStart || currentVal.length;
+      const end = textarea.selectionEnd || currentVal.length;
+      const newVal = currentVal.substring(0, start) + text + currentVal.substring(end);
+
+      // Use native setter to bypass React's interception
+      nativeSetter.call(textarea, newVal);
+
+      // Place cursor after inserted text
+      textarea.selectionStart = textarea.selectionEnd = start + text.length;
+
+      // Dispatch input event that React's synthetic event system listens to
+      const inputEvent = new Event('input', { bubbles: true });
+      textarea.dispatchEvent(inputEvent);
+
+      // Also dispatch change event for good measure
+      textarea.dispatchEvent(new Event('change', { bubbles: true }));
+      return;
+    }
+
+    // Ultimate fallback: direct assignment + event dispatch
+    const val = textarea.value;
+    textarea.value = val + text;
+    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
+  function tagUserInChat(username, isRhs) {
+    let textarea = null;
+    if (isRhs) {
+      textarea = document.getElementById('reply_textbox') || document.querySelector('.sidebar-right textarea, .rhs-thread textarea, .sidebar--right textarea, [placeholder*="reply" i]');
+    }
+    if (!textarea) {
+      textarea = document.getElementById('post_textbox') || document.querySelector('textarea#post_textbox, .post-create-body textarea, [placeholder*="write" i]');
+    }
+    if (!textarea) {
+      textarea = document.querySelector('textarea');
+    }
+
+    if (!textarea) {
+      console.warn('[ChatOps Ext] No chat textbox found to tag user.');
+      return;
+    }
+
+    const tag = `@${username} `;
+    insertTextIntoTextarea(textarea, tag);
+  }
+
+  function copyToClipboard(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => {
+        showToast(language.copiedToClipboard || 'Đã sao chép tin nhắn vào clipboard!');
+      }).catch(err => {
+        console.error('Failed to copy text using navigator.clipboard: ', err);
+        fallbackCopyToClipboard(text);
+      });
+    } else {
+      fallbackCopyToClipboard(text);
+    }
+  }
+
+  function fallbackCopyToClipboard(text) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+      document.execCommand('copy');
+      showToast(language.copiedToClipboard || 'Đã sao chép tin nhắn vào clipboard!');
+    } catch (err) {
+      console.error('Fallback copy failed: ', err);
+    }
+    document.body.removeChild(textArea);
+  }
+
   function cleanPostId(postEl) {
     const rawId = postEl?.id || '';
     return rawId.replace('post_', '').replace('rhsPost_', '').replace('rhs_post_', '');
@@ -1845,10 +2058,12 @@ function showToast(msg) {
     const posts = document.querySelectorAll(`.post, [id^="post_"], [class*="post-message"]`);
     
     const showTabs = cachedSettings.showTabs || { search: true, tasks: true, notes: true, missed: true, reactions: true };
-    const floatingButtons = cachedSettings.floatingButtons || { quickNote: true, quickTask: true, spamReactions: true, imagePicker: true };
+    const floatingButtons = cachedSettings.floatingButtons || { quickNote: true, quickTask: true, spamReactions: true, imagePicker: true, quickReply: true, quickCopy: true };
     const tasksEnabled = (showTabs.tasks !== false) && (floatingButtons.quickTask !== false);
     const notesEnabled = (showTabs.notes !== false) && (floatingButtons.quickNote !== false);
     const spamEnabled = (showTabs.reactions !== false) && (floatingButtons.spamReactions !== false);
+    const replyEnabled = floatingButtons.quickReply !== false;
+    const copyEnabled = floatingButtons.quickCopy !== false;
 
     posts.forEach(postEl => {
       const postId = cleanPostId(postEl);
@@ -1944,6 +2159,105 @@ function showToast(msg) {
         }
       } else {
         chatopsGroup.querySelector('.chatops-quick-note-btn.note-btn')?.remove();
+      }
+
+      // Inject/Update Quick Reply button (💬) if enabled
+      if (replyEnabled) {
+        let replyBtn = chatopsGroup.querySelector('.chatops-quick-note-btn.quick-reply-btn');
+        if (!replyBtn) {
+          replyBtn = document.createElement('button');
+          replyBtn.className = 'chatops-quick-note-btn quick-reply-btn';
+          replyBtn.innerHTML = '💬';
+          replyBtn.title = language.quickReplyBtnTooltip || 'Phản hồi nhanh (@)';
+          replyBtn.addEventListener('click', (e) => {
+            e.preventDefault(); e.stopPropagation();
+
+            // Re-entrancy guard: prevent infinite loop if this handler fires again
+            if (replyBtn.dataset.busy === 'true') return;
+            replyBtn.dataset.busy = 'true';
+            const clearBusy = () => { replyBtn.dataset.busy = 'false'; };
+            // Auto-clear after 3s safety net
+            setTimeout(clearBusy, 3000);
+
+            const username = getPostUsername(postEl);
+            if (!username) {
+              showToast(language.usernameNotFoundError || 'Không tìm thấy tên người dùng để tag!');
+              clearBusy();
+              return;
+            }
+            
+            const isInsideRhs = !!postEl.closest('.sidebar-right, .rhs-thread, .sidebar--right') || postEl.id.startsWith('rhsPost_');
+            
+            if (isInsideRhs) {
+              // Already in RHS thread, just tag in the reply textbox
+              tagUserInChat(username, true);
+              clearBusy();
+            } else {
+              // Step 1: Trigger hover events to force Mattermost to render its action menu
+              postEl.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+              postEl.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+              
+              // Step 2: After hover menu renders, find and click the native Mattermost reply button
+              setTimeout(() => {
+                const nativeReplyBtn = findReplyButton(postEl);
+                if (nativeReplyBtn) {
+                  nativeReplyBtn.click();
+                  
+                  // Step 3: Poll until RHS reply textbox is available, then insert @tag
+                  let attempts = 0;
+                  const pollInterval = setInterval(() => {
+                    attempts++;
+                    const textarea = document.getElementById('reply_textbox') || document.querySelector('.sidebar-right textarea, .rhs-thread textarea, .sidebar--right textarea');
+                    if (textarea) {
+                      clearInterval(pollInterval);
+                      // Small extra delay to let React fully hydrate the textarea
+                      setTimeout(() => {
+                        tagUserInChat(username, true);
+                        clearBusy();
+                      }, 100);
+                    } else if (attempts > 30) {
+                      // Timeout after ~3s - fall back to main chat
+                      clearInterval(pollInterval);
+                      tagUserInChat(username, false);
+                      clearBusy();
+                    }
+                  }, 100);
+                } else {
+                  // No native reply button found, tag in the main chat input
+                  tagUserInChat(username, false);
+                  clearBusy();
+                }
+              }, 150);
+            }
+          });
+          chatopsGroup.appendChild(replyBtn);
+        }
+      } else {
+        chatopsGroup.querySelector('.chatops-quick-note-btn.quick-reply-btn')?.remove();
+      }
+
+      // Inject/Update Quick Copy button (📋) if enabled
+      if (copyEnabled) {
+        let copyBtn = chatopsGroup.querySelector('.chatops-quick-note-btn.quick-copy-btn');
+        if (!copyBtn) {
+          copyBtn = document.createElement('button');
+          copyBtn.className = 'chatops-quick-note-btn quick-copy-btn';
+          copyBtn.innerHTML = '📋';
+          copyBtn.title = language.quickCopyBtnTooltip || 'Sao chép nhanh tin nhắn';
+          copyBtn.addEventListener('click', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            const msgBodyEl = postEl.querySelector('.post-message__text, .post__body p, [class*="post-message"]');
+            const msgTextFull = msgBodyEl ? msgBodyEl.innerText.trim() : '';
+            if (!msgTextFull) {
+              showToast(language.quickCopyTextOnlyError || 'Sao chép nhanh chỉ hỗ trợ tin nhắn dạng văn bản.');
+              return;
+            }
+            copyToClipboard(msgTextFull);
+          });
+          chatopsGroup.appendChild(copyBtn);
+        }
+      } else {
+        chatopsGroup.querySelector('.chatops-quick-note-btn.quick-copy-btn')?.remove();
       }
 
           // Remove delete association button (🗑️) as it is no longer needed on ChatOps

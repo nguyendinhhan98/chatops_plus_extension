@@ -916,28 +916,30 @@ function renderTaskCard(task, now) {
           </div>
         </div>
       </div>
-      <div class="memo-footer">
-        <div class="memo-meta" style="display:flex; align-items:center; gap:8px;">
+      <div class="task-attributes-row" style="display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:8px; padding-top:6px; border-top:1px dashed var(--border); width:100%;">
+        <select class="sp-compact-select task-edit-category" data-id="${task.id}" style="max-width: 95px; margin: 0; font-size: 11.5px; font-weight: 400; flex-shrink:0;">
+          <option value="normal" ${task.taskCategory !== 'checklist' ? 'selected' : ''}>${language.categoryNormal || 'Normal'}</option>
+          <option value="checklist" ${task.taskCategory === 'checklist' ? 'selected' : ''}>${language.categoryChecklist || 'Checklist'}</option>
+        </select>
+        ${task.repeatDaily ? `
+          <span class="repeat-daily-badge" style="font-size:10px; font-weight:700; color:var(--accent); background:rgba(28,88,217,0.08); padding:1.5px 5px; border-radius:4px; display:inline-flex; align-items:center; gap:2px; flex-shrink:0; white-space:nowrap;" title="${language.taskRemindDailyLabel}">
+            🔄 ${language.repeatDailyBadgeText || 'Daily'}
+          </span>
+        ` : ''}
+        ${!task.done ? `
+          <div class="task-update-reminder-wrapper ${task.reminder ? 'has-reminder' : ''}" style="flex-shrink:0;">
+            <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor" class="reminder-clock-icon"><path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/></svg>
+            <input type="text" class="task-update-reminder" data-id="${task.id}" value="${task.reminder || ''}" placeholder="yyyy-mm-dd hh:mm" title="${language.changeReminderTime}" />
+          </div>
+        ` : ''}
+      </div>
+      <div class="memo-footer" style="margin-top:6px; padding-top:6px; border-top:1px solid var(--border);">
+        <div class="memo-meta" style="display:flex; align-items:center; gap:6px;">
           <label class="memo-checkbox-container footer-checkbox" title="${task.done ? language.taskMarkIncomplete : language.taskMarkDone}">
             <input type="checkbox" class="task-checkbox" data-id="${task.id}" ${task.done ? 'checked' : ''}>
             <span class="memo-checkmark-custom"></span>
           </label>
           <span class="sp-card-date">${formatRelativeTime(task.createdAt)}</span>
-          <select class="sp-compact-select task-edit-category" data-id="${task.id}" style="max-width: 95px; margin: 0; font-size: 11.5px; font-weight: 400;">
-            <option value="normal" ${task.taskCategory !== 'checklist' ? 'selected' : ''}>${language.categoryNormal || 'Normal'}</option>
-            <option value="checklist" ${task.taskCategory === 'checklist' ? 'selected' : ''}>${language.categoryChecklist || 'Checklist'}</option>
-          </select>
-          ${task.repeatDaily ? `
-            <span class="repeat-daily-badge" style="font-size:10px; font-weight:700; color:var(--accent); background:rgba(28,88,217,0.08); padding:1px 5px; border-radius:4px; display:inline-flex; align-items:center; gap:2px;" title="${language.taskRemindDailyLabel}">
-              🔄 ${language.repeatDailyBadgeText || 'Daily'}
-            </span>
-          ` : ''}
-          ${!task.done ? `
-            <div class="task-update-reminder-wrapper ${task.reminder ? 'has-reminder' : ''}">
-              <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor" class="reminder-clock-icon"><path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/></svg>
-              <input type="text" class="task-update-reminder" data-id="${task.id}" value="${task.reminder || ''}" placeholder="yyyy-mm-dd hh:mm" title="${language.changeReminderTime}" />
-            </div>
-          ` : ''}
         </div>
         <div class="memo-actions">
           ${permalink ? `<a href="${permalink}" class="post-jump-link" data-post-id="${task.postId || ''}" title="${language.memoViewOriginal}">↗</a>` : ''}

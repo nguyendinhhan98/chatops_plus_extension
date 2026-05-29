@@ -318,6 +318,12 @@ const en = {
   floatingQuickNote: 'Quick Create Note Button (📝)',
   floatingSpamReactions: 'Spam Reactions Hover Buttons (🔥/↩️)',
   floatingImagePicker: 'Send Image Button (🖼️)',
+  floatingQuickReply: 'Quick Reply Tag Button (💬)',
+  floatingQuickCopy: 'Quick Copy Message Button (📋)',
+  quickReplyBtnTooltip: 'Quick Reply (@tag)',
+  quickCopyBtnTooltip: 'Quick Copy Message',
+  copiedToClipboard: 'Copied message content to clipboard!',
+  usernameNotFoundError: 'Could not find username to tag!',
   additionalSettingsTitle: 'Additional Options',
   snoozeTitle: 'Default Snooze Time',
   snoozeDesc: 'Default snooze duration (minutes) for new task reminders.',
@@ -416,84 +422,13 @@ const en = {
   taskRemindDailyLabel: 'Repeat daily at selected time',
   repeatDailyBadgeText: 'Daily',
   collapseBtnBottom: 'Collapse',
-  userGuideTitle: 'System Guide & Power Tips 💡',
+  userGuideTitle: 'System Guide 💡',
   userGuideHTML: `
-    <div style="font-family: inherit; color: var(--text-1); line-height: 1.5; font-size: 14px; display: flex; flex-direction: column; gap: 16px;">
-      
-      <!-- Section 1: Interactive Settings Map -->
+    <div class="guide-container">
+
+      <!-- Section 1: Core Tabs & Functions -->
       <div>
-        <h4 style="margin: 0 0 10px 0; color: var(--text-1); font-weight: 800; font-size: 14px; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">⚙️ SYSTEM SETTINGS (Click to navigate directly)</h4>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
-          
-          <div class="settings-road-card settings-subtab-link" data-subtab="features-toggle">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <a href="#" class="settings-subtab-link" data-subtab="features-toggle">Menu Tab Toggles</a>
-            </div>
-            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Show/hide primary tabs (Search, Tasks, Notes, Missed, Images) inside the Sidepanel to maintain a focused and minimalist workspace.</p>
-          </div>
-
-          <div class="settings-road-card settings-subtab-link" data-subtab="features-floating">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <a href="#" class="settings-subtab-link" data-subtab="features-floating">Quick Interaction Buttons</a>
-            </div>
-            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Show/hide quick interaction buttons on ChatOps (Create Task 🎯, Save Note 📝, Spam Reactions 🔥, Capture Image 🖼️, Delete Message 🗑️)</p>
-          </div>
-
-          <div class="settings-road-card settings-subtab-link" data-subtab="features-snooze">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <a href="#" class="settings-subtab-link" data-subtab="features-snooze">Reminders & Sound</a>
-            </div>
-            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Set default task snooze minutes, choose notification delivery type (OS System alerts / Page Banners), and enable dynamic sound effects.</p>
-          </div>
-
-          <div class="settings-road-card settings-subtab-link" data-subtab="features-gif">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <a href="#" class="settings-subtab-link" data-subtab="features-gif">Giphy API Key (GIFs)</a>
-            </div>
-            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Configure your personal Giphy API Key and rate limits to search and send dynamic GIFs directly on ChatOps.</p>
-          </div>
-
-          <div class="settings-road-card settings-subtab-link" data-subtab="categories">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <a href="#" class="settings-subtab-link" data-subtab="categories">Note Categories</a>
-            </div>
-            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Create and manage folder labels (maximum 10-char limit) to easily organize, catalog, and filter your personal Note cards.</p>
-          </div>
-
-          <div class="settings-road-card settings-subtab-link" data-subtab="ui-theme">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <a href="#" class="settings-subtab-link" data-subtab="ui-theme">Themes & Layout</a>
-            </div>
-            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Switch between preset color palettes (Theme Light/Dark/Rose/Slate...) and change line height densities (Compact/Comfortable).</p>
-          </div>
-
-          <div class="settings-road-card settings-subtab-link" data-subtab="sync-data">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <a href="#" class="settings-subtab-link" data-subtab="sync-data">Data & Backup</a>
-            </div>
-            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Backup or restore your tasks and notes to the cloud via your Google account, or schedule automatic cleanups of old completed items.</p>
-          </div>
-
-          <div class="settings-road-card settings-subtab-link" data-subtab="reactions-picker">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <a href="#" class="settings-subtab-link" data-subtab="reactions-picker">Spam Reactions Setup</a>
-            </div>
-            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Customize your quick Spam Reactions list. Instantly inject all configured emojis onto any target message with 1-click.</p>
-          </div>
-
-          <div class="settings-road-card settings-subtab-link" data-subtab="reactions-images">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <a href="#" class="settings-subtab-link" data-subtab="reactions-images">Personal Image Library</a>
-            </div>
-            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Upload, manage, and use your personal meme images and shortcuts in a freestyle masonry layout.</p>
-          </div>
-
-        </div>
-      </div>
-
-      <!-- Section 1.5: Core Tabs & Functions -->
-      <div>
-        <h4 style="margin: 0 0 10px 0; color: var(--text-1); font-weight: 800; font-size: 14px; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">🚀 CORE TABS & FUNCTIONS (Click to open)</h4>
+        <h4 class="guide-section-title">🚀 CORE TABS & FUNCTIONS</h4>
         <div style="display: flex; flex-direction: column; gap: 10px;">
           
           <div class="settings-road-card main-tab-link" data-tab="tasks">
@@ -501,7 +436,7 @@ const en = {
               <span style="font-size: 15px;">🎯</span>
               <a href="#" class="main-tab-link-anchor" data-tab="tasks">Tasks</a>
             </div>
-            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Manage your daily to-do lists. Supports both normal text lists and nested interactive Checklists. Schedule recurring daily reminders with alarms.</p>
+            <p>Manage your daily to-do lists. Supports both normal text lists and nested interactive Checklists. Schedule recurring daily reminders with alarms.</p>
           </div>
 
           <div class="settings-road-card main-tab-link" data-tab="memo">
@@ -509,7 +444,7 @@ const en = {
               <span style="font-size: 15px;">📝</span>
               <a href="#" class="main-tab-link-anchor" data-tab="memo">Notes</a>
             </div>
-            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Jot down quick personal memos or click-to-save important messages. Organize and filter notes easily using custom color-coded category folder sub-tabs.</p>
+            <p>Jot down quick personal memos or click-to-save important messages. Organize and filter notes easily using custom color-coded category folder sub-tabs.</p>
           </div>
 
           <div class="settings-road-card main-tab-link" data-tab="mentions">
@@ -517,7 +452,7 @@ const en = {
               <span style="font-size: 15px;">🔔</span>
               <a href="#" class="main-tab-link-anchor" data-tab="mentions">Mentions</a>
             </div>
-            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Track all missed tagged mentions, DMs, or thread discussions on ChatOps. Displays convenient AI-like bullet summaries and 1-click status checking.</p>
+            <p>Track all missed tagged mentions, DMs, or thread discussions on ChatOps. Displays convenient AI-like bullet summaries and 1-click status checking.</p>
           </div>
 
           <div class="settings-road-card settings-subtab-link" data-subtab="tools-search">
@@ -525,35 +460,108 @@ const en = {
               <span style="font-size: 15px;">🔍</span>
               <a href="#" class="settings-subtab-link" data-subtab="tools-search">Advanced Message Search</a>
             </div>
-            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Smart lookup utility to scan chat history, filter by sender, keywords, or time range easily.</p>
+            <p>Smart lookup utility to scan chat history, filter by sender, keywords, or time range easily.</p>
+          </div>
+
+        </div>
+      </div>
+      
+      <!-- Section 1.5: Interactive Settings Map -->
+      <div>
+        <h4 class="guide-section-title">⚙️ SYSTEM SETTINGS</h4>
+        <div class="guide-grid">
+          
+          <div class="settings-road-card settings-subtab-link" data-subtab="features-toggle">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <a href="#" class="settings-subtab-link" data-subtab="features-toggle">Menu Tab Toggles</a>
+            </div>
+            <p>Show/hide primary tabs (Search, Tasks, Notes, Missed, Images) inside the Sidepanel to maintain a focused and minimalist workspace.</p>
+          </div>
+
+          <div class="settings-road-card settings-subtab-link" data-subtab="features-floating">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <a href="#" class="settings-subtab-link" data-subtab="features-floating">Quick Interaction Buttons</a>
+            </div>
+            <p>Show/hide quick interaction buttons on ChatOps (Create Task 🎯, Save Note 📝, Spam Reactions 🔥, Capture Image 🖼️, Delete Message 🗑️)</p>
+          </div>
+
+          <div class="settings-road-card settings-subtab-link" data-subtab="features-snooze">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <a href="#" class="settings-subtab-link" data-subtab="features-snooze">Reminders & Sound</a>
+            </div>
+            <p>Set default task snooze minutes, choose notification delivery type (OS System alerts / Page Banners), and enable dynamic sound effects.</p>
+          </div>
+
+          <div class="settings-road-card settings-subtab-link" data-subtab="features-gif">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <a href="#" class="settings-subtab-link" data-subtab="features-gif">Giphy API Key (GIFs)</a>
+            </div>
+            <p>Configure your personal Giphy API Key and rate limits to search and send dynamic GIFs directly on ChatOps.</p>
+          </div>
+
+          <div class="settings-road-card settings-subtab-link" data-subtab="categories">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <a href="#" class="settings-subtab-link" data-subtab="categories">Note Categories</a>
+            </div>
+            <p>Create and manage folder labels (maximum 10-char limit) to easily organize, catalog, and filter your personal Note cards.</p>
+          </div>
+
+          <div class="settings-road-card settings-subtab-link" data-subtab="ui-theme">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <a href="#" class="settings-subtab-link" data-subtab="ui-theme">Themes & Layout</a>
+            </div>
+            <p>Switch between preset color palettes (Theme Light/Dark/Rose/Slate...) and change line height densities (Compact/Comfortable).</p>
+          </div>
+
+          <div class="settings-road-card settings-subtab-link" data-subtab="sync-data">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <a href="#" class="settings-subtab-link" data-subtab="sync-data">Data & Backup</a>
+            </div>
+            <p>Backup or restore your tasks and notes to the cloud via your Google account, or schedule automatic cleanups of old completed items.</p>
+          </div>
+
+          <div class="settings-road-card settings-subtab-link" data-subtab="reactions-picker">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <a href="#" class="settings-subtab-link" data-subtab="reactions-picker">Spam Reactions Setup</a>
+            </div>
+            <p>Customize your quick Spam Reactions list. Instantly inject all configured emojis onto any target message with 1-click.</p>
+          </div>
+
+          <div class="settings-road-card settings-subtab-link" data-subtab="reactions-images">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <a href="#" class="settings-subtab-link" data-subtab="reactions-images">Personal Image Library</a>
+            </div>
+            <p>Upload, manage, and use your personal meme images and shortcuts in a freestyle masonry layout.</p>
           </div>
 
         </div>
       </div>
 
       <!-- Section 2: Hover Quick Actions -->
-      <div style="background: var(--bg-1); border: 1px solid var(--border); padding: 12px; border-radius: 8px; display: flex; flex-direction: column; gap: 4px;">
-        <h4 style="margin: 0; color: var(--accent); font-weight: 700; font-size: 13.5px; display: flex; align-items: center; gap: 6px;">⚡ HOVER ACTIONS ON MESSAGES CHATOPS</h4>
-        <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13px; margin-top: 6px;">
-          <div style="display: flex; gap: 6px; align-items: center;"><span style="color: var(--accent);">🎯</span> <span style="color: var(--text-2);">Save message as a pending <strong>Task</strong></span></div>
-          <div style="display: flex; gap: 6px; align-items: center;"><span style="color: var(--accent);">📝</span> <span style="color: var(--text-2);">Save message as a personal <strong>Note card</strong></span></div>
-          <div style="display: flex; gap: 6px; align-items: center;"><span style="color: var(--accent);">🔥</span> <span style="color: var(--text-2);">Dynamic <strong>Spam Reactions</strong> in 1-click</span></div>
-          <div style="display: flex; gap: 6px; align-items: center;"><span style="color: var(--accent);">↩️</span> <span style="color: var(--text-2);"><strong>Instantly clear</strong> all your reactions</span></div>
-          <div style="display: flex; gap: 6px; align-items: center;"><span style="color: #dc2626;">🗑️</span> <span style="color: var(--text-2);"><strong>Delete your own messages</strong> instantly (no confirmation popup)</span></div>
+      <div class="guide-info-box">
+        <h4 class="guide-info-title">⚡ HOVER ACTIONS ON MESSAGES CHATOPS</h4>
+        <div class="guide-info-list">
+          <div class="guide-info-item"><span>🎯</span> <span style="color: var(--text-2);">Save message as a pending <strong>Task</strong></span></div>
+          <div class="guide-info-item"><span>📝</span> <span style="color: var(--text-2);">Save message as a personal <strong>Note card</strong></span></div>
+          <div class="guide-info-item"><span>💬</span> <span style="color: var(--text-2);"><strong>Quick Reply (@tag)</strong> to automatically tag sender</span></div>
+          <div class="guide-info-item"><span>📋</span> <span style="color: var(--text-2);"><strong>Quick Copy</strong> message content to clipboard</span></div>
+          <div class="guide-info-item"><span>🔥</span> <span style="color: var(--text-2);">Dynamic <strong>Spam Reactions</strong> in 1-click</span></div>
+          <div class="guide-info-item"><span>↩️</span> <span style="color: var(--text-2);"><strong>Instantly clear</strong> all your reactions</span></div>
+          <div class="guide-info-item"><span style="color: #dc2626;">🗑️</span> <span style="color: var(--text-2);"><strong>Delete your own messages</strong> instantly (no confirmation popup)</span></div>
         </div>
       </div>
 
       <!-- Section 3: Power Tips -->
-      <div style="border-top: 1px dashed var(--border); padding-top: 12px; margin-top: 2px;">
-        <h4 style="margin: 0 0 8px 0; color: var(--text-1); font-weight: 800; font-size: 13.5px; text-transform: uppercase; letter-spacing: 0.5px;">💡 DYNAMIC POWER TIPS</h4>
+      <div class="guide-tip-section">
+        <h4 class="guide-section-title">💡 DYNAMIC POWER TIPS</h4>
         <div style="display: flex; flex-direction: column; gap: 8px;">
-          <div style="background: rgba(28,88,217,0.04); border-left: 3px solid var(--accent); padding: 8px 10px; border-radius: 4px; font-size: 13px; line-height: 1.5;">
-            <strong style="color: var(--accent);">⚡ Double-Click Shortcut:</strong>
-            <span style="color: var(--text-2);"> Double-click any navigation tab (Search, Tasks, Notes) at the top of the sidepanel to pop open its entry form instantly!</span>
+          <div class="guide-tip-box">
+            <strong>⚡ Double-Click Shortcut:</strong>
+            <span> Double-click any navigation tab (Search, Tasks, Notes) at the top of the sidepanel to pop open its entry form instantly!</span>
           </div>
-          <div style="background: rgba(28,88,217,0.04); border-left: 3px solid var(--accent); padding: 8px 10px; border-radius: 4px; font-size: 13px; line-height: 1.5;">
-            <strong style="color: var(--accent);">✂️ Clipboard Copy:</strong>
-            <span style="color: var(--text-2);"> Hover over any text line in an expanded Note card, click the clipboard icon to copy *only that specific line*!</span>
+          <div class="guide-tip-box">
+            <strong>✂️ Clipboard Copy:</strong>
+            <span> Hover over any text line in an expanded Note card, click the clipboard icon to copy *only that specific line*!</span>
           </div>
         </div>
       </div>
@@ -566,6 +574,7 @@ const en = {
   editBtn: 'Edit',
   deleteBtn: 'Delete',
   clickToCopyLine: 'Click to copy this line',
+  quickCopyTextOnlyError: 'Quick copy only supports text messages.',
   colorOrange: 'Orange',
   colorTeal: 'Teal',
   colorRose: 'Rose',
@@ -888,6 +897,12 @@ const vi = {
   floatingQuickNote: 'Nút tạo ghi chú nhanh (📝)',
   floatingSpamReactions: 'Các nút Cảm xúc trên tin nhắn (🔥/↩️)',
   floatingImagePicker: 'Nút Gửi ảnh trong khung chat (🖼️)',
+  floatingQuickReply: 'Nút Phản hồi nhanh (@) (💬)',
+  floatingQuickCopy: 'Nút Sao chép nhanh tin nhắn (📋)',
+  quickReplyBtnTooltip: 'Phản hồi nhanh (@)',
+  quickCopyBtnTooltip: 'Sao chép nhanh tin nhắn',
+  copiedToClipboard: 'Đã sao chép tin nhắn vào clipboard!',
+  usernameNotFoundError: 'Không tìm thấy tên người dùng để tag!',
   additionalSettingsTitle: 'Tùy chọn bổ sung',
   snoozeTitle: 'Thời gian nhắc lại mặc định',
   snoozeDesc: 'Thời gian nhắc lại mặc định (phút) cho các nhắc nhở công việc mới.',
@@ -986,84 +1001,13 @@ const vi = {
   taskRemindDailyLabel: 'Nhắc nhở hằng ngày vào giờ đã chọn',
   repeatDailyBadgeText: 'Hằng ngày',
   collapseBtnBottom: 'Thu gọn',
-  userGuideTitle: 'Hướng dẫn Hệ thống & Mẹo Năng suất 💡',
+  userGuideTitle: 'Hướng dẫn Hệ thống 💡',
   userGuideHTML: `
-    <div style="font-family: inherit; color: var(--text-1); line-height: 1.5; font-size: 14px; display: flex; flex-direction: column; gap: 16px;">
-      
-      <!-- Section 1: Interactive Settings Map -->
+    <div class="guide-container">
+
+      <!-- Section 1: Core Tabs & Functions -->
       <div>
-        <h4 style="margin: 0 0 10px 0; color: var(--text-1); font-weight: 800; font-size: 14px; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">⚙️ BẢN ĐỒ CÀI ĐẶT HỆ THỐNG (Click để mở trực tiếp)</h4>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
-          
-          <div class="settings-road-card settings-subtab-link" data-subtab="features-toggle">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <a href="#" class="settings-subtab-link" data-subtab="features-toggle">Ẩn/Hiện Tab menu</a>
-            </div>
-            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Bật/tắt các tab chính (Tìm kiếm, Tasks, Ghi chú, Tin nhắn bỏ lỡ, Kho ảnh) trên thanh Sidepanel để tối giản hóa không gian làm việc.</p>
-          </div>
-
-          <div class="settings-road-card settings-subtab-link" data-subtab="features-floating">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <a href="#" class="settings-subtab-link" data-subtab="features-floating">Nút tương tác nhanh</a>
-            </div>
-            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Ẩn/hiện nút tương tác nhanh trên ChatOps (Tạo Task 🎯, Lưu Note 📝, Thả Spam Reactions 🔥, Chụp ảnh 🖼️, Xóa tin nhắn 🗑️)</p>
-          </div>
-
-          <div class="settings-road-card settings-subtab-link" data-subtab="features-snooze">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <a href="#" class="settings-subtab-link" data-subtab="features-snooze">Nhắc Nhở & Âm Thanh</a>
-            </div>
-            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Cấu hình số phút trì hoãn mặc định (Snooze), kiểu hiển thị thông báo (Hệ điều hành / Banner trong trang), phát âm thanh cảnh báo khi đến hạn.</p>
-          </div>
-
-          <div class="settings-road-card settings-subtab-link" data-subtab="features-gif">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <a href="#" class="settings-subtab-link" data-subtab="features-gif">Giphy API Key (GIFs)</a>
-            </div>
-            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Cấu hình API Key Giphy cá nhân và giới hạn lượt gọi để tìm kiếm và gửi các ảnh GIFs động cực nhanh trực tiếp từ thanh công cụ chat.</p>
-          </div>
-
-          <div class="settings-road-card settings-subtab-link" data-subtab="categories">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <a href="#" class="settings-subtab-link" data-subtab="categories">Danh mục Ghi chú</a>
-            </div>
-            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Quản lý và tạo các nhãn danh mục tự chọn (tối đa 10 ký tự) để phân chia và phân loại nhanh các ghi chú công việc một cách ngăn nắp.</p>
-          </div>
-
-          <div class="settings-road-card settings-subtab-link" data-subtab="ui-theme">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <a href="#" class="settings-subtab-link" data-subtab="ui-theme">Giao Diện & Màu Sắc</a>
-            </div>
-            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Thay đổi bảng màu chủ đạo (Theme Light/Dark/Rose/Slate...), khoảng cách giãn dòng (Compact/Comfortable) hiển thị ở Sidepanel.</p>
-          </div>
-
-          <div class="settings-road-card settings-subtab-link" data-subtab="sync-data">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <a href="#" class="settings-subtab-link" data-subtab="sync-data">Dữ Liệu & Sao Lưu</a>
-            </div>
-            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Sao lưu hoặc khôi phục dữ liệu lên đám mây thông qua tài khoản Google, hoặc cấu hình tự động dọn dẹp các ghi chú/task cũ để giải phóng dung lượng.</p>
-          </div>
-
-          <div class="settings-road-card settings-subtab-link" data-subtab="reactions-picker">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <a href="#" class="settings-subtab-link" data-subtab="reactions-picker">Thiết lập Spam Reactions</a>
-            </div>
-            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Cài đặt danh sách phím tắt các Emoji ưa thích của bạn để khi nhấn phím tắt 🔥 sẽ tự động thả hàng loạt cảm xúc đã cấu hình.</p>
-          </div>
-
-          <div class="settings-road-card settings-subtab-link" data-subtab="reactions-images">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <a href="#" class="settings-subtab-link" data-subtab="reactions-images">Thư viện hình ảnh cá nhân</a>
-            </div>
-            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Tải lên, quản lý và sử dụng kho hình ảnh/meme cá nhân của bạn trong thư viện freestyle masonry.</p>
-          </div>
-
-        </div>
-      </div>
-
-      <!-- Section 1.5: Core Tabs & Functions -->
-      <div>
-        <h4 style="margin: 0 0 10px 0; color: var(--text-1); font-weight: 800; font-size: 14px; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">🚀 CÁC CHỨC NĂNG CHÍNH CỦA CHATOPS (Click để mở trực tiếp)</h4>
+        <h4 class="guide-section-title">🚀 CÁC CHỨC NĂNG CHÍNH CỦA CHATOPS</h4>
         <div style="display: flex; flex-direction: column; gap: 10px;">
           
           <div class="settings-road-card main-tab-link" data-tab="tasks">
@@ -1071,7 +1015,7 @@ const vi = {
               <span style="font-size: 15px;">🎯</span>
               <a href="#" class="main-tab-link-anchor" data-tab="tasks">Tasks (Công việc)</a>
             </div>
-            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Quản lý danh sách việc cần làm. Hỗ trợ tạo ghi chú văn bản hoặc các hộp kiểm Checklist tương tác. Lên lịch báo thức nhắc nhở hằng ngày đúng hẹn.</p>
+            <p>Quản lý danh sách việc cần làm. Hỗ trợ tạo ghi chú văn bản hoặc các hộp kiểm Checklist tương tác. Lên lịch báo thức nhắc nhở hằng ngày đúng hẹn.</p>
           </div>
 
           <div class="settings-road-card main-tab-link" data-tab="memo">
@@ -1079,7 +1023,7 @@ const vi = {
               <span style="font-size: 15px;">📝</span>
               <a href="#" class="main-tab-link-anchor" data-tab="memo">Notes (Ghi chú)</a>
             </div>
-            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Lưu nhanh các ý tưởng hoặc lưu tin nhắn ChatOps quan trọng chỉ với 1-click. Dễ dàng sắp xếp, quản lý và phân loại ghi chú theo các nhãn thư mục tự chọn.</p>
+            <p>Lưu nhanh các ý tưởng hoặc lưu tin nhắn ChatOps quan trọng chỉ với 1-click. Dễ dàng sắp xếp, quản lý và phân loại ghi chú theo các nhãn thư mục tự chọn.</p>
           </div>
 
           <div class="settings-road-card main-tab-link" data-tab="mentions">
@@ -1087,7 +1031,7 @@ const vi = {
               <span style="font-size: 15px;">🔔</span>
               <a href="#" class="main-tab-link-anchor" data-tab="mentions">Mentions (Bỏ lỡ)</a>
             </div>
-            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Theo dõi tập trung tất cả lượt nhắc tên (@mention), tin nhắn riêng (DM) hoặc thảo luận trong thread chưa đọc. Đi kèm tóm tắt ý chính và thả phản hồi cực nhanh.</p>
+            <p>Theo dõi tập trung tất cả lượt nhắc tên (@mention), tin nhắn riêng (DM) hoặc thảo luận trong thread chưa đọc. Đi kèm tóm tắt ý chính và thả phản hồi cực nhanh.</p>
           </div>
 
           <div class="settings-road-card settings-subtab-link" data-subtab="tools-search">
@@ -1095,35 +1039,108 @@ const vi = {
               <span style="font-size: 15px;">🔍</span>
               <a href="#" class="settings-subtab-link" data-subtab="tools-search">Tìm kiếm tin nhắn nâng cao</a>
             </div>
-            <p style="margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5;">Công cụ tìm kiếm thông minh giúp lọc lịch sử chat, tìm theo keyword hoặc người gửi dễ dàng.</p>
+            <p>Công cụ tìm kiếm thông minh giúp lọc lịch sử chat, tìm theo keyword hoặc người gửi dễ dàng.</p>
+          </div>
+
+        </div>
+      </div>
+      
+      <!-- Section 1.5: Interactive Settings Map -->
+      <div>
+        <h4 class="guide-section-title">⚙️ BẢN ĐỒ CÀI ĐẶT HỆ THỐNG</h4>
+        <div class="guide-grid">
+          
+          <div class="settings-road-card settings-subtab-link" data-subtab="features-toggle">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <a href="#" class="settings-subtab-link" data-subtab="features-toggle">Ẩn/Hiện Tab menu</a>
+            </div>
+            <p>Bật/tắt các tab chính (Tìm kiếm, Tasks, Ghi chú, Tin nhắn bỏ lỡ, Kho ảnh) trên thanh Sidepanel để tối giản hóa không gian làm việc.</p>
+          </div>
+
+          <div class="settings-road-card settings-subtab-link" data-subtab="features-floating">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <a href="#" class="settings-subtab-link" data-subtab="features-floating">Nút tương tác nhanh</a>
+            </div>
+            <p>Ẩn/hiện nút tương tác nhanh trên ChatOps (Tạo Task 🎯, Lưu Note 📝, Thả Spam Reactions 🔥, Chụp ảnh 🖼️, Xóa tin nhắn 🗑️)</p>
+          </div>
+
+          <div class="settings-road-card settings-subtab-link" data-subtab="features-snooze">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <a href="#" class="settings-subtab-link" data-subtab="features-snooze">Nhắc Nhở & Âm Thanh</a>
+            </div>
+            <p>Cấu hình số phút trì hoãn mặc định (Snooze), kiểu hiển thị thông báo (Hệ điều hành / Banner trong trang), phát âm thanh cảnh báo khi đến hạn.</p>
+          </div>
+
+          <div class="settings-road-card settings-subtab-link" data-subtab="features-gif">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <a href="#" class="settings-subtab-link" data-subtab="features-gif">Giphy API Key (GIFs)</a>
+            </div>
+            <p>Cấu hình API Key Giphy cá nhân và giới hạn lượt gọi để tìm kiếm và gửi các ảnh GIFs động cực nhanh trực tiếp từ thanh công cụ chat.</p>
+          </div>
+
+          <div class="settings-road-card settings-subtab-link" data-subtab="categories">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <a href="#" class="settings-subtab-link" data-subtab="categories">Danh mục Ghi chú</a>
+            </div>
+            <p>Quản lý và tạo các nhãn danh mục tự chọn (tối đa 10 ký tự) để phân chia và phân loại nhanh các ghi chú công việc một cách ngăn nắp.</p>
+          </div>
+
+          <div class="settings-road-card settings-subtab-link" data-subtab="ui-theme">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <a href="#" class="settings-subtab-link" data-subtab="ui-theme">Giao Diện & Màu Sắc</a>
+            </div>
+            <p>Thay đổi bảng màu chủ đạo (Theme Light/Dark/Rose/Slate...), khoảng cách giãn dòng (Compact/Comfortable) hiển thị ở Sidepanel.</p>
+          </div>
+
+          <div class="settings-road-card settings-subtab-link" data-subtab="sync-data">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <a href="#" class="settings-subtab-link" data-subtab="sync-data">Dữ Liệu & Sao Lưu</a>
+            </div>
+            <p>Sao lưu hoặc khôi phục dữ liệu lên đám mây thông qua tài khoản Google, hoặc cấu hình tự động dọn dẹp các ghi chú/task cũ để giải phóng dung lượng.</p>
+          </div>
+
+          <div class="settings-road-card settings-subtab-link" data-subtab="reactions-picker">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <a href="#" class="settings-subtab-link" data-subtab="reactions-picker">Thiết lập Spam Reactions</a>
+            </div>
+            <p>Cài đặt danh sách phím tắt các Emoji ưa thích của bạn để khi nhấn phím tắt 🔥 sẽ tự động thả hàng loạt cảm xúc đã cấu hình.</p>
+          </div>
+
+          <div class="settings-road-card settings-subtab-link" data-subtab="reactions-images">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <a href="#" class="settings-subtab-link" data-subtab="reactions-images">Thư viện hình ảnh cá nhân</a>
+            </div>
+            <p>Tải lên, quản lý và sử dụng kho hình ảnh/meme cá nhân của bạn trong thư viện freestyle masonry.</p>
           </div>
 
         </div>
       </div>
 
       <!-- Section 2: Hover Quick Actions -->
-      <div style="background: var(--bg-1); border: 1px solid var(--border); padding: 12px; border-radius: 8px; display: flex; flex-direction: column; gap: 4px;">
-        <h4 style="margin: 0; color: var(--accent); font-weight: 700; font-size: 13.5px; display: flex; align-items: center; gap: 6px;">⚡ PHÍM TẮT DI CHUỘT TRÊN TIN NHẮN CHATOPS</h4>
-        <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13px; margin-top: 6px;">
-          <div style="display: flex; gap: 6px; align-items: center;"><span style="color: var(--accent);">🎯</span> <span style="color: var(--text-2);">Lưu tin nhắn thành <strong>Công việc cần làm</strong></span></div>
-          <div style="display: flex; gap: 6px; align-items: center;"><span style="color: var(--accent);">📝</span> <span style="color: var(--text-2);">Lưu tin nhắn thành <strong>Ghi chú cá nhân</strong></span></div>
-          <div style="display: flex; gap: 6px; align-items: center;"><span style="color: var(--accent);">🔥</span> <span style="color: var(--text-2);"><strong>Spam Cảm xúc</strong> hàng loạt với 1-click</span></div>
-          <div style="display: flex; gap: 6px; align-items: center;"><span style="color: var(--accent);">↩️</span> <span style="color: var(--text-2);"><strong>Thu hồi nhanh</strong> tất cả cảm xúc đã thả</span></div>
-          <div style="display: flex; gap: 6px; align-items: center;"><span style="color: #dc2626;">🗑️</span> <span style="color: var(--text-2);"><strong>Xóa nhanh tin nhắn</strong> của chính bạn (không cần xác nhận lại)</span></div>
+      <div class="guide-info-box">
+        <h4 class="guide-info-title">⚡ PHÍM TẮT DI CHUỘT TRÊN TIN NHẮN CHATOPS</h4>
+        <div class="guide-info-list">
+          <div class="guide-info-item"><span>🎯</span> <span style="color: var(--text-2);">Lưu tin nhắn thành <strong>Công việc cần làm</strong></span></div>
+          <div class="guide-info-item"><span>📝</span> <span style="color: var(--text-2);">Lưu tin nhắn thành <strong>Ghi chú cá nhân</strong></span></div>
+          <div class="guide-info-item"><span>💬</span> <span style="color: var(--text-2);"><strong>Phản hồi nhanh (@)</strong> tự động tag người gửi</span></div>
+          <div class="guide-info-item"><span>📋</span> <span style="color: var(--text-2);"><strong>Sao chép nhanh</strong> tin nhắn vào clipboard</span></div>
+          <div class="guide-info-item"><span>🔥</span> <span style="color: var(--text-2);"><strong>Spam Cảm xúc</strong> hàng loạt với 1-click</span></div>
+          <div class="guide-info-item"><span>↩️</span> <span style="color: var(--text-2);"><strong>Thu hồi nhanh</strong> tất cả cảm xúc đã thả</span></div>
+          <div class="guide-info-item"><span style="color: #dc2626;">🗑️</span> <span style="color: var(--text-2);"><strong>Xóa nhanh tin nhắn</strong> của chính bạn (không cần xác nhận lại)</span></div>
         </div>
       </div>
 
       <!-- Section 3: Power Tips -->
-      <div style="border-top: 1px dashed var(--border); padding-top: 12px; margin-top: 2px;">
-        <h4 style="margin: 0 0 8px 0; color: var(--text-1); font-weight: 800; font-size: 13.5px; text-transform: uppercase; letter-spacing: 0.5px;">💡 MẸO NĂNG SUẤT ĐỈNH CAO</h4>
+      <div class="guide-tip-section">
+        <h4 class="guide-section-title">💡 MẸO NĂNG SUẤT ĐỈNH CAO</h4>
         <div style="display: flex; flex-direction: column; gap: 8px;">
-          <div style="background: rgba(28,88,217,0.04); border-left: 3px solid var(--accent); padding: 8px 10px; border-radius: 4px; font-size: 13px; line-height: 1.5;">
-            <strong style="color: var(--accent);">⚡ Click Đúp Mở Nhanh:</strong>
-            <span style="color: var(--text-2);"> Nhấp đúp vào bất kỳ tab điều hướng nào (Search, Tasks, Notes) để mở form nhập liệu tương ứng tức thì!</span>
+          <div class="guide-tip-box">
+            <strong>⚡ Click Đúp Mở Nhanh:</strong>
+            <span> Nhập đúp vào bất kỳ tab điều hướng nào (Search, Tasks, Notes) để mở form nhập liệu tương ứng tức thì!</span>
           </div>
-          <div style="background: rgba(28,88,217,0.04); border-left: 3px solid var(--accent); padding: 8px 10px; border-radius: 4px; font-size: 13px; line-height: 1.5;">
-            <strong style="color: var(--accent);">✂️ Sao chép dòng:</strong>
-            <span style="color: var(--text-2);"> Di chuột vào dòng văn bản ở thẻ Ghi chú, click icon copy nhỏ để chỉ sao chép riêng dòng đó!</span>
+          <div class="guide-tip-box">
+            <strong>✂️ Sao chép dòng:</strong>
+            <span> Di chuột vào dòng văn bản ở thẻ Ghi chú, click icon copy nhỏ để chỉ sao chép riêng dòng đó!</span>
           </div>
         </div>
       </div>
@@ -1136,6 +1153,7 @@ const vi = {
   editBtn: 'Chỉnh sửa',
   deleteBtn: 'Xóa',
   clickToCopyLine: 'Nhấp để sao chép dòng này',
+  quickCopyTextOnlyError: 'Sao chép nhanh chỉ hỗ trợ tin nhắn dạng văn bản.',
   colorOrange: 'Cam',
   colorTeal: 'Xanh ngọc',
   colorRose: 'Hồng rose',
