@@ -85,8 +85,38 @@ export function renderPostList(posts, usersMap, baseUrl, teamName, channelsMap, 
     let contentHtml = formatRichText(post.message);
 
     if (keyword && keyword.length >= 2) {
-      const regex = new RegExp(`(${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-      contentHtml = contentHtml.replace(regex, '<mark class="highlight">$1</mark>');
+      // Split keyword by space, filtering out search operators like from: in: after: before:
+      const words = keyword.split(/\s+/).filter(w => {
+        return w.trim().length >= 2 && !w.includes(':');
+      });
+
+      // Sort longer words first to avoid partial highlighting overlaps
+      words.sort((a, b) => b.length - a.length);
+
+      // Deduplicate words case-insensitively
+      const uniqueWords = [];
+      const seen = new Set();
+      for (const w of words) {
+        const lower = w.toLowerCase();
+        if (!seen.has(lower)) {
+          seen.add(lower);
+          uniqueWords.push(w);
+        }
+      }
+
+      uniqueWords.forEach(word => {
+        try {
+          const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          // Match keywords only outside of HTML tags/attributes to protect markup
+          const regex = new RegExp(`(?<!<[^>]*)(${escaped})(?![^<>]*>)`, 'gi');
+          contentHtml = contentHtml.replace(regex, '<mark class="highlight">$1</mark>');
+        } catch (e) {
+          // Fallback to simpler regex if lookaround is not supported (though v3 runs in Chrome which fully supports it)
+          const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const regex = new RegExp(`(${escaped})`, 'gi');
+          contentHtml = contentHtml.replace(regex, '<mark class="highlight">$1</mark>');
+        }
+      });
     }
 
     return `
@@ -147,7 +177,6 @@ export function getChannelLabel(channel) {
  * Renders a channel card for multi-select
  */
 export function renderChannelCard(channel) {
-  const typeIcon = channel.type === 'P' ? '🔒' : (channel.type === 'D' ? '👤' : '#️⃣');
   const displayName = getChannelLabel(channel);
   
   // Only show internal name for non-DM channels if it's different from the display name
@@ -155,7 +184,6 @@ export function renderChannelCard(channel) {
   
   return `
     <div class="ms-channel-card">
-      <span class="ms-channel-icon">${typeIcon}</span>
       <div class="ms-channel-info">
         <div class="ms-channel-name">${escapeHtml(displayName)}</div>
         ${internalName ? `<div class="ms-channel-sub">${escapeHtml(internalName)}</div>` : ''}

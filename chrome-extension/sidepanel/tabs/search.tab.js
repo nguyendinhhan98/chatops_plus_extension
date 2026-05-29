@@ -244,6 +244,8 @@ export function clearResults() {
   if (beforeEl?._flatpickr) beforeEl._flatpickr.clear();
   else if (beforeEl) beforeEl.value = '';
   document.getElementById('chkSearchIncludeDM').checked = false;
+  const chkIsOr = document.getElementById('chkSearchIsOr');
+  if (chkIsOr) chkIsOr.checked = false;
   const btnClearSearch = document.getElementById('btnSpClearSearch');
   if (btnClearSearch) btnClearSearch.style.display = 'none';
   
@@ -361,9 +363,10 @@ export async function performSpSearch(isLoadMore = false) {
   try {
     const team = _state.getTeam();
     const config = _state.getConfig();
+    const isOrSearch = document.getElementById('chkSearchIsOr')?.checked || false;
     const result = await searchPosts(team.id, {
       terms: searchState.terms,
-      is_or_search: false,
+      is_or_search: isOrSearch,
       page: searchState.page,
       per_page: UI_CONFIG.SEARCH_PAGE_SIZE
     });

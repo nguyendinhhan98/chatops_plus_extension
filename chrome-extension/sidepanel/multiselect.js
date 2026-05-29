@@ -24,7 +24,12 @@ export function setupMultiSelect(containerId, fetchOptions, renderFn, getValueFn
   const input = document.createElement('input');
   input.type = 'text';
   input.className = 'autocomplete-input multiselect-input';
-  input.placeholder = container.getAttribute('data-placeholder') || 'Search...';
+  
+  // Resolve dynamically translated placeholder using the data-i18n-placeholder key if present
+  const i18nKey = container.getAttribute('data-i18n-placeholder');
+  const translatedPlaceholder = (i18nKey && language[i18nKey]) ? language[i18nKey] : null;
+  input.placeholder = translatedPlaceholder || container.getAttribute('data-placeholder') || 'Search...';
+  
   inputWrapper.appendChild(input);
   container.appendChild(inputWrapper);
 

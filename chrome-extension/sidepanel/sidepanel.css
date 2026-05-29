@@ -2370,24 +2370,41 @@ input:checked + .toggle-slider:before { transform: translateX(16px); }
   font-size: 13px;
   font-weight: 500;
   color: var(--text-1);
-  cursor: pointer;
+  cursor: grab;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
   transition: all var(--transition);
+  user-select: none;
 }
 .selected-emoji-tag:hover {
-  border-color: var(--danger);
-  background: rgba(208, 69, 76, 0.05);
-  box-shadow: 0 2px 6px rgba(208, 69, 76, 0.1);
+  border-color: var(--accent);
+  background: var(--accent-dim);
+  box-shadow: 0 2px 6px rgba(28, 88, 217, 0.08);
   transform: translateY(-1px);
+}
+.selected-emoji-tag:active {
+  cursor: grabbing;
+}
+.selected-emoji-tag.dragging {
+  opacity: 0.55;
+  border: 1px dashed var(--accent) !important;
+  transform: scale(0.95);
+}
+.selected-emoji-tag.drag-over {
+  border-color: var(--accent) !important;
+  background: rgba(28, 88, 217, 0.12) !important;
+  transform: scale(1.05) translateY(-2px);
+  box-shadow: 0 4px 10px rgba(28, 88, 217, 0.15) !important;
 }
 .selected-emoji-tag .emoji-tag-remove {
   color: var(--text-3);
   cursor: pointer;
   font-weight: bold;
   font-size: 11px;
+  transition: color 0.15s ease;
+  margin-left: 2px;
 }
-.selected-emoji-tag:hover .emoji-tag-remove {
-  color: var(--danger);
+.selected-emoji-tag .emoji-tag-remove:hover {
+  color: var(--danger) !important;
 }
 .selected-emoji-tag img {
   width: 18px; height: 18px;

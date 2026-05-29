@@ -236,6 +236,7 @@ const DEFAULT_SETTINGS = {
     quickNote: true,
     quickTask: true,
     spamReactions: false,
+    reactAlong: true,
     imagePicker: true,
     quickReply: true,
     quickCopy: true
@@ -250,7 +251,10 @@ const DEFAULT_SETTINGS = {
   appPadding: '12px',
   quickDelete: false,
   soundNotification: false,
-  customButtonsPosition: 'before'
+  customButtonsPosition: 'before',
+  activeReactionGroupId: 0,
+  reactionGroups: null,
+  reactAlongEnabled: true
 };
 
 /**
@@ -272,6 +276,16 @@ export async function getSettings() {
     showTabs: { ...DEFAULT_SETTINGS.showTabs, ...rawSettings.showTabs },
     floatingButtons: { ...DEFAULT_SETTINGS.floatingButtons, ...rawSettings.floatingButtons }
   };
+
+  if (!settings.reactionGroups) {
+    settings.reactionGroups = [
+      { id: 0, name: 'Nhóm 1', emojis: Array.isArray(settings.spamEmojis) ? settings.spamEmojis : ['thumbsup', 'heart', 'fire', 'rocket', 'tada'] },
+      { id: 1, name: 'Nhóm 2', emojis: ['laughing', 'smile', 'wink', 'heart_eyes', 'kissing_heart'] },
+      { id: 2, name: 'Nhóm 3', emojis: [] },
+      { id: 3, name: 'Nhóm 4', emojis: [] },
+      { id: 4, name: 'Nhóm 5', emojis: [] }
+    ];
+  }
 
   // Auto-migrate old Vietnamese default categories to English
   if (settings.memoCategories) {
@@ -383,6 +397,7 @@ async function loadAndApplySettings() {
   document.getElementById('settingFloatingQuickTask').checked = settings.floatingButtons?.quickTask !== false;
   document.getElementById('settingFloatingQuickNote').checked = settings.floatingButtons?.quickNote !== false;
   document.getElementById('settingFloatingSpamReactions').checked = settings.floatingButtons?.spamReactions !== false;
+  document.getElementById('settingReactAlongEnabled').checked = settings.floatingButtons?.reactAlong !== false;
   document.getElementById('settingFloatingImagePicker').checked = settings.floatingButtons?.imagePicker !== false;
   document.getElementById('settingFloatingQuickReply').checked = settings.floatingButtons?.quickReply !== false;
   document.getElementById('settingFloatingQuickCopy').checked = settings.floatingButtons?.quickCopy !== false;
@@ -446,6 +461,7 @@ async function loadAndApplySettings() {
   }
 
   // Pre-load selected, standard grid, and personal memes
+  renderReactionGroups(settings);
   renderSelectedEmojis(settings);
   renderStandardEmojiGrid(settings);
   renderSidepanelMemes();
@@ -515,6 +531,12 @@ function setupEventListeners() {
     fileInput.addEventListener('change', async (e) => {
       const files = Array.from(e.target.files);
       if (files.length === 0) return;
+
+      if (files.length > 5) {
+        alert(language.maxUploadLimitError || 'Bạn chỉ có thể tải lên tối đa 5 ảnh cùng lúc.');
+        fileInput.value = '';
+        return;
+      }
 
       const res = await chrome.storage.local.get(['custom_memes']);
       const customMemes = res.custom_memes || [];
@@ -884,6 +906,7 @@ function setupEventListeners() {
   bindFloatingToggle('settingFloatingQuickTask', 'quickTask');
   bindFloatingToggle('settingFloatingQuickNote', 'quickNote');
   bindFloatingToggle('settingFloatingSpamReactions', 'spamReactions');
+  bindFloatingToggle('settingReactAlongEnabled', 'reactAlong');
   bindFloatingToggle('settingFloatingImagePicker', 'imagePicker');
   bindFloatingToggle('settingFloatingQuickReply', 'quickReply');
   bindFloatingToggle('settingFloatingQuickCopy', 'quickCopy');
@@ -940,11 +963,14 @@ function setupEventListeners() {
   const selectedContainer = document.getElementById('selectedEmojisContainer');
   if (selectedContainer) {
     selectedContainer.addEventListener('click', async (e) => {
-      const tag = e.target.closest('.selected-emoji-tag');
-      if (tag) {
-        const name = tag.dataset.name;
-        if (name) {
-          await toggleEmojiSelection(name);
+      const removeBtn = e.target.closest('.emoji-tag-remove');
+      if (removeBtn) {
+        const tag = removeBtn.closest('.selected-emoji-tag');
+        if (tag) {
+          const name = tag.dataset.name;
+          if (name) {
+            await toggleEmojiSelection(name);
+          }
         }
       }
     });
@@ -976,6 +1002,62 @@ function setupEventListeners() {
       e.target.style.display = 'none';
     }
   }, true); // useCapture = true is critical because error events do not bubble
+
+  // Reaction groups tab click listener
+  const groupsTabs = document.getElementById('reactionGroupsTabs');
+  if (groupsTabs) {
+    groupsTabs.addEventListener('click', async (e) => {
+      const btn = e.target.closest('.memo-sub-tab');
+      if (btn) {
+        const id = parseInt(btn.dataset.groupId, 10);
+        if (!isNaN(id)) {
+          const settings = await getSettings();
+          await updateSettings({ activeReactionGroupId: id, spamEmojis: settings.reactionGroups[id].emojis || [] });
+          const updatedSettings = await getSettings();
+          renderReactionGroups(updatedSettings);
+          renderSelectedEmojis(updatedSettings);
+          renderStandardEmojiGrid(updatedSettings);
+          
+          const searchInput = document.getElementById('emojiSearchInput');
+          const term = searchInput ? searchInput.value.trim().toLowerCase() : '';
+          renderCustomEmojiGrid(updatedSettings, term);
+        }
+      }
+    });
+  }
+
+  // Reaction group rename listener
+  const btnSaveGroupName = document.getElementById('btnSaveReactionGroupName');
+  const inputGroupName = document.getElementById('reactionGroupNameInput');
+  if (btnSaveGroupName && inputGroupName) {
+    btnSaveGroupName.addEventListener('click', async () => {
+      const val = inputGroupName.value.trim();
+      if (!val) return;
+      if (val.length > 10) {
+        showErrorFeedback(language.groupNameLengthError || "Group name cannot exceed 10 characters!");
+        return;
+      }
+      
+      const settings = await getSettings();
+      const activeGroupId = settings.activeReactionGroupId !== undefined ? settings.activeReactionGroupId : 0;
+      const groups = settings.reactionGroups || [];
+      const activeGroup = groups.find(g => g.id === activeGroupId);
+      if (activeGroup) {
+        activeGroup.name = val;
+        await updateSettings({ reactionGroups: groups });
+        showAutoSaveFeedback();
+        const updatedSettings = await getSettings();
+        renderReactionGroups(updatedSettings);
+      }
+    });
+
+    // Enter key to rename
+    inputGroupName.addEventListener('keydown', async (e) => {
+      if (e.key === 'Enter') {
+        btnSaveGroupName.click();
+      }
+    });
+  }
 
   const inputCat = document.getElementById('settingNewCategory');
   const btnAddCat = document.getElementById('btnAddCategory');
@@ -1718,14 +1800,45 @@ function escapeHtml(str) {
 /**
  * Renders currently selected emojis in Reactions tab
  */
+function getActiveEmojisList(settings) {
+  const activeGroupId = settings.activeReactionGroupId !== undefined ? settings.activeReactionGroupId : 0;
+  const groups = settings.reactionGroups || [];
+  const activeGroup = groups.find(g => g.id === activeGroupId) || groups[0];
+  return activeGroup ? (activeGroup.emojis || []) : [];
+}
+
+function renderReactionGroups(settings) {
+  const tabsContainer = document.getElementById('reactionGroupsTabs');
+  if (!tabsContainer) return;
+
+  const activeGroupId = settings.activeReactionGroupId !== undefined ? settings.activeReactionGroupId : 0;
+  const groups = settings.reactionGroups || [];
+
+  tabsContainer.innerHTML = groups.map(g => {
+    const isActive = g.id === activeGroupId;
+    const checkmark = isActive ? '<span style="color:#10b981; font-weight:bold; margin-left:4px;">✓</span>' : '';
+    return `
+      <button type="button" class="memo-sub-tab ${isActive ? 'active' : ''}" data-group-id="${g.id}" style="display:flex; align-items:center; gap:4px; font-weight:600; padding:6px 12px; border-radius:6px; font-size:12.5px;">
+        ${escapeHtml(g.name || `Nhóm ${g.id + 1}`)} ${checkmark}
+      </button>
+    `;
+  }).join('');
+
+  const activeGroup = groups.find(g => g.id === activeGroupId) || groups[0];
+  const renameInput = document.getElementById('reactionGroupNameInput');
+  if (renameInput && activeGroup) {
+    renameInput.value = activeGroup.name || `Nhóm ${activeGroup.id + 1}`;
+  }
+}
+
+/**
+ * Renders currently selected emojis in Reactions tab
+ */
 function renderSelectedEmojis(settings) {
   const container = document.getElementById('selectedEmojisContainer');
   if (!container) return;
 
-  let currentList = settings.spamEmojis || [];
-  if (typeof currentList === 'string') {
-    currentList = currentList.split(',').map(e => e.trim()).filter(Boolean);
-  }
+  let currentList = getActiveEmojisList(settings);
 
   const countBadge = document.getElementById('selectedEmojisCountBadge');
   if (countBadge) {
@@ -1746,6 +1859,89 @@ function renderSelectedEmojis(settings) {
     return;
   }
 
+  // HTML5 Drag and Drop Handlers for Reordering
+  let dragSrcEl = null;
+
+  function handleDragStart(e) {
+    dragSrcEl = this;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', this.dataset.name);
+    this.classList.add('dragging');
+    console.log('[ChatOps Ext] Emoji Drag Start:', this.dataset.name);
+  }
+
+  function handleDragOver(e) {
+    if (e.preventDefault) {
+      e.preventDefault();
+    }
+    e.dataTransfer.dropEffect = 'move';
+    return false;
+  }
+
+  function handleDragEnter(e) {
+    e.preventDefault();
+    this.classList.add('drag-over');
+  }
+
+  function handleDragLeave(e) {
+    this.classList.remove('drag-over');
+  }
+
+  async function handleDrop(e) {
+    if (e.preventDefault) {
+      e.preventDefault();
+    }
+    if (e.stopPropagation) {
+      e.stopPropagation();
+    }
+    
+    this.classList.remove('drag-over');
+    
+    const srcName = e.dataTransfer.getData('text/plain') || (dragSrcEl ? dragSrcEl.dataset.name : null);
+    const destName = this.dataset.name;
+    
+    console.log('[ChatOps Ext] Emoji Drag Drop:', srcName, 'over', destName);
+    
+    if (srcName && destName && srcName !== destName) {
+      const settings = await getSettings();
+      const activeGroupId = settings.activeReactionGroupId !== undefined ? settings.activeReactionGroupId : 0;
+      const groups = settings.reactionGroups || [];
+      const activeGroup = groups.find(g => g.id === activeGroupId) || groups[0];
+      let list = activeGroup ? (activeGroup.emojis || []) : [];
+      
+      const srcIndex = list.indexOf(srcName);
+      const destIndex = list.indexOf(destName);
+      
+      if (srcIndex > -1 && destIndex > -1) {
+        list.splice(srcIndex, 1);
+        list.splice(destIndex, 0, srcName);
+        
+        if (activeGroup) {
+          activeGroup.emojis = list;
+        }
+        
+        await updateSettings({ 
+          reactionGroups: groups,
+          spamEmojis: list
+        });
+        showAutoSaveFeedback();
+        
+        const updatedSettings = await getSettings();
+        renderSelectedEmojis(updatedSettings);
+      }
+    }
+    return false;
+  }
+
+  function handleDragEnd() {
+    this.classList.remove('dragging');
+    container.querySelectorAll('.selected-emoji-tag').forEach(tag => {
+      tag.classList.remove('dragging');
+      tag.classList.remove('drag-over');
+    });
+    console.log('[ChatOps Ext] Emoji Drag End');
+  }
+
   container.innerHTML = currentList.map(name => {
     const std = STANDARD_EMOJIS.find(s => s.name === name);
     let content = '';
@@ -1761,12 +1957,23 @@ function renderSelectedEmojis(settings) {
     }
 
     return `
-      <div class="selected-emoji-tag" data-name="${name}" title="${language.clickToRemove || 'Click to remove'}">
+      <div class="selected-emoji-tag" draggable="true" data-name="${name}" title="${language.clickToRemove || 'Click to remove'}">
         ${content}
         <span class="emoji-tag-remove">&times;</span>
       </div>
     `;
   }).join('');
+
+  // Bind drag & drop events to the tags
+  const tags = container.querySelectorAll('.selected-emoji-tag');
+  tags.forEach(tag => {
+    tag.addEventListener('dragstart', handleDragStart);
+    tag.addEventListener('dragover', handleDragOver);
+    tag.addEventListener('dragenter', handleDragEnter);
+    tag.addEventListener('dragleave', handleDragLeave);
+    tag.addEventListener('drop', handleDrop);
+    tag.addEventListener('dragend', handleDragEnd);
+  });
 }
 
 /**
@@ -1776,10 +1983,7 @@ function renderStandardEmojiGrid(settings, filterQuery = '') {
   const grid = document.getElementById('standardEmojiGrid');
   if (!grid) return;
 
-  let currentList = settings.spamEmojis || [];
-  if (typeof currentList === 'string') {
-    currentList = currentList.split(',').map(e => e.trim()).filter(Boolean);
-  }
+  let currentList = getActiveEmojisList(settings);
 
   // Filter standard emojis locally in memory
   const filtered = STANDARD_EMOJIS.filter(item => item.name.toLowerCase().includes(filterQuery));
@@ -1857,10 +2061,7 @@ function renderCustomEmojiGrid(settings, filterQuery = '') {
   const gridItems = document.getElementById('customEmojiGridItems');
   if (!gridItems) return;
 
-  let currentList = settings.spamEmojis || [];
-  if (typeof currentList === 'string') {
-    currentList = currentList.split(',').map(e => e.trim()).filter(Boolean);
-  }
+  let currentList = getActiveEmojisList(settings);
 
   // Filter custom emojis locally in memory
   const filtered = cachedCustomEmojis.filter(item => item.name.toLowerCase().includes(filterQuery));
@@ -1888,15 +2089,11 @@ function renderCustomEmojiGrid(settings, filterQuery = '') {
  */
 async function toggleEmojiSelection(emojiName) {
   const settings = await getSettings();
-  let list = settings.spamEmojis || [];
+  const activeGroupId = settings.activeReactionGroupId !== undefined ? settings.activeReactionGroupId : 0;
+  const groups = settings.reactionGroups || [];
+  const activeGroup = groups.find(g => g.id === activeGroupId) || groups[0];
   
-  if (!Array.isArray(list)) {
-    if (typeof list === 'string') {
-      list = list.split(',').map(e => e.trim()).filter(Boolean);
-    } else {
-      list = [];
-    }
-  }
+  let list = activeGroup ? (activeGroup.emojis || []) : [];
 
   if (list.includes(emojiName)) {
     list = list.filter(name => name !== emojiName);
@@ -1908,7 +2105,14 @@ async function toggleEmojiSelection(emojiName) {
     list.push(emojiName);
   }
 
-  await updateSettings({ spamEmojis: list });
+  if (activeGroup) {
+    activeGroup.emojis = list;
+  }
+
+  await updateSettings({ 
+    reactionGroups: groups,
+    spamEmojis: list 
+  });
   showAutoSaveFeedback();
 
   // Re-render keeping search query intact
@@ -2403,6 +2607,20 @@ export function updateFloatingCheckboxesSync(settings) {
       chkSpam.disabled = false;
       rowSpam.style.opacity = '1.0';
       rowSpam.style.pointerEvents = 'auto';
+    }
+  }
+
+  const rowReactAlong = document.getElementById('rowFloatingReactAlong');
+  const chkReactAlong = document.getElementById('settingReactAlongEnabled');
+  if (rowReactAlong && chkReactAlong) {
+    if (!showReactions) {
+      chkReactAlong.disabled = true;
+      rowReactAlong.style.opacity = '0.5';
+      rowReactAlong.style.pointerEvents = 'none';
+    } else {
+      chkReactAlong.disabled = false;
+      rowReactAlong.style.opacity = '1.0';
+      rowReactAlong.style.pointerEvents = 'auto';
     }
   }
 

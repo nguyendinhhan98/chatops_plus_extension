@@ -344,6 +344,10 @@
                   <input type="checkbox" id="chkSearchIncludeDM">
                   <span style="font-size: 11px;" data-i18n="searchIncludeDM">Include Direct Messages</span>
                 </div>
+                <div class="checkbox-label" style="margin-left: 2px; margin-top: 4px;">
+                  <input type="checkbox" id="chkSearchIsOr">
+                  <span style="font-size: 11px;" data-i18n="searchIsOr">OR Search (Match any keyword)</span>
+                </div>
               </div>
             </div>
 
@@ -443,6 +447,21 @@
         </div>
 
         <div class="settings-group" id="reactionsConfigArea">
+          <!-- Reaction Groups Selector -->
+          <div id="reactionGroupsContainer" style="display:flex; flex-direction:column; gap:8px; margin-bottom:16px; border-bottom:1px dashed var(--border); padding-bottom:14px;">
+            <h3 class="settings-title" style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+              <span data-i18n="reactionGroupsTitle">Reaction Groups</span>
+              <span class="limit-badge" style="font-size: 11px; font-weight: 600; padding: 2px 6px; border-radius: 10px; background: var(--bg-3); color: var(--text-2); border: 1px solid var(--border);">5 / 5</span>
+            </h3>
+            <div class="reaction-groups-tabs" id="reactionGroupsTabs" style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:6px;">
+              <!-- Dynamic buttons rendered here -->
+            </div>
+            <div class="reaction-group-edit-row" style="display:flex; gap:6px; align-items:center;">
+              <input type="text" id="reactionGroupNameInput" maxlength="10" data-i18n-placeholder="groupNamePlaceholder" placeholder="Group name..." style="flex:1; height:32px; font-size:12.5px; padding:4px 8px; border-radius:6px; border:1px solid var(--border); outline:none; background:var(--bg-1); color:var(--text-1);">
+              <button id="btnSaveReactionGroupName" class="btn btn-primary" data-i18n="renameGroupBtn" style="height:32px; padding:0 12px; font-size:12.5px; min-width:unset; font-weight:600;">Rename</button>
+            </div>
+          </div>
+
           <h3 class="settings-title" style="display:flex; align-items:center; gap:8px;">
             <span data-i18n="selectedEmojisTitle">Selected Emojis</span>
             <span id="selectedEmojisCountBadge" class="limit-badge" style="font-size: 11px; font-weight: 600; padding: 2px 6px; border-radius: 10px; background: var(--bg-3); color: var(--text-2); border: 1px solid var(--border);">0 / 20</span>
@@ -686,6 +705,11 @@
                 <label class="settings-toggle-row" id="rowFloatingSpamReactions">
                   <span data-i18n="floatingSpamReactions">Spam Reactions Hover Buttons (🔥/↩️)</span>
                   <input type="checkbox" id="settingFloatingSpamReactions" class="settings-toggle" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+                <label class="settings-toggle-row" id="rowFloatingReactAlong">
+                  <span data-i18n="reactAlongEnabled">Enable React-Along Button (👥)</span>
+                  <input type="checkbox" id="settingReactAlongEnabled" class="settings-toggle" checked>
                   <span class="toggle-slider"></span>
                 </label>
                 <label class="settings-toggle-row" id="rowFloatingImagePicker">

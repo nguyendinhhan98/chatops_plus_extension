@@ -1505,3 +1505,77 @@ span.flatpickr-weekday {
   background: #1545ad;
 }
 
+/* ─── Image Resize Modal Slide Navigator ─── */
+.chatops-image-resize-navigator {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 16px !important;
+  margin: 16px 0 !important;
+  padding: 8px 12px !important;
+  background: #f8fafc !important;
+  border-radius: 20px !important;
+  border: 1px solid #f1f5f9 !important;
+}
+
+.chatops-image-resize-nav-btn {
+  background: #1c58d9 !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 50% !important;
+  width: 32px !important;
+  height: 32px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  font-weight: bold !important;
+  font-size: 14px !important;
+  box-shadow: 0 4px 6px -1px rgba(28, 88, 217, 0.2), 0 2px 4px -2px rgba(28, 88, 217, 0.1) !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.chatops-image-resize-nav-btn:hover {
+  background: #1545ad !important;
+  transform: scale(1.08) !important;
+  box-shadow: 0 10px 15px -3px rgba(28, 88, 217, 0.3) !important;
+}
+
+.chatops-image-resize-nav-btn:active {
+  transform: scale(0.95) !important;
+}
+
+.chatops-image-resize-nav-btn:disabled {
+  opacity: 0.4 !important;
+  pointer-events: none !important;
+  box-shadow: none !important;
+  background: #cbd5e1 !important;
+  color: #94a3b8 !important;
+}
+
+.chatops-image-resize-nav-dots {
+  display: flex !important;
+  gap: 8px !important;
+  align-items: center !important;
+}
+
+.chatops-image-resize-nav-dot {
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 50% !important;
+  background: #cbd5e1 !important;
+  display: inline-block !important;
+  cursor: pointer !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.chatops-image-resize-nav-dot:hover {
+  background: #94a3b8 !important;
+  transform: scale(1.2) !important;
+}
+
+.chatops-image-resize-nav-dot.active {
+  width: 24px !important;
+  border-radius: 4px !important;
+  background: #1c58d9 !important;
+}

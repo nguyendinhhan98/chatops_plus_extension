@@ -824,7 +824,7 @@ function showToast(msg) {
     overlay.classList.remove('hidden');
   }
 
-  function openImageResizeModal(src, index) {
+  function openImageResizeModal(srcList, isLibraryEditIndex) {
     let overlay = document.getElementById('chatops-image-resize-overlay');
     if (!overlay) {
       overlay = document.createElement('div');
@@ -840,6 +840,14 @@ function showToast(msg) {
             <div class="chatops-image-resize-preview-box">
               <img class="chatops-image-resize-preview-img" src="" alt="preview" />
             </div>
+            
+            <!-- Slide Navigation -->
+            <div class="chatops-image-resize-navigator">
+              <button type="button" class="chatops-image-resize-nav-btn prev-btn">&lt;</button>
+              <div class="chatops-image-resize-nav-dots"></div>
+              <button type="button" class="chatops-image-resize-nav-btn next-btn">&gt;</button>
+            </div>
+
             <div class="chatops-image-resize-controls">
               <div class="chatops-image-resize-info-row">
                 <span class="chatops-image-resize-orig-size">Original: --</span>
@@ -870,13 +878,13 @@ function showToast(msg) {
           <div class="chatops-image-resize-footer">
             <button class="chatops-image-resize-btn chatops-image-resize-btn-cancel">${language.cancel}</button>
             <button class="chatops-image-resize-btn chatops-image-resize-btn-save">${language.saveCopy || 'Save Copy'}</button>
-            <button class="chatops-image-resize-btn chatops-image-resize-btn-insert">${language.insertToChat || 'Insert to Chat'}</button>
+            <button class="chatops-image-resize-btn chatops-image-resize-btn-insert">${language.submitSaveBtn || 'Gửi & Lưu'}</button>
           </div>
         </div>
       `;
       document.body.appendChild(overlay);
       
-      // Hook event listeners
+      // Hook closing event listeners
       overlay.querySelector('.chatops-image-resize-close').onclick = () => overlay.classList.remove('visible');
       overlay.querySelector('.chatops-image-resize-btn-cancel').onclick = () => overlay.classList.remove('visible');
       overlay.addEventListener('click', (e) => {
@@ -894,135 +902,281 @@ function showToast(msg) {
     const lockBtn = overlay.querySelector('.chatops-image-resize-lock-btn');
     const saveBtn = overlay.querySelector('.chatops-image-resize-btn-save');
     const insertBtn = overlay.querySelector('.chatops-image-resize-btn-insert');
+    
+    const navigatorRow = overlay.querySelector('.chatops-image-resize-navigator');
+    const prevBtn = overlay.querySelector('.prev-btn');
+    const nextBtn = overlay.querySelector('.next-btn');
+    const dotsContainer = overlay.querySelector('.chatops-image-resize-nav-dots');
 
-    // Load original image details
-    const img = new Image();
-    img.onload = () => {
-      const origWidth = img.width;
-      const origHeight = img.height;
-      const aspect = origWidth / origHeight;
-      const origBytes = getBase64Size(src);
-      const mimeType = src.split(';')[0].split(':')[1] || 'image/png';
-      
-      origSizeEl.textContent = `Original: ${origWidth}x${origHeight} (${formatSize(origBytes)})`;
-      slider.value = 100;
-      sliderVal.textContent = '100%';
-      widthInput.value = origWidth;
-      heightInput.value = origHeight;
-      
-      let isAspectRatioLocked = true;
-      lockBtn.className = 'chatops-image-resize-lock-btn locked';
-      
-      lockBtn.onclick = () => {
-        isAspectRatioLocked = !isAspectRatioLocked;
-        lockBtn.classList.toggle('locked', isAspectRatioLocked);
-      };
+    const sources = Array.isArray(srcList) ? srcList : [srcList];
+    let imagesArray = sources.map(src => ({
+      src: src,
+      width: 0,
+      height: 0,
+      origWidth: 0,
+      origHeight: 0,
+      aspect: 1,
+      sliderValue: 100,
+      isAspectRatioLocked: true,
+      testDataUrl: src,
+      mimeType: src.split(';')[0].split(':')[1] || 'image/png'
+    }));
 
-      // Perform sizing updates
-      function updateCalculatedSize() {
-        const w = parseInt(widthInput.value, 10) || 10;
-        const h = parseInt(heightInput.value, 10) || 10;
-        const canvas = document.createElement('canvas');
-        canvas.width = w;
-        canvas.height = h;
-        const ctx = canvas.getContext('2d');
-        
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
-        
-        if (mimeType !== 'image/png') {
-          ctx.fillStyle = '#ffffff';
-          ctx.fillRect(0, 0, w, h);
+    let currentIndex = 0;
+    
+    // Load and setup the active image state
+    function loadActiveImage() {
+      const activeImgObj = imagesArray[currentIndex];
+      if (!activeImgObj) return;
+
+      const img = new Image();
+      img.onload = () => {
+        // If dimensions are not initialized yet, initialize them
+        if (activeImgObj.origWidth === 0) {
+          activeImgObj.origWidth = img.width;
+          activeImgObj.origHeight = img.height;
+          activeImgObj.aspect = img.width / img.height;
+          activeImgObj.width = img.width;
+          activeImgObj.height = img.height;
         }
-        ctx.drawImage(img, 0, 0, w, h);
+
+        origSizeEl.textContent = `Original: ${activeImgObj.origWidth}x${activeImgObj.origHeight} (${formatSize(getBase64Size(activeImgObj.src))})`;
+        slider.value = activeImgObj.sliderValue;
+        sliderVal.textContent = `${activeImgObj.sliderValue}%`;
+        widthInput.value = activeImgObj.width;
+        heightInput.value = activeImgObj.height;
         
-        const testDataUrl = canvas.toDataURL(mimeType, 0.9);
-        const newBytes = getBase64Size(testDataUrl);
-        newSizeEl.textContent = `Estimated: ${w}x${h} (${formatSize(newBytes)})`;
+        lockBtn.className = `chatops-image-resize-lock-btn ${activeImgObj.isAspectRatioLocked ? 'locked' : ''}`;
         
-        // Update the preview image source and style dimensions dynamically
-        previewImg.src = testDataUrl;
-        previewImg.style.width = w + 'px';
-        previewImg.style.height = h + 'px';
-        
-        return testDataUrl;
-      }
+        // Handle lock toggle
+        lockBtn.onclick = () => {
+          activeImgObj.isAspectRatioLocked = !activeImgObj.isAspectRatioLocked;
+          lockBtn.classList.toggle('locked', activeImgObj.isAspectRatioLocked);
+        };
 
-      slider.oninput = () => {
-        const pct = parseInt(slider.value, 10) / 100;
-        sliderVal.textContent = `${slider.value}%`;
-        widthInput.value = Math.round(origWidth * pct);
-        heightInput.value = Math.round(origHeight * pct);
-        updateCalculatedSize();
-      };
+        function updateCalculatedSize() {
+          const w = parseInt(widthInput.value, 10) || 10;
+          const h = parseInt(heightInput.value, 10) || 10;
+          
+          activeImgObj.width = w;
+          activeImgObj.height = h;
 
-      widthInput.oninput = () => {
-        const w = parseInt(widthInput.value, 10) || 10;
-        if (isAspectRatioLocked) {
-          heightInput.value = Math.round(w / aspect);
-        }
-        // Update slider back to closest match
-        const pct = Math.round((w / origWidth) * 100);
-        slider.value = Math.min(100, Math.max(10, pct));
-        sliderVal.textContent = `${slider.value}%`;
-        updateCalculatedSize();
-      };
-
-      heightInput.oninput = () => {
-        const h = parseInt(heightInput.value, 10) || 10;
-        if (isAspectRatioLocked) {
-          widthInput.value = Math.round(h * aspect);
-        }
-        const pct = Math.round((h / origHeight) * 100);
-        slider.value = Math.min(100, Math.max(10, pct));
-        sliderVal.textContent = `${slider.value}%`;
-        updateCalculatedSize();
-      };
-
-      // Initial update
-      updateCalculatedSize();
-
-      insertBtn.onclick = () => {
-        const resizedUrl = updateCalculatedSize();
-        insertImageToChat(resizedUrl);
-        overlay.classList.remove('visible');
-      };
-
-      saveBtn.onclick = async () => {
-        const resizedUrl = updateCalculatedSize();
-        const res = await chrome.storage.local.get(['custom_memes']);
-        const customMemes = res.custom_memes || [];
-        
-        // Calculate storage size limit (exclude the old image size if we are overwriting it)
-        let totalBytes = 0;
-        customMemes.forEach((url, i) => {
-          if (index !== i) {
-            totalBytes += getBase64Size(url);
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          
+          if (activeImgObj.mimeType !== 'image/png') {
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, w, h);
           }
-        });
-        const newBytes = getBase64Size(resizedUrl);
-
-        if (totalBytes + newBytes > 10 * 1024 * 1024) {
-          alert(language.storageLimitExceeded || 'Storage limit exceeded (10MB maximum)! Please delete some old images.');
-          return;
+          ctx.drawImage(img, 0, 0, w, h);
+          
+          const testDataUrl = canvas.toDataURL(activeImgObj.mimeType, 0.9);
+          activeImgObj.testDataUrl = testDataUrl;
+          
+          const newBytes = getBase64Size(testDataUrl);
+          newSizeEl.textContent = `Estimated: ${w}x${h} (${formatSize(newBytes)})`;
+          
+          previewImg.src = testDataUrl;
+          previewImg.style.width = w + 'px';
+          previewImg.style.height = h + 'px';
         }
 
-        if (index !== undefined && index >= 0 && index < customMemes.length) {
-          // Overwrite existing image
-          customMemes[index] = resizedUrl;
-        } else {
-          // Prepend new image
-          customMemes.unshift(resizedUrl);
-        }
-        
-        await chrome.storage.local.set({ custom_memes: customMemes });
-        loadCustomImages();
-        overlay.classList.remove('visible');
+        slider.oninput = () => {
+          const pct = parseInt(slider.value, 10) / 100;
+          activeImgObj.sliderValue = parseInt(slider.value, 10);
+          sliderVal.textContent = `${slider.value}%`;
+          widthInput.value = Math.round(activeImgObj.origWidth * pct);
+          heightInput.value = Math.round(activeImgObj.origHeight * pct);
+          updateCalculatedSize();
+        };
+
+        widthInput.oninput = () => {
+          const w = parseInt(widthInput.value, 10) || 10;
+          if (activeImgObj.isAspectRatioLocked) {
+            heightInput.value = Math.round(w / activeImgObj.aspect);
+          }
+          const pct = Math.round((w / activeImgObj.origWidth) * 100);
+          slider.value = Math.min(100, Math.max(10, pct));
+          activeImgObj.sliderValue = parseInt(slider.value, 10);
+          sliderVal.textContent = `${slider.value}%`;
+          updateCalculatedSize();
+        };
+
+        heightInput.oninput = () => {
+          const h = parseInt(heightInput.value, 10) || 10;
+          if (activeImgObj.isAspectRatioLocked) {
+            widthInput.value = Math.round(h * activeImgObj.aspect);
+          }
+          const pct = Math.round((h / activeImgObj.origHeight) * 100);
+          slider.value = Math.min(100, Math.max(10, pct));
+          activeImgObj.sliderValue = parseInt(slider.value, 10);
+          sliderVal.textContent = `${slider.value}%`;
+          updateCalculatedSize();
+        };
+
+        // Initialize display
+        updateCalculatedSize();
       };
+      
+      previewImg.src = activeImgObj.src;
+      img.src = activeImgObj.src;
+      
+      renderSlideNavigator();
+    }
+
+    function renderSlideNavigator() {
+      if (imagesArray.length <= 1) {
+        navigatorRow.style.display = 'none';
+        return;
+      }
+      navigatorRow.style.display = 'flex';
+      
+      // Update prev/next button disabled states
+      prevBtn.disabled = currentIndex === 0;
+      nextBtn.disabled = currentIndex === imagesArray.length - 1;
+      
+      // Render navigation dots
+      dotsContainer.innerHTML = imagesArray.map((_, i) => {
+        const isActive = i === currentIndex;
+        return `
+          <span class="chatops-image-resize-nav-dot ${isActive ? 'active' : ''}" data-index="${i}"></span>
+        `;
+      }).join('');
+    }
+
+    // Set up navigation clicks
+    prevBtn.onclick = (e) => {
+      e.preventDefault(); e.stopPropagation();
+      if (currentIndex > 0) {
+        currentIndex--;
+        loadActiveImage();
+      }
     };
 
-    previewImg.src = src;
-    img.src = src;
+    nextBtn.onclick = (e) => {
+      e.preventDefault(); e.stopPropagation();
+      if (currentIndex < imagesArray.length - 1) {
+        currentIndex++;
+        loadActiveImage();
+      }
+    };
+
+    dotsContainer.onclick = (e) => {
+      const dot = e.target.closest('.chatops-image-resize-nav-dot');
+      if (dot) {
+        const idx = parseInt(dot.dataset.index, 10);
+        if (!isNaN(idx) && idx !== currentIndex) {
+          currentIndex = idx;
+          loadActiveImage();
+        }
+      }
+    };
+
+    // "Gửi & Lưu" (Submit & Save) handler - Processes active image only, slides to next or closes when done
+    insertBtn.onclick = async (e) => {
+      e.preventDefault(); e.stopPropagation();
+      const activeImgObj = imagesArray[currentIndex];
+      if (!activeImgObj) return;
+
+      // 1. Submit to Chat
+      insertImageToChat(activeImgObj.testDataUrl);
+
+      // 2. Save to Image Library
+      const res = await chrome.storage.local.get(['custom_memes']);
+      const customMemes = res.custom_memes || [];
+      
+      let totalBytes = 0;
+      customMemes.forEach((url, i) => {
+        if (isLibraryEditIndex !== i) {
+          totalBytes += getBase64Size(url);
+        }
+      });
+      const newBytes = getBase64Size(activeImgObj.testDataUrl);
+
+      if (totalBytes + newBytes > 10 * 1024 * 1024) {
+        alert(language.storageLimitExceeded || 'Storage limit exceeded (10MB maximum)! Please delete some old images.');
+        return;
+      }
+
+      if (isLibraryEditIndex !== undefined && isLibraryEditIndex >= 0 && isLibraryEditIndex < customMemes.length) {
+        customMemes[isLibraryEditIndex] = activeImgObj.testDataUrl;
+      } else {
+        customMemes.unshift(activeImgObj.testDataUrl);
+      }
+      
+      await chrome.storage.local.set({ custom_memes: customMemes });
+      loadCustomImages();
+      
+      // 3. Remove image from slide deck
+      imagesArray.splice(currentIndex, 1);
+
+      if (imagesArray.length > 0) {
+        // Switch to the next available image
+        if (currentIndex >= imagesArray.length) {
+          currentIndex = imagesArray.length - 1;
+        }
+        loadActiveImage();
+        showToast('Đã gửi & lưu ảnh! Đang chuyển sang ảnh tiếp theo...');
+      } else {
+        // Complete! Close modal
+        overlay.classList.remove('visible');
+        showToast('Đã gửi & lưu toàn bộ ảnh thành công! 🎉');
+      }
+    };
+
+    // Save only button (Lưu thư viện) - Processes active image only, slides to next or closes when done
+    saveBtn.onclick = async (e) => {
+      e.preventDefault(); e.stopPropagation();
+      const activeImgObj = imagesArray[currentIndex];
+      if (!activeImgObj) return;
+
+      const res = await chrome.storage.local.get(['custom_memes']);
+      const customMemes = res.custom_memes || [];
+      
+      let totalBytes = 0;
+      customMemes.forEach((url, i) => {
+        if (isLibraryEditIndex !== i) {
+          totalBytes += getBase64Size(url);
+        }
+      });
+      const newBytes = getBase64Size(activeImgObj.testDataUrl);
+
+      if (totalBytes + newBytes > 10 * 1024 * 1024) {
+        alert(language.storageLimitExceeded || 'Storage limit exceeded (10MB maximum)! Please delete some old images.');
+        return;
+      }
+
+      if (isLibraryEditIndex !== undefined && isLibraryEditIndex >= 0 && isLibraryEditIndex < customMemes.length) {
+        customMemes[isLibraryEditIndex] = activeImgObj.testDataUrl;
+      } else {
+        customMemes.unshift(activeImgObj.testDataUrl);
+      }
+      
+      await chrome.storage.local.set({ custom_memes: customMemes });
+      loadCustomImages();
+
+      // Remove image from slide deck
+      imagesArray.splice(currentIndex, 1);
+
+      if (imagesArray.length > 0) {
+        if (currentIndex >= imagesArray.length) {
+          currentIndex = imagesArray.length - 1;
+        }
+        loadActiveImage();
+        showToast('Đã lưu ảnh vào thư viện! Đang chuyển sang ảnh tiếp theo...');
+      } else {
+        overlay.classList.remove('visible');
+        showToast('Đã lưu toàn bộ ảnh vào thư viện! 🎉');
+      }
+    };
+
+    // Initial load
+    loadActiveImage();
     overlay.classList.add('visible');
   }
 
@@ -1075,6 +1229,12 @@ function showToast(msg) {
         const files = Array.from(e.target.files);
         if (files.length === 0) return;
 
+        if (files.length > 5) {
+          alert(language.maxUploadLimitError || 'Bạn chỉ có thể tải lên tối đa 5 ảnh cùng lúc.');
+          fileInput.value = '';
+          return;
+        }
+
         const hasNonImage = files.some(f => !f.type.startsWith('image/'));
         if (hasNonImage) {
           alert(language.uploadOnlyImages || 'Please upload image files only.');
@@ -1082,12 +1242,17 @@ function showToast(msg) {
           return;
         }
 
-        const file = files[0];
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-          openImageResizeModal(ev.target.result);
-        };
-        reader.readAsDataURL(file);
+        // Read all selected files as Data URLs asynchronously
+        const readers = files.map(file => {
+          return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (ev) => resolve(ev.target.result);
+            reader.readAsDataURL(file);
+          });
+        });
+
+        const sources = await Promise.all(readers);
+        openImageResizeModal(sources);
         fileInput.value = '';
       });
     }
@@ -2149,10 +2314,11 @@ function showToast(msg) {
     });
 
     const showTabs = cachedSettings.showTabs || { search: true, tasks: true, notes: true, missed: true, reactions: true };
-    const floatingButtons = cachedSettings.floatingButtons || { quickNote: true, quickTask: true, spamReactions: true, imagePicker: true, quickReply: true, quickCopy: true };
+    const floatingButtons = cachedSettings.floatingButtons || { quickNote: true, quickTask: true, spamReactions: true, reactAlong: true, imagePicker: true, quickReply: true, quickCopy: true };
     const tasksEnabled = (showTabs.tasks !== false) && (floatingButtons.quickTask !== false);
     const notesEnabled = (showTabs.notes !== false) && (floatingButtons.quickNote !== false);
     const spamEnabled = (showTabs.reactions !== false) && (floatingButtons.spamReactions !== false);
+    const reactAlongEnabled = (showTabs.reactions !== false) && (floatingButtons.reactAlong !== false);
     const replyEnabled = floatingButtons.quickReply !== false;
     const copyEnabled = floatingButtons.quickCopy !== false;
 
@@ -2170,6 +2336,9 @@ function showToast(msg) {
     }
     if (!spamEnabled) {
       document.querySelectorAll('.chatops-action-group .chatops-quick-note-btn.spam-btn, .chatops-action-group .chatops-quick-note-btn.retract-btn').forEach(el => el.remove());
+    }
+    if (!reactAlongEnabled) {
+      document.querySelectorAll('.chatops-action-group .chatops-quick-note-btn.clone-btn').forEach(el => el.remove());
     }
     
     const isQuickDeleteEnabled = cachedSettings.quickDelete === true;
@@ -2504,10 +2673,11 @@ function showToast(msg) {
     const posts = document.querySelectorAll(`.post, [id^="post_"], [class*="post-message"]`);
     
     const showTabs = cachedSettings.showTabs || { search: true, tasks: true, notes: true, missed: true, reactions: true };
-    const floatingButtons = cachedSettings.floatingButtons || { quickNote: true, quickTask: true, spamReactions: true, imagePicker: true, quickReply: true, quickCopy: true };
+    const floatingButtons = cachedSettings.floatingButtons || { quickNote: true, quickTask: true, spamReactions: true, reactAlong: true, imagePicker: true, quickReply: true, quickCopy: true };
     const tasksEnabled = (showTabs.tasks !== false) && (floatingButtons.quickTask !== false);
     const notesEnabled = (showTabs.notes !== false) && (floatingButtons.quickNote !== false);
     const spamEnabled = (showTabs.reactions !== false) && (floatingButtons.spamReactions !== false);
+    const reactAlongEnabled = (showTabs.reactions !== false) && (floatingButtons.reactAlong !== false);
     const replyEnabled = floatingButtons.quickReply !== false;
     const copyEnabled = floatingButtons.quickCopy !== false;
 
@@ -2785,6 +2955,45 @@ function showToast(msg) {
       } else {
         // If not enabled, clean up any existing spam and retract buttons from this post
         chatopsGroup.querySelectorAll('.chatops-quick-note-btn.spam-btn, .chatops-quick-note-btn.retract-btn').forEach(el => el.remove());
+      }
+
+      // Handle React-Along button (👥) conditionally!
+      if (reactAlongEnabled) {
+        if (!chatopsGroup.querySelector('.chatops-quick-note-btn.clone-btn')) {
+          const cloneBtn = document.createElement('button');
+          cloneBtn.className = 'chatops-quick-note-btn clone-btn';
+          cloneBtn.innerHTML = '👥';
+          cloneBtn.title = language.reactAlongTooltip || 'Reaction theo bài viết';
+          cloneBtn.addEventListener('click', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            const postId = cleanPostId(postEl);
+            if (!postId) return;
+
+            const origHtml = cloneBtn.innerHTML;
+            cloneBtn.innerHTML = '⏳';
+            cloneBtn.style.opacity = '0.5';
+            cloneBtn.disabled = true;
+
+            chrome.runtime.sendMessage({
+              type: MESSAGE_TYPES.CLONE_POST_REACTIONS,
+              postId
+            }, (res) => {
+              cloneBtn.innerHTML = origHtml;
+              cloneBtn.style.opacity = '1';
+              cloneBtn.disabled = false;
+
+              if (res && res.ok) {
+                showToast(language.reactAlongSuccess || 'Sao chép các biểu tượng cảm xúc thành công! 👥');
+              } else {
+                let errMsg = res?.error || language.unknown;
+                showToast(language.reactAlongErrorPrefix + errMsg);
+              }
+            });
+          });
+          chatopsGroup.appendChild(cloneBtn);
+        }
+      } else {
+        chatopsGroup.querySelector('.chatops-quick-note-btn.clone-btn')?.remove();
       }
 
       // Inject Delete Message button (🗑️ with red color) if it's our post and quickDelete is enabled

@@ -2,7 +2,7 @@
  * Background Service Worker — ChatOps Chrome Extension
  */
 
-import { getConfig, getMyProfile, addPostReaction, deletePostReaction, deletePost, searchUsers, getUsersByIds } from './api/index.js';
+import { getConfig, getMyProfile, addPostReaction, deletePostReaction, deletePost, searchUsers, getUsersByIds, getPostReactions } from './api/index.js';
 import { syncCookies, setupCookieSync } from './background/cookie-sync.js';
 import { 
   handleMentionCheck, 
@@ -119,6 +119,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     case MESSAGE_TYPES.RETRACT_POST_REACTIONS:
       handleRetractReactions(message.postId, sendResponse);
+      return true;
+
+    case MESSAGE_TYPES.CLONE_POST_REACTIONS:
+      handleCloneReactions(message.postId, sendResponse);
       return true;
 
     case MESSAGE_TYPES.DELETE_POST:
@@ -284,15 +288,60 @@ async function handleResolveUserId(userId, sendResponse) {
 }
 
 /**
- * Triggers sequential reaction spamming on a specific post
+ * Clones reactions from other users on a specific post
  */
-async function handleSpamReactions(postId, sendResponse) {
+async function handleCloneReactions(postId, sendResponse) {
   try {
-    const res = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS]);
-    const settings = res[STORAGE_KEYS.SETTINGS] || {};
-    
-    // Support both array and comma-separated string for compatibility
-    let emojis = [];
+    const reactions = await getPostReactions(postId);
+    if (!Array.isArray(reactions) || reactions.length === 0) {
+      sendResponse({ ok: false, error: 'No reactions on this post to clone' });
+      return;
+    }
+
+    const me = await getMyProfile();
+    if (!me || !me.id) {
+      sendResponse({ ok: false, error: 'User profile not found' });
+      return;
+    }
+
+    // Get all unique emojis that you have already reacted with
+    const myReactedEmojis = new Set(reactions.filter(r => r.user_id === me.id).map(r => r.emoji_name));
+
+    // Get all unique emojis present on the post that you have NOT reacted with yet
+    const uniqueEmojis = [...new Set(reactions.map(r => r.emoji_name))].filter(emoji => !myReactedEmojis.has(emoji));
+
+    if (uniqueEmojis.length === 0) {
+      sendResponse({ ok: false, error: 'You have already reacted to all existing emojis on this post' });
+      return;
+    }
+
+    // Call reaction API sequentially to avoid Mattermost rate limiting, wrapped in a local try-catch
+    for (const emoji of uniqueEmojis) {
+      try {
+        await addPostReaction(me.id, postId, emoji);
+      } catch (reactionErr) {
+        console.warn(`[ChatOps Ext] Failed to clone reaction :${emoji}:`, reactionErr);
+      }
+      await new Promise(r => setTimeout(r, 120)); // 120ms sequential gap
+    }
+
+    sendResponse({ ok: true });
+  } catch (err) {
+    console.error('[ChatOps Ext] handleCloneReactions error:', err);
+    sendResponse({ ok: false, error: err.message });
+  }
+}
+
+function getActiveEmojisFromSettings(settings) {
+  let emojis = [];
+  if (settings.reactionGroups && settings.activeReactionGroupId !== undefined) {
+    const activeGroupId = settings.activeReactionGroupId;
+    const activeGroup = settings.reactionGroups.find(g => g.id === activeGroupId);
+    if (activeGroup && Array.isArray(activeGroup.emojis)) {
+      emojis = activeGroup.emojis;
+    }
+  }
+  if (emojis.length === 0) {
     if (Array.isArray(settings.spamEmojis)) {
       emojis = settings.spamEmojis;
     } else if (typeof settings.spamEmojis === 'string') {
@@ -300,6 +349,18 @@ async function handleSpamReactions(postId, sendResponse) {
     } else {
       emojis = ['thumbsup', 'heart', 'fire', 'rocket', 'tada', 'laughing', 'smile', 'wink', 'heart_eyes', 'kissing_heart'];
     }
+  }
+  return emojis;
+}
+
+/**
+ * Triggers sequential reaction spamming on a specific post
+ */
+async function handleSpamReactions(postId, sendResponse) {
+  try {
+    const res = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS]);
+    const settings = res[STORAGE_KEYS.SETTINGS] || {};
+    const emojis = getActiveEmojisFromSettings(settings);
 
     if (emojis.length === 0) {
       sendResponse({ ok: false, error: 'No emojis configured' });
@@ -330,34 +391,35 @@ async function handleSpamReactions(postId, sendResponse) {
  */
 async function handleRetractReactions(postId, sendResponse) {
   try {
-    const res = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS]);
-    const settings = res[STORAGE_KEYS.SETTINGS] || {};
-    
-    // Support both array and comma-separated string for compatibility
-    let emojis = [];
-    if (Array.isArray(settings.spamEmojis)) {
-      emojis = settings.spamEmojis;
-    } else if (typeof settings.spamEmojis === 'string') {
-      emojis = settings.spamEmojis.split(',').map(e => e.trim()).filter(Boolean);
-    } else {
-      emojis = ['thumbsup', 'heart', 'fire', 'rocket', 'laughing'];
-    }
-
-    if (emojis.length === 0) {
-      sendResponse({ ok: false, error: 'No emojis configured' });
-      return;
-    }
-
     const me = await getMyProfile();
     if (!me || !me.id) {
       sendResponse({ ok: false, error: 'User profile not found' });
       return;
     }
 
-    // Call delete API sequentially to avoid rate limiting
-    for (const emoji of emojis) {
-      await deletePostReaction(me.id, postId, emoji);
-      await new Promise(r => setTimeout(r, 150)); // 150ms gap
+    // Fetch all reactions on this post to see what reactions we have actually placed
+    const reactions = await getPostReactions(postId);
+    if (!Array.isArray(reactions)) {
+      sendResponse({ ok: false, error: 'Failed to fetch post reactions' });
+      return;
+    }
+
+    // Find all unique emojis that you (me.id) have reacted with
+    const myReactedEmojis = [...new Set(reactions.filter(r => r.user_id === me.id).map(r => r.emoji_name))];
+
+    if (myReactedEmojis.length === 0) {
+      sendResponse({ ok: false, error: 'No reactions on this post to retract' });
+      return;
+    }
+
+    // Call delete API sequentially for all your reactions, wrapped in a local try-catch
+    for (const emoji of myReactedEmojis) {
+      try {
+        await deletePostReaction(me.id, postId, emoji);
+      } catch (reactionErr) {
+        console.warn(`[ChatOps Ext] Failed to retract reaction :${emoji}:`, reactionErr);
+      }
+      await new Promise(r => setTimeout(r, 120)); // 120ms sequential gap
     }
 
     sendResponse({ ok: true });
