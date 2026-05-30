@@ -5,10 +5,14 @@
 let _currentTeam = null;
 let _currentUser = null;
 let _cachedConfig = null;
+let _teams = [];
 
 export const state = {
   getTeam: () => _currentTeam,
   setTeam: (team) => { _currentTeam = team; },
+  
+  getTeams: () => _teams,
+  setTeams: (teams) => { _teams = teams || []; },
   
   getUser: () => _currentUser,
   setUser: (user) => { _currentUser = user; },

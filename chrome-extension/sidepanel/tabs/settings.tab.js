@@ -236,10 +236,10 @@ const DEFAULT_SETTINGS = {
     quickNote: true,
     quickTask: true,
     spamReactions: false,
-    reactAlong: true,
+    reactAlong: false,
     imagePicker: true,
-    quickReply: true,
-    quickCopy: true
+    quickReply: false,
+    quickCopy: false
   },
   memoCategories: ['General', 'Work'],
   spamEnabled: true,
@@ -254,7 +254,7 @@ const DEFAULT_SETTINGS = {
   customButtonsPosition: 'before',
   activeReactionGroupId: 0,
   reactionGroups: null,
-  reactAlongEnabled: true
+  reactAlongEnabled: false
 };
 
 /**
@@ -317,8 +317,10 @@ export async function getSettings() {
 async function loadAndApplySettings() {
   const settings = await getSettings();
 
-  // Apply inputs
-  document.getElementById('settingSnoozeMinutes').value = settings.snoozeMinutes;
+  const snoozeInput = document.getElementById('settingSnoozeMinutes');
+  if (snoozeInput) {
+    snoozeInput.value = settings.snoozeMinutes;
+  }
 
   const giphyApiKeyInput = document.getElementById('settingGiphyApiKey');
   if (giphyApiKeyInput) {
@@ -638,18 +640,20 @@ function setupEventListeners() {
   }
 
   const snoozeInput = document.getElementById('settingSnoozeMinutes');
-  snoozeInput.addEventListener('change', async (e) => {
-    let val = parseInt(e.target.value, 10);
-    if (isNaN(val) || val < 1) val = 1;
-    e.target.value = val;
-    await updateSettings({ snoozeMinutes: val });
-    
-    const snoozeHint = document.getElementById('snoozeHintText');
-    if (snoozeHint) {
-      snoozeHint.innerHTML = language.taskReminderHint.replace('{minutes}', val);
-    }
-    showAutoSaveFeedback();
-  });
+  if (snoozeInput) {
+    snoozeInput.addEventListener('change', async (e) => {
+      let val = parseInt(e.target.value, 10);
+      if (isNaN(val) || val < 1) val = 1;
+      e.target.value = val;
+      await updateSettings({ snoozeMinutes: val });
+      
+      const snoozeHint = document.getElementById('snoozeHintText');
+      if (snoozeHint) {
+        snoozeHint.innerHTML = language.taskReminderHint.replace('{minutes}', val);
+      }
+      showAutoSaveFeedback();
+    });
+  }
 
   const giphyApiKeyInput = document.getElementById('settingGiphyApiKey');
   if (giphyApiKeyInput) {

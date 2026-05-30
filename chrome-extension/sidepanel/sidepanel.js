@@ -4,13 +4,14 @@
 
 import { state } from './state.js';
 import { setup as setupSearch, reset as resetSearch, getSelects as getSearchSelects } from './tabs/search.tab.js';
-import { setup as setupMentions, reset as resetMentions, getSelects as getMentionsSelects } from './tabs/mentions.tab.js';
+import { setup as setupMentions, reset as resetMentions, getSelects as getMentionsSelects, reRender as reRenderMentions } from './tabs/mentions.tab.js';
 
 import { setup as setupMemo, loadMemos, renderCategories } from './tabs/memo.tab.js';
 import { setup as setupTasks, loadTasks } from './tabs/tasks.tab.js';
 import { setup as setupSettings, getSettings, applyThemeToDOM, applyTabVisibilityToDOM, runAutoCleanup, renderSidepanelMemes } from './tabs/settings.tab.js';
 import { getMyProfile, getMyTeams, getConfig } from '../src/api/index.js';
 import { escapeHtml } from '../src/utils/index.js';
+
 import { STORAGE_KEYS, MESSAGE_TYPES, CHATOPS_CONFIG, TABS } from '../src/constants.js';
 import { language, loadLanguage, applyI18n, setLanguage, getActiveLanguageCode } from '../src/lang.js';
 import { restoreState, setupAutoSave } from './persistence.js';
@@ -97,11 +98,20 @@ async function setupWorkspaceSelector(teams, dropdownContainer) {
     return;
   }
 
+  // Store all teams in state
+  state.setTeams(teams);
+
   const saved = await chrome.storage.local.get([STORAGE_KEYS.CURRENT_TEAM]);
   const config = state.getConfig();
-  let defaultTeam = teams.find(t => String(t.id) === String(saved[STORAGE_KEYS.CURRENT_TEAM]))
-    || teams.find(t => t.name === (config.teamName || CHATOPS_CONFIG.DEFAULT_TEAM))
-    || teams[0];
+  
+  let defaultTeam;
+  if (saved[STORAGE_KEYS.CURRENT_TEAM] === 'all') {
+    defaultTeam = { id: 'all', display_name: language.allWorkspacesOption || 'Tất cả' };
+  } else {
+    defaultTeam = teams.find(t => String(t.id) === String(saved[STORAGE_KEYS.CURRENT_TEAM]))
+      || teams.find(t => t.name === (config.teamName || CHATOPS_CONFIG.DEFAULT_TEAM))
+      || teams[0];
+  }
 
   state.setTeam(defaultTeam);
 
@@ -116,16 +126,29 @@ async function setupWorkspaceSelector(teams, dropdownContainer) {
   // Helper: render options into a given optionsEl
   function renderOptions(optionsEl, currentTeamId) {
     if (!optionsEl) return;
-    optionsEl.innerHTML = teams.map(t => `
+    let html = teams.map(t => `
       <div class="custom-dropdown-option ${t.id === currentTeamId ? 'selected' : ''}" data-value="${t.id}">
         ${escapeHtml(t.display_name)}
       </div>
     `).join('');
+    
+    // Add "All Workspaces" option
+    html += `
+      <div class="custom-dropdown-option ${currentTeamId === 'all' ? 'selected' : ''}" data-value="all" data-i18n="allWorkspacesOption">
+        ${language.allWorkspacesOption || 'Tất cả'}
+      </div>
+    `;
+    optionsEl.innerHTML = html;
   }
 
   // Helper: handle team selection from any dropdown
   function onTeamSelected(val, ownerDropdown, ownerOptions) {
-    const selectedTeam = teams.find(t => String(t.id) === String(val));
+    let selectedTeam;
+    if (val === 'all') {
+      selectedTeam = { id: 'all', display_name: language.allWorkspacesOption || 'Tất cả' };
+    } else {
+      selectedTeam = teams.find(t => String(t.id) === String(val));
+    }
     if (!selectedTeam) return;
 
     syncAllSelectedText(selectedTeam);
@@ -134,6 +157,13 @@ async function setupWorkspaceSelector(teams, dropdownContainer) {
     document.querySelectorAll('.workspace-inline-dropdown .custom-dropdown-option, #spWorkspaceOptions .custom-dropdown-option').forEach(item => {
       item.classList.toggle('selected', item.dataset.value === val);
     });
+
+    // Show/hide performance warning
+    const isAll = val === 'all';
+    const searchWarning = document.getElementById('searchWorkspaceWarning');
+    const mentionsWarning = document.getElementById('mentionsWorkspaceWarning');
+    if (searchWarning) searchWarning.style.display = isAll ? 'block' : 'none';
+    if (mentionsWarning) mentionsWarning.style.display = isAll ? 'block' : 'none';
 
     state.setTeam(selectedTeam);
     chrome.storage.local.set({ [STORAGE_KEYS.CURRENT_TEAM]: val });
@@ -193,6 +223,13 @@ async function setupWorkspaceSelector(teams, dropdownContainer) {
       onTeamSelected(optionItem.dataset.value, container, optionsEl);
     });
   });
+
+  // Set initial warning states
+  const isAll = defaultTeam.id === 'all';
+  const searchWarning = document.getElementById('searchWorkspaceWarning');
+  const mentionsWarning = document.getElementById('mentionsWorkspaceWarning');
+  if (searchWarning) searchWarning.style.display = isAll ? 'block' : 'none';
+  if (mentionsWarning) mentionsWarning.style.display = isAll ? 'block' : 'none';
 
   // Close all dropdowns when clicking outside
   document.addEventListener('click', () => {
@@ -484,6 +521,9 @@ function setupStateHandlers() {
       loadMemos();
       loadTasks();
       renderSidepanelMemes();
+      if (typeof reRenderMentions === 'function') {
+        reRenderMentions();
+      }
       sendResponse({ ok: true });
     } else if (msg.type === 'SWITCH_TAB') {
       switchTab(msg.tab);
@@ -764,6 +804,28 @@ function setupLanguageToggle() {
     // 3. Immediately translate static DOM elements in the side panel
     applyI18n();
 
+    // Re-translate workspace dropdown option text and selected text if 'all' is selected
+    const allText = language.allWorkspacesOption || 'Tất cả';
+    document.querySelectorAll('.custom-dropdown-option[data-value="all"]').forEach(opt => {
+      opt.textContent = allText;
+    });
+    if (state.getTeam()?.id === 'all') {
+      state.setTeam({ id: 'all', display_name: allText });
+      const labelEls = [
+        document.querySelector('#spWorkspaceDropdownSearch .selected-text'),
+        document.querySelector('#spWorkspaceDropdownMentions .selected-text'),
+        document.querySelector('#spWorkspaceDropdown .selected-text')
+      ];
+      labelEls.forEach(el => {
+        if (el) el.textContent = allText;
+      });
+    }
+
+    // Re-render mentions dynamically to translate group labels and banner
+    if (typeof reRenderMentions === 'function') {
+      reRenderMentions();
+    }
+
     // 4. Update the flag button display
     btnHeaderLang.textContent = nextLang === 'en' ? 'EN' : 'VI';
 
@@ -822,4 +884,9 @@ function setupLanguageToggle() {
     });
   });
 }
+
+
+
+
+
 

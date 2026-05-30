@@ -588,7 +588,7 @@ function showToast(msg) {
 
   // --- Image Integration into Main & RHS Chat UI ---
   function injectImageButton() {
-    const floatingButtons = cachedSettings.floatingButtons || { quickNote: true, quickTask: true, spamReactions: true, imagePicker: true, quickReply: true, quickCopy: true };
+    const floatingButtons = cachedSettings.floatingButtons || { quickNote: true, quickTask: true, spamReactions: true, imagePicker: true, quickReply: false, quickCopy: false };
     const memeEnabled = (cachedSettings.memeEnabled !== false) && (floatingButtons.imagePicker !== false);
     
     const targets = [
@@ -2314,7 +2314,7 @@ function showToast(msg) {
     });
 
     const showTabs = cachedSettings.showTabs || { search: true, tasks: true, notes: true, missed: true, reactions: true };
-    const floatingButtons = cachedSettings.floatingButtons || { quickNote: true, quickTask: true, spamReactions: true, reactAlong: true, imagePicker: true, quickReply: true, quickCopy: true };
+    const floatingButtons = cachedSettings.floatingButtons || { quickNote: true, quickTask: true, spamReactions: true, reactAlong: false, imagePicker: true, quickReply: false, quickCopy: false };
     const tasksEnabled = (showTabs.tasks !== false) && (floatingButtons.quickTask !== false);
     const notesEnabled = (showTabs.notes !== false) && (floatingButtons.quickNote !== false);
     const spamEnabled = (showTabs.reactions !== false) && (floatingButtons.spamReactions !== false);
@@ -2673,7 +2673,7 @@ function showToast(msg) {
     const posts = document.querySelectorAll(`.post, [id^="post_"], [class*="post-message"]`);
     
     const showTabs = cachedSettings.showTabs || { search: true, tasks: true, notes: true, missed: true, reactions: true };
-    const floatingButtons = cachedSettings.floatingButtons || { quickNote: true, quickTask: true, spamReactions: true, reactAlong: true, imagePicker: true, quickReply: true, quickCopy: true };
+    const floatingButtons = cachedSettings.floatingButtons || { quickNote: true, quickTask: true, spamReactions: true, reactAlong: false, imagePicker: true, quickReply: false, quickCopy: false };
     const tasksEnabled = (showTabs.tasks !== false) && (floatingButtons.quickTask !== false);
     const notesEnabled = (showTabs.notes !== false) && (floatingButtons.quickNote !== false);
     const spamEnabled = (showTabs.reactions !== false) && (floatingButtons.spamReactions !== false);
@@ -2957,12 +2957,12 @@ function showToast(msg) {
         chatopsGroup.querySelectorAll('.chatops-quick-note-btn.spam-btn, .chatops-quick-note-btn.retract-btn').forEach(el => el.remove());
       }
 
-      // Handle React-Along button (👥) conditionally!
+      // Handle React-Along button (🎭) conditionally!
       if (reactAlongEnabled) {
         if (!chatopsGroup.querySelector('.chatops-quick-note-btn.clone-btn')) {
           const cloneBtn = document.createElement('button');
           cloneBtn.className = 'chatops-quick-note-btn clone-btn';
-          cloneBtn.innerHTML = '👥';
+          cloneBtn.innerHTML = '🎭';
           cloneBtn.title = language.reactAlongTooltip || 'Reaction theo bài viết';
           cloneBtn.addEventListener('click', (e) => {
             e.preventDefault(); e.stopPropagation();
@@ -2983,7 +2983,7 @@ function showToast(msg) {
               cloneBtn.disabled = false;
 
               if (res && res.ok) {
-                showToast(language.reactAlongSuccess || 'Sao chép các biểu tượng cảm xúc thành công! 👥');
+                showToast(language.reactAlongSuccess || 'Sao chép các biểu tượng cảm xúc thành công! 🎭');
               } else {
                 let errMsg = res?.error || language.unknown;
                 showToast(language.reactAlongErrorPrefix + errMsg);

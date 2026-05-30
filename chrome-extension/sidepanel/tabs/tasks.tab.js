@@ -884,6 +884,18 @@ export async function loadTasks() {
   const now = Date.now();
   const pending = tasks.filter(t => !t.done);
   const done = tasks.filter(t => t.done);
+
+  // Update FAB empty/pulse state based on active filtered list being empty
+  const isEmpty = (currentFilter === 'pending' ? pending.length : done.length) === 0;
+  const fab = document.getElementById('btnFabAddTask');
+  if (fab) {
+    if (isEmpty) {
+      fab.classList.add('empty-pulsing');
+    } else {
+      fab.classList.remove('empty-pulsing');
+    }
+  }
+
   let html = '';
 
   const btnClearAllTasks = document.getElementById('btnClearAllTasks');

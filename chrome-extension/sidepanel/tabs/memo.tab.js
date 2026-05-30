@@ -559,6 +559,17 @@ export async function loadMemos() {
     btnClearAllNotes.style.display = notes.length > 0 ? 'inline-flex' : 'none';
   }
 
+  // Update FAB empty/pulse state based on active filtered list being empty
+  const isEmpty = notes.length === 0;
+  const fab = document.getElementById('btnFabAddNote');
+  if (fab) {
+    if (isEmpty) {
+      fab.classList.add('empty-pulsing');
+    } else {
+      fab.classList.remove('empty-pulsing');
+    }
+  }
+
   if (notes.length === 0) {
     noteList.innerHTML = `<div class="empty-state">${language.memoNotesEmpty}</div>`;
     return;

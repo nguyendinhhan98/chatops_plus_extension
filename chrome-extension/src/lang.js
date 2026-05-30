@@ -38,7 +38,7 @@ const en = {
 
   // Sidepanel Search Tab
   search: 'Search',
-  searchEmptyState: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">How to use?</h4><p class="card-desc">Click the floating search button (🔍) in the bottom-right to customize filters and search messages!</p></div></div>',
+  searchEmptyState: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">How to use?</h4><p class="card-desc">Click the search icon (🔍) to customize filters and search messages!</p></div></div>',
   searchChannelPlaceholder: 'Search channel...',
   searchPerformanceNotice: 'Select specific channels to optimize scanning performance.',
   searchCriteriaRequired: 'Please enter at least 1 search criteria',
@@ -51,10 +51,14 @@ const en = {
   last7Days: 'Last 7 Days',
   last30Days: 'Last 30 Days',
   clearResults: 'Clear Results',
+  reactAllBtn: 'React All',
+  allWorkspacesOption: 'All',
+  workspacePerformanceWarning: '⚠️ Searching across all workspaces may affect performance and take longer.',
+  mentionsPerformanceWarning: '⚠️ Scanning across all workspaces may affect performance and take longer.',
 
   // Sidepanel Mentions Tab
   scanMentions: 'Scan Now',
-  scanMentionsStart: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">How to use?</h4><p class="card-desc">Click the floating button (🔔) at the bottom to configure filters and scan. It scans for posts where you were mentioned but haven\'t reacted or replied to yet.</p></div></div>',
+  scanMentionsStart: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">How to use?</h4><p class="card-desc">Click the scan icon (🔔) to configure filters and scan. It scans for posts where you were mentioned but haven\'t reacted or replied to yet.</p></div></div>',
   scanningChannels: 'Scanning channels...',
   scanTimeNotice: 'This process may take some time. You can explore other tabs/features and come back later to see the results.',
   noMissedMentions: 'No missed mentions in the last {hours}h!',
@@ -71,8 +75,8 @@ const en = {
 
   // Sidepanel Tasks Tab
   taskTabLabel: 'Tasks',
-  taskEmpty: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">How to use?</h4><p class="card-desc">Click the floating button <span style="display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; width: 15px; height: 15px; border-radius: 50%; font-size: 10px; font-weight: bold; line-height: 1; margin: 0 2px; vertical-align: middle; position: relative; top: -1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">+</span> in the bottom-right to add a task, or hover over any message in ChatOps and click the 🎯 button to pin it as a task!</p></div></div>',
-  taskClickHint: '📌 Pin messages in ChatOps or click the floating <span style="display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; width: 14px; height: 14px; border-radius: 50%; font-size: 9px; font-weight: bold; line-height: 1; margin: 0 2px; vertical-align: middle; position: relative; top: -1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">+</span> button in the bottom-right.',
+  taskEmpty: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">How to use?</h4><p class="card-desc">Click the add button <span style="display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; width: 15px; height: 15px; border-radius: 50%; font-size: 10px; font-weight: bold; line-height: 1; margin: 0 2px; vertical-align: middle; position: relative; top: -1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">+</span> to add a task, or hover over any message in ChatOps and click the 🎯 button to pin it as a task!</p></div></div>',
+  taskClickHint: '📌 Pin messages in ChatOps or click the add <span style="display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; width: 14px; height: 14px; border-radius: 50%; font-size: 9px; font-weight: bold; line-height: 1; margin: 0 2px; vertical-align: middle; position: relative; top: -1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">+</span> button.',
   taskPending: 'Pending',
   taskCompleted: 'Completed',
   taskClearAll: 'Clear All',
@@ -93,8 +97,8 @@ const en = {
 
   // Sidepanel Memo (Notes) Tab
   memoTasksEmpty: 'No tasks yet.',
-  memoNotesEmpty: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">How to use?</h4><p class="card-desc">Click the floating button <span style="display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; width: 15px; height: 15px; border-radius: 50%; font-size: 10px; font-weight: bold; line-height: 1; margin: 0 2px; vertical-align: middle; position: relative; top: -1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">+</span> in the bottom-right to add a note, or hover over any message in ChatOps and click the 📝 button to pin it as a note!</p></div></div>',
-  memoClickHint: '📝 Pin notes in ChatOps or click the floating <span style="display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; width: 14px; height: 14px; border-radius: 50%; font-size: 9px; font-weight: bold; line-height: 1; margin: 0 2px; vertical-align: middle; position: relative; top: -1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">+</span> button in the bottom-right.',
+  memoNotesEmpty: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">How to use?</h4><p class="card-desc">Click the add button <span style="display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; width: 15px; height: 15px; border-radius: 50%; font-size: 10px; font-weight: bold; line-height: 1; margin: 0 2px; vertical-align: middle; position: relative; top: -1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">+</span> to add a note, or hover over any message in ChatOps and click the 📝 button to pin it as a note!</p></div></div>',
+  memoClickHint: '📝 Pin notes in ChatOps or click the add <span style="display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; width: 14px; height: 14px; border-radius: 50%; font-size: 9px; font-weight: bold; line-height: 1; margin: 0 2px; vertical-align: middle; position: relative; top: -1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">+</span> button.',
   memoPending: 'Pending',
   memoCompleted: 'Completed',
   memoClearAll: 'Clear All',
@@ -160,6 +164,7 @@ const en = {
   orLabel: 'OR',
   quickTaskRemindAfter: 'Remind after:',
   msgPreviewImage: '[Image] Please view directly on ChatOps',
+  imagePlaceholder: 'Image',
   msgPreviewNoText: '[No text content]',
 
   // Content Script - Reaction spam/retraction
@@ -172,10 +177,10 @@ const en = {
   reactionAlreadyExists: 'You have already spammed/reacted to this post!',
   reactionNotFound: 'No reactions to retract!',
   reactAlongTitle: 'React-Along',
-  reactAlongSuccess: 'Copied post reactions successfully! 👥',
+  reactAlongSuccess: 'Copied post reactions successfully! 🎭',
   reactAlongErrorPrefix: 'React-along error: ',
   reactAlongTooltip: 'React along with existing reactions',
-  reactAlongEnabled: 'Enable React-Along Button (👥)',
+  reactAlongEnabled: 'Enable React-Along Button (🎭)',
   submitSaveBtn: 'Submit & Save',
   reactionGroupsTitle: 'Reaction Groups',
   groupNameLengthError: 'Group name cannot exceed 10 characters!',
@@ -261,6 +266,7 @@ const en = {
   mentionHere: 'Group mention (@here)',
   mentionChannel: 'Channel mention (@channel / @all)',
   mentionDMs: 'Direct Messages (DM / GM)',
+  mentionOnlyUnread: 'Only show messages without reaction/reply',
   imageLibraryTab: 'My Library',
   resizeImage: 'Resize image',
   resizeImageTitle: 'Resize Image',
@@ -438,6 +444,7 @@ const en = {
   taskRemindDailyLabel: 'Repeat daily at selected time',
   repeatDailyBadgeText: 'Daily',
   collapseBtnBottom: 'Collapse',
+  groupMessage: 'Group Message',
   userGuideTitle: 'System Guide 💡',
   userGuideHTML: `
     <div class="guide-container">
@@ -633,7 +640,7 @@ const vi = {
 
   // Sidepanel Search Tab
   search: 'Tìm kiếm',
-  searchEmptyState: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">Hướng dẫn sử dụng</h4><p class="card-desc">Nhấp vào nút tìm kiếm (🔍) ở góc dưới cùng bên phải để tùy chỉnh bộ lọc và tìm kiếm tin nhắn!</p></div></div>',
+  searchEmptyState: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">Hướng dẫn sử dụng</h4><p class="card-desc">Nhấp vào biểu tượng tìm kiếm (🔍) để tùy chỉnh bộ lọc và tìm kiếm tin nhắn!</p></div></div>',
   searchChannelPlaceholder: 'Tìm kiếm kênh...',
   searchPerformanceNotice: 'Chọn kênh cụ thể để tối ưu hiệu suất quét.',
   searchCriteriaRequired: 'Vui lòng nhập ít nhất 1 tiêu chí tìm kiếm',
@@ -646,10 +653,14 @@ const vi = {
   last7Days: '7 ngày qua',
   last30Days: '30 ngày qua',
   clearResults: 'Xóa kết quả',
+  reactAllBtn: 'React tất cả',
+  allWorkspacesOption: 'Tất cả',
+  workspacePerformanceWarning: '⚠️ Tìm kiếm trên tất cả không gian làm việc có thể ảnh hưởng đến hiệu suất.',
+  mentionsPerformanceWarning: '⚠️ Quét tin nhắn trên tất cả không gian làm việc có thể ảnh hưởng đến hiệu suất.',
 
   // Sidepanel Mentions Tab
   scanMentions: 'Quét ngay',
-  scanMentionsStart: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">Hướng dẫn sử dụng</h4><p class="card-desc">Nhấp vào nút (🔔) ở phía dưới để cấu hình bộ lọc và quét. Hệ thống sẽ quét các bài viết bạn được nhắc đến nhưng chưa phản hồi hoặc phản ứng.</p></div></div>',
+  scanMentionsStart: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">Hướng dẫn sử dụng</h4><p class="card-desc">Nhấp vào biểu tượng (🔔) để cấu hình bộ lọc và quét. Hệ thống sẽ quét các bài viết bạn được nhắc đến nhưng chưa phản hồi hoặc phản ứng.</p></div></div>',
   scanningChannels: 'Đang quét các kênh...',
   scanTimeNotice: 'Quá trình này có thể mất nhiều thời gian. Bạn có thể khám phá các tính năng khác rồi quay lại xem kết quả sau.',
   noMissedMentions: 'Không có tin nhắn bị bỏ lỡ trong {hours}h qua!',
@@ -666,8 +677,8 @@ const vi = {
 
   // Sidepanel Tasks Tab
   taskTabLabel: 'Công việc',
-  taskEmpty: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">Hướng dẫn sử dụng</h4><p class="card-desc">Nhấp vào nút <span style="display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; width: 15px; height: 15px; border-radius: 50%; font-size: 10px; font-weight: bold; line-height: 1; margin: 0 2px; vertical-align: middle; position: relative; top: -1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">+</span> ở góc dưới cùng bên phải để thêm công việc, hoặc di chuột qua bất kỳ tin nhắn nào trong ChatOps và nhấp vào biểu tượng 🎯 để ghim công việc!</p></div></div>',
-  taskClickHint: '📌 Ghim tin nhắn trong ChatOps hoặc nhấp vào nút <span style="display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; width: 14px; height: 14px; border-radius: 50%; font-size: 9px; font-weight: bold; line-height: 1; margin: 0 2px; vertical-align: middle; position: relative; top: -1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">+</span> ở góc dưới cùng bên phải.',
+  taskEmpty: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">Hướng dẫn sử dụng</h4><p class="card-desc">Nhấp vào nút thêm <span style="display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; width: 15px; height: 15px; border-radius: 50%; font-size: 10px; font-weight: bold; line-height: 1; margin: 0 2px; vertical-align: middle; position: relative; top: -1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">+</span> để thêm công việc, hoặc di chuột qua bất kỳ tin nhắn nào trong ChatOps và nhấp vào biểu tượng 🎯 để ghim công việc!</p></div></div>',
+  taskClickHint: '📌 Ghim tin nhắn trong ChatOps hoặc nhấp vào nút thêm <span style="display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; width: 14px; height: 14px; border-radius: 50%; font-size: 9px; font-weight: bold; line-height: 1; margin: 0 2px; vertical-align: middle; position: relative; top: -1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">+</span>.',
   taskPending: 'Chờ xử lý',
   taskCompleted: 'Đã hoàn thành',
   taskClearAll: 'Xóa tất cả',
@@ -688,8 +699,8 @@ const vi = {
 
   // Sidepanel Memo (Notes) Tab
   memoTasksEmpty: 'Chưa có công việc nào.',
-  memoNotesEmpty: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">Hướng dẫn sử dụng</h4><p class="card-desc">Nhấp vào nút <span style="display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; width: 15px; height: 15px; border-radius: 50%; font-size: 10px; font-weight: bold; line-height: 1; margin: 0 2px; vertical-align: middle; position: relative; top: -1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">+</span> ở góc dưới cùng bên phải để thêm ghi chú, hoặc di chuột qua bất kỳ tin nhắn nào trong ChatOps và nhấp vào biểu tượng 📝 để ghim ghi chú!</p></div></div>',
-  memoClickHint: '📝 Ghim ghi chú trong ChatOps hoặc nhấp vào nút <span style="display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; width: 14px; height: 14px; border-radius: 50%; font-size: 9px; font-weight: bold; line-height: 1; margin: 0 2px; vertical-align: middle; position: relative; top: -1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">+</span> ở góc dưới cùng bên phải.',
+  memoNotesEmpty: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">Hướng dẫn sử dụng</h4><p class="card-desc">Nhấp vào nút thêm <span style="display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; width: 15px; height: 15px; border-radius: 50%; font-size: 10px; font-weight: bold; line-height: 1; margin: 0 2px; vertical-align: middle; position: relative; top: -1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">+</span> để thêm ghi chú, hoặc di chuột qua bất kỳ tin nhắn nào trong ChatOps và nhấp vào biểu tượng 📝 để ghim ghi chú!</p></div></div>',
+  memoClickHint: '📝 Ghim ghi chú trong ChatOps hoặc nhấp vào nút thêm <span style="display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; width: 14px; height: 14px; border-radius: 50%; font-size: 9px; font-weight: bold; line-height: 1; margin: 0 2px; vertical-align: middle; position: relative; top: -1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">+</span>.',
   memoPending: 'Chờ xử lý',
   memoCompleted: 'Đã hoàn thành',
   memoClearAll: 'Xóa tất cả',
@@ -755,6 +766,7 @@ const vi = {
   orLabel: 'HOẶC',
   quickTaskRemindAfter: 'Nhắc nhở sau:',
   msgPreviewImage: '[Hình ảnh] Vui lòng xem trực tiếp trên ChatOps',
+  imagePlaceholder: 'Hình ảnh',
   msgPreviewNoText: '[Không có nội dung văn bản]',
 
   // Content Script - Reaction spam/retraction
@@ -767,10 +779,10 @@ const vi = {
   reactionAlreadyExists: 'Bạn đã tương tác/spam bài viết này rồi!',
   reactionNotFound: 'Không có cảm xúc nào để hoàn tác!',
   reactAlongTitle: 'Reaction theo bài viết',
-  reactAlongSuccess: 'Sao chép các biểu tượng cảm xúc thành công! 👥',
+  reactAlongSuccess: 'Sao chép các biểu tượng cảm xúc thành công! 🎭',
   reactAlongErrorPrefix: 'Lỗi sao chép reaction: ',
   reactAlongTooltip: 'Reaction theo bài viết',
-  reactAlongEnabled: 'Bật nút Reaction theo bài viết (👥)',
+  reactAlongEnabled: 'Bật nút Reaction theo bài viết (🎭)',
   submitSaveBtn: 'Gửi & Lưu',
   reactionGroupsTitle: 'Nhóm Reactions',
   groupNameLengthError: 'Tên nhóm không được vượt quá 10 ký tự!',
@@ -856,6 +868,7 @@ const vi = {
   mentionHere: 'Nhắc tên nhóm (@here)',
   mentionChannel: 'Nhắc tên kênh (@channel / @all)',
   mentionDMs: 'Tin nhắn trực tiếp (DM / GM)',
+  mentionOnlyUnread: 'Chỉ hiển thị tin nhắn chưa tương tác (reaction/reply)',
   imageLibraryTab: 'Ảnh của tôi',
   resizeImage: 'Thay đổi kích thước',
   resizeImageTitle: 'Thay đổi kích thước ảnh',
@@ -1033,6 +1046,7 @@ const vi = {
   taskRemindDailyLabel: 'Nhắc nhở hằng ngày vào giờ đã chọn',
   repeatDailyBadgeText: 'Hằng ngày',
   collapseBtnBottom: 'Thu gọn',
+  groupMessage: 'Tin nhắn Nhóm',
   userGuideTitle: 'Hướng dẫn Hệ thống 💡',
   userGuideHTML: `
     <div class="guide-container">

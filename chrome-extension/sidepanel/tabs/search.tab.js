@@ -34,6 +34,24 @@ let searchInMS = null;
 let searchFromAC = null;
 let _joinedChannelsCache = null;
 
+function updateFabState() {
+  const fab = document.getElementById('btnFabSearch');
+  if (fab) {
+    if (searchState.isSearching) {
+      fab.style.display = 'none';
+      return;
+    } else {
+      fab.style.display = 'flex';
+    }
+    const hasResults = !!document.getElementById('searchPostList');
+    if (!hasResults) {
+      fab.classList.add('empty-pulsing');
+    } else {
+      fab.classList.remove('empty-pulsing');
+    }
+  }
+}
+
 /**
  * Initializes the Search Tab
  * @param {Object} state - Centralized state module
@@ -220,6 +238,7 @@ export function setup(state) {
       dateFormat: "Y-m-d"
     });
   }
+  updateFabState();
 }
 
 /**
@@ -254,6 +273,7 @@ export function clearResults() {
 
   // Trigger auto-save
   termsInput.dispatchEvent(new Event('input', { bubbles: true }));
+  updateFabState();
 }
 
 /**
@@ -264,6 +284,7 @@ export function reset() {
   if (searchInMS) searchInMS.reset();
   if (searchFromAC) searchFromAC.reset();
   document.getElementById('spSearchResults').innerHTML = `<div class="empty-state">${language.searchEmptyState}</div>`;
+  updateFabState();
 }
 
 export function getSelects() {
@@ -293,11 +314,13 @@ export async function performSpSearch(isLoadMore = false) {
 
     if (!terms && !from && inChannels.length === 0) {
       resultsEl.innerHTML = `<div class="empty-state">${language.searchCriteriaRequired}</div>`;
+      updateFabState();
       return;
     }
 
     if (terms && terms.length < 2) {
       resultsEl.innerHTML = `<div class="empty-state">${language.searchKeywordHelper}</div>`;
+      updateFabState();
       return;
     }
 
@@ -359,17 +382,52 @@ export async function performSpSearch(isLoadMore = false) {
   }
 
   searchState.isSearching = true;
+  updateFabState();
 
   try {
     const team = _state.getTeam();
     const config = _state.getConfig();
     const isOrSearch = document.getElementById('chkSearchIsOr')?.checked || false;
-    const result = await searchPosts(team.id, {
-      terms: searchState.terms,
-      is_or_search: isOrSearch,
-      page: searchState.page,
-      per_page: UI_CONFIG.SEARCH_PAGE_SIZE
-    });
+    
+    let result;
+    if (team.id === 'all') {
+      const teams = _state.getTeams() || [];
+      const results = await Promise.all(
+        teams.map(t => searchPosts(t.id, {
+          terms: searchState.terms,
+          is_or_search: isOrSearch,
+          page: searchState.page,
+          per_page: UI_CONFIG.SEARCH_PAGE_SIZE
+        }).catch(() => ({ order: [], posts: {} })))
+      );
+      
+      // Merge results, sorting posts by create_at descending
+      const allPosts = [];
+      results.forEach((res, index) => {
+        const teamName = teams[index]?.name;
+        if (res && res.order && res.posts) {
+          res.order.forEach(id => {
+            if (res.posts[id]) {
+              const post = res.posts[id];
+              post.teamName = teamName;
+              allPosts.push(post);
+            }
+          });
+        }
+      });
+      allPosts.sort((a, b) => b.create_at - a.create_at);
+      result = {
+        order: allPosts.map(p => p.id),
+        posts: Object.fromEntries(allPosts.map(p => [p.id, p]))
+      };
+    } else {
+      result = await searchPosts(team.id, {
+        terms: searchState.terms,
+        is_or_search: isOrSearch,
+        page: searchState.page,
+        per_page: UI_CONFIG.SEARCH_PAGE_SIZE
+      });
+    }
 
     if (searchState.isCancelled) return;
 
@@ -460,5 +518,6 @@ export async function performSpSearch(isLoadMore = false) {
     if (termsInput) {
       termsInput.dispatchEvent(new Event('input'));
     }
+    updateFabState();
   }
 }

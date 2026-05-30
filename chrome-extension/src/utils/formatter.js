@@ -40,7 +40,13 @@ export function formatRichText(unsafe) {
   html = html.replace(/_([^_]+)_/g, '<em>$1</em>');
   
   // Parse Markdown images ![alt](url)
-  html = html.replace(/!\[([^\]]*)\]\((https?:\/\/[^\)]+)\)/g, '<img src="$2" alt="$1" class="meme-img" style="max-width: 50%; height: auto; display: block; border-radius: 4px; margin-top: 6px; cursor: zoom-in;" />');
+  html = html.replace(/!\[([^\]]*)\]\((https?:\/\/[^\)]+|\/[^\)]+)\)/g, (match, alt, url) => {
+    let altText = alt ? alt.trim() : '';
+    if (!altText || altText.toLowerCase() === 'image') {
+      altText = language.imagePlaceholder || 'Image';
+    }
+    return `<img src="${url}" alt="${escapeHtml(altText)}" class="meme-img" style="max-width: 50%; height: auto; display: block; border-radius: 4px; margin-top: 6px; cursor: zoom-in;" />`;
+  });
 
   // Parse Markdown links [text](url)
   html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2" target="_blank" class="post-link" style="color:var(--accent);text-decoration:underline;word-break:break-all;">$1</a>');
@@ -80,7 +86,7 @@ export function renderPostList(posts, usersMap, baseUrl, teamName, channelsMap, 
     const channel = channelsMap[post.channel_id];
     const author = user ? formatUserDisplayName(user) : language.unknown;
     const channelName = channel ? getChannelLabel(channel) : language.unknown;
-    const permalink = makePermalinkSync(post.id, baseUrl, teamName);
+    const permalink = makePermalinkSync(post.id, baseUrl, post.teamName || teamName);
 
     let contentHtml = formatRichText(post.message);
 
@@ -159,15 +165,21 @@ export function renderUserCard(user) {
 export function getChannelLabel(channel) {
   if (!channel) return language.unknown;
   
-  // If we have a display name that isn't just a raw hash, use it.
-  // Note: DMs enriched with usernames will have a proper display_name.
-  if (channel.display_name && !channel.display_name.includes('__')) {
-    return channel.display_name;
+  // Fallback for GMs
+  if (channel.type === 'G') {
+    return language.groupMessage || 'Tin nhắn Nhóm';
   }
-  
+
   // Fallback for DMs without enriched names
   if (channel.type === 'D' || (channel.name && channel.name.includes('__'))) {
-    return language.directMessage;
+    return channel.display_name && !channel.display_name.includes('__') && !/^[a-z0-9]{26,}$/i.test(channel.display_name)
+      ? channel.display_name
+      : (language.directMessage || 'Tin nhắn Trực tiếp');
+  }
+
+  // If we have a display name that isn't just a raw hash or ID, use it.
+  if (channel.display_name && !channel.display_name.includes('__') && !/^[a-z0-9]{26,}$/i.test(channel.display_name)) {
+    return channel.display_name;
   }
   
   return channel.display_name || channel.name || channel.id;

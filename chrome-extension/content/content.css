@@ -110,6 +110,9 @@
   border-radius: 4px !important;
   opacity: 1 !important;
   transition: background 0.12s !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 .chatops-quick-note-btn:hover {

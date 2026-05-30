@@ -152,6 +152,17 @@ export function setupMultiSelect(containerId, fetchOptions, renderFn, getValueFn
     }
   });
 
+  // Reposition dropdown when inside a scrollable modal body
+  function positionDropdown() {
+    const inModal = inputWrapper.closest('.sp-modal-body');
+    if (inModal) {
+      const rect = inputWrapper.getBoundingClientRect();
+      dropdown.style.top = `${rect.bottom + 2}px`;
+      dropdown.style.left = `${rect.left}px`;
+      dropdown.style.width = `${rect.width}px`;
+    }
+  }
+
   input.addEventListener('input', (e) => {
     const value = e.target.value.trim();
     if (value === currentSearch && value !== '') return;
@@ -162,6 +173,7 @@ export function setupMultiSelect(containerId, fetchOptions, renderFn, getValueFn
     timeoutId = setTimeout(() => {
       if (document.activeElement === input) {
         dropdown.style.display = 'block';
+        positionDropdown();
         loadData(false);
       }
     }, UI_CONFIG.DEBOUNCE_DELAY_MS);
@@ -169,6 +181,7 @@ export function setupMultiSelect(containerId, fetchOptions, renderFn, getValueFn
 
   input.addEventListener('focus', () => {
     dropdown.style.display = 'block';
+    positionDropdown();
     if (currentSearch === '' && dropdown.children.length === 0) {
       loadData(false);
     }
@@ -177,6 +190,7 @@ export function setupMultiSelect(containerId, fetchOptions, renderFn, getValueFn
   input.addEventListener('blur', () => {
     dropdown.style.display = 'none';
   });
+
 
   return {
     getSelected: () => selectedItems,
