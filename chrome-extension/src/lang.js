@@ -97,8 +97,8 @@ const en = {
 
   // Sidepanel Memo (Notes) Tab
   memoTasksEmpty: 'No tasks yet.',
-  memoNotesEmpty: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">How to use?</h4><p class="card-desc">Click the add button <span style="display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; width: 15px; height: 15px; border-radius: 50%; font-size: 10px; font-weight: bold; line-height: 1; margin: 0 2px; vertical-align: middle; position: relative; top: -1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">+</span> to add a note, or hover over any message in ChatOps and click the 📝 button to pin it as a note!</p></div></div>',
-  memoClickHint: '📝 Pin notes in ChatOps or click the add <span style="display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; width: 14px; height: 14px; border-radius: 50%; font-size: 9px; font-weight: bold; line-height: 1; margin: 0 2px; vertical-align: middle; position: relative; top: -1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">+</span> button.',
+  memoNotesEmpty: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">How to use?</h4><p class="card-desc">Click the add button <span style="display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; width: 15px; height: 15px; border-radius: 50%; font-size: 10px; font-weight: bold; line-height: 1; margin: 0 2px; vertical-align: middle; position: relative; top: -1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">+</span> to add a note, or hover over any message in ChatOps and click the 📒 button to pin it as a note!</p></div></div>',
+  memoClickHint: '📒 Pin notes in ChatOps or click the add <span style="display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; width: 14px; height: 14px; border-radius: 50%; font-size: 9px; font-weight: bold; line-height: 1; margin: 0 2px; vertical-align: middle; position: relative; top: -1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">+</span> button.',
   memoPending: 'Pending',
   memoCompleted: 'Completed',
   memoClearAll: 'Clear All',
@@ -277,7 +277,7 @@ const en = {
   noteTextareaPlaceholder: 'Write a note... (Shift + Enter to save)',
   categoryLabelPrefix: '📁 Category:',
   customizeCategories: '➕ Customize Categories',
-  memoAddBtn: '📝 Add Note',
+  memoAddBtn: '📒 Add Note',
   last24Hours: 'Last 24 hours',
   last48Hours: 'Last 48 hours',
   last72Hours: 'Last 72 hours',
@@ -363,8 +363,8 @@ const en = {
   floatingButtonsTitle: 'Quick Actions on ChatOps',
   floatingButtonsDesc: 'Floating buttons & position layout',
   floatingQuickTask: 'Quick Create Task Button (🎯)',
-  floatingQuickNote: 'Quick Create Note Button (📝)',
-  floatingSpamReactions: 'Spam & Revert reaction Hover Buttons (🔥/↩️)',
+  floatingQuickNote: 'Quick Create Note Button (📒)',
+  floatingSpamReactions: 'Spam & Revert reaction Hover Buttons (🔥/↩️ )',
   floatingImagePicker: 'Send Image Button (🖼️)',
   floatingQuickReply: 'Quick Reply Tag Button (💬)',
   floatingQuickCopy: 'Quick Copy Message Button (📋)',
@@ -456,6 +456,7 @@ const en = {
   posBelow: 'Vertical - Below Actions',
   settingSoundNotification: 'Play sound for notifications',
   settingsSaved: 'Saved automatically',
+  tabsCompactToggleTooltip: 'Toggle Compact Tabs (Icon Only)',
   customColorLabel: 'Custom...',
   exportNotesBtn: 'Export',
   importNotesBtn: 'Import',
@@ -491,7 +492,7 @@ const en = {
 
           <div class="settings-road-card main-tab-link" data-tab="memo">
             <div style="display: flex; align-items: center; gap: 6px;">
-              <span style="font-size: 15px;">📝</span>
+              <span style="font-size: 15px;">📒</span>
               <a href="#" class="main-tab-link-anchor" data-tab="memo">Notes</a>
             </div>
             <p>Quickly capture personal ideas or save important chat messages with 1-click. Organize notes with folders and labels. Can be promoted to the main menu or demoted inside ⚡ Other Tools.</p>
@@ -548,7 +549,7 @@ const en = {
             <div style="display: flex; align-items: center; gap: 6px;">
               <a href="#" class="settings-subtab-link" data-subtab="features-floating">Quick Floating Buttons</a>
             </div>
-            <p>Customize floating action buttons over messages (Task 🎯, Note 📝, Spam 🔥, Mimic Reactions 🎭, Send Image 🖼, Reply 💬, Copy 📋).</p>
+            <p>Customize floating action buttons over messages (Task 🎯, Note 📒, Spam 🔥, Mimic Reactions 🎭, Send Image 🖼, Reply 💬, Copy 📋).</p>
           </div>
 
           <div class="settings-road-card settings-subtab-link" data-subtab="features-snooze">
@@ -587,7 +588,7 @@ const en = {
         <h4 class="guide-info-title">⚡ HOVER ACTIONS ON MESSAGES</h4>
         <div class="guide-info-list">
           <div class="guide-info-item"><span>🎯</span> <span style="color: var(--text-2);">Pin message as a pending <strong>Task</strong></span></div>
-          <div class="guide-info-item"><span>📝</span> <span style="color: var(--text-2);">Save message as a personal <strong>Note</strong></span></div>
+          <div class="guide-info-item"><span>📒</span> <span style="color: var(--text-2);">Save message as a personal <strong>Note</strong></span></div>
           <div class="guide-info-item"><span>💬</span> <span style="color: var(--text-2);"><strong>Quick Reply (@tag)</strong> to automatically tag sender</span></div>
           <div class="guide-info-item"><span>📋</span> <span style="color: var(--text-2);"><strong>Quick Copy</strong> message body to clipboard</span></div>
           <div class="guide-info-item"><span>🔥</span> <span style="color: var(--text-2);">Dynamic <strong>Spam Reactions</strong> in 1-click</span></div>
@@ -722,8 +723,8 @@ const vi = {
 
   // Sidepanel Memo (Notes) Tab
   memoTasksEmpty: 'Chưa có công việc nào.',
-  memoNotesEmpty: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">Hướng dẫn sử dụng</h4><p class="card-desc">Nhấp vào nút thêm <span style="display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; width: 15px; height: 15px; border-radius: 50%; font-size: 10px; font-weight: bold; line-height: 1; margin: 0 2px; vertical-align: middle; position: relative; top: -1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">+</span> để thêm ghi chú, hoặc di chuột qua bất kỳ tin nhắn nào trong ChatOps và nhấp vào biểu tượng 📝 để ghim ghi chú!</p></div></div>',
-  memoClickHint: '📝 Ghim ghi chú trong ChatOps hoặc nhấp vào nút thêm <span style="display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; width: 14px; height: 14px; border-radius: 50%; font-size: 9px; font-weight: bold; line-height: 1; margin: 0 2px; vertical-align: middle; position: relative; top: -1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">+</span>.',
+  memoNotesEmpty: '<div class="sp-how-to-use-card"><div class="card-icon">💡</div><div><h4 class="card-title">Hướng dẫn sử dụng</h4><p class="card-desc">Nhấp vào nút thêm <span style="display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; width: 15px; height: 15px; border-radius: 50%; font-size: 10px; font-weight: bold; line-height: 1; margin: 0 2px; vertical-align: middle; position: relative; top: -1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">+</span> để thêm ghi chú, hoặc di chuột qua bất kỳ tin nhắn nào trong ChatOps và nhấp vào biểu tượng 📒 để ghim ghi chú!</p></div></div>',
+  memoClickHint: '📒 Ghim ghi chú trong ChatOps hoặc nhấp vào nút thêm <span style="display: inline-flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; width: 14px; height: 14px; border-radius: 50%; font-size: 9px; font-weight: bold; line-height: 1; margin: 0 2px; vertical-align: middle; position: relative; top: -1px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">+</span>.',
   memoPending: 'Chờ xử lý',
   memoCompleted: 'Đã hoàn thành',
   memoClearAll: 'Xóa tất cả',
@@ -902,7 +903,7 @@ const vi = {
   noteTextareaPlaceholder: 'Viết ghi chú... (Shift + Enter để lưu)',
   categoryLabelPrefix: '📁 Danh mục:',
   customizeCategories: '➕ Tùy chỉnh',
-  memoAddBtn: '📝 Thêm ghi chú',
+  memoAddBtn: '📒 Thêm ghi chú',
   last24Hours: '24 giờ qua',
   last48Hours: '48 giờ qua',
   last72Hours: '72 giờ qua',
@@ -956,6 +957,8 @@ const vi = {
   featuresSnoozeTab: '⏳ Nhắc lại',
   featuresAlertsTab: '🔔 Cảnh báo',
   featuresGifTab: '🎬 GIFs',
+  giphyApiDesc: 'Cấu hình API Key & giới hạn lượt gọi',
+  manageCategoriesDesc: 'Quản lý các danh mục ghi chú tự chọn',
   giphyApiKeyTitle: 'Giphy API Key',
   giphyApiKeyDesc: 'Nhập API Key Giphy của bạn để tìm kiếm và dùng GIF.',
   giphyNoApiKey: 'Chưa cấu hình Giphy API Key.',
@@ -988,8 +991,8 @@ const vi = {
   floatingButtonsTitle: 'Nút tương tác nhanh trên ChatOps',
   floatingButtonsDesc: 'Nút tương tác nhanh & vị trí hiển thị',
   floatingQuickTask: 'Nút tạo công việc nhanh (🎯)',
-  floatingQuickNote: 'Nút tạo ghi chú nhanh (📝)',
-  floatingSpamReactions: 'Nút Spam & Revert reaction (🔥/↩️)',
+  floatingQuickNote: 'Nút tạo ghi chú nhanh (📒)',
+  floatingSpamReactions: 'Nút Spam & Revert reaction (🔥/↩️ )',
   floatingImagePicker: 'Nút Gửi ảnh trong khung chat (🖼️)',
   floatingQuickReply: 'Nút Phản hồi nhanh (@) (💬)',
   floatingQuickCopy: 'Nút Sao chép nhanh tin nhắn (📋)',
@@ -1046,7 +1049,7 @@ const vi = {
 
           <div class="settings-road-card main-tab-link" data-tab="memo">
             <div style="display: flex; align-items: center; gap: 6px;">
-              <span style="font-size: 15px;">📝</span>
+              <span style="font-size: 15px;">📒</span>
               <a href="#" class="main-tab-link-anchor" data-tab="memo">Notes (Ghi chú)</a>
             </div>
             <p>Lưu nhanh các ý tưởng hoặc lưu tin nhắn quan trọng chỉ với 1-click. Sắp xếp, quản lý ghi chú theo nhãn thư mục tự chọn. Hỗ trợ đưa ra menu chính hoặc thu gọn vào tab ⚡ Công cụ khác.</p>
@@ -1103,7 +1106,7 @@ const vi = {
             <div style="display: flex; align-items: center; gap: 6px;">
               <a href="#" class="settings-subtab-link" data-subtab="features-floating">Nút tương tác nhanh (Floating)</a>
             </div>
-            <p>Bật/tắt các nút nổi tương tác nhanh trên khung chat (Tạo Task 🎯, Lưu Note 📝, Spam Reactions 🔥, Bắt chước cảm xúc 🎭, Gửi ảnh 🖼️, Phản hồi nhanh 💬, Sao chép 📋).</p>
+            <p>Bật/tắt các nút tương tác nhanh trên khung chat (Tạo Task 🎯, Lưu Note 📒, Spam Reactions 🔥, Bắt chước cảm xúc 🎭, Gửi ảnh 🖼️, Phản hồi nhanh 💬, Sao chép 📋).</p>
           </div>
 
           <div class="settings-road-card settings-subtab-link" data-subtab="features-snooze">
@@ -1142,7 +1145,7 @@ const vi = {
         <h4 class="guide-info-title">⚡ PHÍM TẮT DI CHUỘT TRÊN TIN NHẮN CHATOPS</h4>
         <div class="guide-info-list">
           <div class="guide-info-item"><span>🎯</span> <span style="color: var(--text-2);">Lưu tin nhắn thành <strong>Công việc cần làm</strong></span></div>
-          <div class="guide-info-item"><span>📝</span> <span style="color: var(--text-2);">Lưu tin nhắn thành <strong>Ghi chú cá nhân</strong></span></div>
+          <div class="guide-info-item"><span>📒</span> <span style="color: var(--text-2);">Lưu tin nhắn thành <strong>Ghi chú cá nhân</strong></span></div>
           <div class="guide-info-item"><span>💬</span> <span style="color: var(--text-2);"><strong>Phản hồi nhanh (@)</strong> tự động tag người gửi</span></div>
           <div class="guide-info-item"><span>📋</span> <span style="color: var(--text-2);"><strong>Sao chép nhanh</strong> tin nhắn vào clipboard</span></div>
           <div class="guide-info-item"><span>🔥</span> <span style="color: var(--text-2);"><strong>Spam Cảm xúc</strong> hàng loạt với 1-click</span></div>
@@ -1197,6 +1200,60 @@ const vi = {
   paddingDefault: 'Mặc định (12px)',
   paddingComfortable: 'Dễ nhìn (16px)',
   paddingSpacious: 'Rộng rãi (20px)',
+  categoriesTitle: 'Danh mục Ghi chú',
+  newCategoryPlaceholder: 'Nhập tên danh mục mới...',
+  addBtn: 'Thêm',
+  dataManagementTitle: 'Quản lý Dữ liệu',
+  syncCloudTab: '☁️ Sao lưu đám mây',
+  syncCleanupTab: '🧹 Dọn dẹp & Bộ nhớ',
+  cloudSyncTitle: 'Đồng bộ đám mây (Tài khoản Google)',
+  cloudSyncDesc: 'Sao lưu hoặc khôi phục các công việc và ghi chú của bạn lên đám mây thông qua tài khoản Google để đồng bộ dữ liệu giữa các máy tính.',
+  backupToCloudBtn: 'Sao lưu',
+  restoreFromCloudBtn: 'Khôi phục',
+  noBackupsFound: 'Không tìm thấy bản sao lưu nào trên máy tính này.',
+  whySyncTitle: 'Tại sao nên đồng bộ thủ công?',
+  whySyncDesc: 'Để đảm bảo quyền riêng tư tối đa và tốc độ tức thì, tất cả dữ liệu được lưu trữ ngoại tuyến theo mặc định. Đồng bộ thủ công cho phép bạn quyết định chính xác thời điểm sao lưu hoặc truyền dữ liệu của mình.',
+  cleanupTitle: 'Dọn dẹp & Tối ưu dung lượng',
+  cleanupDesc: 'Tự động xóa các công việc đã hoàn thành hoặc ghi chú sau một khoảng thời gian nhất định để giữ cho dữ liệu của bạn được đồng bộ nhanh chóng.',
+  storageUsedLabel: 'Dung lượng đã dùng:',
+  autoCleanupLabel: 'Chu kỳ tự động dọn dẹp:',
+  autoCleanupSublabel: 'Chỉ áp dụng cho các công việc đã hoàn thành và ghi chú.',
+  cleanupNever: 'Không bao giờ',
+  cleanupOnOpen: 'Khi mở Tiện ích',
+  cleanup1Day: 'Sau 1 ngày',
+  cleanup7Days: 'Sau 7 ngày',
+  cleanup30Days: 'Sau 30 ngày',
+  cleanup90Days: 'Sau 90 ngày',
+  cleanupNowBtn: 'Dọn dẹp ngay',
+  confirmDeleteTask: '⚠️ Bạn có chắc chắn muốn xóa công việc này?',
+  confirmDeleteNote: '⚠️ Bạn có chắc chắn muốn xóa ghi chú này?',
+  settingQuickDelete: 'Nút xóa nhanh tin nhắn (🗑️)',
+  customButtonsPositionLabel: 'Vị trí các nút tương tác nhanh',
+  customButtonsPositionSublabel: 'Cấu hình vị trí nút tương tác nhanh so với menu ChatOps',
+  posHorizontalBefore: 'Ngang - Trước các chức năng',
+  posHorizontalAfter: 'Ngang - Sau các chức năng',
+  posAbove: 'Dọc - Trên các chức năng',
+  posBelow: 'Dọc - Dưới các chức năng',
+  settingSoundNotification: 'Phát âm thanh khi có nhắc nhở',
+  settingsSaved: 'Đã lưu tự động',
+  customColorLabel: 'Tự chọn...',
+  exportNotesBtn: 'Xuất ghi chú',
+  importNotesBtn: 'Nhập ghi chú',
+  exportNotesBtnTitle: 'Xuất ghi chú ra tệp Markdown (.md)',
+  importNotesBtnTitle: 'Nhập ghi chú từ tệp Markdown (.md), TXT hoặc JSON',
+  importSuccess: '🎉 Đã nhập thành công {count} ghi chú!',
+  importFailed: '❌ Nhập ghi chú thất bại. Vui lòng kiểm tra lại nội dung tệp.',
+  categoryNormal: 'Thường',
+  categoryChecklist: 'Checklist',
+  addChecklineBtn: '+ Thêm mục',
+  checklistPlaceholder: 'mục checklist {num}...',
+  checklistMinError: 'Vui lòng nhập ít nhất một mục checklist.',
+  taskRemindDailyLabel: 'Lặp lại hàng ngày vào giờ đã chọn',
+  repeatDailyBadgeText: 'Hàng ngày',
+  collapseBtnBottom: 'Thu gọn',
+  groupMessage: 'Tin nhắn nhóm',
+  userGuideTitle: 'Hướng dẫn Hệ thống 💡',
+  tabsCompactToggleTooltip: 'Thu gọn menu (Chỉ hiển thị icon)',
 };
 
 // Swaps the active language dictionary key-value pairs in-place

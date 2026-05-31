@@ -8,7 +8,7 @@ import { setup as setupMentions, reset as resetMentions, getSelects as getMentio
 
 import { setup as setupMemo, loadMemos, renderCategories } from './tabs/memo.tab.js';
 import { setup as setupTasks, loadTasks } from './tabs/tasks.tab.js';
-import { setup as setupSettings, getSettings, applyThemeToDOM, applyTabRepositioning, applyTabVisibilityToDOM, runAutoCleanup, renderSidepanelMemes, applyTabOrderToDOM, renderTabOrderList } from './tabs/settings.tab.js';
+import { setup as setupSettings, getSettings, updateSettings, applyThemeToDOM, applyTabRepositioning, applyTabVisibilityToDOM, runAutoCleanup, renderSidepanelMemes, applyTabOrderToDOM, renderTabOrderList } from './tabs/settings.tab.js';
 import { getMyProfile, getMyTeams, getConfig } from '../src/api/index.js';
 import { escapeHtml } from '../src/utils/index.js';
 
@@ -641,6 +641,47 @@ function setupStateHandlers() {
     } else if (msg.type === 'SWITCH_TAB') {
       switchTab(msg.tab);
       sendResponse({ ok: true });
+    } else if (msg.type === 'NAVIGATE_TO_SUBTAB') {
+      const subtabName = msg.subtab;
+      if (subtabName) {
+        window.isRedirectingToSetting = true;
+        let tabId = 'settings';
+        let sectionId = '';
+
+        if (subtabName.startsWith('reactions-') || subtabName === 'tools-search') {
+          tabId = 'tools';
+          if (subtabName === 'reactions-picker') {
+            sectionId = 'reactions';
+          } else if (subtabName === 'reactions-images') {
+            sectionId = 'images';
+          } else if (subtabName === 'tools-search') {
+            sectionId = 'search';
+          }
+        } else if (subtabName.startsWith('features-') || subtabName === 'categories') {
+          tabId = 'settings';
+          sectionId = 'features';
+        } else if (subtabName.startsWith('ui-')) {
+          tabId = 'settings';
+          sectionId = 'ui';
+        } else if (subtabName.startsWith('sync-')) {
+          tabId = 'settings';
+          sectionId = 'data';
+        }
+
+        switchTab(tabId);
+
+        if (sectionId) {
+          const selector = tabId === 'settings' ? '#settingsSubTabs' : '#toolsSubTabs';
+          const tabBtn = document.querySelector(`${selector} .memo-sub-tab[data-section="${sectionId}"]`);
+          if (tabBtn) {
+            tabBtn.click();
+            if (tabId === 'settings' && window.openSettingsAccordion) {
+              window.openSettingsAccordion(subtabName);
+            }
+          }
+        }
+      }
+      sendResponse({ ok: true });
     }
   });
 
@@ -654,11 +695,7 @@ function setupStateHandlers() {
     }
   });
   
-  // Header Settings gear button — navigate to settings tab
-  const headerSettingsBtn = document.getElementById('btnHeaderSettings');
-  if (headerSettingsBtn) {
-    headerSettingsBtn.addEventListener('click', () => switchTab('settings'));
-  }
+
 
   // Donate modal listeners
   const coffeeBtn = document.getElementById('btnHeaderCoffee');
@@ -681,19 +718,13 @@ function setupStateHandlers() {
     });
   }
 
-  // Global system user guide help modal listener
+  // Global system user guide help page listener (opens standalone guide in new tab)
   const helpBtn = document.getElementById('btnHeaderHelp');
   if (helpBtn) {
     helpBtn.addEventListener('click', () => {
-      const guideBody = document.getElementById('formUserGuide');
-      if (guideBody) {
-        guideBody.innerHTML = language.userGuideHTML || '';
-      }
-      window.ModalManager.open(
-        language.userGuideTitle || 'User Guide',
-        'formUserGuide',
-        'spUserGuidePlaceholder'
-      );
+      const activeLang = getActiveLanguageCode();
+      const url = chrome.runtime.getURL(`sidepanel/guide.html?lang=${activeLang}`);
+      chrome.tabs.create({ url });
     });
   }
 

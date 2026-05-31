@@ -66,7 +66,7 @@
         <span class="tab-label"><span data-i18n="taskTabLabel">Tasks</span> <span id="taskTabBadge" class="tab-badge"></span></span>
       </button>
       <button class="tab-btn" data-tab="memo" data-i18n-title="memoNotesLabel" title="Notes">
-        <span class="tab-icon">📝</span>
+        <span class="tab-icon">📒</span>
         <span class="tab-label"><span data-i18n="memoNotesLabel">Notes</span> <span id="noteTabBadge" class="tab-badge"></span></span>
       </button>
       <button class="tab-btn" data-tab="mentions" data-i18n-title="toolsMentionsSubTab" title="Mentions">
@@ -296,7 +296,7 @@
               style="padding: 0 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: transparent; height: 36px; color: var(--text-2); display: inline-flex; align-items: center; justify-content: center;">Cancel</button>
             <button type="button" class="btn btn-primary" id="btnQuickNoteSave" data-i18n="memoAddBtn"
               style="padding: 0 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; background: var(--accent); color: #fff; border: none; height: 36px; min-width: 90px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 4px var(--accent-dim);">
-              📝 Add Note
+              📒 Add Note
             </button>
           </div>
         </div>
@@ -664,7 +664,7 @@
                   <span class="toggle-slider"></span>
                 </label>
                 <label class="settings-toggle-row" id="rowFloatingQuickNote">
-                  <span data-i18n="floatingQuickNote">Create Note Button (📝)</span>
+                  <span data-i18n="floatingQuickNote">Create Note Button (📒)</span>
                   <input type="checkbox" id="settingFloatingQuickNote" class="settings-toggle" checked>
                   <span class="toggle-slider"></span>
                 </label>
@@ -862,7 +862,7 @@
                 <div class="menu-tab-card">
                   <div class="menu-tab-card-header">
                     <div class="menu-tab-info">
-                      <span class="menu-tab-icon">📝</span>
+                      <span class="menu-tab-icon">📒</span>
                       <span class="menu-tab-name" data-i18n="memoNotesLabel">Notes</span>
                     </div>
                     <label class="premium-switch">
@@ -1342,7 +1342,7 @@
       }
     }
 
-    #btnHeaderCoffee, #btnHeaderLang, #btnHeaderHelp, #btnHeaderRate {
+    #btnHeaderCoffee, #btnHeaderLang, #btnHeaderHelp, #btnHeaderRate, #btnHeaderTabsCompact {
       background: #ffffff;
       border: none;
       border-radius: 50%;
@@ -1360,14 +1360,24 @@
       margin-left: 4px;
     }
 
-    #btnHeaderCoffee:hover, #btnHeaderLang:hover, #btnHeaderHelp:hover, #btnHeaderRate:hover {
+    #btnHeaderCoffee:hover, #btnHeaderLang:hover, #btnHeaderHelp:hover, #btnHeaderRate:hover, #btnHeaderTabsCompact:hover {
       background: #ffffff !important;
       transform: scale(1.18) rotate(12deg);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
 
-    #btnHeaderCoffee:active, #btnHeaderLang:active, #btnHeaderHelp:active, #btnHeaderRate:active {
+    #btnHeaderCoffee:active, #btnHeaderLang:active, #btnHeaderHelp:active, #btnHeaderRate:active, #btnHeaderTabsCompact:active {
       transform: scale(0.95);
+    }
+
+    /* Active state for Compact Tabs Toggle Button (Contrast glow & white background) */
+    #btnHeaderTabsCompact.compact-active {
+      background: #ffffff !important;
+      border: 2px solid var(--accent) !important;
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.45), 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+    }
+    #btnHeaderTabsCompact.compact-active svg {
+      stroke: var(--accent) !important;
     }
 
     #btnDonateModalClose:hover {
@@ -1382,12 +1392,7 @@
     }
   </style>
 
-  <!-- Hidden user guide placeholders for ModalManager -->
-  <div id="spUserGuidePlaceholder" style="display:none;">
-    <div id="formUserGuide" style="display:flex; flex-direction:column; gap:12px; max-height:70vh; overflow-y:auto; padding-right:4px;">
-      <!-- Populated dynamically via JS -->
-    </div>
-  </div>
+
 
 
 

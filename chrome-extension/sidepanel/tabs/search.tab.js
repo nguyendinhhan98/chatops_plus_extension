@@ -9,7 +9,7 @@ import {
   getChannelById, 
   getMyChannels, 
   searchChannels, 
-  getUsersByIds 
+  getUsersByIds
 } from '../../src/api/index.js';
 import { setupAutocomplete } from '../autocomplete.js';
 import { setupMultiSelect } from '../multiselect.js';
@@ -67,7 +67,6 @@ export function setup(state) {
     const inChannels = searchInMS ? searchInMS.getSelected() : [];
     const after = document.getElementById('spSearchAfter')?.value.trim() || '';
     const before = document.getElementById('spSearchBefore')?.value.trim() || '';
-
     const hasValue = terms.length > 0 || from.length > 0 || inChannels.length > 0 || after.length > 0 || before.length > 0;
     if (hasValue) {
       btnSearch.disabled = false;
@@ -108,6 +107,7 @@ export function setup(state) {
   document.getElementById('spSearchAfter')?.addEventListener('input', updateSearchButtonState);
   document.getElementById('spSearchBefore')?.addEventListener('change', updateSearchButtonState);
   document.getElementById('spSearchBefore')?.addEventListener('input', updateSearchButtonState);
+
 
   // Set initial state
   updateSearchButtonState();
@@ -265,6 +265,7 @@ export function clearResults() {
   document.getElementById('chkSearchIncludeDM').checked = false;
   const chkIsOr = document.getElementById('chkSearchIsOr');
   if (chkIsOr) chkIsOr.checked = false;
+  
   const btnClearSearch = document.getElementById('btnSpClearSearch');
   if (btnClearSearch) btnClearSearch.style.display = 'none';
   
@@ -304,7 +305,6 @@ export async function performSpSearch(isLoadMore = false) {
     const terms = document.getElementById('spSearchTerms').value.trim();
     const fromInput = document.getElementById('spSearchFrom');
     let from = fromInput.value.trim();
-    // Use the stored username if available, otherwise use input text
     if (fromInput.dataset.username && from) {
       from = fromInput.dataset.username;
     }
@@ -389,6 +389,7 @@ export async function performSpSearch(isLoadMore = false) {
     const config = _state.getConfig();
     const isOrSearch = document.getElementById('chkSearchIsOr')?.checked || false;
     
+    let posts = [];
     let result;
     if (team.id === 'all') {
       const teams = _state.getTeams() || [];
@@ -401,7 +402,6 @@ export async function performSpSearch(isLoadMore = false) {
         }).catch(() => ({ order: [], posts: {} })))
       );
       
-      // Merge results, sorting posts by create_at descending
       const allPosts = [];
       results.forEach((res, index) => {
         const teamName = teams[index]?.name;
@@ -434,10 +434,12 @@ export async function performSpSearch(isLoadMore = false) {
     const progressEl = document.getElementById('searchProgress');
     if (progressEl) progressEl.style.width = '60%';
 
-    const posts = result.order.map((id) => result.posts[id]).filter(Boolean);
+    posts = result.order.map((id) => result.posts[id]).filter(Boolean);
     
     if (posts.length < UI_CONFIG.SEARCH_PAGE_SIZE) searchState.hasMore = false;
     searchState.page++;
+
+    if (searchState.isCancelled) return;
 
     if (!isLoadMore && posts.length === 0) {
       resultsEl.innerHTML = `<div class="empty-state">${language.noResultsFriendly}</div>`;
@@ -495,7 +497,6 @@ export async function performSpSearch(isLoadMore = false) {
     document.getElementById('searchPostList')?.querySelectorAll('.post-item').forEach(card => {
       const textEl = card.querySelector('.post-body');
       const collapseBtn = card.querySelector('.collapse-btn');
-      // Only process items where the collapse button hasn't been hidden yet
       if (textEl && collapseBtn && collapseBtn.style.display !== 'none') {
         const isOverflowing = textEl.scrollHeight > textEl.clientHeight + 1;
         if (!isOverflowing) {

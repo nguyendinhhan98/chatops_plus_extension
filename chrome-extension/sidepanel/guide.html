@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <title>ChatOps++ — Hướng Dẫn Sử Dụng & Nhật Ký Phiên Bản</title>
+  <link rel="stylesheet" href="guide.css">
+</head>
+
+<body>
+
+  <header class="guide-header">
+    <div class="header-container">
+      <div class="logo-area">
+        <img src="../icons/icon128.png" class="logo-img" alt="ChatOps++ Logo">
+        <div class="logo-text">
+          <h1>ChatOps++</h1>
+          <p class="subtitle lang-vi">Nâng tầm năng suất làm việc của bạn trên Mattermost</p>
+          <p class="subtitle lang-en">Elevating your Mattermost workspace productivity</p>
+        </div>
+      </div>
+      <div class="lang-switch-container">
+        <button class="lang-switch-btn active" data-lang="vi">🇻🇳 Tiếng Việt</button>
+        <button class="lang-switch-btn" data-lang="en">🇺🇸 English</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <div class="split-pane-layout">
+      
+      <!-- LEFT COLUMN: SYSTEM MANUAL, SETTINGS CONFIG, AND SLIDESHOW CAROUSEL -->
+      <section class="left-pane-guide">
+        
+
+        <!-- Part B: Initial Config Settings (Settings Carousel) -->
+        <div class="settings-guide-section">
+          <div class="pane-header-title">
+            <span class="pane-header-icon">⚙️</span>
+            <h3 class="lang-vi">Cấu Hình Ban Đầu & Cá Nhân Hóa (Settings)</h3>
+            <h3 class="lang-en">Initial Setup & Settings Personalization</h3>
+          </div>
+
+          <!-- Settings Carousel: 4 slides matching settings_1..4.png -->
+          <div class="settings-carousel-container">
+
+            <!-- Slide 1: Quick Action Buttons (settings_1.png) -->
+            <div class="settings-carousel-slide active" data-settings-slide-index="0">
+              <div class="slide-content-grid">
+                <div class="slide-text">
+                  <span class="slide-badge">01 / 04</span>
+                  <h4 class="slide-title lang-vi">🚀 Nút Tương Tác Nhanh</h4>
+                  <h4 class="slide-title lang-en">🚀 Quick Action Buttons</h4>
+                  <ul class="slide-bullets lang-vi">
+                    <li>Bật/tắt riêng lẻ từng nút trong 8 nút tương tác nhanh trên khung chat.</li>
+                    <li>Các số thứ tự bên phải thể hiện vị trí của từng nút.</li>
+                    <li>Chọn kiểu bố trí: ngang hoặc dọc, trước/sau thanh chức năng.</li>
+                  </ul>
+                  <ul class="slide-bullets lang-en">
+                    <li>Enable/disable each of the 8 floating buttons individually on chat.</li>
+                    <li>Numbers on the right indicate the order/position of each button.</li>
+                    <li>Choose layout: horizontal or vertical, before/after action toolbar.</li>
+                  </ul>
+                </div>
+                <div class="slide-image">
+                  <div class="slide-image-wrapper">
+                    <div class="frame-ss-selector">
+                      <button class="ss-select-btn active" data-img-src="images/settings_1.png">
+                        <span class="lang-vi">Hình 1</span><span class="lang-en">Screen 1</span>
+                      </button>
+                      <button class="ss-select-btn" data-img-src="images/settings_1_2.png">
+                        <span class="lang-vi">Hình 2</span><span class="lang-en">Screen 2</span>
+                      </button>
+                      <button class="ss-select-btn" data-img-src="images/settings_1_3.png">
+                        <span class="lang-vi">Hình 3</span><span class="lang-en">Screen 3</span>
+                      </button>
+                    </div>
+                    <img src="images/settings_1.png" class="screenshot-img" alt="Settings Quick Actions">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slide 2: Giphy & GIFs Integration (settings_2.png) -->
+            <div class="settings-carousel-slide" data-settings-slide-index="1">
+              <div class="slide-content-grid">
+                <div class="slide-text">
+                  <span class="slide-badge">02 / 04</span>
+                  <h4 class="slide-title lang-vi">🎬 Tích Hợp Giphy & GIFs</h4>
+                  <h4 class="slide-title lang-en">🎬 Giphy & GIFs Integration</h4>
+                  <ul class="slide-bullets lang-vi">
+                    <li>Nhập API Key cá nhân từ Giphy, hệ thống tự kiểm tra tính hợp lệ.</li>
+                    <li>Chọn kích thước GIF chèn: Lớn 200px (mặc định) hoặc Nhỏ 100px.</li>
+                    <li>Hướng dẫn chi tiết cách lấy API Key miễn phí từ developers.giphy.com.</li>
+                  </ul>
+                  <ul class="slide-bullets lang-en">
+                    <li>Enter personal Giphy API Key; system auto-validates it in real time.</li>
+                    <li>Choose GIF insert size: Large 200px (default) or Small 100px.</li>
+                    <li>Step-by-step guide to get a free API Key from developers.giphy.com.</li>
+                  </ul>
+                </div>
+                <div class="slide-image">
+                  <div class="slide-image-wrapper">
+                    <div class="frame-ss-selector">
+                      <button class="ss-select-btn active" data-img-src="images/settings_2.png">
+                        <span class="lang-vi">Hình 1</span><span class="lang-en">Screen 1</span>
+                      </button>
+                      <button class="ss-select-btn" data-img-src="images/settings_2_2.png">
+                        <span class="lang-vi">Hình 2</span><span class="lang-en">Screen 2</span>
+                      </button>
+                      <button class="ss-select-btn" data-img-src="images/settings_2_3.png">
+                        <span class="lang-vi">Hình 3</span><span class="lang-en">Screen 3</span>
+                      </button>
+                    </div>
+                    <img src="images/settings_2.png" class="screenshot-img" alt="Settings Giphy">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slide 3: Tab Display & Ordering (settings_3.png) -->
+            <div class="settings-carousel-slide" data-settings-slide-index="2">
+              <div class="slide-content-grid">
+                <div class="slide-text">
+                  <span class="slide-badge">03 / 04</span>
+                  <h4 class="slide-title lang-vi">🗂️ Hiển Thị & Sắp Xếp Tab</h4>
+                  <h4 class="slide-title lang-en">🗂️ Tab Display & Ordering</h4>
+                  <ul class="slide-bullets lang-vi">
+                    <li>Bật/tắt từng tab tính năng (Công việc, Ghi chú, Tìm kiếm, Bỏ lỡ, Hình ảnh, Spam).</li>
+                    <li>Chọn tab ưu tiên đưa lên thanh menu chính (số thứ tự hiển thị bên phải).</li>
+                    <li>Các tab không ưu tiên sẽ được gom vào mục "Công cụ khác".</li>
+                  </ul>
+                  <ul class="slide-bullets lang-en">
+                    <li>Enable/disable each feature tab (Tasks, Notes, Search, Missed, Images, Spam).</li>
+                    <li>Select priority tabs to promote to the main menu bar (shown with position numbers).</li>
+                    <li>Non-priority tabs are grouped into the "Other Tools" panel.</li>
+                  </ul>
+                </div>
+                <div class="slide-image">
+                  <div class="slide-image-wrapper">
+                    <div class="frame-ss-selector">
+                      <button class="ss-select-btn active" data-img-src="images/settings_3.png">
+                        <span class="lang-vi">Hình 1</span><span class="lang-en">Screen 1</span>
+                      </button>
+                      <button class="ss-select-btn" data-img-src="images/settings_3_2.png">
+                        <span class="lang-vi">Hình 2</span><span class="lang-en">Screen 2</span>
+                      </button>
+                      <button class="ss-select-btn" data-img-src="images/settings_3_3.png">
+                        <span class="lang-vi">Hình 3</span><span class="lang-en">Screen 3</span>
+                      </button>
+                    </div>
+                    <img src="images/settings_3.png" class="screenshot-img" alt="Settings Tab Display">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slide 4: Cloud Sync & Data Backup (settings_4.png) -->
+            <div class="settings-carousel-slide" data-settings-slide-index="3">
+              <div class="slide-content-grid">
+                <div class="slide-text">
+                  <span class="slide-badge">04 / 04</span>
+                  <h4 class="slide-title lang-vi">☁️ Đồng Bộ & Sao Lưu Dữ Liệu</h4>
+                  <h4 class="slide-title lang-en">☁️ Cloud Sync & Data Backup</h4>
+                  <ul class="slide-bullets lang-vi">
+                    <li>Sao lưu thủ công toàn bộ công việc và ghi chú lên Google Drive cá nhân.</li>
+                    <li>Khôi phục dữ liệu từ đám mây về máy tính mới chỉ với 1 thao tác.</li>
+                    <li>Dữ liệu được lưu ngoại tuyến; đồng bộ thủ công đảm bảo quyền riêng tư.</li>
+                  </ul>
+                  <ul class="slide-bullets lang-en">
+                    <li>Manually backup all tasks and notes to personal Google Drive.</li>
+                    <li>Restore cloud data to a new device in a single action.</li>
+                    <li>Offline-first storage; manual sync ensures your privacy.</li>
+                  </ul>
+                </div>
+                <div class="slide-image">
+                  <div class="slide-image-wrapper">
+                    <div class="frame-ss-selector">
+                      <button class="ss-select-btn active" data-img-src="images/settings_4.png">
+                        <span class="lang-vi">Hình 1</span><span class="lang-en">Screen 1</span>
+                      </button>
+                      <button class="ss-select-btn" data-img-src="images/settings_4_2.png">
+                        <span class="lang-vi">Hình 2</span><span class="lang-en">Screen 2</span>
+                      </button>
+                      <button class="ss-select-btn" data-img-src="images/settings_4_3.png">
+                        <span class="lang-vi">Hình 3</span><span class="lang-en">Screen 3</span>
+                      </button>
+                    </div>
+                    <img src="images/settings_4.png" class="screenshot-img" alt="Settings Cloud Sync">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Carousel Controls -->
+            <button class="carousel-ctrl settings-carousel-ctrl prev" id="prevSettingsSlideBtn">&#10094;</button>
+            <button class="carousel-ctrl settings-carousel-ctrl next" id="nextSettingsSlideBtn">&#10095;</button>
+
+            <!-- Bullet Indicators -->
+            <div class="carousel-bullets settings-carousel-bullets" id="settingsCarouselBullets">
+              <span class="bullet active" data-settings-slide-to="0"></span>
+              <span class="bullet" data-settings-slide-to="1"></span>
+              <span class="bullet" data-settings-slide-to="2"></span>
+              <span class="bullet" data-settings-slide-to="3"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Part C: Feature Slideshow Carousel -->
+        <div class="slideshow-guide-section">
+          <div class="pane-header-title" style="border-radius: 0;">
+            <span class="pane-header-icon">📂</span>
+            <h3 class="lang-vi">Hướng Dẫn Chi Tiết Từng Phân Hệ Tính Năng (Slideshow)</h3>
+            <h3 class="lang-en">Detailed Feature Walkthrough Manual (Slideshow)</h3>
+          </div>
+
+          <div class="carousel-container">
+            
+            <!-- Slide 1: Tasks (Công việc) -->
+            <div class="carousel-slide active" data-slide-index="0">
+              <div class="slide-content-grid">
+                <div class="slide-text">
+                  <span class="slide-badge">01 / 06</span>
+                  <h4 class="slide-title lang-vi">🎯 Phân hệ Quản lý Tác vụ (Tasks)</h4>
+                  <h4 class="slide-title lang-en">🎯 Task & Checklist Boards</h4>
+                  
+                  <ul class="slide-bullets lang-vi">
+                    <li>Quản lý To-Do List khoa học, tập trung.</li>
+                    <li>Checklist con, báo thức & nhắc nhở tự động.</li>
+                    <li>Sắp xếp thứ tự ưu tiên ghim tác vụ lên Menu.</li>
+                  </ul>
+                  <ul class="slide-bullets lang-en">
+                    <li>Organize personal To-Do lists in a central view.</li>
+                    <li>Nested checklists, sound alarms & reminders.</li>
+                    <li>Prioritize and pin tasks to the main menu.</li>
+                  </ul>
+                </div>
+                <div class="slide-image">
+                  <div class="slide-image-wrapper">
+                    <!-- Switcher tasks -->
+                    <div class="frame-ss-selector">
+                      <button class="ss-select-btn active" data-img-src="images/tasks_1.png">
+                        <span class="lang-vi">Hình 1</span><span class="lang-en">Screen 1</span>
+                      </button>
+                      <button class="ss-select-btn" data-img-src="images/tasks_2.png">
+                        <span class="lang-vi">Hình 2</span><span class="lang-en">Screen 2</span>
+                      </button>
+                      <button class="ss-select-btn" data-img-src="images/tasks_3.png">
+                        <span class="lang-vi">Hình 3</span><span class="lang-en">Screen 3</span>
+                      </button>
+                    </div>
+                    <img src="images/tasks_1.png" class="screenshot-img" alt="Tasks Screenshot">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slide 2: Notes (Ghi chú) -->
+            <div class="carousel-slide" data-slide-index="1">
+              <div class="slide-content-grid">
+                <div class="slide-text">
+                  <span class="slide-badge">02 / 06</span>
+                  <h4 class="slide-title lang-vi">📒 Phân hệ Ghi chú & Biên bản Ghi nhớ (Notes)</h4>
+                  <h4 class="slide-title lang-en">📒 Memos & Note Repository</h4>
+                  
+                  <ul class="slide-bullets lang-vi">
+                    <li>Lưu nhanh tin nhắn chat chỉ với 1-click.</li>
+                    <li>Quản lý theo Thư mục và Nhãn dán.</li>
+                    <li>Tìm kiếm và lọc nội dung ghi chú tức thì.</li>
+                  </ul>
+                  <ul class="slide-bullets lang-en">
+                    <li>1-click capture any message from channels.</li>
+                    <li>Organize with folders and visual tag labels.</li>
+                    <li>High-speed notes search and indexing.</li>
+                  </ul>
+                </div>
+                <div class="slide-image">
+                  <div class="slide-image-wrapper">
+                    <!-- Switcher notes -->
+                    <div class="frame-ss-selector">
+                      <button class="ss-select-btn active" data-img-src="images/notes_1.png">
+                        <span class="lang-vi">Hình 1</span><span class="lang-en">Screen 1</span>
+                      </button>
+                      <button class="ss-select-btn" data-img-src="images/notes_2.png">
+                        <span class="lang-vi">Hình 2</span><span class="lang-en">Screen 2</span>
+                      </button>
+                    </div>
+                    <img src="images/notes_1.png" class="screenshot-img" alt="Notes Screenshot">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slide 3: Mentions (Tin nhắn bỏ lỡ) -->
+            <div class="carousel-slide" data-slide-index="2">
+              <div class="slide-content-grid">
+                <div class="slide-text">
+                  <span class="slide-badge">03 / 06</span>
+                  <h4 class="slide-title lang-vi">🔔 Giám sát Tin nhắn bỏ lỡ & DM (Mentions)</h4>
+                  <h4 class="slide-title lang-en">🔔 Centralized Mentions Hub</h4>
+                  
+                  <ul class="slide-bullets lang-vi">
+                    <li>Gom tụ toàn bộ lượt nhắc tên (@) và tin nhắn riêng.</li>
+                    <li>Tóm tắt nội dung thông tin ngắn gọn, súc tích.</li>
+                    <li>Tương tác và phản hồi trực tiếp ngay trên thanh bên.</li>
+                  </ul>
+                  <ul class="slide-bullets lang-en">
+                    <li>Centralize name mentions (@) and direct messages.</li>
+                    <li>Provide clear bullet summaries of missed topics.</li>
+                    <li>Reply to colleagues directly inside the sidepanel.</li>
+                  </ul>
+                </div>
+                <div class="slide-image">
+                  <div class="slide-image-wrapper">
+                    <!-- Switcher mentions -->
+                    <div class="frame-ss-selector">
+                      <button class="ss-select-btn active" data-img-src="images/mentions_1.png">
+                        <span class="lang-vi">Hình 1</span><span class="lang-en">Screen 1</span>
+                      </button>
+                      <button class="ss-select-btn" data-img-src="images/mentions_2.png">
+                        <span class="lang-vi">Hình 2</span><span class="lang-en">Screen 2</span>
+                      </button>
+                    </div>
+                    <img src="images/mentions_1.png" class="screenshot-img" alt="Mentions Screenshot">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slide 4: Search (Tìm kiếm) -->
+            <div class="carousel-slide" data-slide-index="3">
+              <div class="slide-content-grid">
+                <div class="slide-text">
+                  <span class="slide-badge">04 / 06</span>
+                  <h4 class="slide-title lang-vi">🔍 Lọc Tìm kiếm Hội thoại Nâng cao (Search)</h4>
+                  <h4 class="slide-title lang-en">🔍 Advanced Conversation Search</h4>
+                  
+                  <ul class="slide-bullets lang-vi">
+                    <li>Quét lịch sử tin nhắn trong các kênh cực nhanh.</li>
+                    <li>Lọc theo người gửi, từ khóa và mốc thời gian.</li>
+                    <li>Hỗ trợ tìm kiếm lịch sử chat nhanh chóng.</li>
+                  </ul>
+                  <ul class="slide-bullets lang-en">
+                    <li>Scan channel chat history streams at high speed.</li>
+                    <li>Filter by sender, keyword, and date range.</li>
+                    <li>Search chat history with robust filters.</li>
+                  </ul>
+                </div>
+                <div class="slide-image">
+                  <div class="slide-image-wrapper">
+                    <!-- Switcher search -->
+                    <div class="frame-ss-selector">
+                      <button class="ss-select-btn active" data-img-src="images/search_1.png">
+                        <span class="lang-vi">Hình 1</span><span class="lang-en">Screen 1</span>
+                      </button>
+                      <button class="ss-select-btn" data-img-src="images/search_2.png">
+                        <span class="lang-vi">Hình 2</span><span class="lang-en">Screen 2</span>
+                      </button>
+                    </div>
+                    <img src="images/search_1.png" class="screenshot-img" alt="Search Screenshot">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slide 5: Meme Library (Thư viện Meme) -->
+            <div class="carousel-slide" data-slide-index="4">
+              <div class="slide-content-grid">
+                <div class="slide-text">
+                  <span class="slide-badge">05 / 06</span>
+                  <h4 class="slide-title lang-vi">🖼️ Thư viện Meme & Quản trị Hình ảnh</h4>
+                  <h4 class="slide-title lang-en">🖼️ Image & Meme Bank</h4>
+                  
+                  <ul class="slide-bullets lang-vi">
+                    <li>Quản lý kho ảnh biểu đồ hoặc ảnh chế (meme).</li>
+                    <li>Chèn ảnh trực tiếp vào hộp chat chỉ với 1-click.</li>
+                    <li>Nén dung lượng tự động để tối ưu hiệu năng.</li>
+                  </ul>
+                  <ul class="slide-bullets lang-en">
+                    <li>Manage gallery boards, charts, and custom memes.</li>
+                    <li>1-click media insertion directly into chat inputs.</li>
+                    <li>Automated compression to optimize performance.</li>
+                  </ul>
+                </div>
+                <div class="slide-image">
+                  <div class="slide-image-wrapper">
+                    <!-- Switcher meme -->
+                    <div class="frame-ss-selector">
+                      <button class="ss-select-btn active" data-img-src="images/meme_1.png">
+                        <span class="lang-vi">Hình 1</span><span class="lang-en">Screen 1</span>
+                      </button>
+                      <button class="ss-select-btn" data-img-src="images/meme_2.png">
+                        <span class="lang-vi">Hình 2</span><span class="lang-en">Screen 2</span>
+                      </button>
+                    </div>
+                    <img src="images/meme_1.png" class="screenshot-img" alt="Meme Screenshot">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slide 6: Spam & Modals (Bão cảm xúc & Popup nhanh) -->
+            <div class="carousel-slide" data-slide-index="5">
+              <div class="slide-content-grid">
+                <div class="slide-text">
+                  <span class="slide-badge">06 / 06</span>
+                  <h4 class="slide-title lang-vi">🔥 Bão Cảm xúc & Hộp thoại Tạo nhanh</h4>
+                  <h4 class="slide-title lang-en">🔥 Quick Action Popovers & Emojis</h4>
+                  
+                  <ul class="slide-bullets lang-vi">
+                    <li>Nút tương tác nhanh di chuột để thả bão emoji tự động.</li>
+                    <li>Phím tắt thu hồi nhanh cảm xúc đã thả.</li>
+                    <li>Di chuột bấm 🎯 hoặc 📒 để tạo nhanh tác vụ/ghi chú.</li>
+                  </ul>
+                  <ul class="slide-bullets lang-en">
+                    <li>Floating hover panel to spam emoji reactions.</li>
+                    <li>Quick action retract keys to undo reactions.</li>
+                    <li>Hover to trigger 🎯 or 📒 quick creation dialogs.</li>
+                  </ul>
+                </div>
+                <div class="slide-image">
+                  <div class="slide-image-wrapper">
+                    <!-- Switcher reactions -->
+                    <div class="frame-ss-selector">
+                      <button class="ss-select-btn active" data-img-src="images/reactions_1.png">
+                        <span class="lang-vi">Hình 1</span><span class="lang-en">Screen 1</span>
+                      </button>
+                      <button class="ss-select-btn" data-img-src="images/reactions_2.png">
+                        <span class="lang-vi">Hình 2</span><span class="lang-en">Screen 2</span>
+                      </button>
+                    </div>
+                    <img src="images/reactions_1.png" class="screenshot-img" alt="Reactions Screenshot">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Carousel Controls -->
+            <button class="carousel-ctrl prev" id="prevSlideBtn">&#10094;</button>
+            <button class="carousel-ctrl next" id="nextSlideBtn">&#10095;</button>
+
+            <!-- Carousel Bullet Indicators -->
+            <div class="carousel-bullets" id="carouselBullets">
+              <span class="bullet active" data-slide-to="0"></span>
+              <span class="bullet" data-slide-to="1"></span>
+              <span class="bullet" data-slide-to="2"></span>
+              <span class="bullet" data-slide-to="3"></span>
+              <span class="bullet" data-slide-to="4"></span>
+              <span class="bullet" data-slide-to="5"></span>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- RIGHT COLUMN: PREMIUM STICKY VERTICAL CHANGELOG TIMELINE -->
+      <aside class="right-pane-changelog">
+        <div class="pane-header-title">
+          <span class="pane-header-icon">🚀</span>
+          <h3 class="lang-vi">Nhật Ký Phiên Bản (Changelog)</h3>
+          <h3 class="lang-en">Product Updates & Changelog</h3>
+        </div>
+
+        <div class="timeline-container">
+          <div class="timeline-list">
+            <!-- Timeline Node: v3.3.9 -->
+            <div class="timeline-item">
+              <div class="timeline-badge badge-active"></div>
+              <div class="timeline-content card-gradient-border-active">
+                <div class="timeline-card-inner">
+                  <div class="timeline-header">
+                    <span class="timeline-ver ver-active">v3.3.9</span>
+                    <span class="timeline-date lang-vi">31/05/2026</span>
+                    <span class="timeline-date lang-en">May 31, 2026</span>
+                    <span class="status-pill active-pill lang-vi">Mới nhất</span>
+                    <span class="status-pill active-pill lang-en">Latest</span>
+                  </div>
+                  <div class="timeline-body">
+                    <ul class="changelog-list lang-vi">
+                      <li><span class="type-badge type-feat">Đặc sắc</span> Ra mắt Slide Hướng dẫn tương tác trực quan và bộ chọn đa ảnh minh họa tích hợp.</li>
+                      <li><span class="type-badge type-ui">Cải tiến</span> Nâng cấp UI/UX.</li>
+                    </ul>
+                    <ul class="changelog-list lang-en">
+                      <li><span class="type-badge type-feat">Highlight</span> Released visual interactive slideshow guide and built-in screenshot selector tabs.</li>
+                      <li><span class="type-badge type-ui">UI</span> UI/UX enhancements.</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Timeline Node: v3.3.8 -->
+            <div class="timeline-item">
+              <div class="timeline-badge"></div>
+              <div class="timeline-content">
+                <div class="timeline-card-inner">
+                  <div class="timeline-header">
+                    <span class="timeline-ver">v3.3.8</span>
+                    <span class="timeline-date lang-vi">30/05/2026</span>
+                    <span class="timeline-date lang-en">May 30, 2026</span>
+                  </div>
+                  <div class="timeline-body">
+                    <ul class="changelog-list lang-vi">
+                      <li><span class="type-badge type-bug">Sửa lỗi</span> Khắc phục lỗi hiển thị sai các tab ẩn Cài đặt trên thanh menu chính.</li>
+                      <li><span class="type-badge type-ui">Cải tiến</span> Nâng cấp UI/UX.</li>
+                    </ul>
+                    <ul class="changelog-list lang-en">
+                      <li><span class="type-badge type-bug">Bug</span> Resolved visibility settings overrides showing disabled tabs on the menu bar.</li>
+                      <li><span class="type-badge type-ui">UI</span> UI/UX enhancements.</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Timeline Node: v3.3.0 -->
+            <div class="timeline-item">
+              <div class="timeline-badge"></div>
+              <div class="timeline-content">
+                <div class="timeline-card-inner">
+                  <div class="timeline-header">
+                    <span class="timeline-ver">v3.3.0</span>
+                    <span class="timeline-date lang-vi">27/05/2026</span>
+                    <span class="timeline-date lang-en">May 27, 2026</span>
+                  </div>
+                  <div class="timeline-body">
+                    <ul class="changelog-list lang-vi">
+                      <li><span class="type-badge type-feat">Tính năng</span> Ra mắt phân hệ Bão cảm xúc (Emoji Reactions Spammer) và Hộp thoại tạo nhanh Tác vụ/Ghi chú từ tin nhắn.</li>
+                      <li><span class="type-badge type-feat">Tính năng</span> Tích hợp phím xóa nhanh tác vụ trên tin nhắn và thả emoji trực tiếp trên giao diện Tin nhắn bỏ lỡ.</li>
+                      <li><span class="type-badge type-ui">Cải tiến</span> Nâng cấp UI/UX.</li>
+                    </ul>
+                    <ul class="changelog-list lang-en">
+                      <li><span class="type-badge type-feat">Feature</span> Launched Emoji Reactions Spammer floating bar and quick task/note creation popups from messages.</li>
+                      <li><span class="type-badge type-feat">Feature</span> Supported hover quick delete triggers and reacting directly inside Mentions.</li>
+                      <li><span class="type-badge type-ui">UI</span> UI/UX enhancements.</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Timeline Node: v3.0.0 -->
+            <div class="timeline-item">
+              <div class="timeline-badge"></div>
+              <div class="timeline-content">
+                <div class="timeline-card-inner">
+                  <div class="timeline-header">
+                    <span class="timeline-ver">v3.0.0</span>
+                    <span class="timeline-date lang-vi">26/05/2026</span>
+                    <span class="timeline-date lang-en">May 26, 2026</span>
+                  </div>
+                  <div class="timeline-body">
+                    <ul class="changelog-list lang-vi">
+                      <li><span class="type-badge type-feat">Tính năng</span> Tích hợp sao lưu dữ liệu tự động lên Google Drive và công cụ dọn dẹp dung lượng bộ nhớ.</li>
+                      <li><span class="type-badge type-feat">Tính năng</span> Hỗ trợ tùy chọn ẩn/hiện động toàn bộ 6 thẻ tính năng trong Cài đặt thanh bên.</li>
+                      <li><span class="type-badge type-tối ưu">Tối ưu</span> Bổ sung cơ chế tự động nén dung lượng tệp tải lên thư viện hình ảnh Meme.</li>
+                    </ul>
+                    <ul class="changelog-list lang-en">
+                      <li><span class="type-badge type-feat">Feature</span> Supported Google Drive database backup/restore and local storage cleanups.</li>
+                      <li><span class="type-badge type-feat">Feature</span> Enabled dynamic visibility toggles for the 6 core components inside Settings.</li>
+                      <li><span class="type-badge type-optimize">Optimize</span> Curated automatic image compression engine for meme gallery uploads.</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Timeline Node: v2.0.0 -->
+            <div class="timeline-item">
+              <div class="timeline-badge"></div>
+              <div class="timeline-content">
+                <div class="timeline-card-inner">
+                  <div class="timeline-header">
+                    <span class="timeline-ver">v2.0.0</span>
+                    <span class="timeline-date lang-vi">20/05/2026</span>
+                    <span class="timeline-date lang-en">May 20, 2026</span>
+                  </div>
+                  <div class="timeline-body">
+                    <ul class="changelog-list lang-vi">
+                      <li><span class="type-badge type-feat">Tính năng</span> Tích hợp cơ chế thông báo trạng thái quét tin nhắn (crawler scan alert) theo thời gian thực.</li>
+                      <li><span class="type-badge type-ui">Cải tiến</span> Nâng cấp UI/UX.</li>
+                    </ul>
+                    <ul class="changelog-list lang-en">
+                      <li><span class="type-badge type-feat">Feature</span> Integrated active crawler scan alert notifications in headers.</li>
+                      <li><span class="type-badge type-ui">UI</span> UI/UX enhancements.</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Timeline Node: v1.1.0 -->
+            <div class="timeline-item">
+              <div class="timeline-badge"></div>
+              <div class="timeline-content">
+                <div class="timeline-card-inner">
+                  <div class="timeline-header">
+                    <span class="timeline-ver">v1.1.0</span>
+                    <span class="timeline-date lang-vi">18/05/2026</span>
+                    <span class="timeline-date lang-en">May 18, 2026</span>
+                  </div>
+                  <div class="timeline-body">
+                    <ul class="changelog-list lang-vi">
+                      <li><span class="type-badge type-feat">Tính năng</span> Hỗ trợ checklist tác vụ con, nhắc nhở giờ hẹn và báo chuông báo động cho Công việc.</li>
+                      <li><span class="type-badge type-feat">Tính năng</span> Hỗ trợ kéo thả sắp xếp danh sách công việc và ghim tác vụ ưu tiên lên thanh Menu.</li>
+                    </ul>
+                    <ul class="changelog-list lang-en">
+                      <li><span class="type-badge type-feat">Feature</span> Integrated sub-checklist trackers, time reminders, and task alarms.</li>
+                      <li><span class="type-badge type-feat">Feature</span> Enabled drag-and-drop sorting and task promotion to the main menu.</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Timeline Node: v1.0.0 -->
+            <div class="timeline-item">
+              <div class="timeline-badge"></div>
+              <div class="timeline-content">
+                <div class="timeline-card-inner">
+                  <div class="timeline-header">
+                    <span class="timeline-ver">v1.0.0</span>
+                    <span class="timeline-date lang-vi">15/05/2026</span>
+                    <span class="timeline-date lang-en">May 15, 2026</span>
+                  </div>
+                  <div class="timeline-body">
+                    <ul class="changelog-list lang-vi">
+                      <li><span class="type-badge type-feat">Khởi tạo</span> Ra mắt tiện ích Extension ChatOps++ thông minh chạy trực tiếp trên thanh bên.</li>
+                      <li><span class="type-badge type-feat">Cốt lõi</span> Phát hành 4 phân hệ cốt lõi: Công việc (Checklist), Ghi chú (Notes), Tin nhắn bỏ lỡ (Mentions) và Tìm kiếm lịch sử (crawler Search).</li>
+                    </ul>
+                    <ul class="changelog-list lang-en">
+                      <li><span class="type-badge type-feat">Init</span> Launched the ChatOps++ Chrome Extension featuring smart sidepanel interface.</li>
+                      <li><span class="type-badge type-feat">Core</span> Rolled out 4 foundational modules: Tasks, Notes, Mentions, and Search.</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+    </div>
+  </main>
+
+  <footer class="guide-footer">
+    <div class="footer-container">
+      <p class="lang-vi">© 2026 ChatOps++. Được phát triển với 💖 nhằm nâng tầm năng suất làm việc của bạn.</p>
+      <p class="lang-en">© 2026 ChatOps++. Built with 💖 to elevate your ultimate workplace productivity.</p>
+    </div>
+  </footer>
+
+  <div id="guideLightbox" class="guide-lightbox">
+    <button id="guideLightboxClose" style="position: absolute; top: 20px; right: 20px; background: transparent; border: none; color: #fff; font-size: 30px; cursor: pointer;">&times;</button>
+    <img id="guideLightboxImg" src="" style="max-width: 90%; max-height: 90%; object-fit: contain;">
+  </div>
+
+  <script src="guide.js" type="module"></script>
+</body>
+
+</html>

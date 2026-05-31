@@ -413,7 +413,7 @@ body {
   border-radius: 6px;
 }
 
-.tab-btn:hover .tab-icon {
+.tab-btn:hover:not(.active) .tab-icon {
   transform: translateY(-2px);
 }
 
@@ -429,21 +429,14 @@ body {
   opacity: 1;
 }
 
-.tab-btn:hover {
-  color: var(--nav-text-active);
-  background: rgba(255, 255, 255, 0.15);
+.tab-btn:hover:not(.active) {
+  background: var(--nav-bg-hover, #1664c0);
   border-radius: 6px;
+  opacity: 1;
 }
 
-.tab-btn.active {
-  color: var(--accent);
-  background: #ffffff;
-  border-bottom: none;
-  font-weight: 700;
-  border-radius: 6px;
-  margin: 2px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-}
+
+
 
 /* 5-tab layout: compact labels */
 .tab-icon { font-size: 19px; }

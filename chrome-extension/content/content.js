@@ -875,8 +875,8 @@ function showToast(msg) {
           </div>
           <div class="chatops-image-resize-footer">
             <button class="chatops-image-resize-btn chatops-image-resize-btn-cancel">${language.cancel}</button>
-            <button class="chatops-image-resize-btn chatops-image-resize-btn-save">${language.saveCopy || 'Save Copy'}</button>
             <button class="chatops-image-resize-btn chatops-image-resize-btn-insert">${language.submitSaveBtn || 'Gửi & Lưu'}</button>
+            <button class="chatops-image-resize-btn chatops-image-resize-btn-save">${language.saveCopy || 'Save Copy'}</button>
           </div>
         </div>
       `;
@@ -1029,10 +1029,10 @@ function showToast(msg) {
 
     function renderSlideNavigator() {
       if (imagesArray.length <= 1) {
-        navigatorRow.style.display = 'none';
+        navigatorRow.style.setProperty('display', 'none', 'important');
         return;
       }
-      navigatorRow.style.display = 'flex';
+      navigatorRow.style.removeProperty('display');
       
       // Update prev/next button disabled states
       prevBtn.disabled = currentIndex === 0;
@@ -2232,7 +2232,8 @@ function showToast(msg) {
     memeEnabled: true,
     showTabs: { search: true, tasks: true, notes: true, missed: true, reactions: true },
     floatingButtons: { quickNote: true, quickTask: true, spamReactions: false, imagePicker: true, quickReply: true, quickCopy: true },
-    spamEmojis: ['thumbsup', 'heart', 'fire', 'rocket', 'tada', 'laughing', 'smile', 'wink', 'heart_eyes', 'kissing_heart']
+    spamEmojis: ['thumbsup', 'heart', 'fire', 'rocket', 'tada', 'laughing', 'smile', 'wink', 'heart_eyes', 'kissing_heart'],
+    tabsCompactMode: false
   };
   let cachedSettings = { ...DEFAULT_SETTINGS };
   let cachedMemos = [];
@@ -2763,13 +2764,13 @@ function showToast(msg) {
         chatopsGroup.querySelector('.chatops-quick-note-btn.task-btn')?.remove();
       }
 
-      // Inject/Update Note button (📝) if enabled
+      // Inject/Update Note button (📒) if enabled
       if (notesEnabled) {
         let noteBtn = chatopsGroup.querySelector('.chatops-quick-note-btn.note-btn');
         if (!noteBtn) {
           noteBtn = document.createElement('button');
           noteBtn.className = 'chatops-quick-note-btn note-btn';
-          noteBtn.innerHTML = '📝';
+          noteBtn.innerHTML = '📒';
           noteBtn.title = language.quickNoteCreate;
           noteBtn.addEventListener('click', (e) => {
             e.preventDefault(); e.stopPropagation();

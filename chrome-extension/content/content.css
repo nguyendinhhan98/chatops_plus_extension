@@ -1493,19 +1493,19 @@ span.flatpickr-weekday {
   background: #e2e8f0;
 }
 .chatops-image-resize-btn-save {
-  background: #f1f5f9;
-  color: #1c58d9;
-  border: 1px solid rgba(28, 88, 217, 0.2);
-}
-.chatops-image-resize-btn-save:hover {
-  background: rgba(28, 88, 217, 0.08);
-}
-.chatops-image-resize-btn-insert {
   background: #1c58d9;
   color: #ffffff;
 }
-.chatops-image-resize-btn-insert:hover {
+.chatops-image-resize-btn-save:hover {
   background: #1545ad;
+}
+.chatops-image-resize-btn-insert {
+  background: #e0f2fe;
+  color: #0284c7;
+  border: 1px solid #bae6fd;
+}
+.chatops-image-resize-btn-insert:hover {
+  background: #bae6fd;
 }
 
 /* ─── Image Resize Modal Slide Navigator ─── */

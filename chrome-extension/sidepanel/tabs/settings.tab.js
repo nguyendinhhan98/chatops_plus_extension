@@ -192,7 +192,7 @@ const STANDARD_EMOJIS = [
   { name: 'pushpin', char: '📌' },
   { name: 'key', char: '🔑' },
   { name: 'lock', char: '🔒' },
-  { name: 'memo', char: '📝' },
+  { name: 'memo', char: '📒' },
   { name: 'book', char: '📖' },
   { name: 'hammer_and_wrench', char: '🛠️' },
 
@@ -225,6 +225,7 @@ const DEFAULT_SETTINGS = {
   tabTextColor: '#ffffff',
   accentColor: '#1c58d9',
   accentTextColor: '#ffffff',
+  tabsCompactMode: false,
   showTabs: {
     search: true,
     tasks: true, // Always true
@@ -2336,7 +2337,7 @@ function renderCategoryList(categories) {
   }
 }
 
-async function updateSettings(partial) {
+export async function updateSettings(partial) {
   const settings = await getSettings();
   const newSettings = { ...settings, ...partial };
   await chrome.storage.local.set({ [STORAGE_KEYS.SETTINGS]: newSettings });
@@ -2440,6 +2441,7 @@ export function applyThemeToDOM(settings) {
     mockAccentBtn.style.background = accentColor;
     mockAccentBtn.style.color = accentTextColor;
   }
+
 }
 
 export function applyTabRepositioning(settings, showTabs) {
@@ -3057,7 +3059,6 @@ async function fetchGiphyGifs(query = '') {
     `;
   }
 }
-
 export function applyTabOrderToDOM(order) {
   const container = document.querySelector('.tab-nav');
   if (!container) return;
@@ -3133,7 +3134,7 @@ export async function renderTabOrderList() {
 
   const tabMeta = {
     tasks: { icon: '🎯', labelKey: 'taskTabLabel', fallback: 'Tasks' },
-    memo: { icon: '📝', labelKey: 'memoNotesLabel', fallback: 'Notes' },
+    memo: { icon: '📒', labelKey: 'memoNotesLabel', fallback: 'Notes' },
     mentions: { icon: '🔔', labelKey: 'toolsMentionsSubTab', fallback: 'Mentions' },
     'tools-search': { icon: '🔍', labelKey: 'toolsSearchSubTab', fallback: 'Search' },
     'tools-images': { icon: '🖼️', labelKey: 'toolsImagesSubTab', fallback: 'Images' },
