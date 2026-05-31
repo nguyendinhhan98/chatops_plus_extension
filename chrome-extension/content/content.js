@@ -140,10 +140,8 @@ async function injectDynamicTheme() {
   const res = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS]);
   const settings = res[STORAGE_KEYS.SETTINGS] || {};
   
-  const accentColor = settings.accentColor || settings.themeColor || '#1c58d9';
-  const headerColor = settings.headerColor || settings.themeColor || '#1c58d9';
-  const accentTextColor = settings.accentTextColor || '#ffffff';
-  const headerTextColor = settings.headerTextColor || '#ffffff';
+  const accentColor = (settings.accentColor && settings.accentColor !== 'undefined') ? settings.accentColor : '#1c58d9';
+  const accentTextColor = (settings.accentTextColor && settings.accentTextColor !== 'undefined') ? settings.accentTextColor : '#ffffff';
   
   let styleEl = document.getElementById('chatops-dynamic-theme');
   if (!styleEl) {
@@ -154,7 +152,7 @@ async function injectDynamicTheme() {
   styleEl.textContent = `
     :root {
       --chatops-accent: ${accentColor};
-      --chatops-header: ${headerColor};
+      --chatops-header: ${accentColor};
     }
     .chatops-reminder-banner { border-top-color: var(--chatops-accent) !important; }
     .crb-title { color: var(--chatops-accent) !important; }
@@ -1121,11 +1119,11 @@ function showToast(msg) {
           currentIndex = imagesArray.length - 1;
         }
         loadActiveImage();
-        showToast('Đã gửi & lưu ảnh! Đang chuyển sang ảnh tiếp theo...');
+        showToast(language.toastSentAndSavedNext || 'Đã gửi & lưu ảnh! Đang chuyển sang ảnh tiếp theo...');
       } else {
         // Complete! Close modal
         overlay.classList.remove('visible');
-        showToast('Đã gửi & lưu toàn bộ ảnh thành công! 🎉');
+        showToast(language.toastSentAndSavedAll || 'Đã gửi & lưu toàn bộ ảnh thành công! 🎉');
       }
     };
 
@@ -1168,10 +1166,10 @@ function showToast(msg) {
           currentIndex = imagesArray.length - 1;
         }
         loadActiveImage();
-        showToast('Đã lưu ảnh vào thư viện! Đang chuyển sang ảnh tiếp theo...');
+        showToast(language.toastSavedToLibraryNext || 'Đã lưu ảnh vào thư viện! Đang chuyển sang ảnh tiếp theo...');
       } else {
         overlay.classList.remove('visible');
-        showToast('Đã lưu toàn bộ ảnh vào thư viện! 🎉');
+        showToast(language.toastSavedToLibraryAll || 'Đã lưu toàn bộ ảnh vào thư viện! 🎉');
       }
     };
 
@@ -1546,8 +1544,9 @@ function showToast(msg) {
       // Reuse trending cache for same API key
       if (query.trim() === '' && cachedPickerTrendingGifs.length > 0 && cachedPickerTrendingApiKey === apiKey) {
         grid.innerHTML = cachedPickerTrendingGifs.map(gif => {
-          const gifUrl = gif.images.fixed_height.url;
-          return `<div class="chatops-picker-meme-item" data-url="${gifUrl}" title="${gif.title}"><img src="${gifUrl}" alt="${gif.title}" loading="lazy"></div>`;
+          const previewUrl = gif.images.fixed_height_small.url;
+          const insertUrl = settings.giphySize === '100' ? gif.images.fixed_height_small.url : gif.images.fixed_height.url;
+          return `<div class="chatops-picker-meme-item" data-url="${insertUrl}" title="${gif.title}"><img src="${previewUrl}" alt="${gif.title}" loading="lazy"></div>`;
         }).join('');
         return;
       }
@@ -1570,8 +1569,9 @@ function showToast(msg) {
             cachedPickerTrendingApiKey = apiKey;
           }
           grid.innerHTML = result.data.map(gif => {
-            const gifUrl = gif.images.fixed_height.url;
-            return `<div class="chatops-picker-meme-item" data-url="${gifUrl}" title="${gif.title}"><img src="${gifUrl}" alt="${gif.title}" loading="lazy"></div>`;
+            const previewUrl = gif.images.fixed_height_small.url;
+            const insertUrl = settings.giphySize === '100' ? gif.images.fixed_height_small.url : gif.images.fixed_height.url;
+            return `<div class="chatops-picker-meme-item" data-url="${insertUrl}" title="${gif.title}"><img src="${previewUrl}" alt="${gif.title}" loading="lazy"></div>`;
           }).join('');
           return;
         }
@@ -2315,10 +2315,10 @@ function showToast(msg) {
 
     const showTabs = cachedSettings.showTabs || { search: true, tasks: true, notes: true, missed: true, reactions: true };
     const floatingButtons = cachedSettings.floatingButtons || { quickNote: true, quickTask: true, spamReactions: true, reactAlong: false, imagePicker: true, quickReply: false, quickCopy: false };
-    const tasksEnabled = (showTabs.tasks !== false) && (floatingButtons.quickTask !== false);
-    const notesEnabled = (showTabs.notes !== false) && (floatingButtons.quickNote !== false);
-    const spamEnabled = (showTabs.reactions !== false) && (floatingButtons.spamReactions !== false);
-    const reactAlongEnabled = (showTabs.reactions !== false) && (floatingButtons.reactAlong !== false);
+    const tasksEnabled = floatingButtons.quickTask !== false;
+    const notesEnabled = floatingButtons.quickNote !== false;
+    const spamEnabled = floatingButtons.spamReactions !== false;
+    const reactAlongEnabled = floatingButtons.reactAlong !== false;
     const replyEnabled = floatingButtons.quickReply !== false;
     const copyEnabled = floatingButtons.quickCopy !== false;
 
@@ -2674,10 +2674,10 @@ function showToast(msg) {
     
     const showTabs = cachedSettings.showTabs || { search: true, tasks: true, notes: true, missed: true, reactions: true };
     const floatingButtons = cachedSettings.floatingButtons || { quickNote: true, quickTask: true, spamReactions: true, reactAlong: false, imagePicker: true, quickReply: false, quickCopy: false };
-    const tasksEnabled = (showTabs.tasks !== false) && (floatingButtons.quickTask !== false);
-    const notesEnabled = (showTabs.notes !== false) && (floatingButtons.quickNote !== false);
-    const spamEnabled = (showTabs.reactions !== false) && (floatingButtons.spamReactions !== false);
-    const reactAlongEnabled = (showTabs.reactions !== false) && (floatingButtons.reactAlong !== false);
+    const tasksEnabled = floatingButtons.quickTask !== false;
+    const notesEnabled = floatingButtons.quickNote !== false;
+    const spamEnabled = floatingButtons.spamReactions !== false;
+    const reactAlongEnabled = floatingButtons.reactAlong !== false;
     const replyEnabled = floatingButtons.quickReply !== false;
     const copyEnabled = floatingButtons.quickCopy !== false;
 
@@ -2716,6 +2716,8 @@ function showToast(msg) {
         // Apply position-based CSS styling
         if (position === 'above') {
           chatopsGroup.style.cssText = 'position: absolute; bottom: 100%; right: 0; display: inline-flex; align-items: center; gap: 0; margin-bottom: 2px; padding: 2px 4px; background: var(--bg-1, #ffffff); border: 1px solid var(--border, #e5e5e5); border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); z-index: 10;';
+        } else if (position === 'below') {
+          chatopsGroup.style.cssText = 'position: absolute; top: 100%; right: 0; display: inline-flex; align-items: center; gap: 0; margin-top: 2px; padding: 2px 4px; background: var(--bg-1, #ffffff); border: 1px solid var(--border, #e5e5e5); border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); z-index: 10;';
         } else {
           chatopsGroup.style.cssText = 'display: inline-flex; align-items: center; gap: 0;';
         }
@@ -2730,6 +2732,8 @@ function showToast(msg) {
         // Update styling and layout order in case setting changed dynamically
         if (position === 'above') {
           chatopsGroup.style.cssText = 'position: absolute; bottom: 100%; right: 0; display: inline-flex; align-items: center; gap: 0; margin-bottom: 2px; padding: 2px 4px; background: var(--bg-1, #ffffff); border: 1px solid var(--border, #e5e5e5); border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); z-index: 10;';
+        } else if (position === 'below') {
+          chatopsGroup.style.cssText = 'position: absolute; top: 100%; right: 0; display: inline-flex; align-items: center; gap: 0; margin-top: 2px; padding: 2px 4px; background: var(--bg-1, #ffffff); border: 1px solid var(--border, #e5e5e5); border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); z-index: 10;';
         } else {
           chatopsGroup.style.cssText = 'display: inline-flex; align-items: center; gap: 0;';
         }
@@ -2907,7 +2911,7 @@ function showToast(msg) {
 
               if (!res || !res.ok) {
                 let errMsg = res?.error || language.unknown;
-                if (errMsg.toLowerCase().includes('unable to save reaction')) {
+                if (errMsg.toLowerCase().includes('unable to save reaction') || errMsg.toLowerCase().includes('already spammed') || errMsg.toLowerCase().includes('already reacted')) {
                   errMsg = language.reactionAlreadyExists;
                 }
                 showToast(language.spamErrorPrefix + errMsg);
@@ -2986,6 +2990,11 @@ function showToast(msg) {
                 showToast(language.reactAlongSuccess || 'Sao chép các biểu tượng cảm xúc thành công! 🎭');
               } else {
                 let errMsg = res?.error || language.unknown;
+                if (errMsg.toLowerCase().includes('no reactions on this post to clone')) {
+                  errMsg = language.noReactionsToClone || errMsg;
+                } else if (errMsg.toLowerCase().includes('already reacted to all') || errMsg.toLowerCase().includes('already reacted')) {
+                  errMsg = language.alreadyClonedAllReactions || errMsg;
+                }
                 showToast(language.reactAlongErrorPrefix + errMsg);
               }
             });
@@ -3017,7 +3026,7 @@ function showToast(msg) {
                 postEl.style.transition = 'opacity 0.3s ease';
                 postEl.style.opacity = '0';
                 setTimeout(() => {
-                  postEl.remove();
+                   postEl.remove();
                 }, 300);
               } else {
                 console.error('[ChatOps Ext] Failed to delete message:', res?.error);
@@ -3030,6 +3039,27 @@ function showToast(msg) {
       } else {
         chatopsGroup.querySelector('.chatops-quick-note-btn.msg-delete-btn')?.remove();
       }
+
+      // Sort ChatOps action buttons dynamically to ensure consistent layout
+      const orderClasses = [
+        'task-btn',
+        'note-btn',
+        'quick-reply-btn',
+        'quick-copy-btn',
+        'spam-btn',
+        'clone-btn',
+        'retract-btn',
+        'msg-delete-btn'
+      ];
+      const buttons = Array.from(chatopsGroup.querySelectorAll('.chatops-quick-note-btn'));
+      buttons.sort((a, b) => {
+        const classA = orderClasses.find(cls => a.classList.contains(cls));
+        const classB = orderClasses.find(cls => b.classList.contains(cls));
+        const idxA = classA ? orderClasses.indexOf(classA) : 999;
+        const idxB = classB ? orderClasses.indexOf(classB) : 999;
+        return idxA - idxB;
+      });
+      buttons.forEach(btn => chatopsGroup.appendChild(btn));
     });
   }
 

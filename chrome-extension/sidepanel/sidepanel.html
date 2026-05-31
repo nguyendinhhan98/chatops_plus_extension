@@ -17,24 +17,39 @@
 <body>
   <div class="panel-container">
     <!-- ─── Header (compact action bar only) ─── -->
-    <div class="workspace-header" style="display: flex; align-items: center; justify-content: flex-end; gap: 6px;">
-      <!-- Language Toggle Flag Button -->
-      <button id="btnHeaderLang" data-i18n-title="langToggleTooltip" title="Switch to Vietnamese" style="font-size: 11px; font-weight: 700; color: var(--accent); margin: 0;">
-        EN
-      </button>
-      <!-- Coffee Icon Button to open Donate Modal -->
-      <button id="btnHeaderCoffee" data-i18n-title="supportVibecodingTitle" title="Support Vibecoding" style="margin: 0;">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: block;">
-          <path d="M18 8h1a4 4 0 0 1 0 8h-1"></path>
-          <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path>
-          <line x1="6" y1="1" x2="6" y2="4"></line>
-          <line x1="10" y1="1" x2="10" y2="4"></line>
-          <line x1="14" y1="1" x2="14" y2="4"></line>
-        </svg>
-      <!-- Help / Guide Button -->
-      <button id="btnHeaderHelp" data-i18n-title="systemHelpTooltip" title="System Help & Tips" style="font-weight: 700; color: var(--accent); font-size: 15px; font-family: monospace; margin: 0;">
-        ?
-      </button>
+    <div class="workspace-header" style="display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 8px 10px 8px 12px; box-sizing: border-box; width: 100%;">
+      <!-- Brand & Version -->
+      <div class="header-brand">
+        <span class="header-brand-logo">ChatOps++</span>
+        <span id="header-version" class="header-brand-version">v3.3.7</span>
+      </div>
+      <!-- Right: Action Buttons -->
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <!-- Language Toggle Flag Button -->
+        <button id="btnHeaderLang" data-i18n-title="langToggleTooltip" title="Switch to Vietnamese" style="font-size: 11px; font-weight: 700; color: var(--accent); margin: 0;">
+          EN
+        </button>
+        <!-- Coffee Icon Button to open Donate Modal -->
+        <button id="btnHeaderCoffee" data-i18n-title="supportVibecodingTitle" title="Support Vibecoding" style="margin: 0;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: block;">
+            <path d="M18 8h1a4 4 0 0 1 0 8h-1"></path>
+            <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path>
+            <line x1="6" y1="1" x2="6" y2="4"></line>
+            <line x1="10" y1="1" x2="10" y2="4"></line>
+            <line x1="14" y1="1" x2="14" y2="4"></line>
+          </svg>
+        </button>
+        <!-- Star Icon Button to open Chrome Web Store reviews -->
+        <button id="btnHeaderRate" data-i18n-title="rateExtensionTooltip" title="Rate 5 Stars" style="margin: 0;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: block;">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="var(--accent)"></polygon>
+          </svg>
+        </button>
+        <!-- Help / Guide Button -->
+        <button id="btnHeaderHelp" data-i18n-title="systemHelpTooltip" title="System Help & Tips" style="font-weight: 700; color: var(--accent); font-size: 15px; font-family: monospace; margin: 0;">
+          ?
+        </button>
+      </div>
     </div>
     <!-- Workspace Dropdown (hidden, referenced by JS — instances below appear inline in Search/Mentions) -->
     <div id="spWorkspaceDropdown" class="custom-dropdown" style="display:none; position:relative;">
@@ -45,7 +60,6 @@
       <div id="spWorkspaceOptions" class="custom-dropdown-options"></div>
     </div>
 
-    <!-- ─── Tab Navigation (4 tabs) ─── -->
     <nav class="tab-nav">
       <button class="tab-btn active" data-tab="tasks" data-i18n-title="taskTabLabel" title="Tasks">
         <span class="tab-icon">🎯</span>
@@ -63,6 +77,19 @@
         <span class="tab-icon">⚡</span>
         <span class="tab-label" data-i18n="toolsTabLabel">Tools</span>
       </button>
+      <button class="tab-btn" data-tab="tools-search" data-i18n-title="toolsSearchSubTab" title="Search">
+        <span class="tab-icon">🔍</span>
+        <span class="tab-label" data-i18n="toolsSearchSubTab">Search</span>
+      </button>
+      <button class="tab-btn" data-tab="tools-images" data-i18n-title="toolsImagesSubTab" title="Images">
+        <span class="tab-icon">🖼️</span>
+        <span class="tab-label" data-i18n="toolsImagesSubTab">Images</span>
+      </button>
+      <button class="tab-btn" data-tab="tools-reactions" data-i18n-title="toolsReactionsSubTab" title="Reactions">
+        <span class="tab-icon">🔥</span>
+        <span class="tab-label" data-i18n="toolsReactionsSubTab">Reactions</span>
+      </button>
+      <!-- Settings tab -->
       <button class="tab-btn" data-tab="settings" data-i18n-title="settingsTabLabel" title="Settings">
         <span class="tab-icon">⚙️</span>
         <span class="tab-label" data-i18n="settingsTabLabel">Settings</span>
@@ -299,7 +326,7 @@
       </div>
 
       <!-- Section: Search (formerly tab-search, but now a nested panel) -->
-      <div id="tools-section-search" class="tools-tab-panel active" style="display:flex; flex-direction:column; flex:1; overflow:hidden; position:relative;">
+      <div id="tools-section-search" class="tools-tab-panel" style="display:none; flex-direction:column; flex:1; overflow:hidden; position:relative;">
         <!-- Hidden Search Form Placeholder -->
         <div id="spSearchFormPlaceholder" style="display: none;">
           <div class="search-form" id="spSearchForm" style="padding: 12px var(--app-padding, 16px) 16px var(--app-padding, 16px); background: white; border-bottom: 1px solid var(--border);">
@@ -383,7 +410,7 @@
 
 
       <!-- Section: Images (formerly reactions-section-meme) -->
-      <div id="tools-section-images" class="tools-tab-panel" style="display:none; flex:1; flex-direction:column; overflow-y:auto; padding:var(--app-padding, 16px); width:100%; box-sizing:border-box;">
+      <div id="tools-section-images" class="tools-tab-panel" style="display:none; flex:1; flex-direction:column; overflow-y:auto; overflow-x:hidden !important; padding:var(--app-padding, 16px); width:100%; box-sizing:border-box;">
         <div class="settings-group" id="personalMemesConfigArea" style="padding-bottom: 16px; width:100%; box-sizing:border-box;">
           <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px;">
             <h3 class="settings-title" style="margin: 0;" data-i18n="imageLibrarySettingsTitle">Cài đặt hình ảnh</h3>
@@ -436,7 +463,7 @@
       </div>
 
       <!-- Section: Reactions (formerly reactions-section-picker) -->
-      <div id="tools-section-reactions" class="tools-tab-panel" style="display:none; flex:1; flex-direction:column; overflow-y:auto; padding:var(--app-padding, 16px);">
+      <div id="tools-section-reactions" class="tools-tab-panel" style="display:none; flex:1; flex-direction:column; overflow-y:auto; overflow-x:hidden !important; padding:var(--app-padding, 16px); width:100%; box-sizing:border-box;">
         <!-- Reaction Spammer Explainer Card -->
         <div class="sp-how-to-use-card">
           <div class="card-icon">💡</div>
@@ -493,15 +520,15 @@
 
           <!-- Standard grid -->
           <div id="standardEmojiGrid" class="emoji-picker-grid"
-            style="display:grid; grid-template-columns: repeat(6, 1fr); gap:8px; max-height:400px; overflow-y:auto; padding:4px; justify-items: center;">
+            style="display:grid; grid-template-columns: repeat(auto-fill, minmax(38px, 1fr)); gap:8px; max-height:400px; overflow-y:auto; overflow-x:hidden !important; padding:4px; justify-items: center;">
             <!-- Standard emojis rendered dynamically -->
           </div>
 
           <!-- Custom grid -->
           <div id="customEmojiGrid" class="emoji-picker-grid"
-            style="display:none; flex-direction:column; max-height:400px; overflow-y:auto; padding:4px; gap:8px;">
-<div id="customEmojiGridItems"
-              style="display:grid; grid-template-columns: repeat(5, 1fr); gap:8px; justify-items: center; width: 100%;">
+            style="display:none; flex-direction:column; max-height:400px; overflow-y:auto; overflow-x:hidden !important; padding:4px; gap:8px;">
+            <div id="customEmojiGridItems"
+              style="display:grid; grid-template-columns: repeat(auto-fill, minmax(38px, 1fr)); gap:8px; justify-items: center; width: 100%;">
               <!-- Custom emojis rendered dynamically -->
             </div>
             <div id="customEmojiLoading" data-i18n="loadingMoreEmojis"
@@ -615,77 +642,7 @@
       <div id="settingsScrollContainer" style="flex:1; overflow-y: auto; padding: var(--app-padding, 16px);">
         <!-- Section: Features -->
         <div id="settings-section-features" class="settings-tab-panel active">
-          <h2 style="font-size: 15px; font-weight: 600; color: var(--text-1); margin-bottom: 20px;" data-i18n="featureSettingsTitle">Feature Settings</h2>
 
-          <!-- Group 1: Sidepanel Tabs & Modules -->
-          <div class="settings-accordion" id="accordionMenuTabs">
-            <div class="settings-accordion-header">
-              <div class="accordion-left">
-                <span class="accordion-icon">📋</span>
-                <div>
-                  <div class="accordion-title" data-i18n="menuTabsTitle">Sidepanel Menu Tabs</div>
-                  <div class="accordion-desc" data-i18n="menuTabsDesc">Show/hide tabs in sidepanel navigation</div>
-                </div>
-              </div>
-              <span class="accordion-arrow">▼</span>
-            </div>
-            <div class="settings-accordion-body">
-              <div class="settings-toggle-list">
-
-                <!-- Tasks (standalone parent tab) -->
-                <label class="settings-toggle-row">
-                  <span>🎯 <span data-i18n="taskTabLabel">Tasks</span></span>
-                  <input type="checkbox" id="settingShowTasks" class="settings-toggle" checked>
-                  <span class="toggle-slider"></span>
-                </label>
-
-                <!-- Notes (standalone parent tab) -->
-                <label class="settings-toggle-row">
-                  <span>📝 <span data-i18n="memoNotesLabel">Notes</span></span>
-                  <input type="checkbox" id="settingShowNotes" class="settings-toggle" checked>
-                  <span class="toggle-slider"></span>
-                </label>
-
-                <!-- Tools (parent tab) + sub-tabs -->
-                <div>
-                  <label class="settings-toggle-row" id="rowShowTools" style="cursor:pointer;">
-                    <span>⚡ <span data-i18n="toolsTabLabel">Other Tools</span></span>
-                    <input type="checkbox" id="settingShowTools" class="settings-toggle" checked>
-                    <span class="toggle-slider"></span>
-                  </label>
-                  <div class="settings-toggle-sub-group expanded" id="toolsSubToggles">
-                    <label class="settings-toggle-row-sub">
-                      <span>🔍 <span data-i18n="toolsSearchSubTab">Search</span></span>
-                      <input type="checkbox" id="settingShowSearch" class="settings-toggle" checked>
-                      <span class="toggle-slider-sm"></span>
-                    </label>
-                    <label class="settings-toggle-row-sub">
-                      <span>🔔 <span data-i18n="toolsMentionsSubTab">Missed Messages</span></span>
-                      <input type="checkbox" id="settingShowMissed" class="settings-toggle" checked>
-                      <span class="toggle-slider-sm"></span>
-                    </label>
-                    <label class="settings-toggle-row-sub">
-                      <span>🖼️ <span data-i18n="toolsImagesSubTab">Images</span></span>
-                      <input type="checkbox" id="settingMemeEnabled" class="settings-toggle" checked>
-                      <span class="toggle-slider-sm"></span>
-                    </label>
-                    <label class="settings-toggle-row-sub">
-                      <span>🔥 <span data-i18n="toolsReactionsSubTab">Spam Reactions</span></span>
-                      <input type="checkbox" id="settingShowReactions" class="settings-toggle" checked>
-                      <span class="toggle-slider-sm"></span>
-                    </label>
-                  </div>
-                </div>
-
-                <!-- Settings (always visible, no toggle) -->
-                <div class="settings-toggle-row-always-on">
-                  <span>⚙️ <span data-i18n="settingsTabLabel">Settings</span></span>
-                  <span class="toggle-always-on-badge" data-i18n="alwaysOnBadge">Always On</span>
-                </div>
-
-              </div>
-            </div>
-          </div>
 
           <!-- Group 2: Floating Buttons outside ChatOps -->
           <div class="settings-accordion" id="accordionFloatingButtons">
@@ -751,6 +708,7 @@
                   <option value="before" data-i18n="posHorizontalBefore">Horizontal - Before Actions</option>
                   <option value="after" data-i18n="posHorizontalAfter">Horizontal - After Actions</option>
                   <option value="above" data-i18n="posAbove">Vertical - Above Actions</option>
+                  <option value="below" data-i18n="posBelow">Vertical - Below Actions</option>
                 </select>
               </div>
             </div>
@@ -771,20 +729,21 @@
               <span class="accordion-arrow">▼</span>
             </div>
             <div class="settings-accordion-body">
-              <div style="display:flex; align-items:flex-start; gap:10px; padding:12px 14px; background:rgba(234,179,8,0.08); border:1px solid rgba(234,179,8,0.3); border-radius:10px; margin-bottom:14px;">
-                <span style="font-size:18px; flex-shrink:0;">⚠️</span>
-                <div style="font-size:12px; color:var(--text-2); line-height:1.6;" data-i18n-html="giphyRateLimitWarning">
-                  <strong style="color:var(--text-1);">Giphy Free API Limit: 100 requests/hour</strong><br>
-                  Để tối ưu, extension tự động <strong>cache trending GIFs</strong> — chỉ gọi API khi bạn tìm kiếm. Hãy dùng <strong>API Key riêng</strong> để không bị share giới hạn với người khác.
-                </div>
-              </div>
               <div style="margin-bottom:14px;">
                 <h3 class="settings-title" style="margin-top:0;" data-i18n="giphyApiKeyTitle">Giphy API Key</h3>
                 <p class="settings-desc" data-i18n="giphyApiKeyDesc">Nhập API Key Giphy của bạn. Để trống để dùng key mặc định (giới hạn dùng chung).</p>
                 <div class="settings-row" style="margin-top: 12px; display: flex; flex-direction: column; gap: 6px;">
-                  <input type="text" id="settingGiphyApiKey" class="settings-input-text" data-i18n-placeholder="giphyApiKeyPlaceholder" placeholder="Paste Giphy API Key here..." style="width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 12px; outline: none; background: var(--bg-1); color: var(--text-1); font-family: monospace;">
+                  <input type="text" id="settingGiphyApiKey" class="settings-input-text" data-i18n-placeholder="giphyApiKeyPlaceholder" placeholder="Paste Giphy API Key here..." style="width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; outline: none; background: var(--bg-1); color: var(--text-1); font-family: inherit;">
                   <div id="settingGiphyApiKeyStatus" style="font-size: 11px; font-weight: 600; display: none;"></div>
                 </div>
+              </div>
+              <div style="margin-bottom:14px; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--border);">
+                <h3 class="settings-title" data-i18n="giphySizeTitle">Kích thước GIF khi gửi</h3>
+                <p class="settings-desc" data-i18n="giphySizeDesc">Chọn kích thước hình ảnh GIF khi chèn vào khung chat.</p>
+                <select id="settingGiphySize" class="custom-select" style="width: 100%; max-width: 220px; font-size: 12.5px;">
+                  <option value="200" data-i18n="giphySize200">Lớn (200px - Mặc định)</option>
+                  <option value="100" data-i18n="giphySize100">Nhỏ (100px)</option>
+                </select>
               </div>
               <div style="padding-top:14px; border-top:1px dashed var(--border);">
                 <h3 class="settings-title" style="margin-top:0;" data-i18n="giphyGuideTitle">🔑 Cách lấy Giphy API Key miễn phí</h3>
@@ -795,7 +754,7 @@
                   <li data-i18n-html="giphyGuideStep4">Copy <strong>API Key</strong> được cấp → paste vào ô trên</li>
                 </ol>
                 <div style="margin-top:10px; padding:10px 12px; background:var(--bg-2); border-radius:8px; font-size:12px; color:var(--text-3);" data-i18n-html="giphyGuideNote">
-                  💡 <strong>Gói miễn phí</strong> hỗ trợ 100 request/giờ — đủ cho sử dụng cá nhân hàng ngày.
+                  💡 <strong>Gói miễn phí</strong> hỗ trợ 100 request/giờ.
                 </div>
               </div>
             </div>
@@ -819,7 +778,7 @@
                 <span id="categoryCharCounter" style="font-size: 11.5px; font-weight: 600; color: var(--text-3); font-family: monospace; background: var(--bg-3); padding: 2px 6px; border-radius: 10px; border: 1px solid var(--border);">0/10</span>
               </div>
               <div class="category-add-row" style="display:flex; gap:8px; margin-bottom:12px;">
-                <input type="text" id="settingNewCategory" maxlength="10" data-i18n-placeholder="newCategoryPlaceholder" placeholder="Enter new category... (Enter to save)"
+                <input type="text" id="settingNewCategory" maxlength="10" data-i18n-placeholder="newCategoryPlaceholder" placeholder="Enter new category..."
                   style="flex:1; padding:8px 12px; border:1px solid var(--border); border-radius:var(--radius-sm); font-family:inherit; font-size:13px; outline:none; background:var(--bg-1); color:var(--text-1);">
                 <button id="btnAddCategory" class="btn btn-primary" data-i18n="addBtn"
                   style="padding:0 16px; font-weight:600; white-space:nowrap; border-radius: 4px;">Add</button>
@@ -829,186 +788,370 @@
               </ul>
             </div>
           </div>
+
+          <!-- Group 7: Support & Rate -->
+          <div class="settings-accordion" id="accordionSupportRate">
+            <div class="settings-accordion-header">
+              <div class="accordion-left">
+                <span class="accordion-icon">💬</span>
+                <div>
+                  <div class="accordion-title" data-i18n="supportRateTitle">Rate & Feedback</div>
+                  <div class="accordion-desc" data-i18n="supportRateDesc">Rate 5 stars on Chrome Web Store</div>
+                </div>
+              </div>
+              <span class="accordion-arrow">▼</span>
+            </div>
+            <div class="settings-accordion-body">
+              <div style="display:flex; flex-direction:column; gap:12px; padding:4px;">
+                <p style="font-size:13px; color:var(--text-2); margin:0; line-height:1.5;" data-i18n="rateAppDescription">
+                  If this extension has been helpful to you, please consider rating us 5 stars on the Chrome Web Store to support development! ⭐
+                </p>
+                <a id="btnRateAppStore" href="https://chromewebstore.google.com/detail/chatops++/mmemhnbgmhfaognbfjhienigmmephjgm/reviews?hl=vi&authuser=0" target="_blank" class="btn btn-primary" style="display:flex; align-items:center; justify-content:center; gap:8px; font-weight:700; height:38px; text-decoration:none;">
+                  ⭐ <span data-i18n="rateAppButton">Rate 5 Stars Now</span>
+                </a>
+                <div style="border-top:1px dashed var(--border); margin-top:4px; padding-top:10px;">
+                  <p style="font-size:12.5px; color:var(--text-3); margin:0;" data-i18n-html="supportContactDesc">
+                    For any feedback or bug reports, please contact: <a href="mailto:dinhhan09091998@gmail.com" style="color:var(--accent); text-decoration:underline;">dinhhan09091998@gmail.com</a>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Section: UI -->
         <div id="settings-section-ui" class="settings-tab-panel" style="display:none">
-          <h2 style="font-size: 15px; font-weight: 600; color: var(--text-1); margin-bottom: 20px;" data-i18n="themeSettingsTitle">Theme Settings</h2>
-          <div class="settings-group">
-            <!-- Color Preset Selectors -->
-            <div class="settings-color-grid" style="display: flex; flex-direction: column; gap: 16px; width: 100%;">
-              <div class="settings-color-item"
-                style="border: 1px solid var(--border); padding: 12px; border-radius: 10px; background: var(--bg-1); box-shadow: 0 2px 4px rgba(0,0,0,0.01);">
-                <span
-                  style="font-weight: 600; font-size: 13px; color: var(--text-1); display: block; margin-bottom: 10px;" data-i18n="themeHeaderTitle">Thành phần Header</span>
 
-                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                  <span style="font-size: 11px; font-weight: 600; color: var(--text-3); min-width: 35px; flex-shrink: 0;" data-i18n="colorBgLabel">Nền</span>
-                  <div class="color-presets-row" data-key="headerColor" style="display: flex; gap: 6px; flex-wrap: wrap; margin: 0; justify-content: flex-start; flex: 1;">
-                    <button class="color-preset active" data-color="#1c58d9" 
-                      style="background: #1c58d9; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
-                    <button class="color-preset " data-color="#3db887" 
-                      style="background: #3db887; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
-                    <button class="color-preset " data-color="#e8384f" 
-                      style="background: #e8384f; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
-                    <button class="color-preset " data-color="#805bfa" 
-                      style="background: #805bfa; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
-                    <button class="color-preset active" data-color="#1153ab" 
-                      style="background: #1153ab; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
-                    <button class="color-preset " data-color="#ff7a00" title="Orange"
-                      style="background: #ff7a00; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
-                    <button class="color-preset " data-color="#00b4d8" title="Teal"
-                      style="background: #00b4d8; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
-                    <button class="color-preset " data-color="#f43f5e" title="Rose"
-                      style="background: #f43f5e; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
-                    <button class="color-preset " data-color="#1e293b" title="Slate"
-                      style="background: #1e293b; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
-                    <div class="color-preset-custom-wrapper" style="position: relative; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--border); cursor: pointer; transition: all 0.2s; background: linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet); display: flex; align-items: center; justify-content: center; overflow: hidden; box-sizing: border-box;" data-i18n-title="customColorLabel" title="Custom...">
-                      <input type="color" class="custom-color-picker-input" data-key="headerColor" style="position: absolute; top: -3px; left: -3px; width: 30px; height: 30px; border: 0; padding: 0; cursor: pointer; opacity: 0;">
-                      <span style="font-size: 9px; font-weight: 700; color: white; pointer-events: none; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">🎨</span>
-                    </div>
-                  </div>
-                </div>
 
-                <div style="display: flex; align-items: center; gap: 8px; padding-top: 8px; border-top: 1px solid var(--border);">
-                  <span style="font-size: 11px; font-weight: 600; color: var(--text-3); min-width: 35px; flex-shrink: 0;" data-i18n="colorTextLabel">Chữ</span>
-                  <div class="color-presets-row" data-key="headerTextColor" style="display: flex; gap: 6px; flex-wrap: wrap; margin: 0; justify-content: flex-start; flex: 1;">
-                    <button class="color-preset active" data-color="#ffffff" title="White"
-                      style="background: #ffffff; width: 24px; height: 24px; border-radius: 50%; border: 2px solid #cbd5e1; cursor: pointer; transition: all 0.2s;"></button>
-                    <button class="color-preset " data-color="#e2e8f0" title="Light Gray"
-                      style="background: #e2e8f0; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
-                    <button class="color-preset " data-color="#fde68a" title="Yellow"
-                      style="background: #fde68a; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
-                    <button class="color-preset " data-color="#1e293b" title="Dark"
-                      style="background: #1e293b; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
-                    <div class="color-preset-custom-wrapper" style="position: relative; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--border); cursor: pointer; transition: all 0.2s; background: linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet); display: flex; align-items: center; justify-content: center; overflow: hidden; box-sizing: border-box;" data-i18n-title="customColorLabel" title="Custom...">
-                      <input type="color" class="custom-color-picker-input" data-key="headerTextColor" style="position: absolute; top: -3px; left: -3px; width: 30px; height: 30px; border: 0; padding: 0; cursor: pointer; opacity: 0;">
-                      <span style="font-size: 9px; font-weight: 700; color: white; pointer-events: none; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">🎨</span>
-                    </div>
-                  </div>
+          <!-- Group 1: Sidepanel Tabs & Modules -->
+          <div class="settings-accordion" id="accordionMenuTabs">
+            <div class="settings-accordion-header">
+              <div class="accordion-left">
+                <span class="accordion-icon">🗂️</span>
+                <div>
+                  <div class="accordion-title" data-i18n="menuTabsTitle">Sidepanel Menu Tabs</div>
+                  <div class="accordion-desc" data-i18n="menuTabsDesc">Show/hide tabs in sidepanel navigation</div>
                 </div>
               </div>
+              <span class="accordion-arrow">▼</span>
+            </div>
+            <div class="settings-accordion-body">
+              <div class="settings-toggle-list">
 
-              <div class="settings-color-item"
-                style="border: 1px solid var(--border); padding: 12px; border-radius: 10px; background: var(--bg-1); box-shadow: 0 2px 4px rgba(0,0,0,0.01);">
-                <span
-                  style="font-weight: 600; font-size: 13px; color: var(--text-1); display: block; margin-bottom: 10px;" data-i18n="themeNavTitle">Thanh điều hướng (Tab)</span>
-
-                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                  <span style="font-size: 11px; font-weight: 600; color: var(--text-3); min-width: 35px; flex-shrink: 0;" data-i18n="colorBgLabel">Nền</span>
-                  <div class="color-presets-row" data-key="navColor" style="display: flex; gap: 6px; flex-wrap: wrap; margin: 0; justify-content: flex-start; flex: 1;">
-                    <button class="color-preset active" data-color="#1c58d9" 
-                      style="background: #1c58d9; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
-                    <button class="color-preset " data-color="#3db887" 
-                      style="background: #3db887; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
-                    <button class="color-preset " data-color="#e8384f" 
-                      style="background: #e8384f; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
-                    <button class="color-preset " data-color="#805bfa" 
-                      style="background: #805bfa; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
-                    <button class="color-preset active" data-color="#1153ab" 
-                      style="background: #1153ab; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
-                    <button class="color-preset " data-color="#ff7a00" title="Orange"
-                      style="background: #ff7a00; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
-                    <button class="color-preset " data-color="#00b4d8" title="Teal"
-                      style="background: #00b4d8; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
-                    <button class="color-preset " data-color="#f43f5e" title="Rose"
-                      style="background: #f43f5e; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
-                    <button class="color-preset " data-color="#1e293b" title="Slate"
-                      style="background: #1e293b; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
-                    <div class="color-preset-custom-wrapper" style="position: relative; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--border); cursor: pointer; transition: all 0.2s; background: linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet); display: flex; align-items: center; justify-content: center; overflow: hidden; box-sizing: border-box;" data-i18n-title="customColorLabel" title="Custom...">
-                      <input type="color" class="custom-color-picker-input" data-key="navColor" style="position: absolute; top: -3px; left: -3px; width: 30px; height: 30px; border: 0; padding: 0; cursor: pointer; opacity: 0;">
-                      <span style="font-size: 9px; font-weight: 700; color: white; pointer-events: none; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">🎨</span>
+                <!-- Tasks Card -->
+                <div class="menu-tab-card">
+                  <div class="menu-tab-card-header">
+                    <div class="menu-tab-info">
+                      <span class="menu-tab-icon">🎯</span>
+                      <span class="menu-tab-name" data-i18n="taskTabLabel">Tasks</span>
                     </div>
+                    <label class="premium-switch">
+                      <input type="checkbox" id="settingShowTasks" checked>
+                      <span class="premium-slider"></span>
+                    </label>
+                  </div>
+                  <div class="menu-tab-sub-options" id="promoteTasksWrapper">
+                    <label class="menu-tab-promote-row">
+                      <input type="checkbox" id="settingPromoteTasks" class="premium-checkbox" checked>
+                      <span data-i18n="promoteToMainTab">Promote to Main Tab</span>
+                    </label>
                   </div>
                 </div>
 
-                <div style="display: flex; align-items: center; gap: 8px; padding-top: 8px; border-top: 1px solid var(--border);">
-                  <span style="font-size: 11px; font-weight: 600; color: var(--text-3); min-width: 35px; flex-shrink: 0;" data-i18n="colorTextLabel">Chữ</span>
-                  <div class="color-presets-row" data-key="tabTextColor" style="display: flex; gap: 6px; flex-wrap: wrap; margin: 0; justify-content: flex-start; flex: 1;">
-                    <button class="color-preset active" data-color="#ffffff" title="White"
-                      style="background: #ffffff; width: 24px; height: 24px; border-radius: 50%; border: 2px solid #cbd5e1; cursor: pointer; transition: all 0.2s;"></button>
-                    <button class="color-preset " data-color="#e2e8f0" title="Light Gray"
-                      style="background: #e2e8f0; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
-                    <button class="color-preset " data-color="#fde68a" title="Yellow"
-                      style="background: #fde68a; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
-                    <button class="color-preset " data-color="#1e293b" title="Dark"
-                      style="background: #1e293b; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
-                    <div class="color-preset-custom-wrapper" style="position: relative; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--border); cursor: pointer; transition: all 0.2s; background: linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet); display: flex; align-items: center; justify-content: center; overflow: hidden; box-sizing: border-box;" data-i18n-title="customColorLabel" title="Custom...">
-                      <input type="color" class="custom-color-picker-input" data-key="tabTextColor" style="position: absolute; top: -3px; left: -3px; width: 30px; height: 30px; border: 0; padding: 0; cursor: pointer; opacity: 0;">
-                      <span style="font-size: 9px; font-weight: 700; color: white; pointer-events: none; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">🎨</span>
+                <!-- Notes Card -->
+                <div class="menu-tab-card">
+                  <div class="menu-tab-card-header">
+                    <div class="menu-tab-info">
+                      <span class="menu-tab-icon">📝</span>
+                      <span class="menu-tab-name" data-i18n="memoNotesLabel">Notes</span>
                     </div>
+                    <label class="premium-switch">
+                      <input type="checkbox" id="settingShowNotes" checked>
+                      <span class="premium-slider"></span>
+                    </label>
                   </div>
-                </div>
-              </div>
-
-              <div class="settings-color-item"
-                style="border: 1px solid var(--border); padding: 12px; border-radius: 10px; background: var(--bg-1); box-shadow: 0 2px 4px rgba(0,0,0,0.01);">
-                <span
-                  style="font-weight: 600; font-size: 13px; color: var(--text-1); display: block; margin-bottom: 10px;" data-i18n="themeAccentTitle">Nút bật & Điểm nhấn</span>
-
-                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                  <span style="font-size: 11px; font-weight: 600; color: var(--text-3); min-width: 35px; flex-shrink: 0;" data-i18n="colorBgLabel">Nền</span>
-                  <div class="color-presets-row" data-key="accentColor" style="display: flex; gap: 6px; flex-wrap: wrap; margin: 0; justify-content: flex-start; flex: 1;">
-                    <button class="color-preset active" data-color="#1c58d9" 
-                      style="background: #1c58d9; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
-                    <button class="color-preset " data-color="#3db887" 
-                      style="background: #3db887; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
-                    <button class="color-preset " data-color="#e8384f" 
-                      style="background: #e8384f; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
-                    <button class="color-preset " data-color="#805bfa" 
-                      style="background: #805bfa; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
-                    <button class="color-preset " data-color="#f5a623" 
-                      style="background: #f5a623; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
-                    <button class="color-preset " data-color="#ff7a00" title="Orange"
-                      style="background: #ff7a00; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
-                    <button class="color-preset " data-color="#00b4d8" title="Teal"
-                      style="background: #00b4d8; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
-                    <button class="color-preset " data-color="#f43f5e" title="Rose"
-                      style="background: #f43f5e; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
-                    <button class="color-preset " data-color="#1e293b" title="Slate"
-                      style="background: #1e293b; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
-                    <div class="color-preset-custom-wrapper" style="position: relative; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--border); cursor: pointer; transition: all 0.2s; background: linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet); display: flex; align-items: center; justify-content: center; overflow: hidden; box-sizing: border-box;" data-i18n-title="customColorLabel" title="Custom...">
-                      <input type="color" class="custom-color-picker-input" data-key="accentColor" style="position: absolute; top: -3px; left: -3px; width: 30px; height: 30px; border: 0; padding: 0; cursor: pointer; opacity: 0;">
-                      <span style="font-size: 9px; font-weight: 700; color: white; pointer-events: none; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">🎨</span>
-                    </div>
+                  <div class="menu-tab-sub-options" id="promoteNotesWrapper">
+                    <label class="menu-tab-promote-row">
+                      <input type="checkbox" id="settingPromoteNotes" class="premium-checkbox" checked>
+                      <span data-i18n="promoteToMainTab">Promote to Main Tab</span>
+                    </label>
                   </div>
                 </div>
 
-                <div style="display: flex; align-items: center; gap: 8px; padding-top: 8px; border-top: 1px solid var(--border);">
-                  <span style="font-size: 11px; font-weight: 600; color: var(--text-3); min-width: 35px; flex-shrink: 0;" data-i18n="colorTextLabel">Chữ</span>
-                  <div class="color-presets-row" data-key="accentTextColor" style="display: flex; gap: 6px; flex-wrap: wrap; margin: 0; justify-content: flex-start; flex: 1;">
-                    <button class="color-preset active" data-color="#ffffff" title="White"
-                      style="background: #ffffff; width: 24px; height: 24px; border-radius: 50%; border: 2px solid #cbd5e1; cursor: pointer; transition: all 0.2s;"></button>
-                    <button class="color-preset " data-color="#e2e8f0" title="Light Gray"
-                      style="background: #e2e8f0; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
-                    <button class="color-preset " data-color="#fde68a" title="Yellow"
-                      style="background: #fde68a; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
-                    <button class="color-preset " data-color="#1e293b" title="Dark"
-                      style="background: #1e293b; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
-                    <div class="color-preset-custom-wrapper" style="position: relative; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--border); cursor: pointer; transition: all 0.2s; background: linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet); display: flex; align-items: center; justify-content: center; overflow: hidden; box-sizing: border-box;" data-i18n-title="customColorLabel" title="Custom...">
-                      <input type="color" class="custom-color-picker-input" data-key="accentTextColor" style="position: absolute; top: -3px; left: -3px; width: 30px; height: 30px; border: 0; padding: 0; cursor: pointer; opacity: 0;">
-                      <span style="font-size: 9px; font-weight: 700; color: white; pointer-events: none; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">🎨</span>
+                <!-- Search Card -->
+                <div class="menu-tab-card">
+                  <div class="menu-tab-card-header">
+                    <div class="menu-tab-info">
+                      <span class="menu-tab-icon">🔍</span>
+                      <span class="menu-tab-name" data-i18n="toolsSearchSubTab">Search</span>
                     </div>
+                    <label class="premium-switch">
+                      <input type="checkbox" id="settingShowSearch" checked>
+                      <span class="premium-slider"></span>
+                    </label>
+                  </div>
+                  <div class="menu-tab-sub-options" id="promoteSearchWrapper">
+                    <label class="menu-tab-promote-row">
+                      <input type="checkbox" id="settingPromoteSearch" class="premium-checkbox" checked>
+                      <span data-i18n="promoteToMainTab">Promote to Main Tab</span>
+                    </label>
                   </div>
                 </div>
+
+                <!-- Missed Messages Card -->
+                <div class="menu-tab-card">
+                  <div class="menu-tab-card-header">
+                    <div class="menu-tab-info">
+                      <span class="menu-tab-icon">🔔</span>
+                      <span class="menu-tab-name" data-i18n="toolsMentionsSubTab">Missed Messages</span>
+                    </div>
+                    <label class="premium-switch">
+                      <input type="checkbox" id="settingShowMissed" checked>
+                      <span class="premium-slider"></span>
+                    </label>
+                  </div>
+                  <div class="menu-tab-sub-options" id="promoteMentionsWrapper">
+                    <label class="menu-tab-promote-row">
+                      <input type="checkbox" id="settingPromoteMentions" class="premium-checkbox" checked>
+                      <span data-i18n="promoteToMainTab">Promote to Main Tab</span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Images Card -->
+                <div class="menu-tab-card">
+                  <div class="menu-tab-card-header">
+                    <div class="menu-tab-info">
+                      <span class="menu-tab-icon">🖼️</span>
+                      <span class="menu-tab-name" data-i18n="toolsImagesSubTab">Images</span>
+                    </div>
+                    <label class="premium-switch">
+                      <input type="checkbox" id="settingMemeEnabled" checked>
+                      <span class="premium-slider"></span>
+                    </label>
+                  </div>
+                  <div class="menu-tab-sub-options" id="promoteImagesWrapper">
+                    <label class="menu-tab-promote-row">
+                      <input type="checkbox" id="settingPromoteImages" class="premium-checkbox">
+                      <span data-i18n="promoteToMainTab">Promote to Main Tab</span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Spam Reactions Card -->
+                <div class="menu-tab-card">
+                  <div class="menu-tab-card-header">
+                    <div class="menu-tab-info">
+                      <span class="menu-tab-icon">🔥</span>
+                      <span class="menu-tab-name" data-i18n="toolsReactionsSubTab">Spam Reactions</span>
+                    </div>
+                    <label class="premium-switch">
+                      <input type="checkbox" id="settingShowReactions" checked>
+                      <span class="premium-slider"></span>
+                    </label>
+                  </div>
+                  <div class="menu-tab-sub-options" id="promoteReactionsWrapper">
+                    <label class="menu-tab-promote-row">
+                      <input type="checkbox" id="settingPromoteReactions" class="premium-checkbox">
+                      <span data-i18n="promoteToMainTab">Promote to Main Tab</span>
+                    </label>
+                  </div>
+                </div>
+
               </div>
             </div>
+          </div>
 
-            <!-- Padding Density Control -->
-            <div class="settings-color-item"
-              style="border: 1px solid var(--border); padding: 12px; border-radius: 10px; background: var(--bg-1); box-shadow: 0 2px 4px rgba(0,0,0,0.01); margin: 16px 0 0 0; width: 100%; box-sizing: border-box;">
-              <span
-                style="font-weight: 600; font-size: 13px; color: var(--text-1); display: block; margin-bottom: 4px;" data-i18n="themePaddingTitle">Layout Spacing (Padding)</span>
-              <p class="settings-desc" style="margin-bottom: 10px; font-size: 12px; line-height: 1.4;" data-i18n="themePaddingDesc">
-                Fine-tune the density and spacing of lists, cards, and panels across the extension.
+          <!-- Group 1.5: Tab Order Config -->
+          <div class="settings-accordion" id="accordionTabOrder">
+            <div class="settings-accordion-header">
+              <div class="accordion-left">
+                <span class="accordion-icon">↕️</span>
+                <div>
+                  <div class="accordion-title" data-i18n="tabOrderTitle">Tab Order</div>
+                  <div class="accordion-desc" data-i18n="tabOrderDesc">Change the order of sidepanel menu tabs</div>
+                </div>
+              </div>
+              <span class="accordion-arrow">▼</span>
+            </div>
+            <div class="settings-accordion-body">
+              <p class="settings-desc" style="margin-bottom: 12px;" data-i18n="tabOrderGuide">
+                Sử dụng các nút mũi tên để thay đổi thứ tự sắp xếp của các Tab trên thanh điều hướng.
               </p>
-              <div class="settings-row" style="display: flex; align-items: center; gap: 8px;">
-                <select id="settingAppPadding" class="custom-select" style="width:100%; max-width:200px;">
-                  <option value="10px" data-i18n="paddingCompact">Compact (10px)</option>
-                  <option value="12px" data-i18n="paddingDefault" selected>Default (12px)</option>
-                  <option value="16px" data-i18n="paddingComfortable">Comfortable (16px)</option>
-                  <option value="20px" data-i18n="paddingSpacious">Spacious (20px)</option>
-                </select>
+              <div id="tabOrderListContainer">
+                <!-- Sorted items will be rendered here dynamically -->
+              </div>
+            </div>
+          </div>
+          <!-- Group 2: Interface Spacing & Colors -->
+          <div class="settings-accordion" id="accordionThemeColors">
+            <div class="settings-accordion-header">
+              <div class="accordion-left">
+                <span class="accordion-icon">🎨</span>
+                <div>
+                  <div class="accordion-title" data-i18n="themeSettingsTitle">Theme Settings</div>
+                  <div class="accordion-desc" data-i18n="themeColorsDesc">Tùy chỉnh màu sắc và khoảng cách hiển thị</div>
+                </div>
+              </div>
+              <span class="accordion-arrow">▼</span>
+            </div>
+            <div class="settings-accordion-body">
+              <!-- Color Preset Selectors -->
+              <div class="settings-color-grid" style="display: flex; flex-direction: column; gap: 16px; width: 100%;">
+                
+                <!-- Header Component -->
+                <div class="settings-color-item"
+                  style="border: 1px solid var(--border); padding: 12px; border-radius: 10px; background: var(--bg-1); box-shadow: 0 2px 4px rgba(0,0,0,0.01);">
+                  <span
+                    style="font-weight: 600; font-size: 13px; color: var(--text-1); display: block; margin-bottom: 10px;" data-i18n="themeHeaderTitle">Thành phần Header</span>
+
+                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                    <span style="font-size: 11px; font-weight: 600; color: var(--text-3); min-width: 35px; flex-shrink: 0;" data-i18n="colorBgLabel">Nền</span>
+                    <div class="color-presets-row" data-key="headerColor" style="display: flex; gap: 6px; flex-wrap: wrap; margin: 0; justify-content: flex-start; flex: 1;">
+                      <button class="color-preset active" data-color="#1c58d9" 
+                        style="background: #1c58d9; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
+                      <button class="color-preset " data-color="#3db887" 
+                        style="background: #3db887; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
+                      <button class="color-preset " data-color="#e8384f" 
+                        style="background: #e8384f; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
+                      <button class="color-preset active" data-color="#1153ab" 
+                        style="background: #1153ab; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
+                      <button class="color-preset " data-color="#1e293b" title="Slate"
+                        style="background: #1e293b; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
+                      <div class="color-preset-custom-wrapper" style="position: relative; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--border); cursor: pointer; transition: all 0.2s; background: linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet); display: flex; align-items: center; justify-content: center; overflow: hidden; box-sizing: border-box;" data-i18n-title="customColorLabel" title="Custom...">
+                        <input type="color" class="custom-color-picker-input" data-key="headerColor" style="position: absolute; top: -3px; left: -3px; width: 30px; height: 30px; border: 0; padding: 0; cursor: pointer; opacity: 0;">
+                        <span style="font-size: 9px; font-weight: 700; color: white; pointer-events: none; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">🎨</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style="display: flex; align-items: center; gap: 8px; padding-top: 8px; border-top: 1px solid var(--border);">
+                    <span style="font-size: 11px; font-weight: 600; color: var(--text-3); min-width: 35px; flex-shrink: 0;" data-i18n="colorTextLabel">Chữ</span>
+                    <div class="color-presets-row" data-key="headerTextColor" style="display: flex; gap: 6px; flex-wrap: wrap; margin: 0; justify-content: flex-start; flex: 1;">
+                      <button class="color-preset active" data-color="#ffffff" title="White"
+                        style="background: #ffffff; width: 24px; height: 24px; border-radius: 50%; border: 2px solid #cbd5e1; cursor: pointer; transition: all 0.2s;"></button>
+                      <button class="color-preset " data-color="#e2e8f0" title="Light Gray"
+                        style="background: #e2e8f0; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
+                      <button class="color-preset " data-color="#fde68a" title="Yellow"
+                        style="background: #fde68a; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
+                      <button class="color-preset " data-color="#1e293b" title="Dark"
+                        style="background: #1e293b; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
+                      <div class="color-preset-custom-wrapper" style="position: relative; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--border); cursor: pointer; transition: all 0.2s; background: linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet); display: flex; align-items: center; justify-content: center; overflow: hidden; box-sizing: border-box;" data-i18n-title="customColorLabel" title="Custom...">
+                        <input type="color" class="custom-color-picker-input" data-key="headerTextColor" style="position: absolute; top: -3px; left: -3px; width: 30px; height: 30px; border: 0; padding: 0; cursor: pointer; opacity: 0;">
+                        <span style="font-size: 9px; font-weight: 700; color: white; pointer-events: none; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">🎨</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Navigation Bar (Tabs) -->
+                <div class="settings-color-item"
+                  style="border: 1px solid var(--border); padding: 12px; border-radius: 10px; background: var(--bg-1); box-shadow: 0 2px 4px rgba(0,0,0,0.01);">
+                  <span
+                    style="font-weight: 600; font-size: 13px; color: var(--text-1); display: block; margin-bottom: 10px;" data-i18n="themeNavTitle">Thanh điều hướng (Tab)</span>
+
+                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                    <span style="font-size: 11px; font-weight: 600; color: var(--text-3); min-width: 35px; flex-shrink: 0;" data-i18n="colorBgLabel">Nền</span>
+                    <div class="color-presets-row" data-key="navColor" style="display: flex; gap: 6px; flex-wrap: wrap; margin: 0; justify-content: flex-start; flex: 1;">
+                      <button class="color-preset active" data-color="#1c58d9" 
+                        style="background: #1c58d9; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
+                      <button class="color-preset " data-color="#3db887" 
+                        style="background: #3db887; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
+                      <button class="color-preset " data-color="#e8384f" 
+                        style="background: #e8384f; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
+                      <button class="color-preset active" data-color="#1153ab" 
+                        style="background: #1153ab; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
+                      <button class="color-preset " data-color="#1e293b" title="Slate"
+                        style="background: #1e293b; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
+                      <div class="color-preset-custom-wrapper" style="position: relative; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--border); cursor: pointer; transition: all 0.2s; background: linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet); display: flex; align-items: center; justify-content: center; overflow: hidden; box-sizing: border-box;" data-i18n-title="customColorLabel" title="Custom...">
+                        <input type="color" class="custom-color-picker-input" data-key="navColor" style="position: absolute; top: -3px; left: -3px; width: 30px; height: 30px; border: 0; padding: 0; cursor: pointer; opacity: 0;">
+                        <span style="font-size: 9px; font-weight: 700; color: white; pointer-events: none; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">🎨</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style="display: flex; align-items: center; gap: 8px; padding-top: 8px; border-top: 1px solid var(--border);">
+                    <span style="font-size: 11px; font-weight: 600; color: var(--text-3); min-width: 35px; flex-shrink: 0;" data-i18n="colorTextLabel">Chữ</span>
+                    <div class="color-presets-row" data-key="tabTextColor" style="display: flex; gap: 6px; flex-wrap: wrap; margin: 0; justify-content: flex-start; flex: 1;">
+                      <button class="color-preset active" data-color="#ffffff" title="White"
+                        style="background: #ffffff; width: 24px; height: 24px; border-radius: 50%; border: 2px solid #cbd5e1; cursor: pointer; transition: all 0.2s;"></button>
+                      <button class="color-preset " data-color="#e2e8f0" title="Light Gray"
+                        style="background: #e2e8f0; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
+                      <button class="color-preset " data-color="#fde68a" title="Yellow"
+                        style="background: #fde68a; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
+                      <button class="color-preset " data-color="#1e293b" title="Dark"
+                        style="background: #1e293b; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
+                      <div class="color-preset-custom-wrapper" style="position: relative; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--border); cursor: pointer; transition: all 0.2s; background: linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet); display: flex; align-items: center; justify-content: center; overflow: hidden; box-sizing: border-box;" data-i18n-title="customColorLabel" title="Custom...">
+                        <input type="color" class="custom-color-picker-input" data-key="tabTextColor" style="position: absolute; top: -3px; left: -3px; width: 30px; height: 30px; border: 0; padding: 0; cursor: pointer; opacity: 0;">
+                        <span style="font-size: 9px; font-weight: 700; color: white; pointer-events: none; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">🎨</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Accent Buttons & Highlights -->
+                <div class="settings-color-item"
+                  style="border: 1px solid var(--border); padding: 12px; border-radius: 10px; background: var(--bg-1); box-shadow: 0 2px 4px rgba(0,0,0,0.01);">
+                  <span
+                    style="font-weight: 600; font-size: 13px; color: var(--text-1); display: block; margin-bottom: 10px;" data-i18n="themeAccentTitle">Nút bật & Điểm nhấn</span>
+
+                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                    <span style="font-size: 11px; font-weight: 600; color: var(--text-3); min-width: 35px; flex-shrink: 0;" data-i18n="colorBgLabel">Nền</span>
+                    <div class="color-presets-row" data-key="accentColor" style="display: flex; gap: 6px; flex-wrap: wrap; margin: 0; justify-content: flex-start; flex: 1;">
+                      <button class="color-preset active" data-color="#1c58d9" 
+                        style="background: #1c58d9; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
+                      <button class="color-preset " data-color="#3db887" 
+                        style="background: #3db887; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
+                      <button class="color-preset " data-color="#e8384f" 
+                        style="background: #e8384f; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
+                      <button class="color-preset " data-color="#1153ab" 
+                        style="background: #1153ab; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
+                      <button class="color-preset " data-color="#1e293b" title="Slate"
+                        style="background: #1e293b; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
+                      <div class="color-preset-custom-wrapper" style="position: relative; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--border); cursor: pointer; transition: all 0.2s; background: linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet); display: flex; align-items: center; justify-content: center; overflow: hidden; box-sizing: border-box;" data-i18n-title="customColorLabel" title="Custom...">
+                        <input type="color" class="custom-color-picker-input" data-key="accentColor" style="position: absolute; top: -3px; left: -3px; width: 30px; height: 30px; border: 0; padding: 0; cursor: pointer; opacity: 0;">
+                        <span style="font-size: 9px; font-weight: 700; color: white; pointer-events: none; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">🎨</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style="display: flex; align-items: center; gap: 8px; padding-top: 8px; border-top: 1px solid var(--border);">
+                    <span style="font-size: 11px; font-weight: 600; color: var(--text-3); min-width: 35px; flex-shrink: 0;" data-i18n="colorTextLabel">Chữ</span>
+                    <div class="color-presets-row" data-key="accentTextColor" style="display: flex; gap: 6px; flex-wrap: wrap; margin: 0; justify-content: flex-start; flex: 1;">
+                      <button class="color-preset active" data-color="#ffffff" title="White"
+                        style="background: #ffffff; width: 24px; height: 24px; border-radius: 50%; border: 2px solid #cbd5e1; cursor: pointer; transition: all 0.2s;"></button>
+                      <button class="color-preset " data-color="#e2e8f0" title="Light Gray"
+                        style="background: #e2e8f0; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
+                      <button class="color-preset " data-color="#fde68a" title="Yellow"
+                        style="background: #fde68a; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
+                      <button class="color-preset " data-color="#1e293b" title="Dark"
+                        style="background: #1e293b; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.2s;"></button>
+                      <div class="color-preset-custom-wrapper" style="position: relative; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--border); cursor: pointer; transition: all 0.2s; background: linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet); display: flex; align-items: center; justify-content: center; overflow: hidden; box-sizing: border-box;" data-i18n-title="customColorLabel" title="Custom...">
+                        <input type="color" class="custom-color-picker-input" data-key="accentTextColor" style="position: absolute; top: -3px; left: -3px; width: 30px; height: 30px; border: 0; padding: 0; cursor: pointer; opacity: 0;">
+                        <span style="font-size: 9px; font-weight: 700; color: white; pointer-events: none; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">🎨</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Padding Density Control -->
+              <div class="settings-color-item"
+                style="border: 1px solid var(--border); padding: 12px; border-radius: 10px; background: var(--bg-1); box-shadow: 0 2px 4px rgba(0,0,0,0.01); margin: 16px 0 0 0; width: 100%; box-sizing: border-box;">
+                <span
+                  style="font-weight: 600; font-size: 13px; color: var(--text-1); display: block; margin-bottom: 4px;" data-i18n="themePaddingTitle">Layout Spacing (Padding)</span>
+                <p class="settings-desc" style="margin-bottom: 10px; font-size: 12px; line-height: 1.4;" data-i18n="themePaddingDesc">
+                  Fine-tune the density and spacing of lists, cards, and panels across the extension.
+                </p>
+                <div class="settings-row" style="display: flex; align-items: center; gap: 8px;">
+                  <select id="settingAppPadding" class="custom-select" style="width:100%; max-width:200px;">
+                    <option value="10px" data-i18n="paddingCompact">Compact (10px)</option>
+                    <option value="12px" data-i18n="paddingDefault" selected>Default (12px)</option>
+                    <option value="16px" data-i18n="paddingComfortable">Comfortable (16px)</option>
+                    <option value="20px" data-i18n="paddingSpacious">Spacious (20px)</option>
+                  </select>
+                </div>
               </div>
             </div>
           </div>
@@ -1016,7 +1159,7 @@
 
         <!-- Section: Data -->
         <div id="settings-section-data" class="settings-tab-panel" style="display:none">
-          <h2 style="font-size: 15px; font-weight: 600; color: var(--text-1); margin-bottom: 20px;" data-i18n="dataManagementTitle">Data Management</h2>
+
 
           <!-- Sub-tab Bar for Sync -->
           <div class="settings-subtab-bar">
@@ -1033,27 +1176,27 @@
             <div class="settings-group" id="cloudSyncConfigArea"
               style="padding: 16px; background: var(--bg-1); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); margin-bottom: 16px;">
               <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-                <span style="font-size: 20px; line-height: 1;">☁️</span>
+                <span style="font-size: 16px; line-height: 1;">☁️</span>
                 <h3 class="settings-title"
-                  style="margin: 0; font-size: 15.5px; font-weight: 700; color: var(--text-1);" data-i18n="cloudSyncTitle">
+                  style="margin: 0; font-size: 13.5px; font-weight: 700; color: var(--text-1);" data-i18n="cloudSyncTitle">
                   Cloud Sync (Google Account)</h3>
               </div>
               <p class="settings-desc"
-                style="color: var(--text-2); font-size: 13.5px; line-height: 1.5; margin: 0 0 14px 0;" data-i18n="cloudSyncDesc">
+                style="color: var(--text-2); font-size: 12px; line-height: 1.5; margin: 0 0 14px 0;" data-i18n="cloudSyncDesc">
                 Backup or restore your tasks and notes to the cloud via your Google account to sync data across computers.
               </p>
               <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
                 <button id="btnSyncCloudBackup" class="btn btn-secondary"
-                  style="flex:1; display:flex; align-items:center; justify-content:center; gap:6px; font-size:13.5px; font-weight:700; padding:10px; border-radius:8px; transition:all 0.2s; height:38px; cursor:pointer;">
+                  style="flex:1; display:flex; align-items:center; justify-content:center; gap:6px; font-size:12px; font-weight:700; padding:8px; border-radius:8px; transition:all 0.2s; height:34px; cursor:pointer;">
                   <span data-i18n="backupToCloudBtn">📤 Backup to Cloud</span>
                 </button>
                 <button id="btnSyncCloudRestore" class="btn btn-primary"
-                  style="flex:1; display:flex; align-items:center; justify-content:center; gap:6px; font-size:13.5px; font-weight:700; padding:10px; border-radius:8px; transition:all 0.2s; height:38px; cursor:pointer;">
+                  style="flex:1; display:flex; align-items:center; justify-content:center; gap:6px; font-size:12px; font-weight:700; padding:8px; border-radius:8px; transition:all 0.2s; height:34px; cursor:pointer;">
                   <span data-i18n="restoreFromCloudBtn">🔄 Restore from Cloud</span>
                 </button>
               </div>
               <div id="syncStatusMessage"
-                style="font-size: 12.5px; color: var(--text-3); font-weight: 500; display:flex; align-items:center; gap:4px; transition: all 0.3s ease;" data-i18n="noBackupsFound">
+                style="font-size: 11.5px; color: var(--text-3); font-weight: 500; display:flex; align-items:center; gap:4px; transition: all 0.3s ease;" data-i18n="noBackupsFound">
                 ⏳ No backups found on this computer.
               </div>
             </div>
@@ -1064,8 +1207,8 @@
               <div style="font-size: 18px; color: var(--accent); line-height: 1; margin-top: 2px;">💡</div>
               <div>
                 <h4 class="settings-title"
-                  style="color: var(--accent); font-size: 13px; font-weight: 700; margin: 0 0 4px 0;" data-i18n="whySyncTitle">Why use manual sync?</h4>
-                <p class="settings-desc" style="color: var(--text-2); font-size: 12px; line-height: 1.5; margin: 0;" data-i18n="whySyncDesc">
+                  style="color: var(--accent); font-size: 12px; font-weight: 700; margin: 0 0 4px 0;" data-i18n="whySyncTitle">Why use manual sync?</h4>
+                <p class="settings-desc" style="color: var(--text-2); font-size: 11px; line-height: 1.5; margin: 0;" data-i18n="whySyncDesc">
                   To ensure maximum privacy and instant speed, all data is stored offline by default. Manual sync lets you decide exactly when to backup or transfer your data.
                 </p>
               </div>
@@ -1077,18 +1220,18 @@
             <div class="settings-group" id="autoCleanupConfigArea"
               style="padding: 16px; background: var(--bg-1); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
               <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-                <h3 class="settings-title"
-                  style="margin: 0; font-size: 15.5px; font-weight: 700; color: var(--text-1);" data-i18n="cleanupTitle">
-                  Cleanup & Storage Optimization</h3>
-              </div>
-              <p class="settings-desc"
-                style="color: var(--text-2); font-size: 13.5px; line-height: 1.5; margin: 0 0 12px 0;" data-i18n="cleanupDesc">
-                Automatically delete completed tasks or notes after a certain period of time to keep your data synchronized quickly.
-              </p>
+                  <h3 class="settings-title"
+                    style="margin: 0; font-size: 13.5px; font-weight: 700; color: var(--text-1);" data-i18n="cleanupTitle">
+                    Cleanup & Storage Optimization</h3>
+                </div>
+                <p class="settings-desc"
+                  style="color: var(--text-2); font-size: 12px; line-height: 1.5; margin: 0 0 12px 0;" data-i18n="cleanupDesc">
+                  Automatically delete completed tasks or notes after a certain period of time to keep your data synchronized quickly.
+                </p>
               <div
                 style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; background:var(--bg-2); padding:8px 12px; border-radius:8px; border:1px solid var(--border); flex-wrap:wrap; gap:6px;">
                 <span
-                  style="font-size:13.5px; font-weight:600; color:var(--text-2); display:inline-flex; align-items:center; gap:6px;" data-i18n="storageUsedLabel">
+                  style="font-size:12.5px; font-weight:600; color:var(--text-2); display:inline-flex; align-items:center; gap:6px;" data-i18n="storageUsedLabel">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                     stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent); flex-shrink:0;">
                     <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
@@ -1098,15 +1241,15 @@
                   Storage Used:
                 </span>
                 <span id="storageUsageDisplay"
-                  style="font-size:13px; font-weight:600; color:var(--text-1);">Calculating...</span>
+                  style="font-size:12px; font-weight:600; color:var(--text-1);">Calculating...</span>
               </div>
               <div
                 style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; flex-wrap:wrap;">
                 <div style="display:flex; flex-direction:column; gap:4px; flex:1; min-width:180px;">
-                  <span style="font-size:14.5px; font-weight:600; color:var(--text-1);" data-i18n="autoCleanupLabel">Auto Cleanup Period:</span>
-                  <span style="font-size:13px; color:var(--text-3); font-weight:500;" data-i18n="autoCleanupSublabel">Only applies to completed tasks and notes.</span>
+                  <span style="font-size:12.5px; font-weight:600; color:var(--text-1);" data-i18n="autoCleanupLabel">Auto Cleanup Period:</span>
+                  <span style="font-size:11.5px; color:var(--text-3); font-weight:500;" data-i18n="autoCleanupSublabel">Only applies to completed tasks and notes.</span>
                 </div>
-                <select id="settingsAutoCleanupDays" class="custom-select" style="width:170px; font-size:13.5px;">
+                <select id="settingsAutoCleanupDays" class="custom-select" style="width:170px; font-size:12.5px;">
                   <option value="0" data-i18n="cleanupNever">Never</option>
                   <option value="-1" data-i18n="cleanupOnOpen">Upon opening Extension</option>
                   <option value="1" data-i18n="cleanup1Day">After 1 day</option>
@@ -1118,7 +1261,7 @@
               <div
                 style="display:flex; margin-top:14px; border-top:1px solid var(--border); padding-top:12px; width:100%;">
                 <button id="btnManualCleanupNow" class="btn btn-secondary"
-                  style="display:inline-flex; align-items:center; justify-content:center; gap:6px; font-size:12.5px; font-weight:700; padding:8px 14px; border-radius:8px; transition:all 0.2s; height:36px; cursor:pointer; border:1px solid var(--border); background:#fff; width:100%;">
+                  style="display:inline-flex; align-items:center; justify-content:center; gap:6px; font-size:11.5px; font-weight:700; padding:8px 14px; border-radius:8px; transition:all 0.2s; height:32px; cursor:pointer; border:1px solid var(--border); background:#fff; width:100%;">
                   <span data-i18n="cleanupNowBtn">Cleanup Now</span>
                 </button>
               </div>
@@ -1162,6 +1305,13 @@
           style="width: 280px; height: auto; display: block; border-radius: 6px;">
       </div>
 
+      <!-- Star Review link in Donate Modal -->
+      <div style="margin-top: 14px; text-align: center; width: 100%;">
+        <a id="btnDonateRateLink" href="https://chromewebstore.google.com/detail/chatops++/mmemhnbgmhfaognbfjhienigmmephjgm/reviews?hl=vi&authuser=0" target="_blank" style="color: #f5a623; font-size: 13px; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; transition: color 0.2s;" data-i18n-title="rateExtensionTooltip">
+          ⭐ <span data-i18n="rateAppButton">Rate 5 Stars Now</span>
+        </a>
+      </div>
+
     </div>
   </div>
 
@@ -1192,7 +1342,7 @@
       }
     }
 
-    #btnHeaderCoffee, #btnHeaderLang, #btnHeaderHelp {
+    #btnHeaderCoffee, #btnHeaderLang, #btnHeaderHelp, #btnHeaderRate {
       background: #ffffff;
       border: none;
       border-radius: 50%;
@@ -1210,13 +1360,13 @@
       margin-left: 4px;
     }
 
-    #btnHeaderCoffee:hover, #btnHeaderLang:hover, #btnHeaderHelp:hover {
+    #btnHeaderCoffee:hover, #btnHeaderLang:hover, #btnHeaderHelp:hover, #btnHeaderRate:hover {
       background: #ffffff !important;
       transform: scale(1.18) rotate(12deg);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
 
-    #btnHeaderCoffee:active, #btnHeaderLang:active, #btnHeaderHelp:active {
+    #btnHeaderCoffee:active, #btnHeaderLang:active, #btnHeaderHelp:active, #btnHeaderRate:active {
       transform: scale(0.95);
     }
 

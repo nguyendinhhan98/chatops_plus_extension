@@ -176,11 +176,11 @@ const en = {
   undoSpamErrorPrefix: 'Undo reactions error: ',
   reactionAlreadyExists: 'You have already spammed/reacted to this post!',
   reactionNotFound: 'No reactions to retract!',
-  reactAlongTitle: 'React-Along',
+  reactAlongTitle: 'Mimic Reactions',
   reactAlongSuccess: 'Copied post reactions successfully! 🎭',
-  reactAlongErrorPrefix: 'React-along error: ',
-  reactAlongTooltip: 'React along with existing reactions',
-  reactAlongEnabled: 'Enable React-Along Button (🎭)',
+  reactAlongErrorPrefix: 'Mimic reaction error: ',
+  reactAlongTooltip: 'Mimic existing post reactions',
+  reactAlongEnabled: 'Mimic Reactions Button (🎭)',
   submitSaveBtn: 'Submit & Save',
   reactionGroupsTitle: 'Reaction Groups',
   groupNameLengthError: 'Group name cannot exceed 10 characters!',
@@ -226,6 +226,26 @@ const en = {
   // HTML Static Texts
   supportVibecodingTitle: '☕ Support Development!',
   supportVibecodingDesc: 'If this extension has been helpful to you, consider buying the developer a coffee to support future projects 🚀',
+  rateExtensionTooltip: 'Rate 5 Stars on Chrome Web Store ⭐',
+  supportRateTitle: 'Rate & Feedback',
+  supportRateDesc: 'Support development by rating 5 stars',
+  rateAppDescription: 'If this extension has been helpful to you, please consider rating us 5 stars on the Chrome Web Store to support development! ⭐',
+  rateAppButton: 'Rate 5 Stars Now',
+  supportContactDesc: 'For any feedback or bug reports, please contact: <a href="mailto:dinhhan09091998@gmail.com" style="color:var(--accent); text-decoration:underline;">dinhhan09091998@gmail.com</a>',
+  tabOrderTitle: 'Tab Order Placement',
+  tabOrderDesc: 'Customize navigation tab sorting',
+  tabOrderGuide: 'Use the arrow buttons to rearrange the sequence of tabs on the navigation bar.',
+  categoryNameLengthError: 'Category name cannot exceed 10 characters!',
+  categoryAlreadyExists: 'This category already exists!',
+  maxCategoriesLimit: 'Maximum of 5 categories allowed!',
+  categoryNameEmptyError: 'Category name cannot be empty!',
+  categoryContainsNotesError: 'Category "{category}" contains notes and cannot be deleted!',
+  noReactionsToClone: 'No reactions on this post to clone!',
+  alreadyClonedAllReactions: 'You have already reacted to all existing emojis on this post!',
+  toastSentAndSavedNext: 'Sent & saved image! Switching to next image...',
+  toastSentAndSavedAll: 'All images sent & saved successfully! 🎉',
+  toastSavedToLibraryNext: 'Saved image to library! Switching to next image...',
+  toastSavedToLibraryAll: 'All images saved to library successfully! 🎉',
   memoNotesLabel: 'Notes',
   toolsTabLabel: 'Other Tools',
   toolsSearchSubTab: 'Search',
@@ -315,14 +335,14 @@ const en = {
   giphyApiKeyDesc: 'Enter your Giphy API Key to search and use GIFs.',
   giphyNoApiKey: 'Giphy API Key not set up yet.',
   giphySetupLink: 'Set up in Settings → GIFs',
-  giphyRateLimitWarning: '<strong>Giphy Free API Limit: 100 requests/hour</strong><br>To optimize, the extension automatically <strong>caches trending GIFs</strong> — only querying the API when you search. Please use your <strong>own API Key</strong> to avoid sharing the limit with others.',
+  giphyRateLimitWarning: '',
   giphyApiKeyPlaceholder: 'Paste Giphy API Key here...',
   giphyGuideTitle: '🔑 How to get a free Giphy API Key',
   giphyGuideStep1: 'Visit <a href="https://https://developers.giphy.com/dashboard" target="_blank" style="color:var(--accent); text-decoration:none; font-weight:600;">https://developers.giphy.com/dashboard</a>',
   giphyGuideStep2: 'Click <strong>Create an API key</strong> → choose <strong>API (not SDK)</strong>',
   giphyGuideStep3: 'Enter any app name → click <strong>Next Step</strong>',
   giphyGuideStep4: 'Copy the provided <strong>API Key</strong> → paste it into the field above',
-  giphyGuideNote: '💡 <strong>Free Tier</strong> supports 100 requests/hour — plenty for personal daily use.',
+  giphyGuideNote: '💡 <strong>Free Tier</strong> supports 100 requests/hour.',
   giphyCheckingKey: 'Checking API Key...',
   giphyValidKey: 'Giphy API Key is valid!',
   giphyInvalidKey: 'Giphy API Key is invalid or expired.',
@@ -330,15 +350,21 @@ const en = {
   giphyLoadError: 'Failed to load GIFs.',
   giphyHttpError: 'HTTP {status} — check your API Key or try again later (limit: 100 req/h).',
   giphyNotFound: 'No GIFs found.',
+  giphySizeTitle: 'Giphy Send Size',
+  giphySizeDesc: 'Choose the size of the GIF image when inserting it into the chat.',
+  giphySize200: 'Large (200px - Default)',
+  giphySize100: 'Small (100px)',
   featuresToggleTitle: 'Enable/Disable Features',
   featuresToggleDesc: 'Select which modules you want to display in the sidepanel.',
   menuTabsTitle: 'Sidepanel Menu Tabs',
-  menuTabsDesc: 'Select which tabs you want to show in the sidepanel navigation. Hiding a tab will also disable its corresponding floating buttons outside ChatOps.',
+  menuTabsDesc: 'Select which tabs you want to show in the sidepanel navigation.',
+  promoteToMainTab: 'Promote to Main Tab',
+  otherToolsDisabledNotice: 'Other Tools is OFF',
   floatingButtonsTitle: 'Quick Actions on ChatOps',
   floatingButtonsDesc: 'Floating buttons & position layout',
   floatingQuickTask: 'Quick Create Task Button (🎯)',
   floatingQuickNote: 'Quick Create Note Button (📝)',
-  floatingSpamReactions: 'Spam Reactions Hover Buttons (🔥/↩️)',
+  floatingSpamReactions: 'Spam & Revert reaction Hover Buttons (🔥/↩️)',
   floatingImagePicker: 'Send Image Button (🖼️)',
   floatingQuickReply: 'Quick Reply Tag Button (💬)',
   floatingQuickCopy: 'Quick Copy Message Button (📋)',
@@ -395,15 +421,15 @@ const en = {
   paddingComfortable: 'Comfortable (16px)',
   paddingSpacious: 'Spacious (20px)',
   categoriesTitle: 'Note Categories',
-  newCategoryPlaceholder: 'Enter new category... (Enter to save)',
+  newCategoryPlaceholder: 'Enter new category...',
   addBtn: 'Add',
   dataManagementTitle: 'Data Management',
   syncCloudTab: '☁️ Cloud Sync',
   syncCleanupTab: '🧹 Cleanup & Space',
   cloudSyncTitle: 'Cloud Sync (Google Account)',
   cloudSyncDesc: 'Backup or restore your tasks and notes to the cloud via your Google account to sync data across computers.',
-  backupToCloudBtn: 'Backup to Cloud',
-  restoreFromCloudBtn: 'Restore from Cloud',
+  backupToCloudBtn: 'Backup',
+  restoreFromCloudBtn: 'Restore',
   noBackupsFound: 'No backups found on this computer.',
   whySyncTitle: 'Why use manual sync?',
   whySyncDesc: 'To ensure maximum privacy and instant speed, all data is stored offline by default. Manual sync lets you decide exactly when to backup or transfer your data.',
@@ -427,6 +453,7 @@ const en = {
   posHorizontalBefore: 'Horizontal - Before Actions',
   posHorizontalAfter: 'Horizontal - After Actions',
   posAbove: 'Vertical - Above Actions',
+  posBelow: 'Vertical - Below Actions',
   settingSoundNotification: 'Play sound for notifications',
   settingsSaved: 'Saved automatically',
   customColorLabel: 'Custom...',
@@ -451,7 +478,7 @@ const en = {
 
       <!-- Section 1: Core Tabs & Functions -->
       <div>
-        <h4 class="guide-section-title">🚀 CORE TABS & FUNCTIONS</h4>
+        <h4 class="guide-section-title">🚀 CHATOPS++ CORE TABS & FEATURES</h4>
         <div style="display: flex; flex-direction: column; gap: 10px;">
           
           <div class="settings-road-card main-tab-link" data-tab="tasks">
@@ -459,7 +486,7 @@ const en = {
               <span style="font-size: 15px;">🎯</span>
               <a href="#" class="main-tab-link-anchor" data-tab="tasks">Tasks</a>
             </div>
-            <p>Manage your daily to-do lists. Supports both normal text lists and nested interactive Checklists. Schedule recurring daily reminders with alarms.</p>
+            <p>Manage daily to-do lists. Supports rich text lists, interactive nested Checklists, and recurring alarms. Can be promoted to the main menu or demoted inside ⚡ Other Tools.</p>
           </div>
 
           <div class="settings-road-card main-tab-link" data-tab="memo">
@@ -467,23 +494,39 @@ const en = {
               <span style="font-size: 15px;">📝</span>
               <a href="#" class="main-tab-link-anchor" data-tab="memo">Notes</a>
             </div>
-            <p>Jot down quick personal memos or click-to-save important messages. Organize and filter notes easily using custom color-coded category folder sub-tabs.</p>
+            <p>Quickly capture personal ideas or save important chat messages with 1-click. Organize notes with folders and labels. Can be promoted to the main menu or demoted inside ⚡ Other Tools.</p>
           </div>
 
           <div class="settings-road-card main-tab-link" data-tab="mentions">
             <div style="display: flex; align-items: center; gap: 6px;">
               <span style="font-size: 15px;">🔔</span>
-              <a href="#" class="main-tab-link-anchor" data-tab="mentions">Mentions</a>
+              <a href="#" class="main-tab-link-anchor" data-tab="mentions">Missed Messages (Mentions)</a>
             </div>
-            <p>Track all missed tagged mentions, DMs, or thread discussions on ChatOps. Displays convenient AI-like bullet summaries and 1-click status checking.</p>
+            <p>Track tags (@mentions), DMs, and thread discussions centrally. Provides helpful bulleted summaries and swift reply capabilities.</p>
           </div>
 
           <div class="settings-road-card settings-subtab-link" data-subtab="tools-search">
             <div style="display: flex; align-items: center; gap: 6px;">
               <span style="font-size: 15px;">🔍</span>
-              <a href="#" class="settings-subtab-link" data-subtab="tools-search">Advanced Message Search</a>
+              <a href="#" class="settings-subtab-link" data-subtab="tools-search">Advanced Search</a>
             </div>
-            <p>Smart lookup utility to scan chat history, filter by sender, keywords, or time range easily.</p>
+            <p>Smart chat history crawler. Filter by sender, keywords, or date range easily, supporting OR conditions and excluding DMs.</p>
+          </div>
+
+          <div class="settings-road-card settings-subtab-link" data-subtab="reactions-images">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="font-size: 15px;">🖼️</span>
+              <a href="#" class="settings-subtab-link" data-subtab="reactions-images">Images & Meme Library</a>
+            </div>
+            <p>Manage your custom image/meme library, supports batch uploads and fast direct inserting into chat box. Auto-compresses image sizes.</p>
+          </div>
+
+          <div class="settings-road-card settings-subtab-link" data-subtab="reactions-picker">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="font-size: 15px;">🔥</span>
+              <a href="#" class="settings-subtab-link" data-subtab="reactions-picker">Spam & Revert Reactions</a>
+            </div>
+            <p>Toggle quick emoji reactions. Set up custom reaction groups to instantly spam multiple emojis with a single click, or undo them instantly.</p>
           </div>
 
         </div>
@@ -491,70 +534,49 @@ const en = {
       
       <!-- Section 1.5: Interactive Settings Map -->
       <div>
-        <h4 class="guide-section-title">⚙️ SYSTEM SETTINGS</h4>
+        <h4 class="guide-section-title">⚙️ INTERACTIVE SYSTEM SETTINGS MAP</h4>
         <div class="guide-grid">
           
           <div class="settings-road-card settings-subtab-link" data-subtab="features-toggle">
             <div style="display: flex; align-items: center; gap: 6px;">
-              <a href="#" class="settings-subtab-link" data-subtab="features-toggle">Menu Tab Toggles</a>
+              <a href="#" class="settings-subtab-link" data-subtab="features-toggle">Menu & Tab Positioning</a>
             </div>
-            <p>Show/hide primary tabs (Search, Tasks, Notes, Missed, Images) inside the Sidepanel to maintain a focused and minimalist workspace.</p>
+            <p>Toggle show/hide for all 6 primary tabs, sort their visual order using arrow buttons ↕️, and promote or demote them to the ⚡ Other Tools container.</p>
           </div>
 
           <div class="settings-road-card settings-subtab-link" data-subtab="features-floating">
             <div style="display: flex; align-items: center; gap: 6px;">
-              <a href="#" class="settings-subtab-link" data-subtab="features-floating">Quick Interaction Buttons</a>
+              <a href="#" class="settings-subtab-link" data-subtab="features-floating">Quick Floating Buttons</a>
             </div>
-            <p>Show/hide quick interaction buttons on ChatOps (Create Task 🎯, Save Note 📝, Spam Reactions 🔥, Capture Image 🖼️, Delete Message 🗑️)</p>
+            <p>Customize floating action buttons over messages (Task 🎯, Note 📝, Spam 🔥, Mimic Reactions 🎭, Send Image 🖼, Reply 💬, Copy 📋).</p>
           </div>
 
           <div class="settings-road-card settings-subtab-link" data-subtab="features-snooze">
             <div style="display: flex; align-items: center; gap: 6px;">
-              <a href="#" class="settings-subtab-link" data-subtab="features-snooze">Reminders & Sound</a>
+              <a href="#" class="settings-subtab-link" data-subtab="features-snooze">Alarms & Snooze Durations</a>
             </div>
-            <p>Set default task snooze minutes, choose notification delivery type (OS System alerts / Page Banners), and enable dynamic sound effects.</p>
+            <p>Configure task reminder alarms, sound alert types (Gentle / Alarm), and default snooze durations (minutes).</p>
           </div>
 
           <div class="settings-road-card settings-subtab-link" data-subtab="features-gif">
             <div style="display: flex; align-items: center; gap: 6px;">
-              <a href="#" class="settings-subtab-link" data-subtab="features-gif">Giphy API Key (GIFs)</a>
+              <a href="#" class="settings-subtab-link" data-subtab="features-gif">Giphy API & Cache GIFs</a>
             </div>
-            <p>Configure your personal Giphy API Key and rate limits to search and send dynamic GIFs directly on ChatOps.</p>
+            <p>Set personal Giphy API key and choose GIF display size (100px / 200px). Trending GIFs are cached automatically to conserve API limit.</p>
           </div>
 
           <div class="settings-road-card settings-subtab-link" data-subtab="categories">
             <div style="display: flex; align-items: center; gap: 6px;">
-              <a href="#" class="settings-subtab-link" data-subtab="categories">Note Categories</a>
+              <a href="#" class="settings-subtab-link" data-subtab="categories">Notes Categories</a>
             </div>
-            <p>Create and manage folder labels (maximum 10-char limit) to easily organize, catalog, and filter your personal Note cards.</p>
-          </div>
-
-          <div class="settings-road-card settings-subtab-link" data-subtab="ui-theme">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <a href="#" class="settings-subtab-link" data-subtab="ui-theme">Themes & Layout</a>
-            </div>
-            <p>Switch between preset color palettes (Theme Light/Dark/Rose/Slate...) and change line height densities (Compact/Comfortable).</p>
+            <p>Create and edit custom category labels to classify your personal ideas, checklist logs, and saved items cleanly.</p>
           </div>
 
           <div class="settings-road-card settings-subtab-link" data-subtab="sync-data">
             <div style="display: flex; align-items: center; gap: 6px;">
-              <a href="#" class="settings-subtab-link" data-subtab="sync-data">Data & Backup</a>
+              <a href="#" class="settings-subtab-link" data-subtab="sync-data">Cloud Backups & Auto-cleanup</a>
             </div>
-            <p>Backup or restore your tasks and notes to the cloud via your Google account, or schedule automatic cleanups of old completed items.</p>
-          </div>
-
-          <div class="settings-road-card settings-subtab-link" data-subtab="reactions-picker">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <a href="#" class="settings-subtab-link" data-subtab="reactions-picker">Spam Reactions Setup</a>
-            </div>
-            <p>Customize your quick Spam Reactions list. Instantly inject all configured emojis onto any target message with 1-click.</p>
-          </div>
-
-          <div class="settings-road-card settings-subtab-link" data-subtab="reactions-images">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <a href="#" class="settings-subtab-link" data-subtab="reactions-images">Personal Image Library</a>
-            </div>
-            <p>Upload, manage, and use your personal meme images and shortcuts in a freestyle masonry layout.</p>
+            <p>Sync all tasks/notes data to your secure Google Drive. Enable auto-cleanup options to systematically delete old logs and free up space.</p>
           </div>
 
         </div>
@@ -562,13 +584,14 @@ const en = {
 
       <!-- Section 2: Hover Quick Actions -->
       <div class="guide-info-box">
-        <h4 class="guide-info-title">⚡ HOVER ACTIONS ON MESSAGES CHATOPS</h4>
+        <h4 class="guide-info-title">⚡ HOVER ACTIONS ON MESSAGES</h4>
         <div class="guide-info-list">
-          <div class="guide-info-item"><span>🎯</span> <span style="color: var(--text-2);">Save message as a pending <strong>Task</strong></span></div>
-          <div class="guide-info-item"><span>📝</span> <span style="color: var(--text-2);">Save message as a personal <strong>Note card</strong></span></div>
+          <div class="guide-info-item"><span>🎯</span> <span style="color: var(--text-2);">Pin message as a pending <strong>Task</strong></span></div>
+          <div class="guide-info-item"><span>📝</span> <span style="color: var(--text-2);">Save message as a personal <strong>Note</strong></span></div>
           <div class="guide-info-item"><span>💬</span> <span style="color: var(--text-2);"><strong>Quick Reply (@tag)</strong> to automatically tag sender</span></div>
-          <div class="guide-info-item"><span>📋</span> <span style="color: var(--text-2);"><strong>Quick Copy</strong> message content to clipboard</span></div>
+          <div class="guide-info-item"><span>📋</span> <span style="color: var(--text-2);"><strong>Quick Copy</strong> message body to clipboard</span></div>
           <div class="guide-info-item"><span>🔥</span> <span style="color: var(--text-2);">Dynamic <strong>Spam Reactions</strong> in 1-click</span></div>
+          <div class="guide-info-item"><span>🎭</span> <span style="color: var(--text-2);"><strong>React-Along</strong> to copy all existing emojis on the post</span></div>
           <div class="guide-info-item"><span>↩️</span> <span style="color: var(--text-2);"><strong>Instantly clear</strong> all your reactions</span></div>
           <div class="guide-info-item"><span style="color: #dc2626;">🗑️</span> <span style="color: var(--text-2);"><strong>Delete your own messages</strong> instantly (no confirmation popup)</span></div>
         </div>
@@ -778,11 +801,11 @@ const vi = {
   undoSpamErrorPrefix: 'Lỗi hoàn tác cảm xúc: ',
   reactionAlreadyExists: 'Bạn đã tương tác/spam bài viết này rồi!',
   reactionNotFound: 'Không có cảm xúc nào để hoàn tác!',
-  reactAlongTitle: 'Reaction theo bài viết',
+  reactAlongTitle: 'Clone reaction',
   reactAlongSuccess: 'Sao chép các biểu tượng cảm xúc thành công! 🎭',
   reactAlongErrorPrefix: 'Lỗi sao chép reaction: ',
-  reactAlongTooltip: 'Reaction theo bài viết',
-  reactAlongEnabled: 'Bật nút Reaction theo bài viết (🎭)',
+  reactAlongTooltip: 'Clone reaction',
+  reactAlongEnabled: 'Nút clone reaction (🎭)',
   submitSaveBtn: 'Gửi & Lưu',
   reactionGroupsTitle: 'Nhóm Reactions',
   groupNameLengthError: 'Tên nhóm không được vượt quá 10 ký tự!',
@@ -828,6 +851,26 @@ const vi = {
   // HTML Static Texts
   supportVibecodingTitle: '☕ Hỗ trợ phát triển!',
   supportVibecodingDesc: 'Nếu tiện ích này hữu ích với bạn, hãy mời nhà phát triển một tách cà phê để tiếp thêm động lực cho những dự án mới nhé 🚀',
+  rateExtensionTooltip: 'Đánh giá 5 sao trên Chrome Web Store ⭐',
+  supportRateTitle: 'Đánh giá & Phản hồi',
+  supportRateDesc: 'Đánh giá 5 sao để ủng hộ tiện ích',
+  rateAppDescription: 'Nếu tiện ích này hữu ích với bạn, hãy dành chút thời gian đánh giá 5 sao trên Chrome Web Store để ủng hộ nhà phát triển nhé! ⭐',
+  rateAppButton: 'Đánh giá 5 sao ngay',
+  supportContactDesc: 'Mọi ý kiến đóng góp hoặc báo cáo lỗi xin vui lòng liên hệ: <a href="mailto:dinhhan09091998@gmail.com" style="color:var(--accent); text-decoration:underline;">dinhhan09091998@gmail.com</a>',
+  tabOrderTitle: 'Thứ tự hiển thị các Tab',
+  tabOrderDesc: 'Tùy chỉnh sắp xếp vị trí các Tab',
+  tabOrderGuide: 'Sử dụng các nút mũi tên để thay đổi thứ tự sắp xếp của các Tab trên thanh điều hướng.',
+  categoryNameLengthError: 'Tên danh mục không được vượt quá 10 ký tự!',
+  categoryAlreadyExists: 'Danh mục này đã tồn tại!',
+  maxCategoriesLimit: 'Chỉ cho phép tối đa 5 danh mục!',
+  categoryNameEmptyError: 'Tên danh mục không được để trống!',
+  categoryContainsNotesError: 'Danh mục "{category}" đang chứa ghi chú và không thể xóa!',
+  noReactionsToClone: 'Không có cảm xúc nào trên bài viết để sao chép!',
+  alreadyClonedAllReactions: 'Bạn đã sao chép toàn bộ cảm xúc trên bài viết này rồi!',
+  toastSentAndSavedNext: 'Đã gửi & lưu ảnh! Đang chuyển sang ảnh tiếp theo...',
+  toastSentAndSavedAll: 'Đã gửi & lưu toàn bộ ảnh thành công! 🎉',
+  toastSavedToLibraryNext: 'Đã lưu ảnh vào thư viện! Đang chuyển sang ảnh tiếp theo...',
+  toastSavedToLibraryAll: 'Đã lưu toàn bộ ảnh vào thư viện! 🎉',
   memoNotesLabel: 'Ghi chú',
   toolsTabLabel: 'Công cụ khác',
   toolsSearchSubTab: 'Tìm kiếm',
@@ -917,14 +960,14 @@ const vi = {
   giphyApiKeyDesc: 'Nhập API Key Giphy của bạn để tìm kiếm và dùng GIF.',
   giphyNoApiKey: 'Chưa cấu hình Giphy API Key.',
   giphySetupLink: 'Thiết lập tại Cài Đặt → GIFs',
-  giphyRateLimitWarning: '<strong>Giphy Free API Limit: 100 requests/hour</strong><br>Để tối ưu, extension tự động <strong>cache trending GIFs</strong> — chỉ gọi API khi bạn tìm kiếm. Hãy dùng <strong>API Key riêng</strong> để không bị share giới hạn với người khác.',
+  giphyRateLimitWarning: '',
   giphyApiKeyPlaceholder: 'Nhập API Key Giphy của bạn tại đây...',
   giphyGuideTitle: '🔑 Cách lấy Giphy API Key miễn phí',
   giphyGuideStep1: 'Truy cập <a href="https://developers.giphy.com/dashboard" target="_blank" style="color:var(--accent); text-decoration:none; font-weight:600;">developers.giphy.com/dashboard</a>',
   giphyGuideStep2: 'Nhấn <strong>Create an API key</strong> → chọn <strong>API (not SDK)</strong>',
   giphyGuideStep3: 'Đặt tên app bất kỳ → nhấn <strong>Next Step</strong>',
   giphyGuideStep4: 'Copy <strong>API Key</strong> được cấp → paste vào ô trên',
-  giphyGuideNote: '💡 <strong>Gói miễn phí</strong> hỗ trợ 100 request/giờ — đủ cho sử dụng cá nhân hàng ngày.',
+  giphyGuideNote: '💡 <strong>Gói miễn phí</strong> hỗ trợ 100 request/giờ.',
   giphyCheckingKey: 'Đang kiểm tra API Key...',
   giphyValidKey: 'Giphy API Key hợp lệ!',
   giphyInvalidKey: 'Giphy API Key không hợp lệ hoặc hết hạn.',
@@ -932,15 +975,21 @@ const vi = {
   giphyLoadError: 'Không tải được GIF.',
   giphyHttpError: 'HTTP {status} — kiểm tra API Key hoặc thử lại sau (giới hạn 100 req/h).',
   giphyNotFound: 'Không tìm thấy GIF nào.',
+  giphySizeTitle: 'Kích thước GIF khi gửi',
+  giphySizeDesc: 'Chọn kích thước hình ảnh GIF khi chèn vào khung chat.',
+  giphySize200: 'Lớn (200px - Mặc định)',
+  giphySize100: 'Nhỏ (100px)',
   featuresToggleTitle: 'Bật/Tắt Tính năng',
   featuresToggleDesc: 'Chọn mô-đun nào bạn muốn hiển thị trên thanh bên.',
   menuTabsTitle: 'Hiển thị Tab trong Menu',
-  menuTabsDesc: 'Chọn các tab bạn muốn hiển thị trên thanh bên Sidepanel. Ẩn tab sẽ tự động tắt các nút tương tác nhanh tương ứng ngoài trang ChatOps.',
+  menuTabsDesc: 'Chọn các tab bạn muốn hiển thị trên thanh bên Sidepanel.',
+  promoteToMainTab: 'Đưa ra thanh menu chính',
+  otherToolsDisabledNotice: 'Tab Công cụ khác đang TẮT',
   floatingButtonsTitle: 'Nút tương tác nhanh trên ChatOps',
   floatingButtonsDesc: 'Nút tương tác nhanh & vị trí hiển thị',
   floatingQuickTask: 'Nút tạo công việc nhanh (🎯)',
   floatingQuickNote: 'Nút tạo ghi chú nhanh (📝)',
-  floatingSpamReactions: 'Các nút Cảm xúc trên tin nhắn (🔥/↩️)',
+  floatingSpamReactions: 'Nút Spam & Revert reaction (🔥/↩️)',
   floatingImagePicker: 'Nút Gửi ảnh trong khung chat (🖼️)',
   floatingQuickReply: 'Nút Phản hồi nhanh (@) (💬)',
   floatingQuickCopy: 'Nút Sao chép nhanh tin nhắn (📋)',
@@ -975,85 +1024,16 @@ const vi = {
     </div>
     <div
       style="border-top: 1px dashed var(--border); margin-top: 6px; padding-top: 8px; font-style: italic; color: var(--accent); font-weight: 500;">
-      💡 Mẹo: Nếu thông báo không xuất hiện sau khi bật, vui lòng khởi động lại Google Chrome hoàn toàn (Cmd+Q trên
-      macOS hoặc đóng tất cả cửa sổ) để hệ điều hành áp dụng quyền.
+      💡 Gợi ý: Nếu thông báo không hiển thị sau khi bật, hãy khởi động lại hoàn toàn Google Chrome (Cmd+Q trên macOS, hoặc đóng tất cả cửa sổ) để OS áp dụng quyền thông báo.
     </div>
   `,
-  snoozeAlertDesc: 'Thời gian tạm dừng, loại cảnh báo & âm thanh',
-  giphyApiDesc: 'Thiết lập API key & giới hạn tần suất',
-  manageCategoriesDesc: 'Quản lý các danh mục ghi chú tùy chỉnh',
-  createCategoryHint: '💡 Bạn có thể <a href="#" class="settings-subtab-link" data-subtab="categories" style="color: var(--accent); text-decoration: underline; font-weight: 600;">thêm danh mục</a> trong Cài đặt',
-  themeSettingsTitle: 'Cài đặt Giao diện',
-  themeHeaderTitle: 'Thành phần Header',
-  themeNavTitle: 'Thanh điều hướng (Tab)',
-  themeTabTextTitle: 'Màu chữ Tab',
-  themeAccentTitle: 'Nút bật & Điểm nhấn',
-  colorBgLabel: 'Nền',
-  colorTextLabel: 'Chữ',
-  themePaddingTitle: 'Khoảng cách giao diện (Padding)',
-  themePaddingDesc: 'Tinh chỉnh mật độ và khoảng cách của danh sách, thẻ và bảng trên toàn bộ tiện ích mở rộng.',
-  paddingCompact: 'Nhỏ gọn (10px)',
-  paddingDefault: 'Mặc định (12px)',
-  paddingComfortable: 'Thoải mái (16px)',
-  paddingSpacious: 'Rộng rãi (20px)',
-  categoriesTitle: 'Danh mục ghi chú',
-  newCategoryPlaceholder: 'Nhập danh mục mới... (Ấn Enter để lưu)',
-  addBtn: 'Thêm',
-  dataManagementTitle: 'Quản lý Dữ liệu',
-  syncCloudTab: '☁️ Đồng bộ Đám mây',
-  syncCleanupTab: 'Dọn dẹp & Lưu trữ',
-  cloudSyncTitle: 'Đồng bộ Đám mây (Tài khoản Google)',
-  cloudSyncDesc: 'Sao lưu hoặc khôi phục công việc và ghi chú của bạn lên đám mây thông qua tài khoản Google để đồng bộ dữ liệu giữa các máy tính.',
-  backupToCloudBtn: 'Sao lưu lên Đám mây',
-  restoreFromCloudBtn: 'Khôi phục từ Đám mây',
-  noBackupsFound: 'Không tìm thấy bản sao lưu nào trên máy tính này.',
-  whySyncTitle: 'Tại sao nên đồng bộ thủ công?',
-  whySyncDesc: 'Để đảm bảo tính riêng tư tối đa và tốc độ tức thì, tất cả dữ liệu được lưu trữ ngoại tuyến theo mặc định. Đồng bộ thủ công cho phép bạn quyết định chính xác khi nào cần sao lưu hoặc chuyển dữ liệu.',
-  cleanupTitle: 'Dọn dẹp & Tối ưu hóa Lưu trữ',
-  cleanupDesc: 'Tự động xóa các công việc đã hoàn thành sau một khoảng thời gian nhất định để giữ cho dữ liệu của bạn gọn gàng, đồng bộ nhanh.',
-  storageUsedLabel: 'Dung lượng đã dùng:',
-  autoCleanupLabel: 'Chu kỳ dọn dẹp tự động:',
-  autoCleanupSublabel: 'Chỉ áp dụng cho công việc và ghi chú đã hoàn thành.',
-  cleanupNever: 'Không bao giờ',
-  cleanupOnOpen: 'Khi mở Tiện ích',
-  cleanup1Day: 'Sau 1 ngày',
-  cleanup7Days: 'Sau 7 ngày',
-  cleanup30Days: 'Sau 30 ngày',
-  cleanup90Days: 'Sau 90 days',
-  cleanupNowBtn: 'Dọn dẹp ngay',
-  confirmDeleteTask: '⚠️ Bạn có chắc chắn muốn xóa công việc này không?',
-  confirmDeleteNote: '⚠️ Bạn có chắc chắn muốn xóa ghi chú này không?',
-  settingQuickDelete: 'Nút xóa tin nhắn nhanh (🗑️)',
-  customButtonsPositionLabel: 'Vị trí các nút',
-  customButtonsPositionSublabel: 'Cấu hình vị trí so với menu gốc của ChatOps',
-  posHorizontalBefore: 'Nằm ngang - Phía trước',
-  posHorizontalAfter: 'Nằm ngang - Phía sau',
-  posAbove: 'Nằm dọc - Phía trên',
-  settingSoundNotification: 'Phát âm thanh khi có thông báo',
-  settingsSaved: 'Đã lưu tự động',
-  customColorLabel: 'Tùy chọn...',
-  exportNotesBtn: 'Xuất ghi chú',
-  importNotesBtn: 'Nhập ghi chú',
-  exportNotesBtnTitle: 'Xuất ghi chú ra tệp Markdown (.md)',
-  importNotesBtnTitle: 'Nhập ghi chú từ tệp Markdown (.md), TXT hoặc JSON',
-  importSuccess: '🎉 Đã nhập thành công {count} ghi chú!',
-  importFailed: '❌ Nhập thất bại. Vui lòng kiểm tra lại nội dung file.',
-  categoryNormal: 'Thường',
-  categoryChecklist: 'Checklist',
-  addChecklineBtn: '+ Thêm dòng',
-  checklistPlaceholder: 'checklist {num}...',
-  checklistMinError: 'Vui lòng nhập ít nhất một dòng checklist.',
-  taskRemindDailyLabel: 'Nhắc nhở hằng ngày vào giờ đã chọn',
-  repeatDailyBadgeText: 'Hằng ngày',
-  collapseBtnBottom: 'Thu gọn',
-  groupMessage: 'Tin nhắn Nhóm',
   userGuideTitle: 'Hướng dẫn Hệ thống 💡',
   userGuideHTML: `
     <div class="guide-container">
 
       <!-- Section 1: Core Tabs & Functions -->
       <div>
-        <h4 class="guide-section-title">🚀 CÁC CHỨC NĂNG CHÍNH CỦA CHATOPS</h4>
+        <h4 class="guide-section-title">🚀 CÁC TÍNH NĂNG CHÍNH CỦA CHATOPS++</h4>
         <div style="display: flex; flex-direction: column; gap: 10px;">
           
           <div class="settings-road-card main-tab-link" data-tab="tasks">
@@ -1061,7 +1041,7 @@ const vi = {
               <span style="font-size: 15px;">🎯</span>
               <a href="#" class="main-tab-link-anchor" data-tab="tasks">Tasks (Công việc)</a>
             </div>
-            <p>Quản lý danh sách việc cần làm. Hỗ trợ tạo ghi chú văn bản hoặc các hộp kiểm Checklist tương tác. Lên lịch báo thức nhắc nhở hằng ngày đúng hẹn.</p>
+            <p>Quản lý danh sách việc cần làm. Hỗ trợ tạo ghi chú văn bản hoặc các hộp kiểm Checklist tương tác. Lên lịch báo thức nhắc nhở hằng ngày đúng hẹn. Có thể đưa ra menu chính hoặc thu gọn vào tab ⚡ Công cụ khác.</p>
           </div>
 
           <div class="settings-road-card main-tab-link" data-tab="memo">
@@ -1069,15 +1049,15 @@ const vi = {
               <span style="font-size: 15px;">📝</span>
               <a href="#" class="main-tab-link-anchor" data-tab="memo">Notes (Ghi chú)</a>
             </div>
-            <p>Lưu nhanh các ý tưởng hoặc lưu tin nhắn ChatOps quan trọng chỉ với 1-click. Dễ dàng sắp xếp, quản lý và phân loại ghi chú theo các nhãn thư mục tự chọn.</p>
+            <p>Lưu nhanh các ý tưởng hoặc lưu tin nhắn quan trọng chỉ với 1-click. Sắp xếp, quản lý ghi chú theo nhãn thư mục tự chọn. Hỗ trợ đưa ra menu chính hoặc thu gọn vào tab ⚡ Công cụ khác.</p>
           </div>
 
           <div class="settings-road-card main-tab-link" data-tab="mentions">
             <div style="display: flex; align-items: center; gap: 6px;">
               <span style="font-size: 15px;">🔔</span>
-              <a href="#" class="main-tab-link-anchor" data-tab="mentions">Mentions (Bỏ lỡ)</a>
+              <a href="#" class="main-tab-link-anchor" data-tab="mentions">Mentions (Tin nhắn bỏ lỡ)</a>
             </div>
-            <p>Theo dõi tập trung tất cả lượt nhắc tên (@mention), tin nhắn riêng (DM) hoặc thảo luận trong thread chưa đọc. Đi kèm tóm tắt ý chính và thả phản hồi cực nhanh.</p>
+            <p>Theo dõi tập trung tất cả lượt nhắc tên (@mention), tin nhắn riêng (DM) hoặc thảo luận trong thread chưa đọc. Tóm tắt ý chính và thả phản hồi cực nhanh.</p>
           </div>
 
           <div class="settings-road-card settings-subtab-link" data-subtab="tools-search">
@@ -1085,7 +1065,23 @@ const vi = {
               <span style="font-size: 15px;">🔍</span>
               <a href="#" class="settings-subtab-link" data-subtab="tools-search">Tìm kiếm tin nhắn nâng cao</a>
             </div>
-            <p>Công cụ tìm kiếm thông minh giúp lọc lịch sử chat, tìm theo keyword hoặc người gửi dễ dàng.</p>
+            <p>Công cụ tìm kiếm thông minh giúp lọc lịch sử chat, tìm theo keyword hoặc người gửi dễ dàng, hỗ trợ tìm kiếm dạng OR và loại bỏ DMs.</p>
+          </div>
+
+          <div class="settings-road-card settings-subtab-link" data-subtab="reactions-images">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="font-size: 15px;">🖼️</span>
+              <a href="#" class="settings-subtab-link" data-subtab="reactions-images">Thư viện hình ảnh & Meme</a>
+            </div>
+            <p>Quản lý kho ảnh, ảnh chế (meme) cá nhân của bạn, hỗ trợ tải lên hàng loạt và chèn nhanh trực tiếp vào khung chat. Tự động nén tối ưu dung lượng.</p>
+          </div>
+
+          <div class="settings-road-card settings-subtab-link" data-subtab="reactions-picker">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="font-size: 15px;">🔥</span>
+              <a href="#" class="settings-subtab-link" data-subtab="reactions-picker">Spam & Revert Reactions</a>
+            </div>
+            <p>Bật/tắt phím tắt cảm xúc nhanh. Thiết lập các nhóm cảm xúc ưa thích để tự động spam thả hàng loạt emoji chỉ với 1-click hoặc thu hồi cảm xúc đã thả.</p>
           </div>
 
         </div>
@@ -1098,65 +1094,44 @@ const vi = {
           
           <div class="settings-road-card settings-subtab-link" data-subtab="features-toggle">
             <div style="display: flex; align-items: center; gap: 6px;">
-              <a href="#" class="settings-subtab-link" data-subtab="features-toggle">Ẩn/Hiện Tab menu</a>
+              <a href="#" class="settings-subtab-link" data-subtab="features-toggle">Cấu hình Menu & Sắp xếp Tab</a>
             </div>
-            <p>Bật/tắt các tab chính (Tìm kiếm, Tasks, Ghi chú, Tin nhắn bỏ lỡ, Kho ảnh) trên thanh Sidepanel để tối giản hóa không gian làm việc.</p>
+            <p>Ẩn/hiện toàn bộ 6 tab chính, sắp xếp thứ tự hiển thị bằng các nút mũi tên ↕️, chọn đưa ra menu chính hoặc thu gọn gọn gàng vào ⚡ Công cụ khác.</p>
           </div>
 
           <div class="settings-road-card settings-subtab-link" data-subtab="features-floating">
             <div style="display: flex; align-items: center; gap: 6px;">
-              <a href="#" class="settings-subtab-link" data-subtab="features-floating">Nút tương tác nhanh</a>
+              <a href="#" class="settings-subtab-link" data-subtab="features-floating">Nút tương tác nhanh (Floating)</a>
             </div>
-            <p>Ẩn/hiện nút tương tác nhanh trên ChatOps (Tạo Task 🎯, Lưu Note 📝, Thả Spam Reactions 🔥, Chụp ảnh 🖼️, Xóa tin nhắn 🗑️)</p>
+            <p>Bật/tắt các nút nổi tương tác nhanh trên khung chat (Tạo Task 🎯, Lưu Note 📝, Spam Reactions 🔥, Bắt chước cảm xúc 🎭, Gửi ảnh 🖼️, Phản hồi nhanh 💬, Sao chép 📋).</p>
           </div>
 
           <div class="settings-road-card settings-subtab-link" data-subtab="features-snooze">
             <div style="display: flex; align-items: center; gap: 6px;">
-              <a href="#" class="settings-subtab-link" data-subtab="features-snooze">Nhắc Nhở & Âm Thanh</a>
+              <a href="#" class="settings-subtab-link" data-subtab="features-snooze">Nhắc Nhở & Báo Thức</a>
             </div>
-            <p>Cấu hình số phút trì hoãn mặc định (Snooze), kiểu hiển thị thông báo (Hệ điều hành / Banner trong trang), phát âm thanh cảnh báo khi đến hạn.</p>
+            <p>Thiết lập thời gian nhắc lại mặc định (Snooze), kiểu hiển thị thông báo (Hệ thống OS / Banner), phát nhạc báo động hoặc nhạc chuông nhẹ nhàng khi đến hạn.</p>
           </div>
 
           <div class="settings-road-card settings-subtab-link" data-subtab="features-gif">
             <div style="display: flex; align-items: center; gap: 6px;">
-              <a href="#" class="settings-subtab-link" data-subtab="features-gif">Giphy API Key (GIFs)</a>
+              <a href="#" class="settings-subtab-link" data-subtab="features-gif">Giphy API & Cache GIFs</a>
             </div>
-            <p>Cấu hình API Key Giphy cá nhân và giới hạn lượt gọi để tìm kiếm và gửi các ảnh GIFs động cực nhanh trực tiếp từ thanh công cụ chat.</p>
+            <p>Cấu hình API Key Giphy riêng của bạn và chọn kích thước GIF khi gửi (100px / 200px). Hệ thống tự động cache GIFs trending để tiết kiệm lượt gọi API.</p>
           </div>
 
           <div class="settings-road-card settings-subtab-link" data-subtab="categories">
             <div style="display: flex; align-items: center; gap: 6px;">
               <a href="#" class="settings-subtab-link" data-subtab="categories">Danh mục Ghi chú</a>
             </div>
-            <p>Quản lý và tạo các nhãn danh mục tự chọn (tối đa 10 ký tự) để phân chia và phân loại nhanh các ghi chú công việc một cách ngăn nắp.</p>
-          </div>
-
-          <div class="settings-road-card settings-subtab-link" data-subtab="ui-theme">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <a href="#" class="settings-subtab-link" data-subtab="ui-theme">Giao Diện & Màu Sắc</a>
-            </div>
-            <p>Thay đổi bảng màu chủ đạo (Theme Light/Dark/Rose/Slate...), khoảng cách giãn dòng (Compact/Comfortable) hiển thị ở Sidepanel.</p>
+            <p>Quản lý các nhãn danh mục để phân loại ghi chú cá nhân. Hỗ trợ tạo mới, chỉnh sửa tên và sắp xếp danh mục ghi chú ngăn nắp.</p>
           </div>
 
           <div class="settings-road-card settings-subtab-link" data-subtab="sync-data">
             <div style="display: flex; align-items: center; gap: 6px;">
-              <a href="#" class="settings-subtab-link" data-subtab="sync-data">Dữ Liệu & Sao Lưu</a>
+              <a href="#" class="settings-subtab-link" data-subtab="sync-data">Sao lưu Google & Tự động dọn dẹp</a>
             </div>
-            <p>Sao lưu hoặc khôi phục dữ liệu lên đám mây thông qua tài khoản Google, hoặc cấu hình tự động dọn dẹp các ghi chú/task cũ để giải phóng dung lượng.</p>
-          </div>
-
-          <div class="settings-road-card settings-subtab-link" data-subtab="reactions-picker">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <a href="#" class="settings-subtab-link" data-subtab="reactions-picker">Thiết lập Spam Reactions</a>
-            </div>
-            <p>Cài đặt danh sách phím tắt các Emoji ưa thích của bạn để khi nhấn phím tắt 🔥 sẽ tự động thả hàng loạt cảm xúc đã cấu hình.</p>
-          </div>
-
-          <div class="settings-road-card settings-subtab-link" data-subtab="reactions-images">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <a href="#" class="settings-subtab-link" data-subtab="reactions-images">Thư viện hình ảnh cá nhân</a>
-            </div>
-            <p>Tải lên, quản lý và sử dụng kho hình ảnh/meme cá nhân của bạn trong thư viện freestyle masonry.</p>
+            <p>Đồng bộ dữ liệu an toàn lên tài khoản Google Drive cá nhân của bạn. Cấu hình tự động dọn dẹp (auto-cleanup) các công việc/ghi chú cũ để giải phóng dung lượng.</p>
           </div>
 
         </div>
@@ -1171,6 +1146,7 @@ const vi = {
           <div class="guide-info-item"><span>💬</span> <span style="color: var(--text-2);"><strong>Phản hồi nhanh (@)</strong> tự động tag người gửi</span></div>
           <div class="guide-info-item"><span>📋</span> <span style="color: var(--text-2);"><strong>Sao chép nhanh</strong> tin nhắn vào clipboard</span></div>
           <div class="guide-info-item"><span>🔥</span> <span style="color: var(--text-2);"><strong>Spam Cảm xúc</strong> hàng loạt với 1-click</span></div>
+          <div class="guide-info-item"><span>🎭</span> <span style="color: var(--text-2);"><strong>Bắt chước cảm xúc (React-Along)</strong> để tự động thả toàn bộ emoji giống bài viết</span></div>
           <div class="guide-info-item"><span>↩️</span> <span style="color: var(--text-2);"><strong>Thu hồi nhanh</strong> tất cả cảm xúc đã thả</span></div>
           <div class="guide-info-item"><span style="color: #dc2626;">🗑️</span> <span style="color: var(--text-2);"><strong>Xóa nhanh tin nhắn</strong> của chính bạn (không cần xác nhận lại)</span></div>
         </div>
@@ -1208,6 +1184,19 @@ const vi = {
   colorLightGray: 'Xám sáng',
   colorYellow: 'Vàng',
   colorDark: 'Tối',
+  themeSettingsTitle: 'Giao diện & Màu sắc',
+  themeHeaderTitle: 'Thành phần Header',
+  themeNavTitle: 'Thanh điều hướng (Tab)',
+  themeTabTextTitle: 'Màu chữ của Tab',
+  themeAccentTitle: 'Nút bật & Điểm nhấn',
+  colorBgLabel: 'Nền',
+  colorTextLabel: 'Chữ',
+  themePaddingTitle: 'Mật độ khoảng cách (Padding)',
+  themePaddingDesc: 'Tùy chỉnh khoảng cách và mật độ hiển thị của danh sách, thẻ và thanh điều hướng.',
+  paddingCompact: 'Thu gọn (10px)',
+  paddingDefault: 'Mặc định (12px)',
+  paddingComfortable: 'Dễ nhìn (16px)',
+  paddingSpacious: 'Rộng rãi (20px)',
 };
 
 // Swaps the active language dictionary key-value pairs in-place
@@ -1219,8 +1208,8 @@ export function setLanguage(langCode) {
     delete language[key];
   }
   
-  // Assign all keys in-place
-  Object.assign(language, dict);
+  // Assign all keys in-place (with en as fallback for missing keys)
+  Object.assign(language, en, dict);
 }
 
 // Function to dynamically retrieve active locale code

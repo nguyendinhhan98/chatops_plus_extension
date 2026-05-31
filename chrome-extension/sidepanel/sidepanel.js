@@ -8,7 +8,7 @@ import { setup as setupMentions, reset as resetMentions, getSelects as getMentio
 
 import { setup as setupMemo, loadMemos, renderCategories } from './tabs/memo.tab.js';
 import { setup as setupTasks, loadTasks } from './tabs/tasks.tab.js';
-import { setup as setupSettings, getSettings, applyThemeToDOM, applyTabVisibilityToDOM, runAutoCleanup, renderSidepanelMemes } from './tabs/settings.tab.js';
+import { setup as setupSettings, getSettings, applyThemeToDOM, applyTabRepositioning, applyTabVisibilityToDOM, runAutoCleanup, renderSidepanelMemes, applyTabOrderToDOM, renderTabOrderList } from './tabs/settings.tab.js';
 import { getMyProfile, getMyTeams, getConfig } from '../src/api/index.js';
 import { escapeHtml } from '../src/utils/index.js';
 
@@ -26,11 +26,23 @@ async function init() {
   await loadLanguage();
   applyI18n();
 
+  try {
+    const manifest = chrome.runtime.getManifest();
+    const versionEl = document.getElementById('header-version');
+    if (versionEl) {
+      versionEl.textContent = `v${manifest.version}`;
+    }
+  } catch (versionErr) {
+    console.error('[ChatOps Ext] Failed to load version:', versionErr);
+  }
+
   const dropdownEl = document.getElementById('spWorkspaceDropdown');
   try {
     const settings = await getSettings();
     applyThemeToDOM(settings);
-    applyTabVisibilityToDOM(settings.showTabs, settings.memeEnabled);
+    applyTabOrderToDOM(settings.tabOrder);
+    applyTabRepositioning(settings, settings.showTabs);
+    applyTabVisibilityToDOM(settings);
   } catch (settingsErr) {
     console.error('[ChatOps Ext] Failed to load settings:', settingsErr);
   }
@@ -63,6 +75,7 @@ async function init() {
   setupTabs();
   setupModalListeners();
   setupLanguageToggle();
+  updateRateLinks();
   
   // Background silent auto cleanup
   runAutoCleanup().catch(e => console.error('[ChatOps Ext] Auto cleanup error:', e));
@@ -257,8 +270,100 @@ async function setupWorkspaceSelector(teams, dropdownContainer) {
  * Switches the active tab in the UI
  */
 function switchTab(id) {
-  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === id));
-  document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === `tab-${id}`));
+  const promoteTabs = window.activeSettings?.promoteTabs || { tasks: true, notes: true, search: false, images: false, reactions: false, mentions: true };
+  const isTasksPromoted = promoteTabs.tasks !== false;
+  const isNotesPromoted = promoteTabs.notes !== false;
+  const isSearchPromoted = promoteTabs.search === true;
+  const isImagesPromoted = promoteTabs.images === true;
+  const isReactionsPromoted = promoteTabs.reactions === true;
+  const isMentionsPromoted = promoteTabs.mentions !== false;
+
+  let mainId = id;
+  let subId = null;
+
+  if (id === 'tasks') {
+    if (!isTasksPromoted) {
+      mainId = 'tools';
+      subId = 'tasks';
+    }
+  } else if (id === 'memo') {
+    if (!isNotesPromoted) {
+      mainId = 'tools';
+      subId = 'notes';
+    }
+  } else if (id === 'tools-search') {
+    if (!isSearchPromoted) {
+      mainId = 'tools';
+      subId = 'search';
+    }
+  } else if (id === 'tools-images') {
+    if (!isImagesPromoted) {
+      mainId = 'tools';
+      subId = 'images';
+    }
+  } else if (id === 'tools-reactions') {
+    if (!isReactionsPromoted) {
+      mainId = 'tools';
+      subId = 'reactions';
+    }
+  } else if (id === 'mentions') {
+    if (!isMentionsPromoted) {
+      mainId = 'tools';
+      subId = 'mentions';
+    }
+  } else if (id.startsWith('tools-')) {
+    mainId = 'tools';
+    subId = id.substring(6);
+  }
+
+  const activeTabBtnId = (mainId === 'tools' && subId) ? 'tools' : mainId;
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === activeTabBtnId));
+
+  // Update header settings gear icon visual state
+  const headerSettingsGear = document.getElementById('btnHeaderSettings');
+  if (headerSettingsGear) {
+    headerSettingsGear.classList.toggle('active', mainId === 'settings');
+  }
+
+  const getPanelId = (mid) => {
+    if (mid === 'tasks') return 'tab-tasks';
+    if (mid === 'memo') return 'tab-memo';
+    if (mid === 'mentions') return 'tab-mentions';
+    if (mid === 'tools') return 'tab-tools';
+    if (mid === 'tools-search') return 'tools-section-search';
+    if (mid === 'tools-images') return 'tools-section-images';
+    if (mid === 'tools-reactions') return 'tools-section-reactions';
+    if (mid === 'settings') return 'tab-settings';
+    return '';
+  };
+  const activePanelId = getPanelId(mainId);
+
+  document.querySelectorAll('.tab-content').forEach(c => {
+    const isTarget = c.id === activePanelId;
+    c.classList.toggle('active', isTarget);
+    if (isTarget) {
+      c.style.display = 'flex';
+    } else {
+      c.style.display = 'none';
+    }
+  });
+
+  const toolsSubTabs = document.getElementById('toolsSubTabs');
+  if (toolsSubTabs) {
+    if (mainId === 'tools') {
+      toolsSubTabs.parentElement.style.removeProperty('display');
+    } else {
+      toolsSubTabs.parentElement.style.setProperty('display', 'none', 'important');
+    }
+  }
+
+  if (subId) {
+    const subTabBtn = document.querySelector(`#toolsSubTabs .memo-sub-tab[data-section="${subId}"]`);
+    if (subTabBtn) {
+      subTabBtn.click();
+    }
+  }
+
   if (id === 'settings') {
     if (window.isRedirectingToSetting) return;
 
@@ -306,6 +411,13 @@ function setupTabs() {
           language.modalScannerFiltersTitle,
           'spMentionsForm',
           'spMentionsFormPlaceholder'
+        );
+      } else if (tab === 'tools-search') {
+        // Double-click on Search tab opens search filters modal
+        window.ModalManager.open(
+          language.modalSearchTitle || 'Search',
+          'spSearchForm',
+          'spSearchFormPlaceholder'
         );
       }
     });
@@ -517,6 +629,7 @@ function setupStateHandlers() {
       loadTasks();
     } else if (msg.type === 'APP_LANG_CHANGED') {
       applyI18n();
+      updateRateLinks();
       renderCategories();
       loadMemos();
       loadTasks();
@@ -541,6 +654,12 @@ function setupStateHandlers() {
     }
   });
   
+  // Header Settings gear button — navigate to settings tab
+  const headerSettingsBtn = document.getElementById('btnHeaderSettings');
+  if (headerSettingsBtn) {
+    headerSettingsBtn.addEventListener('click', () => switchTab('settings'));
+  }
+
   // Donate modal listeners
   const coffeeBtn = document.getElementById('btnHeaderCoffee');
   const donateModal = document.getElementById('donateModal');
@@ -549,6 +668,16 @@ function setupStateHandlers() {
   if (coffeeBtn && donateModal) {
     coffeeBtn.addEventListener('click', () => {
       donateModal.style.display = 'flex';
+    });
+  }
+
+  // Rate button in header listener
+  const rateBtn = document.getElementById('btnHeaderRate');
+  if (rateBtn) {
+    rateBtn.addEventListener('click', () => {
+      const activeLang = getActiveLanguageCode();
+      const url = `https://chromewebstore.google.com/detail/chatops++/mmemhnbgmhfaognbfjhienigmmephjgm/reviews?hl=${activeLang === 'vi' ? 'vi' : 'en'}&authuser=0`;
+      window.open(url, '_blank');
     });
   }
 
@@ -868,10 +997,12 @@ function setupLanguageToggle() {
     });
 
     // 6. Refresh active views to render correct dynamic translations
+    updateRateLinks();
     renderCategories();
     if (typeof loadMemos === 'function') loadMemos();
     if (typeof loadTasks === 'function') loadTasks();
     if (typeof renderSidepanelMemes === 'function') renderSidepanelMemes();
+    if (typeof renderTabOrderList === 'function') renderTabOrderList();
 
     // 7. Broadcast the change to other contexts (background, active content script tabs)
     chrome.runtime.sendMessage({ type: 'APP_LANG_CHANGED', lang: nextLang });
@@ -883,6 +1014,23 @@ function setupLanguageToggle() {
       }
     });
   });
+}
+
+/**
+ * Updates review links' href attributes based on the current language
+ */
+function updateRateLinks() {
+  const activeLang = getActiveLanguageCode();
+  const url = `https://chromewebstore.google.com/detail/chatops++/mmemhnbgmhfaognbfjhienigmmephjgm/reviews?hl=${activeLang === 'vi' ? 'vi' : 'en'}&authuser=0`;
+  
+  const rateAppStore = document.getElementById('btnRateAppStore');
+  if (rateAppStore) {
+    rateAppStore.setAttribute('href', url);
+  }
+  const donateRateLink = document.getElementById('btnDonateRateLink');
+  if (donateRateLink) {
+    donateRateLink.setAttribute('href', url);
+  }
 }
 
 
