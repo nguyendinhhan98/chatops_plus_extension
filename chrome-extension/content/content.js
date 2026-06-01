@@ -2307,11 +2307,11 @@ function showToast(msg) {
 
   function handleQuickActionButtonsVisibility() {
     // Clear post processing cache so buttons are properly re-evaluated
-    document.querySelectorAll('.post, [id^="post_"], [class*="post-message"]').forEach(el => {
-      delete el.dataset.chatopsInjected;
+    document.querySelectorAll('[data-chatops-injected]').forEach(el => {
+      el.removeAttribute('data-chatops-injected');
     });
-    document.querySelectorAll('#emojiPickerButton, #rhsEmojiPickerButton, button[aria-label*="emoji" i], button[aria-label*="Emoji"], button[class*="emoji" i], .emoji-picker__container button, button[id*="Emoji"]').forEach(el => {
-      delete el.dataset.chatopsImageInjected;
+    document.querySelectorAll('[data-chatops-image-injected]').forEach(el => {
+      el.removeAttribute('data-chatops-image-injected');
     });
 
     const showTabs = cachedSettings.showTabs || { search: true, tasks: true, notes: true, missed: true, reactions: true };
@@ -2354,12 +2354,13 @@ function showToast(msg) {
   async function getPostUsername(postEl) {
     if (!postEl) return null;
 
-    // Helper to request username from main world using React Fiber + Redux store
     async function getPostUsernameFromReact(postId) {
       const bridgeResult = await new Promise((resolve) => {
+        let timeoutId;
         const handler = (e) => {
           if (e.detail.postId === postId) {
             window.removeEventListener('chatops-username-response', handler);
+            clearTimeout(timeoutId);
             resolve({ username: e.detail.username, userId: e.detail.userId });
           }
         };
@@ -2370,7 +2371,7 @@ function showToast(msg) {
         }));
 
         // Short timeout: 200ms
-        setTimeout(() => {
+        timeoutId = setTimeout(() => {
           window.removeEventListener('chatops-username-response', handler);
           resolve({ username: null, userId: null });
         }, 200);
@@ -2669,9 +2670,30 @@ function showToast(msg) {
     return rawId.replace('post_', '').replace('rhsPost_', '').replace('rhs_post_', '');
   }
 
-  function injectQuickNoteButtons() {
-    // 1. Find all post elements (in main view or RHS thread)
-    const posts = document.querySelectorAll(`.post, [id^="post_"], [class*="post-message"]`);
+  function injectQuickNoteButtons(target = document) {
+    const postsSelector =
+      `.post:not([data-chatops-injected]), ` +
+      `[id^="post_"]:not([data-chatops-injected]), ` +
+      `[id^="rhsPost_"]:not([data-chatops-injected]), ` +
+      `.post[data-chatops-injected="true"]:not(:has(.chatops-action-group)), ` +
+      `[id^="post_"][data-chatops-injected="true"]:not(:has(.chatops-action-group)), ` +
+      `[id^="rhsPost_"][data-chatops-injected="true"]:not(:has(.chatops-action-group))`;
+
+    const postSelectorPattern = '.post, [id^="post_"], [id^="rhsPost_"]';
+
+    let posts = [];
+    if (target && target !== document) {
+      if (target.matches && target.matches(postSelectorPattern)) {
+        if (!target.dataset.chatopsInjected || (target.dataset.chatopsInjected === 'true' && !target.querySelector('.chatops-action-group'))) {
+          posts.push(target);
+        }
+      }
+      if (target.querySelectorAll) {
+        posts = posts.concat(Array.from(target.querySelectorAll(postsSelector)));
+      }
+    } else {
+      posts = Array.from(document.querySelectorAll(postsSelector));
+    }
     
     const showTabs = cachedSettings.showTabs || { search: true, tasks: true, notes: true, missed: true, reactions: true };
     const floatingButtons = cachedSettings.floatingButtons || { quickNote: true, quickTask: true, spamReactions: true, reactAlong: false, imagePicker: true, quickReply: false, quickCopy: false };
@@ -2684,7 +2706,10 @@ function showToast(msg) {
 
     posts.forEach(postEl => {
       const postId = cleanPostId(postEl);
-      if (!postId) return;
+      if (!postId) {
+        postEl.dataset.chatopsInjected = 'skipped';
+        return;
+      }
 
       const isPostDeleted = postEl.classList.contains('post--deleted') || 
                             postEl.querySelector('.post--deleted') ||
@@ -2692,6 +2717,7 @@ function showToast(msg) {
                             postEl.textContent.includes('(tin nhắn đã bị xóa)');
       if (isPostDeleted) {
         postEl.querySelectorAll('.chatops-quick-note-btn').forEach(el => el.remove());
+        postEl.dataset.chatopsInjected = 'skipped';
         return;
       }
 
@@ -3083,7 +3109,27 @@ function showToast(msg) {
     }
   });
 
+  let lastPathname = window.location.pathname;
+
+  function handleChannelChange() {
+    document.querySelectorAll('[data-chatops-injected]').forEach(el => {
+      el.removeAttribute('data-chatops-injected');
+    });
+    document.querySelectorAll('.chatops-action-group').forEach(el => {
+      el.remove();
+    });
+    document.querySelectorAll('.chatops-ext-image-picker-btn').forEach(el => {
+      el.remove();
+    });
+    document.querySelectorAll('[data-chatops-image-injected]').forEach(el => {
+      el.removeAttribute('data-chatops-image-injected');
+    });
+  }
+
   let observerTimeout = null;
+  let mutatedSubtrees = new Set();
+  let emojiButtonMutations = false;
+
   observer = new MutationObserver((mutations) => {
     // Prevent orphaned scripts from continuing to run after extension update/reload
     try {
@@ -3096,38 +3142,72 @@ function showToast(msg) {
       return;
     }
 
-    let shouldUpdate = false;
+    if (window.location.pathname !== lastPathname) {
+      lastPathname = window.location.pathname;
+      runWithObserverDisabled(() => {
+        handleChannelChange();
+        injectImageButton();
+        injectQuickNoteButtons();
+      });
+      mutatedSubtrees.clear();
+      emojiButtonMutations = false;
+      return;
+    }
+
+    const postSelectorPattern = '.post, [id^="post_"], [id^="rhsPost_"]';
+
     for (const m of mutations) {
       if (m.addedNodes.length > 0) {
         for (const node of m.addedNodes) {
           if (node.nodeType === Node.ELEMENT_NODE) {
+            // Check if it's a post or inside a post
+            const postParent = node.closest ? node.closest(postSelectorPattern) : null;
+            if (postParent) {
+              mutatedSubtrees.add(postParent);
+            } else if (node.querySelectorAll) {
+              // It could be a container (e.g. post list) containing posts
+              const matches = node.querySelectorAll(postSelectorPattern);
+              matches.forEach(match => mutatedSubtrees.add(match));
+            }
+
+            // Check if emoji button is added
             if (
-              node.classList?.contains('post') || 
-              node.id?.startsWith('post_') || 
-              node.id?.startsWith('rhsPost_') ||
-              node.classList?.contains('post-list__table') ||
-              node.classList?.contains('post-list') ||
-              node.matches?.('.post-menu, .post__actions, .dot-menu__container, [class*="post-menu"], .post-action-menu, textarea, #emojiPickerButton, #rhsEmojiPickerButton, button[aria-label*="emoji" i]') ||
-              (node.querySelector && node.querySelector('.post-menu, .post__actions, .dot-menu__container, [class*="post-menu"], .post-action-menu, textarea, #emojiPickerButton, #rhsEmojiPickerButton, button[aria-label*="emoji" i]'))
+              node.id === 'emojiPickerButton' || 
+              node.id === 'rhsEmojiPickerButton' ||
+              node.matches?.('button[aria-label*="emoji" i], button[class*="emoji" i], .emoji-picker__container button') ||
+              (node.querySelector && node.querySelector('#emojiPickerButton, #rhsEmojiPickerButton, button[aria-label*="emoji" i]'))
             ) {
-              shouldUpdate = true;
-              break;
+              emojiButtonMutations = true;
             }
           }
         }
       }
-      if (shouldUpdate) break;
     }
 
-    if (!shouldUpdate) return;
+    if (mutatedSubtrees.size > 0 || emojiButtonMutations) {
+      clearTimeout(observerTimeout);
+      observerTimeout = setTimeout(() => {
+        const subtreesToProcess = Array.from(mutatedSubtrees);
+        const shouldInjectImages = emojiButtonMutations;
+        
+        // Reset state for next batch
+        mutatedSubtrees.clear();
+        emojiButtonMutations = false;
 
-    clearTimeout(observerTimeout);
-    observerTimeout = setTimeout(() => {
-      runWithObserverDisabled(() => {
-        injectImageButton();
-        injectQuickNoteButtons();
-      });
-    }, 200);
+        runWithObserverDisabled(() => {
+          if (shouldInjectImages) {
+            injectImageButton();
+          }
+          if (subtreesToProcess.length > 0) {
+            subtreesToProcess.forEach(subtree => {
+              if (subtree.isConnected) {
+                injectQuickNoteButtons(subtree);
+              }
+            });
+          }
+        });
+      }, 100);
+    }
   });
   
   observer.observe(document.body, { childList: true, subtree: true });
@@ -3137,11 +3217,20 @@ function showToast(msg) {
     injectQuickNoteButtons();
   });
 
-  // Safety net: periodic injection check every 1 second to handle React DOM recycling and page state changes
+  /*
+  // Safety net: periodic injection check every 3 seconds to handle React DOM recycling and page state changes
   setInterval(() => {
+    if (document.hidden) return;
+    if (window.location.pathname !== lastPathname) {
+      lastPathname = window.location.pathname;
+      runWithObserverDisabled(() => {
+        handleChannelChange();
+      });
+    }
     runWithObserverDisabled(() => {
       injectImageButton();
       injectQuickNoteButtons();
     });
-  }, 1000);
+  }, 3000);
+  */
 })();

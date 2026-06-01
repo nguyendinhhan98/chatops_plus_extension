@@ -2317,8 +2317,8 @@ function renderCategoryList(categories) {
     }
   }
   listEl.innerHTML = categories.map((cat, idx) => `
-    <li data-cat="${escapeHtml(cat)}" style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:var(--bg-2); border-radius:6px; border:1px solid var(--border); margin-bottom: 8px; min-width: 0; gap: 8px;">
-      <span class="cat-name" style="font-size:14.5px; font-weight:600; color:var(--text-1); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:0; text-align:left;">${escapeHtml(cat)}</span>
+    <li data-cat="${escapeHtml(cat)}" class="category-item-card" style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; background:var(--bg-1); border-radius:8px; border:1px solid var(--border); margin-bottom: 8px; min-width: 0; gap: 8px; transition: all 0.2s ease;">
+      <span class="cat-name" style="font-size:13px; font-weight:600; color:var(--text-1); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:0; text-align:left;">${escapeHtml(cat)}</span>
       <div style="display:flex; align-items:center; gap:8px;">
         <button class="btn-edit-cat btn-edit-memo" data-idx="${idx}" data-cat="${escapeHtml(cat)}" title="${language.editBtn || 'Edit'}" style="background:none; border:none; padding:4px; cursor:pointer; color:var(--text-3); display:inline-flex; align-items:center;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>

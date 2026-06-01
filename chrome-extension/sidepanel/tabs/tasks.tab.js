@@ -10,6 +10,8 @@ import { language } from '../../src/lang.js';
 let _state = null;
 let currentFilter = 'pending';
 let isLocalTaskUpdate = false;
+let activeListFlatpickrs = [];
+
 
 /**
  * Initializes the Tasks Tab
@@ -872,6 +874,21 @@ export async function loadTasks() {
   const taskList = document.getElementById('taskList');
   if (!taskList) return;
 
+  // Destroy previous flatpickr instances to prevent memory leaks
+  if (activeListFlatpickrs && activeListFlatpickrs.length > 0) {
+    activeListFlatpickrs.forEach(fp => {
+      if (fp && typeof fp.destroy === 'function') {
+        try {
+          fp.destroy();
+        } catch (e) {
+          console.warn('[ChatOps Ext] Error destroying flatpickr:', e);
+        }
+      }
+    });
+  }
+  activeListFlatpickrs = [];
+
+
   const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
   const allItems = res[STORAGE_KEYS.MEMOS] || [];
   const tasks = allItems.filter(m => m.type === 'task');
@@ -940,7 +957,7 @@ export async function loadTasks() {
     const task = tasks.find(t => t.id === id);
     const isRepeatDaily = task ? task.repeatDaily : false;
 
-    initCommonFlatpickr(el, {
+    const fpInstance = initCommonFlatpickr(el, {
       noCalendar: isRepeatDaily,
       enableTime: true,
       dateFormat: isRepeatDaily ? "H:i" : "Y-m-d H:i",
@@ -973,6 +990,9 @@ export async function loadTasks() {
         loadTasks();
       }
     });
+    if (fpInstance) {
+      activeListFlatpickrs.push(fpInstance);
+    }
   });
 
   // Delegate clear completed tasks button

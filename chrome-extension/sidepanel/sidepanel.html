@@ -753,7 +753,7 @@
                   <li data-i18n-html="giphyGuideStep3">Đặt tên app bất kỳ → nhấn <strong>Next Step</strong></li>
                   <li data-i18n-html="giphyGuideStep4">Copy <strong>API Key</strong> được cấp → paste vào ô trên</li>
                 </ol>
-                <div style="margin-top:10px; padding:10px 12px; background:var(--bg-2); border-radius:8px; font-size:12px; color:var(--text-3);" data-i18n-html="giphyGuideNote">
+                <div class="settings-info-box" style="margin-top: 10px !important;" data-i18n-html="giphyGuideNote">
                   💡 <strong>Gói miễn phí</strong> hỗ trợ 100 request/giờ.
                 </div>
               </div>
@@ -766,22 +766,24 @@
               <div class="accordion-left">
                 <span class="accordion-icon">🏷️</span>
                 <div>
-                  <div class="accordion-title" data-i18n="categoriesTitle">Note Categories</div>
+                  <div class="accordion-title" style="display:flex; align-items:center; gap:8px;">
+                    <span data-i18n="categoriesTitle">Note Categories</span>
+                    <span id="categoriesCountBadge" class="limit-badge" style="font-size: 11px; font-weight: 600; padding: 2px 6px; border-radius: 10px; background: var(--bg-3); color: var(--text-2); border: 1px solid var(--border);">0 / 5</span>
+                  </div>
                   <div class="accordion-desc" data-i18n="manageCategoriesDesc">Manage custom note categories</div>
                 </div>
               </div>
               <span class="accordion-arrow">▼</span>
             </div>
-            <div class="settings-accordion-body">
-              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-                <span id="categoriesCountBadge" class="limit-badge" style="font-size: 11px; font-weight: 600; padding: 2px 6px; border-radius: 10px; background: var(--bg-3); color: var(--text-2); border: 1px solid var(--border);">0 / 5</span>
-                <span id="categoryCharCounter" style="font-size: 11.5px; font-weight: 600; color: var(--text-3); font-family: monospace; background: var(--bg-3); padding: 2px 6px; border-radius: 10px; border: 1px solid var(--border);">0/10</span>
-              </div>
-              <div class="category-add-row" style="display:flex; gap:8px; margin-bottom:12px;">
-                <input type="text" id="settingNewCategory" maxlength="10" data-i18n-placeholder="newCategoryPlaceholder" placeholder="Enter new category..."
-                  style="flex:1; padding:8px 12px; border:1px solid var(--border); border-radius:var(--radius-sm); font-family:inherit; font-size:13px; outline:none; background:var(--bg-1); color:var(--text-1);">
+            <div class="settings-accordion-body compact">
+              <div class="category-add-row" style="display:flex; gap:8px; margin-bottom:8px; align-items:center;">
+                <div style="position:relative; flex:1; display:flex; align-items:center;">
+                  <input type="text" id="settingNewCategory" maxlength="10" data-i18n-placeholder="newCategoryPlaceholder" placeholder="Enter new category..."
+                    style="width:100%; padding:6px 45px 6px 10px; height:40px; border:1px solid var(--border); border-radius:var(--radius-sm); font-family:inherit; font-size:12.5px; outline:none; background:var(--bg-1); color:var(--text-1);">
+                  <span id="categoryCharCounter" style="position:absolute; right:10px; font-size: 11px; font-weight: 600; color: var(--text-3); font-family: monospace; background: var(--bg-2); padding: 1px 5px; border-radius: 4px; border: 1px solid var(--border); pointer-events:none;">0/10</span>
+                </div>
                 <button id="btnAddCategory" class="btn btn-primary" data-i18n="addBtn"
-                  style="padding:0 16px; font-weight:600; white-space:nowrap; border-radius: 4px;">Add</button>
+                  style="height:32px; padding:0 14px; font-size:12.5px; font-weight:600; white-space:nowrap; border-radius:4px; display:inline-flex; align-items:center; justify-content:center;">Add</button>
               </div>
               <ul id="settingCategoryList" style="list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:8px;">
                 <!-- Category items rendered here -->
@@ -1260,8 +1262,8 @@
               </div>
               <div
                 style="display:flex; margin-top:14px; border-top:1px solid var(--border); padding-top:12px; width:100%;">
-                <button id="btnManualCleanupNow" class="btn btn-secondary"
-                  style="display:inline-flex; align-items:center; justify-content:center; gap:6px; font-size:11.5px; font-weight:700; padding:8px 14px; border-radius:8px; transition:all 0.2s; height:32px; cursor:pointer; border:1px solid var(--border); background:#fff; width:100%;">
+                <button id="btnManualCleanupNow" class="btn btn-primary btn-full"
+                  style="height:32px; font-size:11.5px; font-weight:700; border-radius:8px;">
                   <span data-i18n="cleanupNowBtn">Cleanup Now</span>
                 </button>
               </div>
