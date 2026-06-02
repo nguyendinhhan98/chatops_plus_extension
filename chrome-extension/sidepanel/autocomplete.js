@@ -116,6 +116,16 @@ export function setupAutocomplete(inputId, fetchOptions, renderFn, onSelectFn) {
     clearBtn.style.display = inputEl.value ? 'flex' : 'none';
   };
   
+  function positionDropdown() {
+    const inModal = wrapper.closest('.sp-modal-body');
+    if (inModal) {
+      const rect = wrapper.getBoundingClientRect();
+      dropdown.style.top = `${rect.bottom + 2}px`;
+      dropdown.style.left = `${rect.left}px`;
+      dropdown.style.width = `${rect.width}px`;
+    }
+  }
+
   inputEl.addEventListener('input', (e) => {
     const value = e.target.value.trim();
     updateClearBtn();
@@ -128,6 +138,7 @@ export function setupAutocomplete(inputId, fetchOptions, renderFn, onSelectFn) {
     timeoutId = setTimeout(() => {
       if (document.activeElement === inputEl) {
         dropdown.style.display = 'block';
+        positionDropdown();
         loadData(false);
       }
     }, UI_CONFIG.DEBOUNCE_DELAY_MS);
@@ -135,6 +146,7 @@ export function setupAutocomplete(inputId, fetchOptions, renderFn, onSelectFn) {
 
   inputEl.addEventListener('focus', () => {
     dropdown.style.display = 'block';
+    positionDropdown();
     if (currentSearch === '' && dropdown.children.length === 0) {
       loadData(false);
     }

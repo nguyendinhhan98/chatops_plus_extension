@@ -89,7 +89,20 @@ export function setup(state) {
       defaultFetch: async (page, perPage) => {
         const includeDM = document.getElementById('spMentionIncludeDM').checked;
         if (!_joinedChannelsCache) {
-          _joinedChannelsCache = await getMyChannels(getTeamId());
+          const teamId = getTeamId();
+          if (teamId === 'all') {
+            const teams = _state.getTeams() || [];
+            const lists = await Promise.all(teams.map(t => getMyChannels(t.id).catch(() => [])));
+            const all = lists.flat();
+            const seen = new Set();
+            _joinedChannelsCache = all.filter(c => {
+              if (!c || !c.id || seen.has(c.id)) return false;
+              seen.add(c.id);
+              return true;
+            });
+          } else {
+            _joinedChannelsCache = await getMyChannels(teamId);
+          }
         }
         let filtered = filterChannels(_joinedChannelsCache, includeDM);
         const paginated = filtered.slice(page * perPage, (page + 1) * perPage);
@@ -98,7 +111,20 @@ export function setup(state) {
       searchFetch: async (term) => {
         const includeDM = document.getElementById('spMentionIncludeDM').checked;
         if (!_joinedChannelsCache) {
-          _joinedChannelsCache = await getMyChannels(getTeamId());
+          const teamId = getTeamId();
+          if (teamId === 'all') {
+            const teams = _state.getTeams() || [];
+            const lists = await Promise.all(teams.map(t => getMyChannels(t.id).catch(() => [])));
+            const all = lists.flat();
+            const seen = new Set();
+            _joinedChannelsCache = all.filter(c => {
+              if (!c || !c.id || seen.has(c.id)) return false;
+              seen.add(c.id);
+              return true;
+            });
+          } else {
+            _joinedChannelsCache = await getMyChannels(teamId);
+          }
         }
         const termLower = term.toLowerCase();
         let filtered = filterChannels(_joinedChannelsCache, includeDM);

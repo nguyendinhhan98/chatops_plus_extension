@@ -105,6 +105,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       handleMarkTaskDone(message.taskId, sendResponse);
       return true; // Keep channel open for async response
 
+    case MESSAGE_TYPES.SKIP_TASK_DAILY:
+      handleSkipTaskDaily(message.taskId, sendResponse);
+      return true;
+
     case MESSAGE_TYPES.GET_CONFIG:
       getConfig().then(sendResponse);
       return true;
@@ -225,6 +229,36 @@ function handleMarkTaskDone(taskId, sendResponse) {
         });
       } else {
         chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos }, () => sendResponse({ ok: true }));
+      }
+    } else {
+      sendResponse({ ok: false, error: 'Task not found' });
+    }
+  });
+}
+
+/**
+ * Reschedules a daily task for tomorrow without marking it as done
+ */
+function handleSkipTaskDaily(taskId, sendResponse) {
+  chrome.alarms.clear(taskId);
+  chrome.storage.local.get([STORAGE_KEYS.MEMOS], (res) => {
+    const memos = res[STORAGE_KEYS.MEMOS] || [];
+    const task = memos.find(m => m.id === taskId);
+    if (task) {
+      if (task.repeatDaily) {
+        // Reschedule for tomorrow
+        const currentReminder = new Date(task.reminder || Date.now());
+        currentReminder.setDate(currentReminder.getDate() + 1);
+        while (currentReminder.getTime() <= Date.now()) {
+          currentReminder.setDate(currentReminder.getDate() + 1);
+        }
+        task.reminder = formatDateTime(currentReminder);
+        chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos }, () => {
+          chrome.alarms.create(taskId, { when: currentReminder.getTime() });
+          sendResponse({ ok: true });
+        });
+      } else {
+        sendResponse({ ok: true });
       }
     } else {
       sendResponse({ ok: false, error: 'Task not found' });

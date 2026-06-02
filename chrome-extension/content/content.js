@@ -15,6 +15,8 @@ let globalInsertImageToChat = null;
 let activeChatTextarea = null;
 let updateImagePickerTranslations = null;
 let updateResizeModalTranslations = null;
+let currentResizeImageObj = null;
+let updateImageEditorTranslations = null;
 
 function runWithObserverDisabled(fn) {
   if (observer) {
@@ -46,7 +48,7 @@ function initCommonFlatpickr(el, options = {}) {
 // --- Listen for reminder notifications from the background script ---
 chrome.runtime.onMessage.addListener(async (message) => {
   if (message.type === MESSAGE_TYPES.SHOW_REMINDER) {
-    showReminderBanner(message.message, message.taskId, message.isTask, message.postId, message.teamName);
+    showReminderBanner(message.message, message.taskId, message.isTask, message.postId, message.teamName, message.isDaily);
   } else if (message.type === 'APP_LANG_CHANGED') {
     await loadLanguage();
     const btn = document.getElementById('chatops-ext-floating-btn');
@@ -66,6 +68,7 @@ chrome.runtime.onMessage.addListener(async (message) => {
     }
     if (updateImagePickerTranslations) updateImagePickerTranslations();
     if (updateResizeModalTranslations) updateResizeModalTranslations();
+    if (updateImageEditorTranslations) updateImageEditorTranslations();
   } else if (message.type === 'INSERT_IMAGE_TO_CHAT') {
     if (typeof globalInsertImageToChat === 'function') {
       globalInsertImageToChat(message.url);
@@ -227,7 +230,7 @@ function playNotificationSound() {
 /**
  * Displays a reminder banner at the top of the page
  */
-async function showReminderBanner(text, taskId, isTask = false, postId = null, taskTeamName = null) {
+async function showReminderBanner(text, taskId, isTask = false, postId = null, taskTeamName = null, isDaily = false) {
   await injectDynamicTheme();
 
   // Play notification sound if enabled
@@ -268,10 +271,9 @@ async function showReminderBanner(text, taskId, isTask = false, postId = null, t
     </div>
     ${isTask ? `
       <div class="crb-task-actions" style="display: flex; flex-direction: column; gap: 6px;">
-        <div style="display: flex; gap: 6px; width: 100%;">
-          <button class="crb-done-btn" data-task-id="${taskId}" style="flex: 1; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;">${language.reminderDoneBtn}</button>
-        </div>
-        ${postId ? `<button class="crb-jump-btn" data-post-id="${postId}" style="width: 100%; margin-top: 0; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;">${language.viewMessage}</button>` : ''}
+        <button class="crb-done-btn" data-task-id="${taskId}">${language.reminderDoneBtn}</button>
+        ${isDaily ? `<button class="crb-skip-btn" data-task-id="${taskId}">${language.reminderSkipBtn || 'Bỏ qua hôm nay'}</button>` : ''}
+        ${postId ? `<button class="crb-jump-btn" data-post-id="${postId}">${language.viewMessage}</button>` : ''}
       </div>
     ` : ''}
     <div class="crb-progress"></div>
@@ -356,6 +358,17 @@ async function showReminderBanner(text, taskId, isTask = false, postId = null, t
       banner.classList.remove('visible');
       setTimeout(() => banner.remove(), 400);
     });
+
+    const skipBtn = banner.querySelector('.crb-skip-btn');
+    if (skipBtn) {
+      skipBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (closeTimer) clearTimeout(closeTimer);
+        chrome.runtime.sendMessage({ type: MESSAGE_TYPES.SKIP_TASK_DAILY, taskId });
+        banner.classList.remove('visible');
+        setTimeout(() => banner.remove(), 400);
+      });
+    }
 
 
 
@@ -739,6 +752,21 @@ function showToast(msg) {
     
     const insertBtn = overlay.querySelector('.chatops-image-resize-btn-insert');
     if (insertBtn) insertBtn.textContent = language.insertToChat || 'Insert to Chat';
+
+    const editBtn = overlay.querySelector('.chatops-image-resize-btn-edit');
+    if (editBtn) {
+      if (editBtn.disabled) {
+        editBtn.title = language.gifNotSupported || 'GIF (Không hỗ trợ resize & edit)';
+      } else {
+        editBtn.title = language.editImageBtn || 'Sửa ảnh';
+      }
+    }
+
+    const newSizeEl = overlay.querySelector('.chatops-image-resize-new-size');
+    if (newSizeEl && currentResizeImageObj && currentResizeImageObj.mimeType === 'image/gif') {
+      const newBytes = getBase64Size(currentResizeImageObj.src);
+      newSizeEl.innerHTML = `<span style="color:#eab308;font-weight:600;font-size:11px;">${language.gifNotSupported || 'GIF (Không hỗ trợ resize & edit)'}:</span> ${currentResizeImageObj.origWidth}x${currentResizeImageObj.origHeight} (${formatSize(newBytes)})`;
+    }
   };
 
   async function loadCustomImages() {
@@ -773,10 +801,16 @@ function showToast(msg) {
     let col2Html = '';
     
     customMemes.forEach((url, idx) => {
+      const isGif = url.startsWith('data:image/gif');
       const cellHtml = `
         <div class="chatops-custom-image-cell">
           <img src="${url}" class="chatops-custom-image-item" loading="lazy" title="${language.clickToSend}" />
           <button class="chatops-custom-image-preview" data-idx="${idx}" title="${language.previewImage || 'Preview full image'}">&#x1F50D;</button>
+          ${!isGif ? `
+          <button class="chatops-custom-image-edit" data-idx="${idx}" title="${language.editImageBtn || 'Sửa ảnh'}">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none; display:block;"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
+          </button>
+          ` : ''}
           <button class="chatops-custom-image-resize" data-idx="${idx}" title="${language.resizeImage || 'Resize image'}">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none; display:block;"><path d="M4 14h6v6"></path><path d="M20 10h-6V4"></path><path d="M14 10l7-7"></path><path d="M10 14l-7 7"></path></svg>
           </button>
@@ -820,6 +854,578 @@ function showToast(msg) {
     }
     overlay.querySelector('#chatops-image-preview-img').src = src;
     overlay.classList.remove('hidden');
+  }
+
+
+  let editorUndoHistory = [];
+  function openImageEditor(activeImgObj, onSaveCallback) {
+    updateImageEditorTranslations = function() {
+      const overlay = document.getElementById('chatops-image-editor-overlay');
+      if (!overlay) return;
+
+      const titleEl = overlay.querySelector('.chatops-image-editor-title');
+      if (titleEl) titleEl.textContent = language.editImageTitle || 'Chỉnh sửa ảnh';
+
+      const brushBtn = overlay.querySelector('.chatops-image-editor-tool-btn[data-tool="brush"]');
+      if (brushBtn) {
+        brushBtn.title = language.drawToolBrush || 'Brush';
+        const span = brushBtn.querySelector('span');
+        if (span) span.textContent = language.drawToolBrush || 'Brush';
+      }
+
+      const shapesToggle = overlay.querySelector('.dropdown-toggle');
+      if (shapesToggle) {
+        const span = shapesToggle.querySelector('span:not([style*="font-size"])');
+        if (span) span.textContent = language.drawToolShapes || 'Hình dạng';
+      }
+
+      const rectItem = overlay.querySelector('.chatops-image-editor-dropdown-item[data-shape="rect"]');
+      if (rectItem) {
+        const span = rectItem.querySelector('span');
+        if (span) span.textContent = language.drawToolRect || 'Hình hộp';
+      }
+      const circleItem = overlay.querySelector('.chatops-image-editor-dropdown-item[data-shape="circle"]');
+      if (circleItem) {
+        const span = circleItem.querySelector('span');
+        if (span) span.textContent = language.drawToolCircle || 'Hình tròn';
+      }
+      const triangleItem = overlay.querySelector('.chatops-image-editor-dropdown-item[data-shape="triangle"]');
+      if (triangleItem) {
+        const span = triangleItem.querySelector('span');
+        if (span) span.textContent = language.drawToolTriangle || 'Tam giác';
+      }
+      const lineItem = overlay.querySelector('.chatops-image-editor-dropdown-item[data-shape="line"]');
+      if (lineItem) {
+        const span = lineItem.querySelector('span');
+        if (span) span.textContent = language.drawToolLine || 'Đường thẳng';
+      }
+
+      const arrowBtn = overlay.querySelector('.chatops-image-editor-tool-btn[data-tool="arrow"]');
+      if (arrowBtn) {
+        arrowBtn.title = language.drawToolArrow || 'Arrow';
+        const span = arrowBtn.querySelector('span');
+        if (span) span.textContent = language.drawToolArrow || 'Arrow';
+      }
+
+      const textBtn = overlay.querySelector('.chatops-image-editor-tool-btn[data-tool="text"]');
+      if (textBtn) {
+        textBtn.title = language.drawToolText || 'Text';
+        const span = textBtn.querySelector('span');
+        if (span) span.textContent = language.drawToolText || 'Text';
+      }
+
+      const eraserBtn = overlay.querySelector('.chatops-image-editor-tool-btn[data-tool="eraser"]');
+      if (eraserBtn) {
+        eraserBtn.title = language.drawToolEraser || 'Eraser';
+        const span = eraserBtn.querySelector('span');
+        if (span) span.textContent = language.drawToolEraser || 'Eraser';
+      }
+
+      const colorLabel = overlay.querySelector('.chatops-image-editor-colors > span');
+      if (colorLabel) colorLabel.textContent = language.drawColorLabel || 'Màu:';
+
+      const customColorBtn = overlay.querySelector('#chatops-image-editor-custom-color-btn');
+      if (customColorBtn) customColorBtn.title = language.customColorTitle || 'Chọn màu';
+
+      const sizeLabel = overlay.querySelector('.chatops-image-editor-slider-wrapper > span');
+      if (sizeLabel) sizeLabel.textContent = language.drawSizeLabel || 'Cỡ:';
+
+      const undoBtn = overlay.querySelector('#chatops-image-editor-undo');
+      if (undoBtn) {
+        const span = undoBtn.querySelector('span');
+        if (span) span.textContent = language.drawUndoBtn || 'Hoàn tác';
+      }
+      const resetBtn = overlay.querySelector('#chatops-image-editor-reset');
+      if (resetBtn) {
+        const span = resetBtn.querySelector('span');
+        if (span) span.textContent = language.drawResetBtn || 'Xóa hết';
+      }
+
+      const cancelBtn = overlay.querySelector('.chatops-image-editor-btn-cancel');
+      if (cancelBtn) cancelBtn.textContent = language.cancel;
+
+      const applyBtn = overlay.querySelector('.chatops-image-editor-btn-apply');
+      if (applyBtn) applyBtn.textContent = language.drawApplyBtn || 'Áp dụng';
+    };
+
+    let editorOverlay = document.getElementById('chatops-image-editor-overlay');
+    if (!editorOverlay) {
+      editorOverlay = document.createElement('div');
+      editorOverlay.id = 'chatops-image-editor-overlay';
+      editorOverlay.className = 'chatops-image-editor-overlay';
+      editorOverlay.innerHTML = `
+        <div class="chatops-image-editor-container">
+          <div class="chatops-image-editor-header">
+            <h3 class="chatops-image-editor-title">${language.editImageTitle || 'Chỉnh sửa ảnh'}</h3>
+            <button class="chatops-image-editor-close-btn">&times;</button>
+          </div>
+          <div class="chatops-image-editor-toolbar">
+            <div class="chatops-image-editor-tool-group">
+              <button class="chatops-image-editor-tool-btn active" data-tool="brush" title="${language.drawToolBrush || 'Brush'}">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M7.5 10.5c.828 0 1.5-.672 1.5-1.5s-.672-1.5-1.5-1.5-1.5.672-1.5 1.5.672 1.5 1.5 1.5z"/><path d="M11.5 7.5c.828 0 1.5-.672 1.5-1.5s-.672-1.5-1.5-1.5-1.5.672-1.5 1.5.672 1.5 1.5 1.5z"/><path d="M16.5 9.5c.828 0 1.5-.672 1.5-1.5s-.672-1.5-1.5-1.5-1.5.672-1.5 1.5.672 1.5 1.5 1.5z"/><path d="M6 14c0-2 2-3 2-3s.5 2.5 2 2.5 3-1.5 3-1.5.5 2 2 2 2.5-1 2.5-1 0 4-5 4-6.5-3-6.5-3z"/></svg>
+                <span>${language.drawToolBrush || 'Brush'}</span>
+              </button>
+              
+              <!-- Shapes Dropdown -->
+              <div class="chatops-image-editor-dropdown" id="chatops-image-editor-shapes-dropdown">
+                <button class="chatops-image-editor-tool-btn dropdown-toggle" data-tool="shape" style="gap: 4px;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                  <span>${language.drawToolShapes || 'Hình dạng'}</span>
+                  <span style="font-size: 8px; margin-left: 2px;">▼</span>
+                </button>
+                <div class="chatops-image-editor-dropdown-menu">
+                  <button class="chatops-image-editor-dropdown-item" data-shape="rect">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/></svg>
+                    <span>${language.drawToolRect || 'Hình hộp'}</span>
+                  </button>
+                  <button class="chatops-image-editor-dropdown-item" data-shape="circle">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><circle cx="12" cy="12" r="10"/></svg>
+                    <span>${language.drawToolCircle || 'Hình tròn'}</span>
+                  </button>
+                  <button class="chatops-image-editor-dropdown-item" data-shape="triangle">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><path d="M12 2L2 22h20L12 2z"/></svg>
+                    <span>${language.drawToolTriangle || 'Tam giác'}</span>
+                  </button>
+                  <button class="chatops-image-editor-dropdown-item" data-shape="line">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><line x1="5" y1="19" x2="19" y2="5"/></svg>
+                    <span>${language.drawToolLine || 'Đường thẳng'}</span>
+                  </button>
+                </div>
+              </div>
+
+              <button class="chatops-image-editor-tool-btn" data-tool="arrow" title="${language.drawToolArrow || 'Arrow'}">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                <span>${language.drawToolArrow || 'Arrow'}</span>
+              </button>
+              <button class="chatops-image-editor-tool-btn" data-tool="text" title="${language.drawToolText || 'Text'}">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+                <span>${language.drawToolText || 'Text'}</span>
+              </button>
+              <button class="chatops-image-editor-tool-btn" data-tool="eraser" title="${language.drawToolEraser || 'Eraser'}">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.5l12-12c1.1-1 2.5-1 3.5 0l4.3 4.3c1 1 1 2.5 0 3.5L10.5 21z"/><path d="M6 14h11"/></svg>
+                <span>${language.drawToolEraser || 'Eraser'}</span>
+              </button>
+            </div>
+
+            <div style="height: 20px; width: 1px; background: #cbd5e1;"></div>
+
+            <div class="chatops-image-editor-colors">
+              <span style="font-size: 13px; color: #475569; font-weight: 500; margin-right: 4px;">${language.drawColorLabel || 'Màu:'}</span>
+              <div class="chatops-image-editor-color-dot active" data-color="#ff0000" style="background: #ff0000;"></div>
+              <div class="chatops-image-editor-color-dot" data-color="#0000ff" style="background: #0000ff;"></div>
+              <div class="chatops-image-editor-color-dot" data-color="#00ff00" style="background: #00ff00;"></div>
+              <div class="chatops-image-editor-color-dot" data-color="#ffff00" style="background: #ffff00;"></div>
+              <div class="chatops-image-editor-color-dot" data-color="#000000" style="background: #000000;"></div>
+              <div class="chatops-image-editor-color-dot" data-color="#ffffff" style="background: #ffffff; border: 1px solid #cbd5e1;"></div>
+              
+              <!-- Custom Color Wheel Dot -->
+              <div class="chatops-image-editor-color-dot custom-color-dot" id="chatops-image-editor-custom-color-btn" title="${language.customColorTitle || 'Chọn màu'}" style="background: conic-gradient(red, yellow, lime, aqua, blue, magenta, red); border: 1px solid #cbd5e1; display: inline-flex; align-items: center; justify-content: center; position: relative;">
+                <input type="color" id="chatops-image-editor-custom-color-input" style="opacity: 0; position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: pointer;" />
+              </div>
+            </div>
+
+            <div style="height: 20px; width: 1px; background: #cbd5e1;"></div>
+
+            <div class="chatops-image-editor-slider-wrapper">
+              <span>${language.drawSizeLabel || 'Cỡ:'}</span>
+              <input type="range" class="chatops-image-editor-slider" min="2" max="50" value="8" />
+              <span class="chatops-image-editor-slider-val" style="width: 32px; font-weight: 600;">8px</span>
+            </div>
+
+            <div style="flex: 1; min-width: 10px;"></div>
+
+            <button class="chatops-image-editor-action-btn" id="chatops-image-editor-undo" title="Undo">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+              <span>${language.drawUndoBtn || 'Hoàn tác'}</span>
+            </button>
+            <button class="chatops-image-editor-action-btn" id="chatops-image-editor-reset">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+              <span>${language.drawResetBtn || 'Xóa hết'}</span>
+            </button>
+          </div>
+          <div class="chatops-image-editor-body">
+            <div class="chatops-image-editor-canvas-container">
+              <img class="chatops-image-editor-bg-img" src="" alt="edit background" />
+              <canvas class="chatops-image-editor-canvas"></canvas>
+            </div>
+          </div>
+          <div class="chatops-image-editor-footer">
+            <button class="chatops-image-editor-btn chatops-image-editor-btn-cancel">${language.cancel}</button>
+            <button class="chatops-image-editor-btn chatops-image-editor-btn-apply">${language.drawApplyBtn || 'Áp dụng'}</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(editorOverlay);
+
+      // Close handlers
+      editorOverlay.querySelector('.chatops-image-editor-close-btn').onclick = () => {
+        const textInput = editorOverlay.querySelector('.chatops-image-editor-text-input');
+        if (textInput) textInput.remove();
+        updateImageEditorTranslations = null;
+        editorOverlay.classList.remove('visible');
+      };
+      editorOverlay.querySelector('.chatops-image-editor-btn-cancel').onclick = () => {
+        const textInput = editorOverlay.querySelector('.chatops-image-editor-text-input');
+        if (textInput) textInput.remove();
+        updateImageEditorTranslations = null;
+        editorOverlay.classList.remove('visible');
+      };
+    }
+
+    const bgImg = editorOverlay.querySelector('.chatops-image-editor-bg-img');
+    const canvas = editorOverlay.querySelector('.chatops-image-editor-canvas');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    const slider = editorOverlay.querySelector('.chatops-image-editor-slider');
+    const sliderVal = editorOverlay.querySelector('.chatops-image-editor-slider-val');
+
+    let currentTool = 'brush';
+    let currentColor = '#ff0000';
+    let currentSize = 8;
+    let isDrawing = false;
+    let startX = 0;
+    let startY = 0;
+    let tempState = null;
+
+    // Set up toolbar controls
+    const toolBtns = editorOverlay.querySelectorAll('.chatops-image-editor-tool-btn:not(.dropdown-toggle)');
+    const dropdownToggle = editorOverlay.querySelector('.dropdown-toggle');
+    const shapesDropdown = editorOverlay.querySelector('#chatops-image-editor-shapes-dropdown');
+    const dropdownItems = editorOverlay.querySelectorAll('.chatops-image-editor-dropdown-item');
+
+    // Toggle dropdown on click
+    if (dropdownToggle) {
+      dropdownToggle.onclick = (e) => {
+        e.stopPropagation();
+        shapesDropdown.classList.toggle('open');
+      };
+    }
+
+    // Close dropdown on click outside
+    document.addEventListener('click', () => {
+      if (shapesDropdown) shapesDropdown.classList.remove('open');
+    });
+
+    // Handle shapes item click
+    dropdownItems.forEach(item => {
+      item.onclick = (e) => {
+        e.stopPropagation();
+        const selectedShape = item.dataset.shape;
+        currentTool = selectedShape;
+        
+        // Remove active class from other tools
+        toolBtns.forEach(b => b.classList.remove('active'));
+        if (dropdownToggle) dropdownToggle.classList.add('active');
+        
+        // Mark active item in dropdown
+        dropdownItems.forEach(di => di.classList.remove('active'));
+        item.classList.add('active');
+        
+        // Close dropdown
+        if (shapesDropdown) shapesDropdown.classList.remove('open');
+        
+        const activeText = editorOverlay.querySelector('.chatops-image-editor-text-input');
+        if (activeText) activeText.blur();
+      };
+    });
+
+    toolBtns.forEach(btn => {
+      btn.onclick = () => {
+        toolBtns.forEach(b => b.classList.remove('active'));
+        if (dropdownToggle) dropdownToggle.classList.remove('active');
+        dropdownItems.forEach(di => di.classList.remove('active'));
+        
+        btn.classList.add('active');
+        currentTool = btn.dataset.tool;
+        const activeText = editorOverlay.querySelector('.chatops-image-editor-text-input');
+        if (activeText) activeText.blur();
+      };
+    });
+
+    const colorDots = editorOverlay.querySelectorAll('.chatops-image-editor-color-dot:not(.custom-color-dot)');
+    const customColorBtn = editorOverlay.querySelector('#chatops-image-editor-custom-color-btn');
+    const customColorInput = editorOverlay.querySelector('#chatops-image-editor-custom-color-input');
+
+    colorDots.forEach(dot => {
+      dot.onclick = () => {
+        colorDots.forEach(d => d.classList.remove('active'));
+        if (customColorBtn) customColorBtn.classList.remove('active');
+        dot.classList.add('active');
+        currentColor = dot.dataset.color;
+        
+        const activeText = editorOverlay.querySelector('.chatops-image-editor-text-input');
+        if (activeText) activeText.style.color = currentColor;
+      };
+    });
+
+    if (customColorInput) {
+      customColorInput.oninput = (e) => {
+        currentColor = e.target.value;
+        customColorBtn.style.background = currentColor; // display chosen color in the wheel
+        colorDots.forEach(d => d.classList.remove('active'));
+        customColorBtn.classList.add('active');
+        
+        const activeText = editorOverlay.querySelector('.chatops-image-editor-text-input');
+        if (activeText) activeText.style.color = currentColor;
+      };
+    }
+
+    slider.oninput = () => {
+      currentSize = parseInt(slider.value, 10);
+      sliderVal.textContent = `${currentSize}px`;
+
+      const activeText = editorOverlay.querySelector('.chatops-image-editor-text-input');
+      if (activeText) {
+        const containerRect = canvas.parentElement.getBoundingClientRect();
+        const displayScale = containerRect.width / canvas.width;
+        activeText.style.fontSize = Math.max(12, currentSize * 2 * displayScale) + 'px';
+      }
+    };
+
+    // Load active image into editor
+    const img = new Image();
+    img.onload = () => {
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      bgImg.src = img.src;
+      let displayWidth = img.naturalWidth;
+      let displayHeight = img.naturalHeight;
+      
+      const maxW = Math.max(500, window.innerWidth - 120);
+      const maxH = Math.max(400, window.innerHeight - 240);
+      
+      let scale = 1;
+      // If the image is too large, scale it down to fit viewport nicely
+      if (displayWidth > maxW || displayHeight > maxH) {
+        scale = Math.min(maxW / displayWidth, maxH / displayHeight);
+      }
+      
+      displayWidth = Math.round(displayWidth * scale);
+      displayHeight = Math.round(displayHeight * scale);
+      const container = editorOverlay.querySelector('.chatops-image-editor-canvas-container');
+      if (container) {
+        container.style.width = displayWidth + 'px';
+        container.style.height = displayHeight + 'px';
+      }
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      editorUndoHistory = [];
+      saveState();
+
+      editorOverlay.classList.add('visible');
+    };
+    img.src = activeImgObj.src;
+
+    function saveState() {
+      if (editorUndoHistory.length > 20) {
+        editorUndoHistory.shift();
+      }
+      editorUndoHistory.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+    }
+
+    editorOverlay.querySelector('#chatops-image-editor-undo').onclick = () => {
+      if (editorUndoHistory.length > 1) {
+        editorUndoHistory.pop();
+        const prevState = editorUndoHistory[editorUndoHistory.length - 1];
+        ctx.putImageData(prevState, 0, 0);
+      } else if (editorUndoHistory.length === 1) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+    };
+
+    editorOverlay.querySelector('#chatops-image-editor-reset').onclick = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      saveState();
+    };
+
+    function getMousePos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+
+      let clientX, clientY;
+      if (e.touches && e.touches.length > 0) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
+      }
+
+      return {
+        x: (clientX - rect.left) * scaleX,
+        y: (clientY - rect.top) * scaleY
+      };
+    }
+
+    function drawArrow(fromX, fromY, toX, toY, color, thickness) {
+      ctx.beginPath();
+      ctx.moveTo(fromX, fromY);
+      ctx.lineTo(toX, toY);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = thickness;
+      ctx.stroke();
+
+      const angle = Math.atan2(toY - fromY, toX - fromX);
+      const headLength = Math.max(thickness * 3, 12);
+
+      ctx.beginPath();
+      ctx.moveTo(toX, toY);
+      ctx.lineTo(toX - headLength * Math.cos(angle - Math.PI / 6), toY - headLength * Math.sin(angle - Math.PI / 6));
+      ctx.lineTo(toX - headLength * Math.cos(angle + Math.PI / 6), toY - headLength * Math.sin(angle + Math.PI / 6));
+      ctx.closePath();
+      ctx.fillStyle = color;
+      ctx.fill();
+    }
+
+    canvas.onmousedown = (e) => {
+      const pos = getMousePos(e);
+      startX = pos.x;
+      startY = pos.y;
+      isDrawing = true;
+
+      if (currentTool === 'brush' || currentTool === 'eraser') {
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.globalCompositeOperation = currentTool === 'eraser' ? 'destination-out' : 'source-over';
+        ctx.strokeStyle = currentTool === 'eraser' ? 'rgba(0,0,0,1)' : currentColor;
+        ctx.lineWidth = currentSize;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        
+        ctx.lineTo(startX, startY);
+        ctx.stroke();
+      } else if (currentTool === 'text') {
+        isDrawing = false;
+        
+        let activeTextInput = editorOverlay.querySelector('.chatops-image-editor-text-input');
+        if (activeTextInput) {
+          activeTextInput.blur();
+        }
+
+        const input = document.createElement('textarea');
+        input.className = 'chatops-image-editor-text-input';
+
+        const containerRect = canvas.parentElement.getBoundingClientRect();
+        const clickX = e.clientX - containerRect.left;
+        const clickY = e.clientY - containerRect.top;
+
+        input.style.left = clickX + 'px';
+        input.style.top = clickY + 'px';
+        input.style.color = currentColor;
+
+        const displayScale = containerRect.width / canvas.width;
+        input.style.fontSize = Math.max(12, currentSize * 2 * displayScale) + 'px';
+
+        input.dataset.canvasX = startX;
+        input.dataset.canvasY = startY;
+
+        canvas.parentElement.appendChild(input);
+        setTimeout(() => input.focus(), 50);
+
+        input.onblur = () => {
+          const val = input.value.trim();
+          if (val) {
+            ctx.font = `bold ${currentSize * 2}px Inter, sans-serif`;
+            ctx.fillStyle = currentColor;
+            ctx.textBaseline = 'top';
+
+            const lines = val.split('\n');
+            const lineHeight = currentSize * 2.4;
+            lines.forEach((line, idx) => {
+              ctx.fillText(line, parseFloat(input.dataset.canvasX), parseFloat(input.dataset.canvasY) + (idx * lineHeight));
+            });
+            saveState();
+          }
+          input.remove();
+        };
+
+        input.onkeydown = (ev) => {
+          if (ev.key === 'Enter' && !ev.shiftKey) {
+            ev.preventDefault();
+            input.blur();
+          } else if (ev.key === 'Escape') {
+            input.value = '';
+            input.blur();
+          }
+        };
+      } else {
+        ctx.globalCompositeOperation = 'source-over';
+        tempState = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      }
+    };
+
+    canvas.onmousemove = (e) => {
+      if (!isDrawing) return;
+      const pos = getMousePos(e);
+
+      if (currentTool === 'brush' || currentTool === 'eraser') {
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+      } else if (currentTool === 'rect') {
+        ctx.putImageData(tempState, 0, 0);
+        ctx.beginPath();
+        ctx.rect(startX, startY, pos.x - startX, pos.y - startY);
+        ctx.strokeStyle = currentColor;
+        ctx.lineWidth = currentSize;
+        ctx.stroke();
+      } else if (currentTool === 'circle') {
+        ctx.putImageData(tempState, 0, 0);
+        ctx.beginPath();
+        const radius = Math.sqrt(Math.pow(pos.x - startX, 2) + Math.pow(pos.y - startY, 2));
+        ctx.arc(startX, startY, radius, 0, 2 * Math.PI);
+        ctx.strokeStyle = currentColor;
+        ctx.lineWidth = currentSize;
+        ctx.stroke();
+      } else if (currentTool === 'triangle') {
+        ctx.putImageData(tempState, 0, 0);
+        ctx.beginPath();
+        ctx.moveTo(startX + (pos.x - startX) / 2, startY);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.lineTo(startX, pos.y);
+        ctx.closePath();
+        ctx.strokeStyle = currentColor;
+        ctx.lineWidth = currentSize;
+        ctx.stroke();
+      } else if (currentTool === 'line') {
+        ctx.putImageData(tempState, 0, 0);
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.strokeStyle = currentColor;
+        ctx.lineWidth = currentSize;
+        ctx.stroke();
+      } else if (currentTool === 'arrow') {
+        ctx.putImageData(tempState, 0, 0);
+        drawArrow(startX, startY, pos.x, pos.y, currentColor, currentSize);
+      }
+    };
+
+    const endDrawing = () => {
+      if (!isDrawing) return;
+      isDrawing = false;
+      saveState();
+    };
+
+    canvas.onmouseup = endDrawing;
+    canvas.onmouseleave = endDrawing;
+
+    editorOverlay.querySelector('.chatops-image-editor-btn-apply').onclick = () => {
+      const activeText = editorOverlay.querySelector('.chatops-image-editor-text-input');
+      if (activeText) activeText.blur();
+
+      const mergedCanvas = document.createElement('canvas');
+      mergedCanvas.width = canvas.width;
+      mergedCanvas.height = canvas.height;
+      const mergedCtx = mergedCanvas.getContext('2d');
+
+      mergedCtx.drawImage(img, 0, 0);
+      mergedCtx.drawImage(canvas, 0, 0);
+
+      const finalDataUrl = mergedCanvas.toDataURL(activeImgObj.mimeType || 'image/png', 0.9);
+      onSaveCallback(finalDataUrl);
+      updateImageEditorTranslations = null;
+      editorOverlay.classList.remove('visible');
+    };
   }
 
   function openImageResizeModal(srcList, isLibraryEditIndex) {
@@ -874,6 +1480,9 @@ function showToast(msg) {
             </div>
           </div>
           <div class="chatops-image-resize-footer">
+            <button class="chatops-image-resize-btn chatops-image-resize-btn-edit" title="${language.editImageBtn || 'Sửa ảnh'}" style="background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; margin-right: auto; display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; padding: 0;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
+            </button>
             <button class="chatops-image-resize-btn chatops-image-resize-btn-cancel">${language.cancel}</button>
             <button class="chatops-image-resize-btn chatops-image-resize-btn-insert">${language.submitSaveBtn || 'Gửi & Lưu'}</button>
             <button class="chatops-image-resize-btn chatops-image-resize-btn-save">${language.saveCopy || 'Save Copy'}</button>
@@ -882,11 +1491,19 @@ function showToast(msg) {
       `;
       document.body.appendChild(overlay);
       
-      // Hook closing event listeners
-      overlay.querySelector('.chatops-image-resize-close').onclick = () => overlay.classList.remove('visible');
-      overlay.querySelector('.chatops-image-resize-btn-cancel').onclick = () => overlay.classList.remove('visible');
+      overlay.querySelector('.chatops-image-resize-close').onclick = () => {
+        currentResizeImageObj = null;
+        overlay.classList.remove('visible');
+      };
+      overlay.querySelector('.chatops-image-resize-btn-cancel').onclick = () => {
+        currentResizeImageObj = null;
+        overlay.classList.remove('visible');
+      };
       overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) overlay.classList.remove('visible');
+        if (e.target === overlay) {
+          currentResizeImageObj = null;
+          overlay.classList.remove('visible');
+        }
       });
     }
 
@@ -900,6 +1517,7 @@ function showToast(msg) {
     const lockBtn = overlay.querySelector('.chatops-image-resize-lock-btn');
     const saveBtn = overlay.querySelector('.chatops-image-resize-btn-save');
     const insertBtn = overlay.querySelector('.chatops-image-resize-btn-insert');
+    const editBtn = overlay.querySelector('.chatops-image-resize-btn-edit');
     
     const navigatorRow = overlay.querySelector('.chatops-image-resize-navigator');
     const prevBtn = overlay.querySelector('.prev-btn');
@@ -922,20 +1540,81 @@ function showToast(msg) {
 
     let currentIndex = 0;
     
-    // Load and setup the active image state
     function loadActiveImage() {
       const activeImgObj = imagesArray[currentIndex];
       if (!activeImgObj) return;
+      currentResizeImageObj = activeImgObj;
+
+      if (editBtn) {
+        editBtn.style.display = activeImgObj.mimeType === 'image/gif' ? 'none' : 'inline-flex';
+        editBtn.onclick = (e) => {
+          e.preventDefault(); e.stopPropagation();
+          openImageEditor(activeImgObj, (editedDataUrl) => {
+            activeImgObj.src = editedDataUrl;
+            activeImgObj.testDataUrl = editedDataUrl;
+            
+            const tempImg = new Image();
+            tempImg.onload = () => {
+              activeImgObj.origWidth = tempImg.width;
+              activeImgObj.origHeight = tempImg.height;
+              activeImgObj.aspect = tempImg.width / tempImg.height;
+              activeImgObj.width = Math.round(tempImg.width * (activeImgObj.sliderValue / 100));
+              activeImgObj.height = Math.round(tempImg.height * (activeImgObj.sliderValue / 100));
+              
+              loadActiveImage();
+            };
+            tempImg.src = editedDataUrl;
+          });
+        };
+      }
 
       const img = new Image();
       img.onload = () => {
-        // If dimensions are not initialized yet, initialize them
         if (activeImgObj.origWidth === 0) {
           activeImgObj.origWidth = img.width;
           activeImgObj.origHeight = img.height;
           activeImgObj.aspect = img.width / img.height;
           activeImgObj.width = img.width;
           activeImgObj.height = img.height;
+        }
+
+        const isGif = activeImgObj.mimeType === 'image/gif';
+        slider.disabled = isGif;
+        widthInput.disabled = isGif;
+        heightInput.disabled = isGif;
+        lockBtn.disabled = isGif;
+        
+        const editBtn = overlay.querySelector('.chatops-image-resize-btn-edit');
+        if (isGif) {
+          lockBtn.style.opacity = '0.5';
+          lockBtn.style.cursor = 'not-allowed';
+          slider.style.opacity = '0.5';
+          slider.style.cursor = 'not-allowed';
+          widthInput.style.opacity = '0.5';
+          widthInput.style.cursor = 'not-allowed';
+          heightInput.style.opacity = '0.5';
+          heightInput.style.cursor = 'not-allowed';
+          if (editBtn) {
+            editBtn.disabled = true;
+            editBtn.style.opacity = '0.5';
+            editBtn.style.cursor = 'not-allowed';
+            editBtn.title = language.gifNotSupported || 'GIF (Không hỗ trợ resize & edit)';
+          }
+        } else {
+          lockBtn.style.opacity = '1';
+          lockBtn.style.cursor = 'pointer';
+          slider.style.opacity = '1';
+          slider.style.cursor = 'pointer';
+          widthInput.style.opacity = '1';
+          widthInput.style.cursor = 'text';
+          heightInput.style.opacity = '1';
+          heightInput.style.cursor = 'text';
+          if (editBtn) {
+            editBtn.disabled = false;
+            editBtn.style.opacity = '1';
+            editBtn.style.cursor = 'pointer';
+            editBtn.title = language.editImageBtn || 'Sửa ảnh';
+          }
         }
 
         origSizeEl.textContent = `Original: ${activeImgObj.origWidth}x${activeImgObj.origHeight} (${formatSize(getBase64Size(activeImgObj.src))})`;
@@ -946,8 +1625,8 @@ function showToast(msg) {
         
         lockBtn.className = `chatops-image-resize-lock-btn ${activeImgObj.isAspectRatioLocked ? 'locked' : ''}`;
         
-        // Handle lock toggle
         lockBtn.onclick = () => {
+          if (isGif) return;
           activeImgObj.isAspectRatioLocked = !activeImgObj.isAspectRatioLocked;
           lockBtn.classList.toggle('locked', activeImgObj.isAspectRatioLocked);
         };
@@ -958,6 +1637,19 @@ function showToast(msg) {
           
           activeImgObj.width = w;
           activeImgObj.height = h;
+
+          if (activeImgObj.mimeType === 'image/gif') {
+            activeImgObj.testDataUrl = activeImgObj.src;
+            const newBytes = getBase64Size(activeImgObj.src);
+            newSizeEl.innerHTML = `<span style="color:#eab308;font-weight:600;font-size:11px;">${language.gifNotSupported || 'GIF (Không hỗ trợ resize & edit)'}:</span> ${activeImgObj.origWidth}x${activeImgObj.origHeight} (${formatSize(newBytes)})`;
+            
+            previewImg.src = activeImgObj.src;
+            previewImg.style.width = '';
+            previewImg.style.height = '';
+            previewImg.style.maxWidth = '100%';
+            previewImg.style.maxHeight = '100%';
+            return;
+          }
 
           const canvas = document.createElement('canvas');
           canvas.width = w;
@@ -1122,6 +1814,7 @@ function showToast(msg) {
         showToast(language.toastSentAndSavedNext || 'Đã gửi & lưu ảnh! Đang chuyển sang ảnh tiếp theo...');
       } else {
         // Complete! Close modal
+        currentResizeImageObj = null;
         overlay.classList.remove('visible');
         showToast(language.toastSentAndSavedAll || 'Đã gửi & lưu toàn bộ ảnh thành công! 🎉');
       }
@@ -1168,6 +1861,7 @@ function showToast(msg) {
         loadActiveImage();
         showToast(language.toastSavedToLibraryNext || 'Đã lưu ảnh vào thư viện! Đang chuyển sang ảnh tiếp theo...');
       } else {
+        currentResizeImageObj = null;
         overlay.classList.remove('visible');
         showToast(language.toastSavedToLibraryAll || 'Đã lưu toàn bộ ảnh vào thư viện! 🎉');
       }
@@ -1285,6 +1979,34 @@ function showToast(msg) {
           const customMemes = res.custom_memes || [];
           if (customMemes[idx]) {
             openImageResizeModal(customMemes[idx], idx);
+          }
+          return;
+        }
+
+        const inlineEditBtn = e.target.closest('.chatops-custom-image-edit');
+        if (inlineEditBtn) {
+          e.stopPropagation();
+          const idx = parseInt(inlineEditBtn.dataset.idx, 10);
+          const res = await chrome.storage.local.get(['custom_memes']);
+          const customMemes = res.custom_memes || [];
+          if (customMemes[idx]) {
+            const activeImgObj = {
+              src: customMemes[idx],
+              testDataUrl: customMemes[idx],
+              mimeType: 'image/png',
+              origWidth: 0,
+              origHeight: 0,
+              aspect: 1,
+              width: 0,
+              height: 0,
+              sliderValue: 100,
+              isAspectRatioLocked: true
+            };
+            openImageEditor(activeImgObj, async (editedDataUrl) => {
+              customMemes[idx] = editedDataUrl;
+              await chrome.storage.local.set({ custom_memes: customMemes });
+              loadCustomImages();
+            });
           }
           return;
         }
@@ -1932,7 +2654,7 @@ function showToast(msg) {
         noCalendar: noCalendarMode,
         enableTime: true,
         dateFormat: noCalendarMode ? "H:i" : "Y-m-d H:i",
-        appendTo: quickNotePopover,
+        appendTo: reminderRow,
         onChange: function(selectedDates) {
           if (selectedDates.length > 0) {
             if (cqnReminderSelect) {
@@ -2073,19 +2795,35 @@ function showToast(msg) {
       console.warn('[ChatOps Ext] Failed to load dynamic categories:', err);
     }
 
-    const msgBodyEl = postEl.querySelector('.post-message__text, .post__body p, [class*="post-message"]');
-    let msgTextFull = msgBodyEl ? msgBodyEl.innerText.trim() : '';
+    // Check if the user has highlighted text within the target post element
+    const selection = window.getSelection();
+    let msgTextFull = '';
+    let isTextSelectionUsed = false;
     
-    // Find all images in the post to append as Markdown
-    const imgEls = postEl.querySelectorAll('img.attachment__image, img.markdown-inline-img, .post-image__column img');
-    if (imgEls.length > 0) {
-      const imgUrls = Array.from(imgEls).map(img => img.src).filter(Boolean);
-      if (imgUrls.length > 0) {
-        const imageMarkdown = imgUrls.map(url => `![Image](${url})`).join('\n');
-        if (msgTextFull) {
-          msgTextFull += '\n\n' + imageMarkdown;
-        } else {
-          msgTextFull = imageMarkdown;
+    if (selection && selection.rangeCount > 0 && !selection.isCollapsed) {
+      const selectedText = selection.toString().trim();
+      // Verify that the selection actually belongs to or starts inside our target postEl
+      if (selectedText && postEl.contains(selection.anchorNode)) {
+        msgTextFull = selectedText;
+        isTextSelectionUsed = true;
+      }
+    }
+
+    if (!isTextSelectionUsed) {
+      const msgBodyEl = postEl.querySelector('.post-message__text, .post__body p, [class*="post-message"]');
+      msgTextFull = msgBodyEl ? msgBodyEl.innerText.trim() : '';
+      
+      // Find all images in the post to append as Markdown
+      const imgEls = postEl.querySelectorAll('img.attachment__image, img.markdown-inline-img, .post-image__column img');
+      if (imgEls.length > 0) {
+        const imgUrls = Array.from(imgEls).map(img => img.src).filter(Boolean);
+        if (imgUrls.length > 0) {
+          const imageMarkdown = imgUrls.map(url => `![Image](${url})`).join('\n');
+          if (msgTextFull) {
+            msgTextFull += '\n\n' + imageMarkdown;
+          } else {
+            msgTextFull = imageMarkdown;
+          }
         }
       }
     }
@@ -2225,6 +2963,9 @@ function showToast(msg) {
     
     popover.classList.remove('visible');
     quickNoteBackdrop.classList.remove('visible');
+    
+    // Display localized success toast message
+    showToast(mode === 'note' ? (language.quickNoteSaveSuccess || 'Đã lưu ghi chú') : (language.quickTaskSaveSuccess || 'Đã lưu công việc'));
   }
 
   const DEFAULT_SETTINGS = {

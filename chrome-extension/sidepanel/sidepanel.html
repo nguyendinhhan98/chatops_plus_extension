@@ -713,8 +713,51 @@
               </div>
             </div>
           </div>
-
-
+          <!-- Group 3: Reminders & Notifications -->
+          <div class="settings-accordion">
+            <div class="settings-accordion-header">
+              <div class="accordion-left">
+                <span class="accordion-icon">🔔</span>
+                <div>
+                  <div class="accordion-title" data-i18n="alertsTitle">Reminders & Notifications</div>
+                  <div class="accordion-desc" data-i18n="snoozeAlertDesc">Snooze time, alert type & sound</div>
+                </div>
+              </div>
+              <span class="accordion-arrow">▼</span>
+            </div>
+            <div class="settings-accordion-body">
+              <!-- Snooze -->
+              <h3 class="settings-title" style="margin-top:0;" data-i18n="snoozeTitle">Default Snooze Time</h3>
+              <p class="settings-desc" data-i18n="snoozeDesc">Default snooze duration (minutes) for new task reminders.</p>
+              <div class="settings-row" style="margin-top: 12px; margin-bottom: 18px; display: flex; align-items: center; gap: 8px;">
+                <input type="number" id="settingSnoozeMinutes" class="settings-input-num" min="1" max="1440" value="30">
+                <span style="font-size: 13px; color: var(--text-2); font-weight: 500;" data-i18n="minutesLabel">minutes</span>
+              </div>
+              <!-- Alert type -->
+              <div style="border-top: 1px dashed var(--border); padding-top: 14px;">
+                <h3 class="settings-title" style="margin-top:0;" data-i18n="alertsTitle">Alert Delivery Type</h3>
+                <p class="settings-desc" data-i18n="alertsDesc">Select how you want to be notified when a task reminder is triggered.</p>
+                <div class="settings-row" style="margin-top: 12px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                  <select id="settingNotificationType" class="custom-select" style="width:100%; max-width:220px;">
+                    <option value="both" data-i18n="alertsOptionBoth">🔔 Both</option>
+                    <option value="system" data-i18n="alertsOptionSystem">🖥️ OS System Notification only</option>
+                    <option value="in-page" data-i18n="alertsOptionInPage">💬 In-page Banner only</option>
+                  </select>
+                  <button type="button" id="btnTestNotification" data-i18n="testNotificationBtn"
+                    style="padding: 8px 14px; background: var(--accent); color: #fff; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.2s; white-space: nowrap; height: 34px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 4px rgba(28, 88, 217, 0.15);">
+                    🔔 Test Notification
+                  </button>
+                </div>
+                <div class="settings-toggle-list" style="margin-top: 16px; border-top: 1px dashed var(--border); padding-top: 16px;">
+                  <label class="settings-toggle-row" style="margin-bottom:0;">
+                    <span data-i18n="settingSoundNotification">Play sound for notifications</span>
+                    <input type="checkbox" id="settingSoundNotification" class="settings-toggle">
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
 
           <!-- Group 5: GIF Settings -->
           <div class="settings-accordion">

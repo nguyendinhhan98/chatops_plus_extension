@@ -159,8 +159,41 @@ export function setup(state) {
   searchFromAC = setupAutocomplete(
     'spSearchFrom',
     {
-      defaultFetch: async (page, perPage) => getUsers(page, perPage, getTeamId()),
-      searchFetch: async (term) => searchUsers(term, getTeamId())
+      defaultFetch: async (page, perPage) => {
+        const teamId = getTeamId();
+        if (teamId === 'all') {
+          const teams = _state.getTeams() || [];
+          const lists = await Promise.all(
+            teams.map(t => getUsers(0, 100, t.id).catch(() => []))
+          );
+          const allUsers = lists.flat();
+          const seen = new Set();
+          const uniqueUsers = allUsers.filter(u => {
+            if (!u || !u.id || seen.has(u.id)) return false;
+            seen.add(u.id);
+            return true;
+          });
+          return uniqueUsers.slice(page * perPage, (page + 1) * perPage);
+        }
+        return getUsers(page, perPage, teamId);
+      },
+      searchFetch: async (term) => {
+        const teamId = getTeamId();
+        if (teamId === 'all') {
+          const teams = _state.getTeams() || [];
+          const lists = await Promise.all(
+            teams.map(t => searchUsers(term, t.id).catch(() => []))
+          );
+          const allUsers = lists.flat();
+          const seen = new Set();
+          return allUsers.filter(u => {
+            if (!u || !u.id || seen.has(u.id)) return false;
+            seen.add(u.id);
+            return true;
+          });
+        }
+        return searchUsers(term, teamId);
+      }
     },
     (user) => renderUserCard(user),
     (user) => {
@@ -187,7 +220,20 @@ export function setup(state) {
       defaultFetch: async (page, perPage) => {
         const includeDM = document.getElementById('chkSearchIncludeDM').checked;
         if (!_joinedChannelsCache) {
-          _joinedChannelsCache = await getMyChannels(getTeamId());
+          const teamId = getTeamId();
+          if (teamId === 'all') {
+            const teams = _state.getTeams() || [];
+            const lists = await Promise.all(teams.map(t => getMyChannels(t.id).catch(() => [])));
+            const all = lists.flat();
+            const seen = new Set();
+            _joinedChannelsCache = all.filter(c => {
+              if (!c || !c.id || seen.has(c.id)) return false;
+              seen.add(c.id);
+              return true;
+            });
+          } else {
+            _joinedChannelsCache = await getMyChannels(teamId);
+          }
         }
         let filtered = filterChannels(_joinedChannelsCache, includeDM);
         const paginated = filtered.slice(page * perPage, (page + 1) * perPage);
@@ -196,7 +242,20 @@ export function setup(state) {
       searchFetch: async (term) => {
         const includeDM = document.getElementById('chkSearchIncludeDM').checked;
         if (!_joinedChannelsCache) {
-          _joinedChannelsCache = await getMyChannels(getTeamId());
+          const teamId = getTeamId();
+          if (teamId === 'all') {
+            const teams = _state.getTeams() || [];
+            const lists = await Promise.all(teams.map(t => getMyChannels(t.id).catch(() => [])));
+            const all = lists.flat();
+            const seen = new Set();
+            _joinedChannelsCache = all.filter(c => {
+              if (!c || !c.id || seen.has(c.id)) return false;
+              seen.add(c.id);
+              return true;
+            });
+          } else {
+            _joinedChannelsCache = await getMyChannels(teamId);
+          }
         }
         const termLower = term.toLowerCase();
         let filtered = filterChannels(_joinedChannelsCache, includeDM);

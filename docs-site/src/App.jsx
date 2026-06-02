@@ -126,8 +126,8 @@ const TRANSLATIONS = {
         date: "31/05/2026",
         latest: true,
         logs: [
-          { type: "Đặc sắc", text: "Ra mắt giao diện hướng dẫn dạng Slide thuyết trình thiết kế tối giản, trực quan và hiện đại." },
-          { type: "Cải tiến", text: "Tối ưu hóa UI/UX các vùng Danh mục, Tab, Hộp thông báo API Giphy trong thanh điều hướng sidebar." }
+          { type: "Đặc sắc", text: "Ra mắt Slide Hướng dẫn tương tác trực quan và bộ chọn đa ảnh minh họa tích hợp." },
+          { type: "Cải tiến", text: "Nâng cấp UI/UX các vùng Danh mục, Tab, Hộp thông báo API Giphy trong thanh điều hướng sidebar." }
         ]
       },
       {
@@ -145,7 +145,8 @@ const TRANSLATIONS = {
         latest: false,
         logs: [
           { type: "Tính năng", text: "Ra mắt phân hệ Bão cảm xúc (Emoji Reactions Spammer) và Hộp thoại tạo nhanh Tác vụ/Ghi chú từ tin nhắn." },
-          { type: "Tính năng", text: "Hỗ trợ phím xóa nhanh tác vụ trên tin nhắn và thả emoji trực tiếp trên giao diện Tin nhắn bỏ lỡ." }
+          { type: "Tính năng", text: "Tích hợp phím xóa nhanh tác vụ trên tin nhắn và thả emoji trực tiếp trên giao diện Tin nhắn bỏ lỡ." },
+          { type: "Cải tiến", text: "Nâng cấp UI/UX." }
         ]
       },
       {
@@ -153,8 +154,36 @@ const TRANSLATIONS = {
         date: "26/05/2026",
         latest: false,
         logs: [
-          { type: "Tính năng", text: "Tích hợp sao lưu dữ liệu tự động lên Google Drive và công cụ dọn dẹp dung lượng bộ nhớ định kỳ." },
+          { type: "Tính năng", text: "Tích hợp sao lưu dữ liệu tự động lên Google Drive và công cụ dọn dẹp dung lượng bộ nhớ." },
+          { type: "Tính năng", text: "Hỗ trợ tùy chọn ẩn/hiện động toàn bộ 6 thẻ tính năng trong Cài đặt thanh bên." },
           { type: "Tối ưu", text: "Bổ sung cơ chế tự động nén dung lượng tệp tải lên thư viện hình ảnh Meme." }
+        ]
+      },
+      {
+        ver: "v2.0.0",
+        date: "20/05/2026",
+        latest: false,
+        logs: [
+          { type: "Tính năng", text: "Tích hợp cơ chế thông báo trạng thái quét tin nhắn (crawler scan alert) theo thời gian thực." },
+          { type: "Cải tiến", text: "Nâng cấp UI/UX." }
+        ]
+      },
+      {
+        ver: "v1.1.0",
+        date: "18/05/2026",
+        latest: false,
+        logs: [
+          { type: "Tính năng", text: "Hỗ trợ checklist tác vụ con, nhắc nhở giờ hẹn và báo chuông báo động cho Công việc." },
+          { type: "Tính năng", text: "Hỗ trợ kéo thả sắp xếp danh sách công việc và ghim tác vụ ưu tiên lên thanh Menu." }
+        ]
+      },
+      {
+        ver: "v1.0.0",
+        date: "15/05/2026",
+        latest: false,
+        logs: [
+          { type: "Khởi tạo", text: "Ra mắt tiện ích Extension ChatOps++ thông minh chạy trực tiếp trên thanh bên." },
+          { type: "Cốt lõi", text: "Phát hành 4 phân hệ cốt lõi: Công việc (Checklist), Ghi chú (Notes), Tin nhắn bỏ lỡ (Mentions) và Tìm kiếm lịch sử (crawler Search)." }
         ]
       }
     ]
@@ -279,7 +308,7 @@ const TRANSLATIONS = {
         date: "May 31, 2026",
         latest: true,
         logs: [
-          { type: "Highlight", text: "Launched minimalist, presentation slide documentation layout." },
+          { type: "Highlight", text: "Released visual interactive slideshow guide and built-in screenshot selector tabs." },
           { type: "UI", text: "Optimized categories, tab layouts, and Giphy API settings config panels on the sidebar." }
         ]
       },
@@ -288,7 +317,7 @@ const TRANSLATIONS = {
         date: "May 30, 2026",
         latest: false,
         logs: [
-          { type: "Bug", text: "Resolved visibility settings overrides showing disabled tabs on the main menu bar." },
+          { type: "Bug", text: "Resolved visibility settings overrides showing disabled tabs on the menu bar." },
           { type: "UI", text: "Enhanced drag-and-drop tab ordering actions." }
         ]
       },
@@ -298,7 +327,8 @@ const TRANSLATIONS = {
         latest: false,
         logs: [
           { type: "Feature", text: "Released Emoji Reactions Spammer popover and quick tasks/memos modal forms." },
-          { type: "Feature", text: "Supported shortcut triggers for fast task creation and reaction options inside Missed Mentions." }
+          { type: "Feature", text: "Supported shortcut triggers for fast task creation and reaction options inside Missed Mentions." },
+          { type: "UI", text: "UI/UX enhancements." }
         ]
       },
       {
@@ -307,7 +337,35 @@ const TRANSLATIONS = {
         latest: false,
         logs: [
           { type: "Feature", text: "Integrated Google Drive automatic cloud backup/restore and database cleaners." },
-          { type: "Optimize", text: "Introduced client-side image compression engine for gallery uploads." }
+          { type: "Feature", text: "Enabled dynamic visibility toggles for the 6 core components inside Settings." },
+          { type: "Optimize", text: "Curated automatic image compression engine for meme gallery uploads." }
+        ]
+      },
+      {
+        ver: "v2.0.0",
+        date: "May 20, 2026",
+        latest: false,
+        logs: [
+          { type: "Feature", text: "Integrated active crawler scan alert notifications in headers." },
+          { type: "UI", text: "UI/UX enhancements." }
+        ]
+      },
+      {
+        ver: "v1.1.0",
+        date: "May 18, 2026",
+        latest: false,
+        logs: [
+          { type: "Feature", text: "Integrated sub-checklist trackers, time reminders, and task alarms." },
+          { type: "Feature", text: "Enabled drag-and-drop sorting and task promotion to the main menu." }
+        ]
+      },
+      {
+        ver: "v1.0.0",
+        date: "May 15, 2026",
+        latest: false,
+        logs: [
+          { type: "Init", text: "Launched the ChatOps++ Chrome Extension featuring smart sidepanel interface." },
+          { type: "Core", text: "Rolled out 4 foundational modules: Tasks, Notes, Mentions, and Search." }
         ]
       }
     ]
@@ -315,7 +373,11 @@ const TRANSLATIONS = {
 };
 
 export default function App() {
-  const [lang, setLang] = useState('vi');
+  const [lang, setLang] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlLang = params.get('lang');
+    return (urlLang === 'en' || urlLang === 'vi') ? urlLang : 'vi';
+  });
   const [slideIndex, setSlideIndex] = useState(0);
   const [activeSubImageIndex, setActiveSubImageIndex] = useState(0);
   
@@ -382,7 +444,14 @@ export default function App() {
           
           <div className="flex items-center gap-4">
             <button 
-              onClick={() => setLang(lang === 'vi' ? 'en' : 'vi')}
+              onClick={() => {
+                const nextLang = lang === 'vi' ? 'en' : 'vi';
+                setLang(nextLang);
+                const params = new URLSearchParams(window.location.search);
+                params.set('lang', nextLang);
+                const newUrl = `${window.location.pathname}?${params.toString()}`;
+                window.history.replaceState({}, '', newUrl);
+              }}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 transition text-xs font-bold text-slate-700 cursor-pointer"
             >
               <Globe className="w-3.5 h-3.5 text-blue-600" />

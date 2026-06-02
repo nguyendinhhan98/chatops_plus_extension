@@ -69,7 +69,8 @@ export async function handleTaskAlarm(taskId) {
           taskId,
           postId: task.postId,
           teamName: task.teamName,
-          isTask: true
+          isTask: true,
+          isDaily: task.repeatDaily
         }).catch(() => {});
       }
     }

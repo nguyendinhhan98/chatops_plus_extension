@@ -718,12 +718,13 @@ function setupStateHandlers() {
     });
   }
 
-  // Global system user guide help page listener (opens standalone guide in new tab)
+  // Global system user guide help page listener (opens standalone docs-site in new tab)
   const helpBtn = document.getElementById('btnHeaderHelp');
   if (helpBtn) {
     helpBtn.addEventListener('click', () => {
       const activeLang = getActiveLanguageCode();
-      const url = chrome.runtime.getURL(`sidepanel/guide.html?lang=${activeLang}`);
+      const baseUrl = CHATOPS_CONFIG.DOCS_SITE_URL;
+      const url = `${baseUrl}?lang=${activeLang}`;
       chrome.tabs.create({ url });
     });
   }

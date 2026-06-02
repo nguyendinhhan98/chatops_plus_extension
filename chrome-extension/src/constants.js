@@ -18,6 +18,7 @@ export const CHATOPS_CONFIG = {
   EMAIL_DOMAIN: 'runsystem.net',
   DEFAULT_TEAM: 'dn',
   LEAVE_CHANNEL: 'checkoff-later',
+  DOCS_SITE_URL: 'https://chatops-plus-extension-docs.vercel.app/',
 };
 
 export const COOKIE_NAMES = {
@@ -47,6 +48,7 @@ export const MESSAGE_TYPES = {
   RESOLVE_DISPLAY_NAME: 'RESOLVE_DISPLAY_NAME',
   RESOLVE_USER_ID: 'RESOLVE_USER_ID',
   CLONE_POST_REACTIONS: 'CLONE_POST_REACTIONS',
+  SKIP_TASK_DAILY: 'SKIP_TASK_DAILY',
 };
 
 export const ALARMS = {
