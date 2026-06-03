@@ -157,6 +157,7 @@
   transform: translateX(-50%) scale(0.97) !important;
   pointer-events: none;
   transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+  overflow: visible !important;
 }
 
 #chatops-quick-note-popover.visible {
@@ -210,6 +211,10 @@
   border-bottom-left-radius: 11px !important;
   border-bottom-right-radius: 11px !important;
   box-sizing: border-box !important;
+  overflow: visible !important;
+}
+#chatops-quick-note-popover .sp-modal-body {
+  overflow: visible !important;
 }
 
 .cqn-preview {

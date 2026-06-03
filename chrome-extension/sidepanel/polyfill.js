@@ -97,6 +97,7 @@ window.convertToCustomDropdown = function(selectOrId, width = null, height = nul
   container.style.boxSizing = 'border-box';
   container.style.display = 'inline-block';
   container.style.verticalAlign = 'middle';
+  container.style.setProperty('overflow', 'visible', 'important');
 
   const options = Array.from(nativeSelect.options);
   const selectedIndex = nativeSelect.selectedIndex >= 0 ? nativeSelect.selectedIndex : 0;
@@ -109,7 +110,7 @@ window.convertToCustomDropdown = function(selectOrId, width = null, height = nul
     : `width: 100%; height: ${selectHeight}; font-size: 11.5px; border-radius: 6px; border: 1px solid var(--border); background: #ffffff; color: var(--text-2); cursor: pointer; outline: none; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; font-weight: 400; transition: all 0.2s ease; box-sizing: border-box;`;
 
   container.innerHTML = `
-    <div class="custom-dropdown" style="position: relative; width: 100%; box-sizing: border-box; font-family: var(--font);">
+    <div class="custom-dropdown" style="position: relative; width: 100%; box-sizing: border-box; font-family: var(--font); overflow: visible !important;">
       <button type="button" class="custom-dropdown-toggle ${isCompact ? 'sp-compact-select' : ''}" data-category="${optionVal.toLowerCase()}"
         style="${toggleStyle}">
         <span class="custom-dropdown-selected-text" style="font-weight: 600; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; text-align: left;">${initialText}</span>

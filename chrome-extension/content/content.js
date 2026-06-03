@@ -46,37 +46,6 @@ function initCommonFlatpickr(el, options = {}) {
 }
 
 // --- Listen for reminder notifications from the background script ---
-chrome.runtime.onMessage.addListener(async (message) => {
-  if (message.type === MESSAGE_TYPES.SHOW_REMINDER) {
-    showReminderBanner(message.message, message.taskId, message.isTask, message.postId, message.teamName, message.isDaily);
-  } else if (message.type === 'APP_LANG_CHANGED') {
-    await loadLanguage();
-    const btn = document.getElementById('chatops-ext-floating-btn');
-    if (btn) {
-      btn.title = language.floatingBtnTitle;
-      const closeBtn = document.getElementById('chatops-ext-close-btn');
-      if (closeBtn) closeBtn.title = language.floatingBtnHide;
-    }
-    // Clear cached popover elements so they are rebuilt in the new language
-    if (quickNotePopover) {
-      quickNotePopover.remove();
-      quickNotePopover = null;
-    }
-    if (quickNoteBackdrop) {
-      quickNoteBackdrop.remove();
-      quickNoteBackdrop = null;
-    }
-    if (updateImagePickerTranslations) updateImagePickerTranslations();
-    if (updateResizeModalTranslations) updateResizeModalTranslations();
-    if (updateImageEditorTranslations) updateImageEditorTranslations();
-  } else if (message.type === 'INSERT_IMAGE_TO_CHAT') {
-    if (typeof globalInsertImageToChat === 'function') {
-      globalInsertImageToChat(message.url);
-    }
-  } else if (message.action === 'open_post_thread') {
-    handleOpenPostThread(message.postId, message.rootId);
-  }
-});
 
 async function handleOpenPostThread(postId, rootId) {
   if (!postId) return;
@@ -706,8 +675,12 @@ function showToast(msg) {
     const yourImagesHeaderEl = imagePickerEl.querySelector('#chatops-your-images-header');
     if (yourImagesHeaderEl) yourImagesHeaderEl.textContent = language.yourImages || 'YOUR IMAGES';
     
-    // Upload image button
-    const uploadLabelEl = imagePickerEl.querySelector('.chatops-image-upload-btn');
+    // Draw button and upload image button
+    const drawBtnEl = imagePickerEl.querySelector('#chatops-draw-btn');
+    if (drawBtnEl) {
+      drawBtnEl.innerHTML = `🎨 ${language.drawBtn || 'Tự vẽ'}`;
+    }
+    const uploadLabelEl = imagePickerEl.querySelector('#chatops-upload-label');
     if (uploadLabelEl) {
       uploadLabelEl.textContent = language.uploadImageBtn || '+ Upload Image';
     }
@@ -1464,19 +1437,6 @@ function showToast(msg) {
                 </div>
                 <input type="range" class="chatops-image-resize-slider" min="10" max="100" step="5" value="100" />
               </div>
-              <div class="chatops-image-resize-inputs-group">
-                <div class="chatops-image-resize-input-wrapper">
-                  <span>Width (px)</span>
-                  <input type="number" class="chatops-image-resize-input chatops-image-resize-width" min="10" />
-                </div>
-                <button class="chatops-image-resize-lock-btn locked" title="Lock Aspect Ratio">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none; display:block;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                </button>
-                <div class="chatops-image-resize-input-wrapper">
-                  <span>Height (px)</span>
-                  <input type="number" class="chatops-image-resize-input chatops-image-resize-height" min="10" />
-                </div>
-              </div>
             </div>
           </div>
           <div class="chatops-image-resize-footer">
@@ -1512,9 +1472,6 @@ function showToast(msg) {
     const newSizeEl = overlay.querySelector('.chatops-image-resize-new-size');
     const slider = overlay.querySelector('.chatops-image-resize-slider');
     const sliderVal = overlay.querySelector('.chatops-image-resize-slider-val');
-    const widthInput = overlay.querySelector('.chatops-image-resize-width');
-    const heightInput = overlay.querySelector('.chatops-image-resize-height');
-    const lockBtn = overlay.querySelector('.chatops-image-resize-lock-btn');
     const saveBtn = overlay.querySelector('.chatops-image-resize-btn-save');
     const insertBtn = overlay.querySelector('.chatops-image-resize-btn-insert');
     const editBtn = overlay.querySelector('.chatops-image-resize-btn-edit');
@@ -1525,18 +1482,24 @@ function showToast(msg) {
     const dotsContainer = overlay.querySelector('.chatops-image-resize-nav-dots');
 
     const sources = Array.isArray(srcList) ? srcList : [srcList];
-    let imagesArray = sources.map(src => ({
-      src: src,
-      width: 0,
-      height: 0,
-      origWidth: 0,
-      origHeight: 0,
-      aspect: 1,
-      sliderValue: 100,
-      isAspectRatioLocked: true,
-      testDataUrl: src,
-      mimeType: src.split(';')[0].split(':')[1] || 'image/png'
-    }));
+    let imagesArray = sources.map(src => {
+      let mimeType = src.split(';')[0].split(':')[1] || 'image/png';
+      if (mimeType === 'image/webp' || !['image/png', 'image/jpeg', 'image/gif'].includes(mimeType)) {
+        mimeType = 'image/png';
+      }
+      return {
+        src: src,
+        width: 0,
+        height: 0,
+        origWidth: 0,
+        origHeight: 0,
+        aspect: 1,
+        sliderValue: 100,
+        isAspectRatioLocked: true,
+        testDataUrl: src,
+        mimeType: mimeType
+      };
+    });
 
     let currentIndex = 0;
     
@@ -1580,20 +1543,11 @@ function showToast(msg) {
 
         const isGif = activeImgObj.mimeType === 'image/gif';
         slider.disabled = isGif;
-        widthInput.disabled = isGif;
-        heightInput.disabled = isGif;
-        lockBtn.disabled = isGif;
         
         const editBtn = overlay.querySelector('.chatops-image-resize-btn-edit');
         if (isGif) {
-          lockBtn.style.opacity = '0.5';
-          lockBtn.style.cursor = 'not-allowed';
           slider.style.opacity = '0.5';
           slider.style.cursor = 'not-allowed';
-          widthInput.style.opacity = '0.5';
-          widthInput.style.cursor = 'not-allowed';
-          heightInput.style.opacity = '0.5';
-          heightInput.style.cursor = 'not-allowed';
           if (editBtn) {
             editBtn.disabled = true;
             editBtn.style.opacity = '0.5';
@@ -1601,14 +1555,8 @@ function showToast(msg) {
             editBtn.title = language.gifNotSupported || 'GIF (Không hỗ trợ resize & edit)';
           }
         } else {
-          lockBtn.style.opacity = '1';
-          lockBtn.style.cursor = 'pointer';
           slider.style.opacity = '1';
           slider.style.cursor = 'pointer';
-          widthInput.style.opacity = '1';
-          widthInput.style.cursor = 'text';
-          heightInput.style.opacity = '1';
-          heightInput.style.cursor = 'text';
           if (editBtn) {
             editBtn.disabled = false;
             editBtn.style.opacity = '1';
@@ -1620,20 +1568,11 @@ function showToast(msg) {
         origSizeEl.textContent = `Original: ${activeImgObj.origWidth}x${activeImgObj.origHeight} (${formatSize(getBase64Size(activeImgObj.src))})`;
         slider.value = activeImgObj.sliderValue;
         sliderVal.textContent = `${activeImgObj.sliderValue}%`;
-        widthInput.value = activeImgObj.width;
-        heightInput.value = activeImgObj.height;
-        
-        lockBtn.className = `chatops-image-resize-lock-btn ${activeImgObj.isAspectRatioLocked ? 'locked' : ''}`;
-        
-        lockBtn.onclick = () => {
-          if (isGif) return;
-          activeImgObj.isAspectRatioLocked = !activeImgObj.isAspectRatioLocked;
-          lockBtn.classList.toggle('locked', activeImgObj.isAspectRatioLocked);
-        };
 
         function updateCalculatedSize() {
-          const w = parseInt(widthInput.value, 10) || 10;
-          const h = parseInt(heightInput.value, 10) || 10;
+          const pct = activeImgObj.sliderValue / 100;
+          const w = Math.round(activeImgObj.origWidth * pct) || 10;
+          const h = Math.round(activeImgObj.origHeight * pct) || 10;
           
           activeImgObj.width = w;
           activeImgObj.height = h;
@@ -1677,33 +1616,6 @@ function showToast(msg) {
         }
 
         slider.oninput = () => {
-          const pct = parseInt(slider.value, 10) / 100;
-          activeImgObj.sliderValue = parseInt(slider.value, 10);
-          sliderVal.textContent = `${slider.value}%`;
-          widthInput.value = Math.round(activeImgObj.origWidth * pct);
-          heightInput.value = Math.round(activeImgObj.origHeight * pct);
-          updateCalculatedSize();
-        };
-
-        widthInput.oninput = () => {
-          const w = parseInt(widthInput.value, 10) || 10;
-          if (activeImgObj.isAspectRatioLocked) {
-            heightInput.value = Math.round(w / activeImgObj.aspect);
-          }
-          const pct = Math.round((w / activeImgObj.origWidth) * 100);
-          slider.value = Math.min(100, Math.max(10, pct));
-          activeImgObj.sliderValue = parseInt(slider.value, 10);
-          sliderVal.textContent = `${slider.value}%`;
-          updateCalculatedSize();
-        };
-
-        heightInput.oninput = () => {
-          const h = parseInt(heightInput.value, 10) || 10;
-          if (activeImgObj.isAspectRatioLocked) {
-            widthInput.value = Math.round(h * activeImgObj.aspect);
-          }
-          const pct = Math.round((h / activeImgObj.origHeight) * 100);
-          slider.value = Math.min(100, Math.max(10, pct));
           activeImgObj.sliderValue = parseInt(slider.value, 10);
           sliderVal.textContent = `${slider.value}%`;
           updateCalculatedSize();
@@ -1914,7 +1826,41 @@ function showToast(msg) {
     reader.readAsDataURL(file);
   }
 
+  function createBlankWhiteImage(width = 800, height = 600) {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, width, height);
+    return canvas.toDataURL('image/png');
+  }
+
   function registerCustomImageEvents() {
+    const drawBtn = document.getElementById('chatops-draw-btn');
+    if (drawBtn) {
+      drawBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const blankSrc = createBlankWhiteImage(800, 600);
+        const activeImgObj = {
+          src: blankSrc,
+          testDataUrl: blankSrc,
+          mimeType: 'image/png',
+          origWidth: 800,
+          origHeight: 600,
+          aspect: 800 / 600,
+          width: 800,
+          height: 600,
+          sliderValue: 100,
+          isAspectRatioLocked: true
+        };
+        if (imagePickerEl) imagePickerEl.classList.add('hidden');
+        openImageEditor(activeImgObj, (editedDataUrl) => {
+          openImageResizeModal(editedDataUrl);
+        });
+      });
+    }
+
     const fileInput = document.getElementById('chatops-image-upload-input');
     if (fileInput) {
       fileInput.addEventListener('change', async (e) => {
@@ -2053,14 +1999,19 @@ function showToast(msg) {
         <!-- Panel 1: Library -->
         <div id="chatops-picker-panel-library" class="chatops-picker-panel active">
           <div class="chatops-image-upload-area">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
-              <div style="display:flex; flex-direction:column; line-height: 1.2;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px; gap: 8px;">
+              <div style="display:flex; flex-direction:column; line-height: 1.2; flex-shrink: 0;">
                 <span id="chatops-your-images-header" style="font-size:11px; font-weight:700; color:#555; text-transform:uppercase; letter-spacing:0.5px;">${language.yourImages}</span>
                 <span id="chatops-your-images-size" style="font-size:10px; color:#888; margin-top:2px;">(0 KB / 10 MB)</span>
               </div>
-              <label for="chatops-image-upload-input" class="chatops-image-upload-btn">
-                ${language.uploadImageBtn}
-              </label>
+              <div style="display:flex; gap: 6px; align-items: center;">
+                <button type="button" id="chatops-draw-btn" class="chatops-image-upload-btn" style="outline: none; font-family: inherit; box-sizing: border-box;">
+                  🎨 ${language.drawBtn || 'Tự vẽ'}
+                </button>
+                <label id="chatops-upload-label" for="chatops-image-upload-input" class="chatops-image-upload-btn" style="margin: 0; cursor: pointer;">
+                  ${language.uploadImageBtn}
+                </label>
+              </div>
               <input type="file" id="chatops-image-upload-input" accept="image/*" style="display:none;" multiple />
             </div>
             <div id="chatops-custom-images-grid" class="chatops-custom-images-grid-container">
@@ -2436,13 +2387,14 @@ function showToast(msg) {
     container.style.boxSizing = 'border-box';
     container.style.display = 'inline-block';
     container.style.verticalAlign = 'middle';
+    container.style.setProperty('overflow', 'visible', 'important');
 
     const options = Array.from(nativeSelect.options);
     const selectedIndex = nativeSelect.selectedIndex >= 0 ? nativeSelect.selectedIndex : 0;
     const initialText = options[selectedIndex]?.textContent || 'Select...';
 
     container.innerHTML = `
-      <div class="custom-dropdown" style="position: relative; width: 100%; box-sizing: border-box; font-family: var(--font);">
+      <div class="custom-dropdown" style="position: relative; width: 100%; box-sizing: border-box; font-family: var(--font); overflow: visible !important;">
         <button type="button" class="custom-dropdown-toggle"
           style="width: 100%; height: 34px; font-size: 11.5px; border-radius: 6px; border: 1px solid #cbd5e1; background: #ffffff; color: #1a1a1c; cursor: pointer; outline: none; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; font-weight: 400; transition: all 0.2s ease; box-sizing: border-box;">
           <span class="custom-dropdown-selected-text" style="font-weight: 400; font-size: 11.5px;">${initialText}</span>
@@ -2554,7 +2506,7 @@ function showToast(msg) {
         <button id="cqn-close" class="sp-modal-close-btn" title="${language.cancel}">&times;</button>
       </div>
       
-      <div class="sp-modal-body" style="padding: 14px 16px; box-sizing: border-box; background: #ffffff; border-bottom-left-radius: 11px; border-bottom-right-radius: 11px;">
+      <div class="sp-modal-body" style="padding: 14px 16px; box-sizing: border-box; background: #ffffff; border-bottom-left-radius: 11px; border-bottom-right-radius: 11px; overflow: visible !important;">
         <div class="cqn-title-row" style="margin-bottom: 8px; width: 100%;">
           <input type="text" id="cqn-note-title" placeholder="${language.titleOptional}" style="width: 50%; height: 28px; font-size: 12px; font-weight: 600; padding: 4px 8px; border-radius: 6px; border: 1px solid #cbd5e1; outline: none; box-sizing: border-box; font-family: inherit;" autocomplete="off">
         </div>
@@ -2562,7 +2514,7 @@ function showToast(msg) {
           <textarea id="cqn-note-text" placeholder="${language.taskTextareaPlaceholder}" class="quick-note-textarea" style="width: 100%; min-height: 110px; resize: vertical; box-sizing: border-box;"></textarea>
         </div>
         
-        <div id="cqn-note-section" style="margin-bottom: 12px; width: 100%; display: none;">
+        <div id="cqn-note-section" style="margin-bottom: 12px; width: 100%; display: none; overflow: visible !important;">
           <div style="font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase; margin-bottom:4px;">${language.categoryLabel}</div>
           <select id="cqn-category" class="custom-select" style="width:100%; height: 34px; font-size: 12.5px; border-radius: 6px; border:1px solid #cbd5e1; background:#fff; outline:none; cursor:pointer; box-sizing: border-box;">
             <option value="general">📁 ${language.categoryGeneral}</option>
@@ -2572,8 +2524,8 @@ function showToast(msg) {
           </select>
         </div>
 
-        <div id="cqn-task-section" style="margin-bottom: 12px; width: 100%;">
-          <div class="task-reminder-wrapper" style="display:flex; flex-wrap:wrap; align-items:center; gap:8px; width:100%; box-sizing: border-box;">
+        <div id="cqn-task-section" style="margin-bottom: 12px; width: 100%; overflow: visible !important;">
+          <div class="task-reminder-wrapper" style="display:flex; flex-wrap:wrap; align-items:center; gap:8px; width:100%; box-sizing: border-box; overflow: visible !important;">
             <div class="task-reminder-row" id="cqnReminderRow"
               style="flex:1 1 220px; min-width:220px; background:#fff; padding:0 10px; border-radius:6px; border:1px solid #cbd5e1; cursor:pointer; display:flex; align-items:center; height:34px; box-sizing:border-box; transition: opacity 0.2s ease;">
               <label class="task-reminder-label" for="cqn-reminder-time"
@@ -2616,6 +2568,7 @@ function showToast(msg) {
         </div>
       </div>
     `;
+    quickNotePopover.style.setProperty('overflow', 'visible', 'important');
     document.body.appendChild(quickNotePopover);
     
     const closePopover = () => {
@@ -2769,7 +2722,7 @@ function showToast(msg) {
     return quickNotePopover;
   }
 
-  async function openQuickNote(postEl, anchorBtn, mode = 'task') {
+  async function openQuickNote(postEl, anchorBtn, mode = 'task', overrideText = null) {
     const popover = getOrCreatePopover();
     popover.dataset.mode = mode;
 
@@ -2795,34 +2748,48 @@ function showToast(msg) {
       console.warn('[ChatOps Ext] Failed to load dynamic categories:', err);
     }
 
-    // Check if the user has highlighted text within the target post element
-    const selection = window.getSelection();
     let msgTextFull = '';
-    let isTextSelectionUsed = false;
-    
-    if (selection && selection.rangeCount > 0 && !selection.isCollapsed) {
-      const selectedText = selection.toString().trim();
-      // Verify that the selection actually belongs to or starts inside our target postEl
-      if (selectedText && postEl.contains(selection.anchorNode)) {
-        msgTextFull = selectedText;
-        isTextSelectionUsed = true;
-      }
-    }
 
-    if (!isTextSelectionUsed) {
-      const msgBodyEl = postEl.querySelector('.post-message__text, .post__body p, [class*="post-message"]');
-      msgTextFull = msgBodyEl ? msgBodyEl.innerText.trim() : '';
-      
-      // Find all images in the post to append as Markdown
-      const imgEls = postEl.querySelectorAll('img.attachment__image, img.markdown-inline-img, .post-image__column img');
-      if (imgEls.length > 0) {
-        const imgUrls = Array.from(imgEls).map(img => img.src).filter(Boolean);
-        if (imgUrls.length > 0) {
-          const imageMarkdown = imgUrls.map(url => `![Image](${url})`).join('\n');
-          if (msgTextFull) {
-            msgTextFull += '\n\n' + imageMarkdown;
-          } else {
-            msgTextFull = imageMarkdown;
+    if (overrideText) {
+      msgTextFull = overrideText.trim();
+    } else {
+      // Highlighted text detection logic
+      const selection = window.getSelection();
+      let hasSelection = false;
+      if (selection && selection.rangeCount > 0) {
+        const selectedStr = selection.toString().trim();
+        if (selectedStr && postEl) {
+          // Ensure the selection is inside the post container
+          const range = selection.getRangeAt(0);
+          if (postEl.contains(range.commonAncestorContainer)) {
+            msgTextFull = selectedStr;
+            hasSelection = true;
+          }
+        }
+      }
+
+      if (!hasSelection) {
+        const msgBodyEl = postEl ? postEl.querySelector('.post-message__text, .post__body p, [class*="post-message"]') : null;
+        msgTextFull = msgBodyEl ? msgBodyEl.innerText.trim() : '';
+        
+        if (postEl) {
+          // Find all images in the post to append as Markdown
+          const imgEls = Array.from(postEl.querySelectorAll('img.attachment__image, img.markdown-inline-img, .post-image__column img'))
+            .filter(img => {
+              // Ensure the image belongs directly to this post, not a nested reply post
+              const closestPost = img.closest('.post, [id^="post_"], [id^="rhsPost_"]');
+              return closestPost === postEl;
+            });
+          if (imgEls.length > 0) {
+            const imgUrls = imgEls.map(img => img.src).filter(Boolean);
+            if (imgUrls.length > 0) {
+              const imageMarkdown = imgUrls.map(url => `![Image](${url})`).join('\n');
+              if (msgTextFull) {
+                msgTextFull += '\n\n' + imageMarkdown;
+              } else {
+                msgTextFull = imageMarkdown;
+              }
+            }
           }
         }
       }
@@ -2868,26 +2835,28 @@ function showToast(msg) {
     const hintEl = popover.querySelector('#cqnSnoozeHintText');
     const saveBtn = document.getElementById('cqn-save-note');
     
-    if (popover.dataset.mode === 'note') {
-      if (taskSection) taskSection.style.display = 'none';
-      if (noteSection) noteSection.style.display = 'block';
-      popover.querySelector('.cqn-title').textContent = language.quickNoteTitle;
-      saveBtn.innerHTML = language.memoAddBtn;
-    } else {
-      if (taskSection) taskSection.style.display = 'block';
-      if (noteSection) noteSection.style.display = 'none';
-      popover.querySelector('.cqn-title').textContent = language.quickTaskTitle;
-      saveBtn.innerHTML = '🎯 ' + language.taskAddBtn;
-      if (hintEl) {
-        const res = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS]);
-        const settings = res[STORAGE_KEYS.SETTINGS] || { snoozeMinutes: 30 };
-        hintEl.innerHTML = language.taskReminderHint.replace('{minutes}', settings.snoozeMinutes);
+    if (saveBtn) {
+      if (popover.dataset.mode === 'note') {
+        if (taskSection) taskSection.style.display = 'none';
+        if (noteSection) noteSection.style.display = 'block';
+        popover.querySelector('.cqn-title').textContent = language.quickNoteTitle;
+        saveBtn.innerHTML = language.memoAddBtn;
+      } else {
+        if (taskSection) taskSection.style.display = 'block';
+        if (noteSection) noteSection.style.display = 'none';
+        popover.querySelector('.cqn-title').textContent = language.quickTaskTitle;
+        saveBtn.innerHTML = '🎯 ' + language.taskAddBtn;
+        if (hintEl) {
+          const res = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS]);
+          const settings = res[STORAGE_KEYS.SETTINGS] || { snoozeMinutes: 30 };
+          hintEl.innerHTML = language.taskReminderHint.replace('{minutes}', settings.snoozeMinutes);
+        }
       }
-    }
 
-    const newSaveBtn = saveBtn.cloneNode(true);
-    saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
-    newSaveBtn.addEventListener('click', () => saveTask(popover));
+      const newSaveBtn = saveBtn.cloneNode(true);
+      saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
+      newSaveBtn.addEventListener('click', () => saveTask(popover));
+    }
     
     // Focus the textarea and put cursor at the end
     const textarea = document.getElementById('cqn-note-text');
@@ -3951,6 +3920,54 @@ function showToast(msg) {
     }
   });
   
+  // --- Listen for reminder notifications from the background script ---
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.type === MESSAGE_TYPES.SHOW_REMINDER) {
+      showReminderBanner(message.message, message.taskId, message.isTask, message.postId, message.teamName, message.isDaily);
+    } else if (message.type === 'APP_LANG_CHANGED') {
+      (async () => {
+        await loadLanguage();
+        const btn = document.getElementById('chatops-ext-floating-btn');
+        if (btn) {
+          btn.title = language.floatingBtnTitle;
+          const closeBtn = document.getElementById('chatops-ext-close-btn');
+          if (closeBtn) closeBtn.title = language.floatingBtnHide;
+        }
+        // Clear cached popover elements so they are rebuilt in the new language
+        if (quickNotePopover) {
+          quickNotePopover.remove();
+          quickNotePopover = null;
+        }
+        if (quickNoteBackdrop) {
+          quickNoteBackdrop.remove();
+          quickNoteBackdrop = null;
+        }
+        if (updateImagePickerTranslations) updateImagePickerTranslations();
+        if (updateResizeModalTranslations) updateResizeModalTranslations();
+        if (updateImageEditorTranslations) updateImageEditorTranslations();
+      })();
+    } else if (message.type === 'INSERT_IMAGE_TO_CHAT') {
+      if (typeof globalInsertImageToChat === 'function') {
+        globalInsertImageToChat(message.url);
+      }
+    } else if (message.action === 'open_post_thread') {
+      handleOpenPostThread(message.postId, message.rootId);
+    } else if (message.type === 'OPEN_QUICK_NOTE_FROM_CONTEXT_MENU') {
+      console.log('[ChatOps Ext] Received context menu message with text:', message.text, 'mode:', message.mode);
+      const selection = window.getSelection();
+      let postEl = null;
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        const container = range.commonAncestorContainer;
+        postEl = container.nodeType === Node.ELEMENT_NODE 
+          ? container.closest('.post, [id^="post_"], [id^="rhsPost_"]')
+          : container.parentElement?.closest('.post, [id^="post_"], [id^="rhsPost_"]');
+      }
+      console.log('[ChatOps Ext] Resolved postEl:', postEl);
+      openQuickNote(postEl, null, message.mode, message.text);
+    }
+  });
+
   observer.observe(document.body, { childList: true, subtree: true });
   
   runWithObserverDisabled(() => {

@@ -18,12 +18,31 @@ import { language, loadLanguage } from './lang.js';
 import { formatDateTime } from './utils/date.js';
 
 /**
+ * Register Context Menu items for highlighting text
+ */
+function setupContextMenus() {
+  chrome.contextMenus.removeAll(() => {
+    chrome.contextMenus.create({
+      id: 'quick-task',
+      title: 'Tạo nhanh công việc (🎯)',
+      contexts: ['selection']
+    });
+    chrome.contextMenus.create({
+      id: 'quick-note',
+      title: 'Tạo nhanh ghi chú (📒)',
+      contexts: ['selection']
+    });
+  });
+}
+
+/**
  * Initialize extension services
  */
 function initialize() {
   setupSidePanel();
   setupCookieSync();
   syncCookies();
+  setupContextMenus();
 }
 
 /**
@@ -39,6 +58,23 @@ chrome.runtime.onInstalled.addListener((details) => {
   });
 
   initialize();
+});
+
+// Handle Context Menu item clicks
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+  console.log('[ChatOps Ext] Context menu clicked:', info.menuItemId, 'text:', info.selectionText);
+  if (tab && (info.menuItemId === 'quick-task' || info.menuItemId === 'quick-note')) {
+    console.log('[ChatOps Ext] Sending context menu message to tab ID:', tab.id);
+    chrome.tabs.sendMessage(tab.id, {
+      type: 'OPEN_QUICK_NOTE_FROM_CONTEXT_MENU',
+      text: info.selectionText,
+      mode: info.menuItemId === 'quick-task' ? 'task' : 'note'
+    }).then(() => {
+      console.log('[ChatOps Ext] Message successfully received by content script');
+    }).catch(err => {
+      console.warn('[ChatOps Ext] Failed to send context menu message to tab:', err);
+    });
+  }
 });
 
 // Initialize on startup

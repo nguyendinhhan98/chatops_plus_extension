@@ -2836,7 +2836,7 @@ textarea {
   flex-direction: column;
   margin-top: 64px;
   animation: slideDownModal 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  overflow: hidden;
+  overflow: visible !important;
 }
 
 .sp-modal-header {
@@ -2877,8 +2877,7 @@ textarea {
 
 .sp-modal-body {
   padding: 12px 14px;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: visible !important;
   flex: 1;
   background: var(--bg-2);
   border-bottom-left-radius: 11px;
