@@ -4,6 +4,7 @@
 
 import { MESSAGE_TYPES, UI_CONFIG, SELECTORS, STORAGE_KEYS, ALARMS, DEFAULT_MEMES } from '../src/constants.js';
 import { language, loadLanguage } from '../src/lang.js';
+import { needsChatOpsConversion, convertForChatOps } from '../src/utils/imageConverter.js';
 import { formatRichText } from '../src/utils/formatter.js';
 
 // Global UI elements shared between the message listeners and page DOM
@@ -150,9 +151,12 @@ async function handleNotificationJump(postId, taskTeamName) {
     console.warn('[ChatOps Ext] Failed to trigger side panel tasks tab:', err);
   }
 
+  const currentTeamFromUrl = window.location.pathname.split('/')[1];
+  const targetTeam = taskTeamName || currentTeamFromUrl || CHATOPS_CONFIG.DEFAULT_TEAM;
   if (postId) {
-    const teamName = taskTeamName || window.location.pathname.split('/')[1] || CHATOPS_CONFIG.DEFAULT_TEAM;
-    window.location.href = `/${teamName}/pl/${postId}`;
+    window.location.href = `/${targetTeam}/pl/${postId}`;
+  } else if (taskTeamName && currentTeamFromUrl !== taskTeamName) {
+    window.location.href = `/${taskTeamName}`;
   }
 }
 
@@ -202,10 +206,11 @@ function playNotificationSound() {
 async function showReminderBanner(text, taskId, isTask = false, postId = null, taskTeamName = null, isDaily = false) {
   await injectDynamicTheme();
 
+  let settings = {};
   // Play notification sound if enabled
   try {
     const resSettings = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS]);
-    const settings = resSettings[STORAGE_KEYS.SETTINGS] || {};
+    settings = resSettings[STORAGE_KEYS.SETTINGS] || {};
     if (settings.soundNotification) {
       playNotificationSound();
     }
@@ -217,15 +222,57 @@ async function showReminderBanner(text, taskId, isTask = false, postId = null, t
   if (!container) {
     container = document.createElement('div');
     container.id = 'chatops-banner-container';
-    container.style.cssText = 'position: fixed; top: 24px; right: 20px; width: 310px; display: flex; flex-direction: column; gap: 12px; z-index: 2147483647; pointer-events: none;';
     document.body.appendChild(container);
   }
+
+  // Determine container position style & direction based on settings
+  let positionCss = 'top: 24px; right: 20px;';
+  let alignCss = 'align-items: flex-end;';
+  const pos = settings.notificationPosition || 'top-right';
+  if (pos === 'top-left') {
+    positionCss = 'top: 24px; left: 20px;';
+    alignCss = 'align-items: flex-start;';
+  } else if (pos === 'bottom-right') {
+    positionCss = 'bottom: 24px; right: 20px;';
+    alignCss = 'align-items: flex-end;';
+  } else if (pos === 'bottom-left') {
+    positionCss = 'bottom: 24px; left: 20px;';
+    alignCss = 'align-items: flex-start;';
+  } else if (pos === 'top-center') {
+    positionCss = 'top: 24px; left: 50%; transform: translateX(-50%);';
+    alignCss = 'align-items: center;';
+  } else if (pos === 'bottom-center') {
+    positionCss = 'bottom: 24px; left: 50%; transform: translateX(-50%);';
+    alignCss = 'align-items: center;';
+  } else if (pos === 'center') {
+    positionCss = 'top: 50%; left: 50%; transform: translate(-50%, -50%);';
+    alignCss = 'align-items: center;';
+  }
+
+  let flexDir = 'flex-direction: column;';
+  if (pos.startsWith('bottom')) {
+    flexDir = 'flex-direction: column-reverse;';
+  }
+
+  let containerWidth = '310px';
+  const size = settings.notificationSize || 'medium';
+  if (size === 'small') {
+    containerWidth = '250px';
+  } else if (size === 'large') {
+    containerWidth = '370px';
+  }
+
+  container.style.cssText = `position: fixed; ${positionCss} width: ${containerWidth}; display: flex; ${flexDir} ${alignCss} gap: 12px; z-index: 2147483647; pointer-events: none; transition: all 0.3s ease;`;
 
   const isLongText = text.length > 80 || text.includes('\n');
   const escText = text.replace(/</g, '&lt;');
 
+  const animStyle = settings.notificationAnimation || 'default';
+  const animationClass = animStyle !== 'default' ? `animation-${animStyle}` : '';
+  const sizeClass = `size-${size}`;
+
   const banner = document.createElement('div');
-  banner.className = 'chatops-reminder-banner';
+  banner.className = `chatops-reminder-banner ${sizeClass} ${animationClass}`;
   banner.innerHTML = `
     <div class="crb-inner">
       <div class="crb-icon">${isTask ? '📋' : '⏰'}</div>
@@ -549,7 +596,7 @@ function showToast(msg) {
       chrome.runtime.sendMessage({ type: MESSAGE_TYPES.TOGGLE_SIDE_PANEL });
     } catch (err) {
       if (err.message && err.message.includes('Extension context invalidated')) {
-        alert(language.extensionUpdated);
+        showToast(language.extensionUpdated);
       }
     }
   };
@@ -774,12 +821,12 @@ function showToast(msg) {
     let col2Html = '';
     
     customMemes.forEach((url, idx) => {
-      const isGif = url.startsWith('data:image/gif');
+      const isAnimated = url.startsWith('data:image/gif') || url.startsWith('data:image/webp');
       const cellHtml = `
         <div class="chatops-custom-image-cell">
           <img src="${url}" class="chatops-custom-image-item" loading="lazy" title="${language.clickToSend}" />
           <button class="chatops-custom-image-preview" data-idx="${idx}" title="${language.previewImage || 'Preview full image'}">&#x1F50D;</button>
-          ${!isGif ? `
+          ${!isAnimated ? `
           <button class="chatops-custom-image-edit" data-idx="${idx}" title="${language.editImageBtn || 'Sửa ảnh'}">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none; display:block;"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
           </button>
@@ -837,7 +884,11 @@ function showToast(msg) {
       if (!overlay) return;
 
       const titleEl = overlay.querySelector('.chatops-image-editor-title');
-      if (titleEl) titleEl.textContent = language.editImageTitle || 'Chỉnh sửa ảnh';
+      if (titleEl) {
+        titleEl.textContent = (activeImgObj && activeImgObj.isDrawing) 
+          ? (language.drawTitle || 'Tự vẽ') 
+          : (language.editImageTitle || 'Chỉnh sửa ảnh');
+      }
 
       const brushBtn = overlay.querySelector('.chatops-image-editor-tool-btn[data-tool="brush"]');
       if (brushBtn) {
@@ -929,7 +980,7 @@ function showToast(msg) {
       editorOverlay.innerHTML = `
         <div class="chatops-image-editor-container">
           <div class="chatops-image-editor-header">
-            <h3 class="chatops-image-editor-title">${language.editImageTitle || 'Chỉnh sửa ảnh'}</h3>
+            <h3 class="chatops-image-editor-title">${(activeImgObj && activeImgObj.isDrawing) ? (language.drawTitle || 'Tự vẽ') : (language.editImageTitle || 'Chỉnh sửa ảnh')}</h3>
             <button class="chatops-image-editor-close-btn">&times;</button>
           </div>
           <div class="chatops-image-editor-toolbar">
@@ -1044,6 +1095,8 @@ function showToast(msg) {
         editorOverlay.classList.remove('visible');
       };
     }
+
+    updateImageEditorTranslations();
 
     const bgImg = editorOverlay.querySelector('.chatops-image-editor-bg-img');
     const canvas = editorOverlay.querySelector('.chatops-image-editor-canvas');
@@ -1445,7 +1498,8 @@ function showToast(msg) {
             </button>
             <button class="chatops-image-resize-btn chatops-image-resize-btn-cancel">${language.cancel}</button>
             <button class="chatops-image-resize-btn chatops-image-resize-btn-insert">${language.submitSaveBtn || 'Gửi & Lưu'}</button>
-            <button class="chatops-image-resize-btn chatops-image-resize-btn-save">${language.saveCopy || 'Save Copy'}</button>
+            <button class="chatops-image-resize-btn chatops-image-resize-btn-send">${language.sendOnlyBtn || 'Gửi'}</button>
+            <button class="chatops-image-resize-btn chatops-image-resize-btn-save">${language.saveCopy || 'Lưu thư viện'}</button>
           </div>
         </div>
       `;
@@ -1474,6 +1528,7 @@ function showToast(msg) {
     const sliderVal = overlay.querySelector('.chatops-image-resize-slider-val');
     const saveBtn = overlay.querySelector('.chatops-image-resize-btn-save');
     const insertBtn = overlay.querySelector('.chatops-image-resize-btn-insert');
+    const sendBtn = overlay.querySelector('.chatops-image-resize-btn-send');
     const editBtn = overlay.querySelector('.chatops-image-resize-btn-edit');
     
     const navigatorRow = overlay.querySelector('.chatops-image-resize-navigator');
@@ -1481,14 +1536,42 @@ function showToast(msg) {
     const nextBtn = overlay.querySelector('.next-btn');
     const dotsContainer = overlay.querySelector('.chatops-image-resize-nav-dots');
 
-    const sources = Array.isArray(srcList) ? srcList : [srcList];
-    let imagesArray = sources.map(src => {
-      let mimeType = src.split(';')[0].split(':')[1] || 'image/png';
-      if (mimeType === 'image/webp' || !['image/png', 'image/jpeg', 'image/gif'].includes(mimeType)) {
+    const rawSources = Array.isArray(srcList) ? srcList : [srcList];
+    const sources = rawSources.map(item => {
+      if (typeof item === 'string') {
+        let mimeType = item.split(';')[0].split(':')[1] || 'image/png';
+        return { src: item, name: 'image', type: mimeType };
+      }
+      return item;
+    });
+
+    let imagesArray = sources.map(item => {
+      let mimeType = item.type || 'image/png';
+      if (item.name && item.name.toLowerCase().endsWith('.gif')) {
+        mimeType = 'image/gif';
+      } else if (item.name && item.name.toLowerCase().endsWith('.webp')) {
+        mimeType = 'image/webp';
+      }
+      
+      if (item.src && item.src.startsWith('data:image/gif;base64,')) {
+        mimeType = 'image/gif';
+      } else if (item.src && item.src.startsWith('data:image/webp;base64,')) {
+        mimeType = 'image/webp';
+      }
+      
+      if (!['image/png', 'image/jpeg', 'image/gif', 'image/webp'].includes(mimeType)) {
         mimeType = 'image/png';
       }
+
+      let srcStr = item.src;
+      if (mimeType === 'image/gif' && srcStr.startsWith('data:') && !srcStr.startsWith('data:image/gif;')) {
+        srcStr = srcStr.replace(/^data:[^;]+;/, 'data:image/gif;');
+      } else if (mimeType === 'image/webp' && srcStr.startsWith('data:') && !srcStr.startsWith('data:image/webp;')) {
+        srcStr = srcStr.replace(/^data:[^;]+;/, 'data:image/webp;');
+      }
+
       return {
-        src: src,
+        src: srcStr,
         width: 0,
         height: 0,
         origWidth: 0,
@@ -1496,7 +1579,7 @@ function showToast(msg) {
         aspect: 1,
         sliderValue: 100,
         isAspectRatioLocked: true,
-        testDataUrl: src,
+        testDataUrl: srcStr,
         mimeType: mimeType
       };
     });
@@ -1509,7 +1592,8 @@ function showToast(msg) {
       currentResizeImageObj = activeImgObj;
 
       if (editBtn) {
-        editBtn.style.display = activeImgObj.mimeType === 'image/gif' ? 'none' : 'inline-flex';
+        const isAnimated = activeImgObj.mimeType === 'image/gif' || activeImgObj.mimeType === 'image/webp';
+        editBtn.style.display = isAnimated ? 'none' : 'inline-flex';
         editBtn.onclick = (e) => {
           e.preventDefault(); e.stopPropagation();
           openImageEditor(activeImgObj, (editedDataUrl) => {
@@ -1541,18 +1625,19 @@ function showToast(msg) {
           activeImgObj.height = img.height;
         }
 
-        const isGif = activeImgObj.mimeType === 'image/gif';
-        slider.disabled = isGif;
+        const isAnimated = activeImgObj.mimeType === 'image/gif' || activeImgObj.mimeType === 'image/webp';
+        slider.disabled = isAnimated;
         
         const editBtn = overlay.querySelector('.chatops-image-resize-btn-edit');
-        if (isGif) {
+        if (isAnimated) {
           slider.style.opacity = '0.5';
           slider.style.cursor = 'not-allowed';
           if (editBtn) {
             editBtn.disabled = true;
             editBtn.style.opacity = '0.5';
             editBtn.style.cursor = 'not-allowed';
-            editBtn.title = language.gifNotSupported || 'GIF (Không hỗ trợ resize & edit)';
+            const labelText = activeImgObj.mimeType === 'image/gif' ? 'GIF' : 'WebP';
+            editBtn.title = `${labelText} (Không hỗ trợ resize & edit)`;
           }
         } else {
           slider.style.opacity = '1';
@@ -1577,10 +1662,11 @@ function showToast(msg) {
           activeImgObj.width = w;
           activeImgObj.height = h;
 
-          if (activeImgObj.mimeType === 'image/gif') {
+          if (isAnimated) {
             activeImgObj.testDataUrl = activeImgObj.src;
             const newBytes = getBase64Size(activeImgObj.src);
-            newSizeEl.innerHTML = `<span style="color:#eab308;font-weight:600;font-size:11px;">${language.gifNotSupported || 'GIF (Không hỗ trợ resize & edit)'}:</span> ${activeImgObj.origWidth}x${activeImgObj.origHeight} (${formatSize(newBytes)})`;
+            const labelText = activeImgObj.mimeType === 'image/gif' ? 'GIF' : 'WebP';
+            newSizeEl.innerHTML = `<span style="color:#eab308;font-weight:600;font-size:11px;">${labelText} (Không hỗ trợ resize & edit):</span> ${activeImgObj.origWidth}x${activeImgObj.origHeight} (${formatSize(newBytes)})`;
             
             previewImg.src = activeImgObj.src;
             previewImg.style.width = '';
@@ -1701,7 +1787,7 @@ function showToast(msg) {
       const newBytes = getBase64Size(activeImgObj.testDataUrl);
 
       if (totalBytes + newBytes > 10 * 1024 * 1024) {
-        alert(language.storageLimitExceeded || 'Storage limit exceeded (10MB maximum)! Please delete some old images.');
+        showToast(language.storageLimitExceeded || 'Storage limit exceeded (10MB maximum)! Please delete some old images.');
         return;
       }
 
@@ -1732,6 +1818,33 @@ function showToast(msg) {
       }
     };
 
+    // "Gửi" (Send only) handler - Sends active image to chat directly without saving to custom library
+    sendBtn.onclick = (e) => {
+      e.preventDefault(); e.stopPropagation();
+      const activeImgObj = imagesArray[currentIndex];
+      if (!activeImgObj) return;
+
+      // 1. Submit to Chat
+      insertImageToChat(activeImgObj.testDataUrl);
+
+      // 2. Remove image from slide deck
+      imagesArray.splice(currentIndex, 1);
+
+      if (imagesArray.length > 0) {
+        // Switch to the next available image
+        if (currentIndex >= imagesArray.length) {
+          currentIndex = imagesArray.length - 1;
+        }
+        loadActiveImage();
+        showToast(language.toastSentOnlyNext || 'Đã gửi ảnh! Đang chuyển sang ảnh tiếp theo...');
+      } else {
+        // Complete! Close modal
+        currentResizeImageObj = null;
+        overlay.classList.remove('visible');
+        showToast(language.toastSentAll || 'Đã gửi toàn bộ ảnh thành công! 🎉');
+      }
+    };
+
     // Save only button (Lưu thư viện) - Processes active image only, slides to next or closes when done
     saveBtn.onclick = async (e) => {
       e.preventDefault(); e.stopPropagation();
@@ -1750,7 +1863,7 @@ function showToast(msg) {
       const newBytes = getBase64Size(activeImgObj.testDataUrl);
 
       if (totalBytes + newBytes > 10 * 1024 * 1024) {
-        alert(language.storageLimitExceeded || 'Storage limit exceeded (10MB maximum)! Please delete some old images.');
+        showToast(language.storageLimitExceeded || 'Storage limit exceeded (10MB maximum)! Please delete some old images.');
         return;
       }
 
@@ -1852,7 +1965,8 @@ function showToast(msg) {
           width: 800,
           height: 600,
           sliderValue: 100,
-          isAspectRatioLocked: true
+          isAspectRatioLocked: true,
+          isDrawing: true
         };
         if (imagePickerEl) imagePickerEl.classList.add('hidden');
         openImageEditor(activeImgObj, (editedDataUrl) => {
@@ -1868,23 +1982,35 @@ function showToast(msg) {
         if (files.length === 0) return;
 
         if (files.length > 5) {
-          alert(language.maxUploadLimitError || 'Bạn chỉ có thể tải lên tối đa 5 ảnh cùng lúc.');
+          showToast(language.maxUploadLimitError || 'Bạn chỉ có thể tải lên tối đa 5 ảnh cùng lúc.');
           fileInput.value = '';
           return;
         }
 
-        const hasNonImage = files.some(f => !f.type.startsWith('image/'));
+        const hasNonImage = files.some(f => !f.type.startsWith('image/') && !f.name.toLowerCase().endsWith('.gif') && !f.name.toLowerCase().endsWith('.webp'));
         if (hasNonImage) {
-          alert(language.uploadOnlyImages || 'Please upload image files only.');
+          showToast(language.uploadOnlyImages || 'Please upload image files only.');
           fileInput.value = '';
           return;
         }
 
-        // Read all selected files as Data URLs asynchronously
-        const readers = files.map(file => {
+        // Convert any non-ChatOps-compatible format before opening resize modal
+        const hasUnsupported = files.some(f => needsChatOpsConversion(f.type, f.name));
+        if (hasUnsupported) showToast(language.webpConvertingToast || 'Converting image... Please wait.');
+
+        const readers = files.map(async (file) => {
+          if (needsChatOpsConversion(file.type, file.name)) {
+            try {
+              const converted = await convertForChatOps(file);
+              return { src: converted.dataUrl, name: converted.name, type: converted.type };
+            } catch (err) {
+              console.error('[ChatOps] Image conversion failed:', err);
+              // Fallback: read as-is
+            }
+          }
           return new Promise((resolve) => {
             const reader = new FileReader();
-            reader.onload = (ev) => resolve(ev.target.result);
+            reader.onload = (ev) => resolve({ src: ev.target.result, name: file.name, type: file.type });
             reader.readAsDataURL(file);
           });
         });
@@ -2333,25 +2459,35 @@ function showToast(msg) {
     if (!textarea) return;
 
     if (url.startsWith('data:')) {
-      try {
-        const blob = dataURLtoBlob(url);
-        const ext = blob.type.split('/')[1] || 'png';
-        const file = new File([blob], `image.${ext}`, { type: blob.type });
+      (async () => {
+        try {
+          let finalUrl = url;
+          const mimeMatch = url.match(/^data:([^;]+);/);
+          const mimeType = mimeMatch ? mimeMatch[1] : '';
+          if (needsChatOpsConversion(mimeType)) {
+            const converted = await convertForChatOps(url);
+            finalUrl = converted.dataUrl;
+          }
 
-        const dataTransfer = new DataTransfer();
-        dataTransfer.items.add(file);
+          const blob = dataURLtoBlob(finalUrl);
+          const ext = blob.type.split('/')[1] || 'png';
+          const file = new File([blob], `image.${ext}`, { type: blob.type });
 
-        const pasteEvent = new ClipboardEvent('paste', {
-          clipboardData: dataTransfer,
-          bubbles: true,
-          cancelable: true
-        });
+          const dataTransfer = new DataTransfer();
+          dataTransfer.items.add(file);
 
-        textarea.focus();
-        textarea.dispatchEvent(pasteEvent);
-      } catch (err) {
-        console.error('Failed to paste custom image:', err);
-      }
+          const pasteEvent = new ClipboardEvent('paste', {
+            clipboardData: dataTransfer,
+            bubbles: true,
+            cancelable: true
+          });
+
+          textarea.focus();
+          textarea.dispatchEvent(pasteEvent);
+        } catch (err) {
+          console.error('Failed to paste custom image:', err);
+        }
+      })();
       return;
     }
 
@@ -2546,6 +2682,7 @@ function showToast(msg) {
             <select id="cqnReminderSelect" class="custom-select"
               style="width: 115px; height: 34px; font-size: 12.5px; border-radius: 6px; cursor: pointer; outline: none; box-sizing: border-box; flex-shrink: 0; line-height: 1; padding: 0 24px 0 10px;">
               <option value="">${language.remindInPreset}</option>
+              <option value="5">+5m</option>
               <option value="15">+15m</option>
               <option value="30">+30m</option>
               <option value="60">+1h</option>
@@ -2943,7 +3080,11 @@ function showToast(msg) {
     showTabs: { search: true, tasks: true, notes: true, missed: true, reactions: true },
     floatingButtons: { quickNote: true, quickTask: true, spamReactions: false, imagePicker: true, quickReply: true, quickCopy: true },
     spamEmojis: ['thumbsup', 'heart', 'fire', 'rocket', 'tada', 'laughing', 'smile', 'wink', 'heart_eyes', 'kissing_heart'],
-    tabsCompactMode: false
+    tabsCompactMode: false,
+    snoozeMinutes: 5,
+    notificationPosition: 'center',
+    notificationAnimation: 'shake-continuous',
+    notificationSize: 'medium'
   };
   let cachedSettings = { ...DEFAULT_SETTINGS };
   let cachedMemos = [];
@@ -3767,7 +3908,7 @@ function showToast(msg) {
                 }, 300);
               } else {
                 console.error('[ChatOps Ext] Failed to delete message:', res?.error);
-                alert(res?.error || 'Failed to delete message');
+                showToast(res?.error || 'Failed to delete message');
               }
             });
           });

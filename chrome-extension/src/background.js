@@ -513,6 +513,8 @@ chrome.notifications.onClicked.addListener(async (notificationId) => {
       let targetUrl = CHATOPS_CONFIG.DEFAULT_URL;
       if (task.postId && task.teamName) {
         targetUrl = `${CHATOPS_CONFIG.DEFAULT_URL}/${task.teamName}/pl/${task.postId}`;
+      } else if (task.teamName) {
+        targetUrl = `${CHATOPS_CONFIG.DEFAULT_URL}/${task.teamName}`;
       }
       
       // Save side panel tab setting to tasks
@@ -522,9 +524,9 @@ chrome.notifications.onClicked.addListener(async (notificationId) => {
       const tabs = await chrome.tabs.query({ url: `${CHATOPS_CONFIG.DEFAULT_URL}/*` });
       let activeTabId = null;
       if (tabs.length > 0) {
-        // Focus the existing tab WITHOUT changing its URL (preserve current workspace view)
+        // Focus the existing tab and update its URL to the target workspace
         const tab = tabs[0];
-        await chrome.tabs.update(tab.id, { active: true });
+        await chrome.tabs.update(tab.id, { url: targetUrl, active: true });
         await chrome.windows.update(tab.windowId, { focused: true });
         activeTabId = tab.id;
       } else {

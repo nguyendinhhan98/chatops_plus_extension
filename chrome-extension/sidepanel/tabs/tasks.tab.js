@@ -12,6 +12,39 @@ let currentFilter = 'pending';
 let isLocalTaskUpdate = false;
 let activeListFlatpickrs = [];
 
+async function getTargetTeamName(stateInstance) {
+  if (!stateInstance) return CHATOPS_CONFIG.DEFAULT_TEAM;
+  const currentTeam = stateInstance.getTeam();
+  if (currentTeam && currentTeam.id !== 'all' && currentTeam.name) {
+    return currentTeam.name;
+  }
+  try {
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tabs && tabs[0] && tabs[0].url) {
+      const url = new URL(tabs[0].url);
+      const host = url.host;
+      if (host.includes('chat.runsystem.vn') || host.includes('localhost') || host.includes('127.0.0.1')) {
+        const pathParts = url.pathname.split('/').filter(Boolean);
+        if (pathParts.length > 0) {
+          const potentialTeamName = pathParts[0];
+          const teams = stateInstance.getTeams() || [];
+          const matchedTeam = teams.find(t => t.name === potentialTeamName);
+          if (matchedTeam) {
+            return matchedTeam.name;
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Error getting team name from URL:', err);
+  }
+  const teams = stateInstance.getTeams() || [];
+  if (teams.length > 0 && teams[0].name && teams[0].id !== 'all') {
+    return teams[0].name;
+  }
+  const cachedConfig = stateInstance.getConfig();
+  return cachedConfig?.teamName || CHATOPS_CONFIG.DEFAULT_TEAM;
+}
 
 /**
  * Initializes the Tasks Tab
@@ -467,7 +500,7 @@ export function setup(state) {
       reminder: reminderVal,
       repeatDaily: isRepeatDaily,
       status: 'pending',
-      teamName: _state.getTeam()?.name || CHATOPS_CONFIG.DEFAULT_TEAM,
+      teamName: await getTargetTeamName(_state),
       taskCategory: taskCat,
       checklist: taskCat === 'checklist' ? checklistItems : []
     };
@@ -590,7 +623,7 @@ export function setup(state) {
       const id = e.target.dataset.id;
       const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS, STORAGE_KEYS.SETTINGS]);
       const memos = res[STORAGE_KEYS.MEMOS] || [];
-      const settings = res[STORAGE_KEYS.SETTINGS] || { snoozeMinutes: 30 };
+      const settings = res[STORAGE_KEYS.SETTINGS] || { snoozeMinutes: 5 };
       const task = memos.find(m => m.id === id);
       if (task) {
         task.done = e.target.checked;
@@ -607,7 +640,7 @@ export function setup(state) {
         if (e.target.checked) {
           chrome.alarms.clear(id);
         } else {
-          const snoozeMins = settings.snoozeMinutes || 30;
+          const snoozeMins = settings.snoozeMinutes || 5;
           chrome.runtime.sendMessage({ type: MESSAGE_TYPES.SET_TASK_ALARM, taskId: id, time: Date.now() + snoozeMins * 60 * 1000 });
         }
         loadTasks();
@@ -632,7 +665,7 @@ export function setup(state) {
 
       const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS, STORAGE_KEYS.SETTINGS]);
       const memos = res[STORAGE_KEYS.MEMOS] || [];
-      const settings = res[STORAGE_KEYS.SETTINGS] || { snoozeMinutes: 30 };
+      const settings = res[STORAGE_KEYS.SETTINGS] || { snoozeMinutes: 5 };
       const task = memos.find(m => m.id === taskId);
       
       if (task && task.checklist && task.checklist[itemIdx]) {
@@ -658,7 +691,7 @@ export function setup(state) {
             task.done = false;
             task.doneAt = null;
             statusChanged = true;
-            const snoozeMins = settings.snoozeMinutes || 30;
+            const snoozeMins = settings.snoozeMinutes || 5;
             chrome.runtime.sendMessage({ type: MESSAGE_TYPES.SET_TASK_ALARM, taskId, time: Date.now() + snoozeMins * 60 * 1000 });
           }
           
@@ -749,7 +782,11 @@ export function setup(state) {
       if (textarea) {
           const newText = textarea.value.trim();
           if (!newText) {
-            alert(language.taskEmptyError);
+            if (typeof window.showErrorFeedback === 'function') {
+              window.showErrorFeedback(language.taskEmptyError);
+            } else {
+              console.warn(language.taskEmptyError);
+            }
             return;
           }
           

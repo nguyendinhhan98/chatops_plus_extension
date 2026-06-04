@@ -1,6 +1,7 @@
 import { STORAGE_KEYS, CHATOPS_CONFIG, MESSAGE_TYPES, DEFAULT_MEMES } from '../../src/constants.js';
 import { language, setLanguage, applyI18n } from '../../src/lang.js';
 import { getCustomEmojis, getConfig, searchCustomEmojis } from '../../src/api/index.js';
+import { needsChatOpsConversion, convertForChatOps } from '../../src/utils/imageConverter.js';
 
 let chatopsUrl = CHATOPS_CONFIG.DEFAULT_URL;
 const customEmojiMap = new Map();
@@ -218,7 +219,10 @@ const STANDARD_EMOJIS = [
 let _state = null;
 
 const DEFAULT_SETTINGS = {
-  snoozeMinutes: 30,
+  snoozeMinutes: 5,
+  notificationPosition: 'center',
+  notificationAnimation: 'shake-continuous',
+  notificationSize: 'medium',
   headerColor: '#1c58d9',
   headerTextColor: '#ffffff',
   navColor: '#1153ab',
@@ -371,6 +375,21 @@ async function loadAndApplySettings() {
   const notificationTypeSelect = document.getElementById('settingNotificationType');
   if (notificationTypeSelect) {
     notificationTypeSelect.value = settings.notificationType || 'both';
+  }
+
+  const notificationPosSelect = document.getElementById('settingNotificationPosition');
+  if (notificationPosSelect) {
+    notificationPosSelect.value = settings.notificationPosition || 'top-right';
+  }
+
+  const notificationAnimSelect = document.getElementById('settingNotificationAnimation');
+  if (notificationAnimSelect) {
+    notificationAnimSelect.value = settings.notificationAnimation || 'default';
+  }
+
+  const notificationSizeSelect = document.getElementById('settingNotificationSize');
+  if (notificationSizeSelect) {
+    notificationSizeSelect.value = settings.notificationSize || 'medium';
   }
 
   const appPaddingSelect = document.getElementById('settingAppPadding');
@@ -534,6 +553,9 @@ async function loadAndApplySettings() {
   if (typeof window.convertToCustomDropdown === 'function') {
     window.convertToCustomDropdown('settingsAutoCleanupDays');
     window.convertToCustomDropdown('settingNotificationType', '220px');
+    window.convertToCustomDropdown('settingNotificationPosition', '220px');
+    window.convertToCustomDropdown('settingNotificationAnimation', '220px');
+    window.convertToCustomDropdown('settingNotificationSize', '220px');
     window.convertToCustomDropdown('settingAppPadding', '200px');
     window.convertToCustomDropdown('settingCustomButtonsPosition', '180px');
   }
@@ -586,7 +608,7 @@ function setupEventListeners() {
       if (files.length === 0) return;
 
       if (files.length > 5) {
-        alert(language.maxUploadLimitError || 'Bạn chỉ có thể tải lên tối đa 5 ảnh cùng lúc.');
+        showErrorFeedback(language.maxUploadLimitError || 'Bạn chỉ có thể tải lên tối đa 5 ảnh cùng lúc.');
         fileInput.value = '';
         return;
       }
@@ -610,22 +632,40 @@ function setupEventListeners() {
       let hitLimit = false;
 
       for (const file of files) {
-        if (!file.type.startsWith('image/')) {
-          alert(`${file.name}: ${language.uploadOnlyImages}`);
+        const isGifOrJpeg = file.type === 'image/gif' || file.type === 'image/jpeg' || file.type === 'image/jpg';
+        const isAnimatedGif = file.type === 'image/gif' || file.name.toLowerCase().endsWith('.gif');
+        if (!file.type.startsWith('image/') && !isAnimatedGif) {
+          showErrorFeedback(`${file.name}: ${language.uploadOnlyImages}`);
           continue;
         }
 
-        const dataUrl = await new Promise((resolve) => {
-          if (file.type === 'image/gif') {
-            const reader = new FileReader();
-            reader.onload = (ev) => resolve(ev.target.result);
-            reader.readAsDataURL(file);
-          } else {
-            compressSidepanelImage(file, 1000, 1000, 0.9, (compressedUrl) => {
-              resolve(compressedUrl);
-            });
+        let dataUrl;
+        if (needsChatOpsConversion(file.type, file.name)) {
+          showSuccessFeedback(language.webpConvertingToast || 'Converting image... Please wait.');
+          try {
+            const converted = await convertForChatOps(file);
+            dataUrl = converted.dataUrl;
+            showSuccessFeedback(converted.type === 'image/gif'
+              ? (language.webpConvertedToGif || 'Converted to GIF ✅')
+              : (language.webpConvertedToPng || 'Converted to PNG ✅'));
+          } catch (err) {
+            console.error('[ChatOps] Conversion failed:', err);
+            showErrorFeedback(`Error converting ${file.name}`);
+            continue;
           }
-        });
+        } else {
+          dataUrl = await new Promise((resolve) => {
+            if (isGifOrJpeg || isAnimatedGif) {
+              const reader = new FileReader();
+              reader.onload = (ev) => resolve(ev.target.result);
+              reader.readAsDataURL(file);
+            } else {
+              compressSidepanelImage(file, 1000, 1000, 0.9, (compressedUrl) => {
+                resolve(compressedUrl);
+              });
+            }
+          });
+        }
 
         if (dataUrl) {
           const newBytes = getBase64Size(dataUrl);
@@ -639,7 +679,7 @@ function setupEventListeners() {
       }
 
       if (hitLimit) {
-        alert(language.storageLimitExceeded);
+        showErrorFeedback(language.storageLimitExceeded);
       }
 
       await chrome.storage.local.set({ custom_memes: customMemes });
@@ -732,6 +772,30 @@ function setupEventListeners() {
     });
   }
 
+  const notificationPosSelect = document.getElementById('settingNotificationPosition');
+  if (notificationPosSelect) {
+    notificationPosSelect.addEventListener('change', async (e) => {
+      await updateSettings({ notificationPosition: e.target.value });
+      showAutoSaveFeedback();
+    });
+  }
+
+  const notificationAnimSelect = document.getElementById('settingNotificationAnimation');
+  if (notificationAnimSelect) {
+    notificationAnimSelect.addEventListener('change', async (e) => {
+      await updateSettings({ notificationAnimation: e.target.value });
+      showAutoSaveFeedback();
+    });
+  }
+
+  const notificationSizeSelect = document.getElementById('settingNotificationSize');
+  if (notificationSizeSelect) {
+    notificationSizeSelect.addEventListener('change', async (e) => {
+      await updateSettings({ notificationSize: e.target.value });
+      showAutoSaveFeedback();
+    });
+  }
+
   const appPaddingSelect = document.getElementById('settingAppPadding');
   if (appPaddingSelect) {
     appPaddingSelect.addEventListener('change', async (e) => {
@@ -759,16 +823,16 @@ function setupEventListeners() {
       }, (response) => {
         if (response && response.ok) {
           if (typeVal === 'in-page') {
-            alert(language.testBannerSuccess);
+            showSuccessFeedback(language.testBannerSuccess);
           } else if (typeVal === 'system') {
-            alert(language.testSystemSuccess);
+            showSuccessFeedback(language.testSystemSuccess);
           } else {
-            alert(language.testBothSuccess);
+            showSuccessFeedback(language.testBothSuccess);
           }
         } else if (response && !response.ok) {
-          alert(language.testErrorPrefix + response.error);
+          showErrorFeedback(language.testErrorPrefix + response.error);
         } else if (!response) {
-          alert(language.testBgWorkerError);
+          showErrorFeedback(language.testBgWorkerError);
         }
       });
     });
@@ -1710,10 +1774,10 @@ function setupEventListeners() {
         await updateSyncStatusText();
         showAutoSaveFeedback();
         
-        alert(language.backupSuccess);
+        showSuccessFeedback(language.backupSuccess);
       } catch (err) {
         console.error('[ChatOps Ext] Cloud backup error:', err);
-        alert(language.backupFailed);
+        showErrorFeedback(language.backupFailed);
       } finally {
         btnBackup.disabled = false;
         btnBackup.textContent = '☁️ ' + language.backupToCloud;
@@ -1758,10 +1822,10 @@ function setupEventListeners() {
         // Force reload all UI tabs
         chrome.runtime.sendMessage({ type: MESSAGE_TYPES.MEMO_UPDATED });
         
-        alert(language.restoreSuccess);
+        showSuccessFeedback(language.restoreSuccess);
       } catch (err) {
         console.error('[ChatOps Ext] Cloud restore error:', err);
-        alert(language.restoreFailed);
+        showErrorFeedback(language.restoreFailed);
       } finally {
         btnRestore.disabled = false;
         btnRestore.textContent = '🔄 ' + language.restoreFromCloud;
@@ -1797,10 +1861,10 @@ function setupEventListeners() {
       try {
         const deletedCount = await runAutoCleanupForce();
         await updateStorageUsageDisplay();
-        alert(language.cleanupSuccess.replace('{count}', deletedCount));
+        showSuccessFeedback(language.cleanupSuccess.replace('{count}', deletedCount));
       } catch (err) {
         console.error('[ChatOps Ext] Manual cleanup error:', err);
-        alert(language.cleanupFailed);
+        showErrorFeedback(language.cleanupFailed);
       } finally {
         btnManualCleanup.disabled = false;
         btnManualCleanup.textContent = '🧹 ' + language.cleanUpNow;
@@ -1938,6 +2002,31 @@ function showAutoSaveFeedback() {
   }, 2000);
 }
 
+function showSuccessFeedback(message) {
+  const fb = document.getElementById('settingsStatus');
+  if (!fb) return;
+
+  if (autoSaveTimeoutId) {
+    clearTimeout(autoSaveTimeoutId);
+  }
+
+  fb.style.background = '#10b981';
+  fb.style.boxShadow = '0 10px 25px -5px rgba(16, 185, 129, 0.4), 0 8px 10px -6px rgba(16, 185, 129, 0.4)';
+  fb.innerHTML = `
+    <span style="font-size: 15px;">✓</span>
+    <span>${escapeHtml(message)}</span>
+  `;
+
+  fb.style.opacity = '1';
+  fb.style.transform = 'translateX(-50%) translateY(0)';
+
+  autoSaveTimeoutId = setTimeout(() => {
+    fb.style.opacity = '0';
+    fb.style.transform = 'translateX(-50%) translateY(20px)';
+    autoSaveTimeoutId = null;
+  }, 3500);
+}
+
 function showErrorFeedback(message) {
   const fb = document.getElementById('settingsStatus');
   if (!fb) return;
@@ -1962,6 +2051,10 @@ function showErrorFeedback(message) {
     autoSaveTimeoutId = null;
   }, 3000);
 }
+
+// Expose toast helpers to the window object for other tab modules
+window.showSuccessFeedback = showSuccessFeedback;
+window.showErrorFeedback = showErrorFeedback;
 
 function escapeHtml(str) {
   if (!str) return '';

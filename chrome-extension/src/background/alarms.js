@@ -98,8 +98,8 @@ export async function handleTaskAlarm(taskId) {
     chrome.action.setBadgeText({ text: 'TASK' });
     chrome.action.setBadgeBackgroundColor({ color: '#d0454c' });
 
-    // Reschedule alarm dynamically using user's settings snooze minutes (default 30)
-    const snoozeMinutes = settings.snoozeMinutes || 30;
+    // Reschedule alarm dynamically using user's settings snooze minutes (default 5)
+    const snoozeMinutes = settings.snoozeMinutes || 5;
     chrome.alarms.create(taskId, { delayInMinutes: snoozeMinutes });
     console.log('[ChatOps Ext] Task alarm fired and rescheduled:', taskId, 'with snooze:', snoozeMinutes, 'mins');
 

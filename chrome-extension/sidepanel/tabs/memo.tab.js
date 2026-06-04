@@ -15,6 +15,40 @@ function getCategoryDisplayName(cat) {
 
 let _state = null;
 
+async function getTargetTeamName(stateInstance) {
+  if (!stateInstance) return CHATOPS_CONFIG.DEFAULT_TEAM;
+  const currentTeam = stateInstance.getTeam();
+  if (currentTeam && currentTeam.id !== 'all' && currentTeam.name) {
+    return currentTeam.name;
+  }
+  try {
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tabs && tabs[0] && tabs[0].url) {
+      const url = new URL(tabs[0].url);
+      const host = url.host;
+      if (host.includes('chat.runsystem.vn') || host.includes('localhost') || host.includes('127.0.0.1')) {
+        const pathParts = url.pathname.split('/').filter(Boolean);
+        if (pathParts.length > 0) {
+          const potentialTeamName = pathParts[0];
+          const teams = stateInstance.getTeams() || [];
+          const matchedTeam = teams.find(t => t.name === potentialTeamName);
+          if (matchedTeam) {
+            return matchedTeam.name;
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Error getting team name from URL:', err);
+  }
+  const teams = stateInstance.getTeams() || [];
+  if (teams.length > 0 && teams[0].name && teams[0].id !== 'all') {
+    return teams[0].name;
+  }
+  const cachedConfig = stateInstance.getConfig();
+  return cachedConfig?.teamName || CHATOPS_CONFIG.DEFAULT_TEAM;
+}
+
 /**
  * Initializes the Memo (Notes) Tab
  * @param {Object} state - Centralized state module
@@ -116,7 +150,8 @@ export function setup(state) {
       createdAt: Date.now(),
       done: false,
       reminder: null,
-      status: 'pending'
+      status: 'pending',
+      teamName: await getTargetTeamName(_state)
     };
 
     const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
@@ -164,7 +199,11 @@ export function setup(state) {
       const notesOnly = allMemos.filter(m => m.type === 'memo');
       
       if (notesOnly.length === 0) {
-        alert(language.noNotesToExport || "No notes to export!");
+        if (typeof window.showErrorFeedback === 'function') {
+          window.showErrorFeedback(language.noNotesToExport || "No notes to export!");
+        } else {
+          console.warn(language.noNotesToExport);
+        }
         return;
       }
       
@@ -260,7 +299,11 @@ export function setup(state) {
           }
           
           if (validNotes.length === 0) {
-            alert(language.noValidNotesFound || "No valid notes found in file!");
+            if (typeof window.showErrorFeedback === 'function') {
+              window.showErrorFeedback(language.noValidNotesFound || "No valid notes found in file!");
+            } else {
+              console.warn(language.noValidNotesFound);
+            }
             return;
           }
           
@@ -292,12 +335,21 @@ export function setup(state) {
           
           const successMsg = (language.importSuccess || "🎉 Successfully imported {count} notes!")
             .replace('{count}', importCount + updateCount);
-          alert(successMsg);
+          if (typeof window.showSuccessFeedback === 'function') {
+            window.showSuccessFeedback(successMsg);
+          } else {
+            console.log(successMsg);
+          }
           
           importFileInput.value = '';
           loadMemos();
         } catch (err) {
-          alert((language.importFailed || "❌ Import failed. Please check the file content.") + "\n" + err.message);
+          const errMsg = (language.importFailed || "❌ Import failed. Please check the file content.") + " " + err.message;
+          if (typeof window.showErrorFeedback === 'function') {
+            window.showErrorFeedback(errMsg);
+          } else {
+            console.error(errMsg);
+          }
           importFileInput.value = '';
         }
       };
@@ -421,7 +473,11 @@ export function setup(state) {
       if (textarea) {
         const newText = textarea.value.trim();
         if (!newText) {
-          alert(language.memoEmptyNoteError);
+          if (typeof window.showErrorFeedback === 'function') {
+            window.showErrorFeedback(language.memoEmptyNoteError);
+          } else {
+            console.warn(language.memoEmptyNoteError);
+          }
           return;
         }
         
@@ -607,7 +663,7 @@ function renderNoteCard(note, categories = ['General', 'Work']) {
   const cachedConfig = _state.getConfig();
   const currentTeam = _state.getTeam();
   const permalink = note.postId && cachedConfig
-    ? makePermalinkSync(note.postId, cachedConfig.chatopsUrl, currentTeam?.name || CHATOPS_CONFIG.DEFAULT_TEAM)
+    ? makePermalinkSync(note.postId, cachedConfig.chatopsUrl, note.teamName || currentTeam?.name || CHATOPS_CONFIG.DEFAULT_TEAM)
     : null;
 
   const rawText = note.note || '';

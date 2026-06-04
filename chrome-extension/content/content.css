@@ -485,6 +485,13 @@ html body #chatops-quick-note-popover textarea#cqn-note-text {
   transform: translateY(-10px);
   transition: opacity 0.25s ease, transform 0.25s ease;
   overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform-style: preserve-3d;
+  will-change: transform, opacity, box-shadow;
 }
 
 .chatops-reminder-banner.visible {
@@ -1553,6 +1560,13 @@ span.flatpickr-weekday {
 .chatops-image-resize-btn-insert:hover {
   background: #bae6fd;
 }
+.chatops-image-resize-btn-send {
+  background: #10b981;
+  color: #ffffff;
+}
+.chatops-image-resize-btn-send:hover {
+  background: #0d9488;
+}
 
 /* ─── Image Resize Modal Slide Navigator ─── */
 .chatops-image-resize-navigator {
@@ -1987,4 +2001,98 @@ span.flatpickr-weekday {
 .chatops-image-editor-btn-apply:hover {
   background: #1545ad;
   box-shadow: 0 4px 12px rgba(28, 88, 217, 0.2);
+}
+
+/* Premium attention-grabbing shake & glow animation */
+.chatops-reminder-banner.visible.animation-strong {
+  animation: chatops-strong-shake-glow 0.85s cubic-bezier(.36,.07,.19,.97) both;
+  box-shadow: 0 0 0 4px rgba(28, 88, 217, 0.35), 0 10px 40px rgba(0,0,0,0.22);
+  border-color: #1c58d9;
+}
+
+@keyframes chatops-strong-shake-glow {
+  0% {
+    transform: scale(0.8) translateY(-20px);
+    box-shadow: 0 0 0 0px rgba(28, 88, 217, 0.7);
+  }
+  15% {
+    transform: scale(1.05) translate3d(-8px, 0, 0);
+    box-shadow: 0 0 0 8px rgba(28, 88, 217, 0);
+  }
+  30% {
+    transform: scale(1.02) translate3d(8px, 0, 0);
+    box-shadow: 0 0 0 12px rgba(28, 88, 217, 0);
+  }
+  45% {
+    transform: scale(1.0) translate3d(-6px, 0, 0);
+  }
+  60% {
+    transform: scale(1.0) translate3d(6px, 0, 0);
+  }
+  75% {
+    transform: scale(1.0) translate3d(-3px, 0, 0);
+  }
+  90% {
+    transform: scale(1.0) translate3d(3px, 0, 0);
+  }
+  100% {
+    transform: scale(1.0) translate3d(0, 0, 0);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.14);
+  }
+}
+
+/* Continuous shaking animation */
+.chatops-reminder-banner.visible.animation-shake-continuous {
+  animation: chatops-shake-continuous 1.2s ease-in-out infinite;
+  box-shadow: 0 0 0 4px rgba(28, 88, 217, 0.35), 0 10px 40px rgba(0,0,0,0.22);
+  border-color: #1c58d9;
+}
+
+@keyframes chatops-shake-continuous {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  10%, 30%, 50%, 70%, 90% { transform: translate3d(-3px, 0, 0); }
+  20%, 40%, 60%, 80% { transform: translate3d(3px, 0, 0); }
+}
+
+/* Continuous pulse glow animation */
+.chatops-reminder-banner.visible.animation-pulse-glow {
+  animation: chatops-pulse-glow 2.0s infinite alternate;
+  border-color: #1c58d9;
+}
+
+@keyframes chatops-pulse-glow {
+  0% {
+    box-shadow: 0 0 0 2px rgba(28, 88, 217, 0.25), 0 8px 32px rgba(0,0,0,0.14);
+  }
+  100% {
+    box-shadow: 0 0 0 8px rgba(28, 88, 217, 0.6), 0 12px 36px rgba(0,0,0,0.25);
+  }
+}
+
+/* Continuous bounce animation */
+.chatops-reminder-banner.visible.animation-bounce {
+  animation: chatops-bounce 1.5s infinite;
+  border-color: #1c58d9;
+}
+
+@keyframes chatops-bounce {
+  0%, 20%, 50%, 80%, 100% { transform: translate3d(0, 0, 0); }
+  40% { transform: translate3d(0, -12px, 0); }
+  60% { transform: translate3d(0, -6px, 0); }
+}
+
+/* Notification Size Styles */
+.chatops-reminder-banner.size-medium {
+  width: 310px !important;
+}
+
+.chatops-reminder-banner.size-large {
+  width: 370px !important;
+  padding: 16px !important;
+}
+.chatops-reminder-banner.size-large .crb-text {
+  font-size: 14px !important;
+}
+.chatops-reminder-banner.size-large .crb-title {
+  font-size: 14.5px !important;
 }
