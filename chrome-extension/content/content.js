@@ -3548,16 +3548,18 @@ function showToast(msg) {
     
     const showTabs = cachedSettings.showTabs || { search: true, tasks: true, notes: true, missed: true, reactions: true };
     const floatingButtons = cachedSettings.floatingButtons || { quickNote: true, quickTask: true, spamReactions: true, reactAlong: false, imagePicker: true, quickReply: false, quickCopy: false };
-    const tasksEnabled = floatingButtons.quickTask !== false;
-    const notesEnabled = floatingButtons.quickNote !== false;
-    const spamEnabled = floatingButtons.spamReactions !== false;
-    const reactAlongEnabled = floatingButtons.reactAlong !== false;
-    const replyEnabled = floatingButtons.quickReply !== false;
-    const copyEnabled = floatingButtons.quickCopy !== false;
+    
+    const isDemo = posts.some(p => p && p.classList && p.classList.contains('chatops-hover-active'));
+    const tasksEnabled = isDemo || floatingButtons.quickTask !== false;
+    const notesEnabled = isDemo || floatingButtons.quickNote !== false;
+    const spamEnabled = isDemo || floatingButtons.spamReactions !== false;
+    const reactAlongEnabled = isDemo || floatingButtons.reactAlong !== false;
+    const replyEnabled = isDemo || floatingButtons.quickReply !== false;
+    const copyEnabled = isDemo || floatingButtons.quickCopy !== false;
 
     posts.forEach(postEl => {
       const postId = cleanPostId(postEl);
-      if (!postId) {
+      if (!postId && !postEl.classList.contains('chatops-hover-active')) {
         postEl.dataset.chatopsInjected = 'skipped';
         return;
       }
@@ -3576,8 +3578,16 @@ function showToast(msg) {
       if (!postEl.isConnected) return;
 
       // Find the action bar within this post
-      const actionArea = postEl.querySelector('.post-menu, .post__actions, .dot-menu__container, [class*="post-menu"], .post-action-menu');
-      if (!actionArea) return;
+      let actionArea = postEl.querySelector('.post-menu, .post__actions, .dot-menu__container, [class*="post-menu"], .post-action-menu');
+      let isFallback = false;
+      if (!actionArea) {
+        if (postEl.classList.contains('chatops-hover-active')) {
+          actionArea = postEl;
+          isFallback = true;
+        } else {
+          return;
+        }
+      }
 
       // Get or create a dedicated container for ChatOps buttons
       let chatopsGroup = actionArea.querySelector('.chatops-action-group');
@@ -3592,31 +3602,47 @@ function showToast(msg) {
         chatopsGroup.className = 'chatops-action-group';
         
         // Apply position-based CSS styling
-        if (position === 'above') {
-          chatopsGroup.style.cssText = 'position: absolute; bottom: 100%; right: 0; display: inline-flex; align-items: center; gap: 0; margin-bottom: 2px; padding: 2px 4px; background: var(--bg-1, #ffffff); border: 1px solid var(--border, #e5e5e5); border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); z-index: 10;';
+        let cssText = '';
+        if (isFallback) {
+          cssText = 'position: absolute; top: -12px; right: 20px; display: inline-flex; align-items: center; gap: 0; padding: 2px 4px; background: var(--bg-1, #ffffff); border: 1px solid var(--border, #cbd5e1); border-radius: 6px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1); z-index: 99999;';
+        } else if (position === 'above') {
+          cssText = 'position: absolute; bottom: 100%; right: 0; display: inline-flex; align-items: center; gap: 0; margin-bottom: 2px; padding: 2px 4px; background: var(--bg-1, #ffffff); border: 1px solid var(--border, #e5e5e5); border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); z-index: 10;';
         } else if (position === 'below') {
-          chatopsGroup.style.cssText = 'position: absolute; top: 100%; right: 0; display: inline-flex; align-items: center; gap: 0; margin-top: 2px; padding: 2px 4px; background: var(--bg-1, #ffffff); border: 1px solid var(--border, #e5e5e5); border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); z-index: 10;';
+          cssText = 'position: absolute; top: 100%; right: 0; display: inline-flex; align-items: center; gap: 0; margin-top: 2px; padding: 2px 4px; background: var(--bg-1, #ffffff); border: 1px solid var(--border, #e5e5e5); border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); z-index: 10;';
         } else {
-          chatopsGroup.style.cssText = 'display: inline-flex; align-items: center; gap: 0;';
+          cssText = 'display: inline-flex; align-items: center; gap: 0;';
         }
 
+        if (postEl.classList.contains('chatops-hover-active')) {
+          cssText = cssText.replace('display: inline-flex;', 'display: inline-flex !important;');
+        }
+        chatopsGroup.style.cssText = cssText;
+
         // Insert at the configured position relative to native action menu
-        if (position === 'after') {
+        if (isFallback || position === 'after') {
           actionArea.appendChild(chatopsGroup);
         } else {
           actionArea.insertBefore(chatopsGroup, actionArea.firstChild);
         }
       } else {
         // Update styling and layout order in case setting changed dynamically
-        if (position === 'above') {
-          chatopsGroup.style.cssText = 'position: absolute; bottom: 100%; right: 0; display: inline-flex; align-items: center; gap: 0; margin-bottom: 2px; padding: 2px 4px; background: var(--bg-1, #ffffff); border: 1px solid var(--border, #e5e5e5); border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); z-index: 10;';
+        let cssText = '';
+        if (isFallback) {
+          cssText = 'position: absolute; top: -12px; right: 20px; display: inline-flex; align-items: center; gap: 0; padding: 2px 4px; background: var(--bg-1, #ffffff); border: 1px solid var(--border, #cbd5e1); border-radius: 6px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1); z-index: 99999;';
+        } else if (position === 'above') {
+          cssText = 'position: absolute; bottom: 100%; right: 0; display: inline-flex; align-items: center; gap: 0; margin-bottom: 2px; padding: 2px 4px; background: var(--bg-1, #ffffff); border: 1px solid var(--border, #e5e5e5); border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); z-index: 10;';
         } else if (position === 'below') {
-          chatopsGroup.style.cssText = 'position: absolute; top: 100%; right: 0; display: inline-flex; align-items: center; gap: 0; margin-top: 2px; padding: 2px 4px; background: var(--bg-1, #ffffff); border: 1px solid var(--border, #e5e5e5); border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); z-index: 10;';
+          cssText = 'position: absolute; top: 100%; right: 0; display: inline-flex; align-items: center; gap: 0; margin-top: 2px; padding: 2px 4px; background: var(--bg-1, #ffffff); border: 1px solid var(--border, #e5e5e5); border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); z-index: 10;';
         } else {
-          chatopsGroup.style.cssText = 'display: inline-flex; align-items: center; gap: 0;';
+          cssText = 'display: inline-flex; align-items: center; gap: 0;';
         }
 
-        if (position === 'after') {
+        if (postEl.classList.contains('chatops-hover-active')) {
+          cssText = cssText.replace('display: inline-flex;', 'display: inline-flex !important;');
+        }
+        chatopsGroup.style.cssText = cssText;
+
+        if (isFallback || position === 'after') {
           actionArea.appendChild(chatopsGroup);
         } else {
           actionArea.insertBefore(chatopsGroup, actionArea.firstChild);
@@ -4106,8 +4132,72 @@ function showToast(msg) {
       }
       console.log('[ChatOps Ext] Resolved postEl:', postEl);
       openQuickNote(postEl, null, message.mode, message.text);
+    } else if (message.type === 'SHOW_HOVER_DEMO') {
+      showHoverDemo(message.active);
     }
   });
+
+  function showHoverDemo(active) {
+    document.querySelectorAll('.chatops-hover-active').forEach(el => {
+      el.classList.remove('chatops-hover-active');
+      el.style.outline = '';
+      el.style.outlineOffset = '';
+      el.style.borderRadius = '';
+      const directAg = el.querySelector(':scope > .chatops-action-group');
+      if (directAg) {
+        directAg.remove();
+      }
+      const ag = el.querySelector('.chatops-action-group');
+      if (ag) {
+        ag.style.display = '';
+        ag.style.animation = '';
+      }
+      delete el.dataset.chatopsInjected;
+    });
+
+    if (!active) return;
+
+    const posts = Array.from(document.querySelectorAll('.post, [id^="post_"], [id^="rhsPost_"]'));
+    if (posts.length === 0) {
+      console.log('[ChatOps Ext] No posts found for hover demo.');
+      return;
+    }
+
+    const reversedPosts = [...posts].reverse();
+    const visiblePost = reversedPosts.find(el => {
+      const rect = el.getBoundingClientRect();
+      const style = window.getComputedStyle(el);
+      if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
+        return false;
+      }
+      return rect.height > 20 && rect.top < window.innerHeight && rect.bottom > 0;
+    }) || posts[posts.length - 1];
+
+    if (!visiblePost) return;
+
+    console.log('[ChatOps Ext] showHoverDemo target post:', visiblePost);
+
+    visiblePost.classList.add('chatops-hover-active');
+    delete visiblePost.dataset.chatopsInjected;
+
+    injectQuickNoteButtons(visiblePost);
+
+    visiblePost.style.outline = '3px dashed #1c58d9';
+    visiblePost.style.outlineOffset = '-3px';
+    visiblePost.style.borderRadius = '8px';
+
+    const ag = visiblePost.querySelector('.chatops-action-group');
+    if (ag) {
+      ag.style.setProperty('display', 'inline-flex', 'important');
+      ag.style.animation = 'chatops-action-pulse 1.5s infinite';
+    }
+
+    try {
+      visiblePost.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } catch (e) {
+      // Ignore
+    }
+  }
 
   observer.observe(document.body, { childList: true, subtree: true });
   

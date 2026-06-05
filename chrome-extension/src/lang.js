@@ -678,6 +678,85 @@ const en = {
   colorLightGray: 'Light Gray',
   colorYellow: 'Yellow',
   colorDark: 'Dark',
+
+  // Interactive Onboarding Tour
+  tourSkip: 'Skip Tour',
+  tourPrev: '← Back',
+  tourNext: 'Next →',
+  tourFinish: '🚀 Get Started!',
+  tourStepOf: '{current} / {total}',
+  tourModalPreview: '(Form preview — click <strong>Next</strong> to continue)',
+
+  tourStep1Title: '👋 Welcome to ChatOps++!',
+  tourStep1Desc: 'This quick tour walks you through the key features. Click <strong>Next</strong> to begin, or <strong>Skip</strong> to explore on your own.',
+
+  tourStep2Title: '🎯 Tasks — Manage your work',
+  tourStep2Desc: 'Track daily to-dos. Pin any ChatOps message as a task with one hover-click.<br><br>💡 <strong>Pro tip:</strong> Double-click this tab to open the Add Task modal!',
+
+  tourStep3Title: 'Tasks Management',
+  tourStep3Desc: 'Organize your tasks with checkboxes, notes, and reminders to keep track of your progress.',
+
+  tourStep4Title: '📒 Notes — Capture ideas',
+  tourStep4Desc: 'Save ideas or important ChatOps messages as personal notes. Organize them with custom categories.<br><br>💡 <strong>Pro tip:</strong> Double-click this tab to open the Add Note modal!',
+
+  tourStep5Title: 'Notes Capture',
+  tourStep5Desc: 'Keep your notes organized by category so you can search and reference them later.',
+
+  tourStep6Title: '🔔 Missed Messages — Track @mentions',
+  tourStep6Desc: 'Never miss an @mention again! Scan channels for messages you have not reacted or replied to.<br><br>💡 <strong>Pro tip:</strong> Double-click this tab to open the scan filters modal!',
+
+  tourStep7Title: 'Scan Mentions',
+  tourStep7Desc: 'Scan and filter missed mentions in your channels to make sure you never miss an important message.',
+
+  tourStep8Title: '⚡ Other Tools — Advanced utilities',
+  tourStep8Desc: 'Explore advanced productivity tools, including your Image Library and Reaction configurations.',
+
+  tourStep9Title: 'Search Messages',
+  tourStep9Desc: 'Search through message history with advanced filters.<br><br>💡 <strong>Pro tip:</strong> Double-click this tab to open the Search panel!',
+  tourStep9ModalTitle: 'Search Filters',
+  tourStep9ModalDesc: 'Enter keywords, filter by sender, channel, or date range to find messages precisely.',
+
+  tourStep10Title: '🖼️ Image Library',
+  tourStep10Desc: 'Upload images/memes by clicking the upload button or dragging files here, then click directly on an image to insert or send it.',
+
+  tourStep11Title: '🔥 Spam Reactions',
+  tourStep11Desc: 'Configure a list of emojis for quick reaction spam. Click emojis to add/remove them. Changes are saved automatically.',
+
+  tourStep12Title: '⚙️ Settings — Customize everything',
+  tourStep12Desc: 'Configure extension settings and behaviors. Remember, hovering over any ChatOps message displays handy quick action icons.',
+
+  tourStep13Title: '🚀 Quick Hover Actions',
+  tourStep13Desc: 'Toggle quick buttons visible when hovering over ChatOps messages (Pin Task, Save Note, Spam React, Copy, Reply, etc.).',
+
+  tourStep14Title: '🔔 In-app Notifications',
+  tourStep14Desc: 'Configure sound notifications and desktop alerts for new mentions or updates.',
+
+  tourStep15Title: '🎬 Giphy Integration',
+  tourStep15Desc: 'Configure Giphy integration settings to search and send animated GIFs directly inside chat. To use them, click the image icon (🖼️) in the chat toolbar and select the GIFs tab.',
+
+  tourStep16Title: '🏷️ Note Categories',
+  tourStep16Desc: 'Manage your custom categories to classify and filter your personal notes.',
+
+  tourStep17Title: '🗂️ Menu Tabs Configuration',
+  tourStep17Desc: 'Show/hide menu tabs or promote nested sub-tabs directly to the main navigation bar.',
+
+  tourStep18Title: '↕️ Tab Order Customization',
+  tourStep18Desc: 'Reorder active tabs on the navigation bar by clicking the up and down arrow buttons to move tabs left or right.',
+
+  tourStep19Title: '🎨 Theme & UI Customization',
+  tourStep19Desc: 'Change accent colors, header and navigation backgrounds, text color, and layout density (Compact vs Spacious).',
+
+  tourStep20Title: '☁️ Cloud Sync',
+  tourStep20Desc: 'Backup or restore your tasks and notes via Google account to keep data in sync across computers.',
+
+  tourStep21Title: '🧹 Cleanup & Space',
+  tourStep21Desc: 'Optimize extension storage and configure auto-cleanup settings for completed tasks.',
+
+  tourStep22Title: '✅ You\'re all set!',
+  tourStep22Desc: 'That covers everything! Click <strong>Get Started</strong> to dive in. Replay this tour anytime via the <strong>?</strong> button in the header.',
+
+  tourReplayBtn: '▶ Replay Tour',
+  tourOpenDocsBtn: '📖 Open Docs',
 };
 
 // Vietnamese Dictionary
@@ -1350,6 +1429,85 @@ const vi = {
   groupMessage: 'Tin nhắn nhóm',
   userGuideTitle: 'Hướng dẫn Hệ thống 💡',
   tabsCompactToggleTooltip: 'Thu gọn menu (Chỉ hiển thị icon)',
+
+  // Interactive Onboarding Tour
+  tourSkip: 'Bỏ qua',
+  tourPrev: '← Quay lại',
+  tourNext: 'Tiếp →',
+  tourFinish: '🚀 Bắt đầu!',
+  tourStepOf: '{current} / {total}',
+  tourModalPreview: '(Xem trước form — nhấn <strong>Tiếp</strong> để tiếp tục)',
+
+  tourStep1Title: '👋 Chào mừng đến ChatOps++!',
+  tourStep1Desc: 'Chuyến tham quan nhanh sẽ giới thiệu các tính năng chính. Nhấn <strong>Tiếp</strong> để bắt đầu, hoặc <strong>Bỏ qua</strong> để tự khám phá.',
+
+  tourStep2Title: '🎯 Công việc — Quản lý task',
+  tourStep2Desc: 'Theo dõi công việc hàng ngày. Ghim tin nhắn ChatOps thành task chỉ với một hover-click.<br><br>💡 <strong>Mẹo:</strong> Bạn có thể click đúp (double-click) vào tab này để mở modal tạo công việc!',
+
+  tourStep3Title: 'Quản lý công việc',
+  tourStep3Desc: 'Tổ chức và quản lý các công việc cần làm, giúp bạn theo dõi tiến độ một cách hiệu quả nhất.',
+
+  tourStep4Title: '📒 Ghi chú — Lưu ý tưởng',
+  tourStep4Desc: 'Lưu ý tưởng hoặc tin nhắn quan trọng dưới dạng ghi chú cá nhân. Phân loại theo danh mục tuỳ chỉnh.<br><br>💡 <strong>Mẹo:</strong> Bạn có thể click đúp (double-click) vào tab này để mở modal tạo ghi chú!',
+
+  tourStep5Title: 'Lưu trữ ghi chú',
+  tourStep5Desc: 'Lưu trữ các ghi chú cá nhân theo danh mục, giúp bạn dễ dàng tìm kiếm và tra cứu lại sau này.',
+
+  tourStep6Title: '🔔 Tin nhắn bỏ lỡ — Theo dõi @mention',
+  tourStep6Desc: 'Không bỏ sót @mention nào nữa! Quét kênh để tìm tin nhắn chưa phản hồi hoặc chưa react.<br><br>💡 <strong>Mẹo:</strong> Bạn có thể click đúp (double-click) vào tab này để mở modal quét tin nhắn!',
+
+  tourStep7Title: 'Quét tin nhắn bỏ lỡ',
+  tourStep7Desc: 'Quét và lọc các lượt nhắc tên (@mention) trong kênh, đảm bảo bạn không bỏ lỡ thông tin quan trọng nào.',
+
+  tourStep8Title: '⚡ Công cụ khác — Tiện ích nâng cao',
+  tourStep8Desc: 'Khám phá các công cụ hỗ trợ nâng cao trong quá trình làm việc, bao gồm Thư viện ảnh và Spam Reactions.',
+
+  tourStep9Title: 'Tìm kiếm tin nhắn',
+  tourStep9Desc: 'Tìm kiếm thông tin trong lịch sử tin nhắn với các bộ lọc.<br><br>💡 <strong>Mẹo:</strong> Bạn có thể click đúp (double-click) vào tab này để mở khung tìm kiếm!',
+  tourStep9ModalTitle: 'Bộ lọc tìm kiếm',
+  tourStep9ModalDesc: 'Nhập từ khóa, lọc theo người gửi, kênh hoặc khoảng thời gian để tìm kiếm tin nhắn một cách chính xác.',
+
+  tourStep10Title: '🖼️ Thư viện ảnh',
+  tourStep10Desc: 'Lưu trữ các hình ảnh và meme yêu thích của bạn. Nhấn vào nút chọn ảnh hoặc kéo thả ảnh để tải lên, sau đó click trực tiếp vào ảnh để gửi nhanh hoặc chèn vào khung chat.',
+
+  tourStep11Title: '🔥 Spam Reactions',
+  tourStep11Desc: 'Cấu hình danh sách các emoji phản hồi hàng loạt. Hãy click chọn các emoji bạn muốn sử dụng, cấu hình được tự động lưu lại.',
+
+  tourStep12Title: '⚙️ Cài đặt — Tuỳ chỉnh mọi thứ',
+  tourStep12Desc: 'Cấu hình các thiết lập hoạt động của extension ChatOps++. Ngoài ra, khi hover qua các tin nhắn trên ChatOps, bạn sẽ thấy xuất hiện các icon chức năng để thực hiện quick action.',
+
+  tourStep13Title: '🚀 Quick Actions khi hover',
+  tourStep13Desc: 'Bật/tắt các biểu tượng tính năng nhanh xuất hiện khi di chuột qua tin nhắn ChatOps (Ghim công việc, Lưu ghi chú, Spam emoji, Copy nhanh, Quick reply, ...).',
+
+  tourStep14Title: '🔔 Thông báo ứng dụng',
+  tourStep14Desc: 'Thiết lập âm thanh thông báo và cảnh báo màn hình cho các lượt nhắc tên hoặc cập nhật mới.',
+
+  tourStep15Title: '🎬 Tích hợp Giphy',
+  tourStep15Desc: 'Cấu hình tích hợp Giphy để tìm kiếm và gửi ảnh động trực tiếp trong cuộc hội thoại. Để sử dụng, click vào biểu tượng ảnh (🖼️) ở thanh công cụ chat và chọn tab GIFs.',
+
+  tourStep16Title: '🏷️ Danh mục Ghi chú',
+  tourStep16Desc: 'Quản lý các nhãn phân loại tùy chỉnh để sắp xếp và chọn lọc ghi chú cá nhân dễ dàng.',
+
+  tourStep17Title: '🗂️ Quản lý Menu & Tab',
+  tourStep17Desc: 'Bật/tắt hiển thị các tab chức năng hoặc đưa các công cụ con ra thanh điều hướng chính.',
+
+  tourStep18Title: '↕️ Sắp xếp thứ tự Tab',
+  tourStep18Desc: 'Thay đổi vị trí hiển thị của các tab trên thanh điều hướng chính bằng cách click vào các nút mũi tên để di chuyển tab sang trái hoặc sang phải theo ý muốn.',
+
+  tourStep19Title: '🎨 Tuỳ chỉnh Giao diện',
+  tourStep19Desc: 'Thay đổi màu sắc chủ đạo, màu nền header, màu thanh điều hướng, màu chữ của tab hoặc thay đổi khoảng cách giãn dòng (Compact / Spacious) phù hợp với bạn.',
+
+  tourStep20Title: '☁️ Đồng bộ đám mây',
+  tourStep20Desc: 'Sao lưu dự phòng và phục hồi toàn bộ công việc, ghi chú của bạn thông qua tài khoản Google để đồng bộ dữ liệu giữa các máy tính khác nhau.',
+
+  tourStep21Title: '🧹 Dọn dẹp & Lưu trữ',
+  tourStep21Desc: 'Tối ưu hóa dung lượng lưu trữ của tiện ích và thiết lập tự động dọn dẹp các công việc đã hoàn thành.',
+
+  tourStep22Title: '✅ Sẵn sàng rồi!',
+  tourStep22Desc: 'Vậy là giới thiệu xong tất cả! Nhấn <strong>Bắt đầu</strong> để dùng ngay. Xem lại tour bất kỳ lúc nào qua nút <strong>?</strong> trên header.',
+
+  tourReplayBtn: '▶ Xem lại Tour',
+  tourOpenDocsBtn: '📖 Mở Tài liệu',
 };
 
 // Swaps the active language dictionary key-value pairs in-place

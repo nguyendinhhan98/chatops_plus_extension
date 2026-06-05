@@ -22,33 +22,65 @@ if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) {
   
   const mockStorage = {
     local: {
-      get: async (keys) => {
+      get: (keys, callback) => {
         const res = {};
+        const processKey = (k) => {
+          const val = localStorage.getItem(k);
+          try {
+            return val ? JSON.parse(val) : null;
+          } catch (_) {
+            return val;
+          }
+        };
+
         if (Array.isArray(keys)) {
           keys.forEach(k => {
-            const val = localStorage.getItem(k);
-            res[k] = val ? JSON.parse(val) : null;
+            res[k] = processKey(k);
           });
-        } else if (typeof keys === 'object') {
+        } else if (typeof keys === 'object' && keys !== null) {
           Object.keys(keys).forEach(k => {
-            const val = localStorage.getItem(k);
-            res[k] = val ? JSON.parse(val) : keys[k];
+            const val = processKey(k);
+            res[k] = val !== null ? val : keys[k];
           });
-        } else {
-          const val = localStorage.getItem(keys);
-          res[keys] = val ? JSON.parse(val) : null;
+        } else if (typeof keys === 'string') {
+          res[keys] = processKey(keys);
         }
-        return res;
+
+        if (typeof callback === 'function') {
+          callback(res);
+        }
+        return Promise.resolve(res);
       },
-      set: async (obj) => {
-        Object.keys(obj).forEach(k => {
-          localStorage.setItem(k, JSON.stringify(obj[k]));
-        });
+      set: (obj, callback) => {
+        if (typeof obj === 'object' && obj !== null) {
+          Object.keys(obj).forEach(k => {
+            localStorage.setItem(k, JSON.stringify(obj[k]));
+          });
+        }
+        if (typeof callback === 'function') {
+          callback();
+        }
+        return Promise.resolve();
+      },
+      remove: (keys, callback) => {
+        if (Array.isArray(keys)) {
+          keys.forEach(k => localStorage.removeItem(k));
+        } else if (typeof keys === 'string') {
+          localStorage.removeItem(keys);
+        }
+        if (typeof callback === 'function') {
+          callback();
+        }
+        return Promise.resolve();
       }
+    },
+    onChanged: {
+      addListener: () => {}
     }
   };
 
   const mockRuntime = {
+    getManifest: () => ({ version: '3.4.1' }),
     sendMessage: () => {},
     onMessage: {
       addListener: () => {}
@@ -60,11 +92,32 @@ if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) {
     create: () => {}
   };
 
+  const mockTabs = {
+    query: (queryInfo, callback) => {
+      if (typeof callback === 'function') {
+        callback([{ id: 1, url: window.location.href }]);
+      }
+      return Promise.resolve([{ id: 1, url: window.location.href }]);
+    },
+    update: (tabId, updateProperties, callback) => {
+      if (typeof callback === 'function') {
+        callback({ id: tabId });
+      }
+      return Promise.resolve({ id: tabId });
+    },
+    sendMessage: () => Promise.resolve()
+  };
+
   // Extend window.chrome by adding properties safely
   try {
-    if (!chrome.storage) chrome.storage = mockStorage;
+    if (!chrome.storage) {
+      chrome.storage = mockStorage;
+    } else if (!chrome.storage.onChanged) {
+      chrome.storage.onChanged = mockStorage.onChanged;
+    }
     if (!chrome.runtime) chrome.runtime = mockRuntime;
     if (!chrome.alarms) chrome.alarms = mockAlarms;
+    if (!chrome.tabs) chrome.tabs = mockTabs;
   } catch (e) {
     console.warn('[ChatOps Ext] Failed to safely extend window.chrome.', e);
   }

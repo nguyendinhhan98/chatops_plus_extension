@@ -91,14 +91,19 @@
 .post-row:hover .chatops-action-group {
   display: inline-flex !important;
 }
+/* Show action group during onboarding tour hover demo */
+.chatops-hover-active .chatops-action-group {
+  display: inline-flex !important;
+}
 
 /* Specifically hide action groups of nested child posts that are NOT currently hovered when a parent post is hovered */
-.post:hover .post:not(:hover) .chatops-action-group,
-[id^="post_"]:hover [id^="post_"]:not(:hover) .chatops-action-group,
-[id^="rhsPost_"]:hover [id^="rhsPost_"]:not(:hover) .chatops-action-group,
-[id^="rhs_post_"]:hover [id^="rhs_post_"]:not(:hover) .chatops-action-group {
+.post:hover .post:not(:hover):not(.chatops-hover-active) .chatops-action-group,
+[id^="post_"]:hover [id^="post_"]:not(:hover):not(.chatops-hover-active) .chatops-action-group,
+[id^="rhsPost_"]:hover [id^="rhsPost_"]:not(:hover):not(.chatops-hover-active) .chatops-action-group,
+[id^="rhs_post_"]:hover [id^="rhs_post_"]:not(:hover):not(.chatops-hover-active) .chatops-action-group {
   display: none !important;
 }
+
 
 /* ─── Quick Note Inject Button ─── */
 .chatops-quick-note-btn {
@@ -2096,3 +2101,18 @@ span.flatpickr-weekday {
 .chatops-reminder-banner.size-large .crb-title {
   font-size: 14.5px !important;
 }
+
+/* Quick hover demo classes and animations */
+.chatops-hover-active {
+  position: relative !important;
+}
+.chatops-hover-active .chatops-action-group {
+  display: inline-flex !important;
+}
+
+@keyframes chatops-action-pulse {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(28, 88, 217, 0.4); }
+  70% { transform: scale(1.06); box-shadow: 0 0 0 10px rgba(28, 88, 217, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(28, 88, 217, 0); }
+}
+

@@ -15,6 +15,15 @@ import { escapeHtml } from '../src/utils/index.js';
 import { STORAGE_KEYS, MESSAGE_TYPES, CHATOPS_CONFIG, TABS } from '../src/constants.js';
 import { language, loadLanguage, applyI18n, setLanguage, getActiveLanguageCode } from '../src/lang.js';
 import { restoreState, setupAutoSave } from './persistence.js';
+import { startTour, checkAndAutoStartTour, setTargetTabId } from './tour.js';
+
+// Capture the Mattermost tab ID immediately — before any UI interaction
+// moves keyboard focus to the sidepanel and potentially confuses tab queries.
+if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.query) {
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    if (tabs && tabs[0]) setTargetTabId(tabs[0].id);
+  });
+}
 
 document.addEventListener('DOMContentLoaded', init);
 
@@ -85,16 +94,8 @@ async function init() {
   setupAutoSave(selectors);
   setupStateHandlers();
 
-  // Show guide modal automatically for first-time installation
-  chrome.storage.local.get(['has_read_guide'], (res) => {
-    if (!res.has_read_guide) {
-      setTimeout(() => {
-        const helpBtn = document.getElementById('btnHeaderHelp');
-        if (helpBtn) helpBtn.click();
-        chrome.storage.local.set({ has_read_guide: true });
-      }, 800);
-    }
-  });
+  // Show interactive onboarding tour for first-time installation
+  checkAndAutoStartTour();
 }
 
 /**
@@ -385,6 +386,9 @@ function switchTab(id) {
     });
   }
 }
+
+// Expose switchTab globally for the tour engine
+window.switchTab = switchTab;
 
 /**
  * Handles tab switching UI logic
@@ -718,14 +722,11 @@ function setupStateHandlers() {
     });
   }
 
-  // Global system user guide help page listener (opens standalone docs-site in new tab)
+  // Help / Guide button — click to replay interactive tour
   const helpBtn = document.getElementById('btnHeaderHelp');
   if (helpBtn) {
     helpBtn.addEventListener('click', () => {
-      const activeLang = getActiveLanguageCode();
-      const baseUrl = CHATOPS_CONFIG.DOCS_SITE_URL;
-      const url = `${baseUrl}?lang=${activeLang}`;
-      chrome.tabs.create({ url });
+      startTour();
     });
   }
 
