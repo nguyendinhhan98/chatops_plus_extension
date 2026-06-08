@@ -96,6 +96,21 @@ export function setup(state) {
     }
   }
 
+  function clearReminderErrorHighlight() {
+    if (reminderRow) {
+      reminderRow.style.borderColor = '';
+      reminderRow.style.boxShadow = '';
+    }
+    const customSelect = presetSelect?.nextElementSibling;
+    if (customSelect && customSelect.classList.contains('custom-dropdown-container')) {
+      const toggleBtn = customSelect.querySelector('.custom-dropdown-toggle');
+      if (toggleBtn) {
+        toggleBtn.style.borderColor = '';
+        toggleBtn.style.boxShadow = '';
+      }
+    }
+  }
+
   let fpQuick = null;
   function initQuickFlatpickr(noCalendarMode = false) {
     if (fpQuick) {
@@ -110,6 +125,7 @@ export function setup(state) {
       dateFormat: noCalendarMode ? "H:i" : "Y-m-d H:i",
       onChange: function(selectedDates) {
         if (selectedDates.length > 0) {
+          clearReminderErrorHighlight();
           if (presetSelect) {
             presetSelect.value = '';
             const customSelect = presetSelect.nextElementSibling;
@@ -165,6 +181,7 @@ export function setup(state) {
 
   if (reminderRow && reminderInput) {
     reminderRow.addEventListener('click', (e) => {
+      clearReminderErrorHighlight();
       syncReminderDimming();
       if (e.target !== reminderInput && fpQuick) {
         fpQuick.open();
@@ -174,6 +191,7 @@ export function setup(state) {
 
   if (presetSelect && reminderInput) {
     presetSelect.addEventListener('change', () => {
+      clearReminderErrorHighlight();
       const val = presetSelect.value;
       if (!val) {
         syncReminderDimming();
@@ -191,6 +209,7 @@ export function setup(state) {
     const customSelect = presetSelect?.nextElementSibling;
     if (customSelect) {
       customSelect.addEventListener('click', () => {
+        clearReminderErrorHighlight();
         if (fpQuick) fpQuick.clear();
         syncReminderDimming();
       });
@@ -488,26 +507,13 @@ export function setup(state) {
       }
       const customSelect = presetSelect?.nextElementSibling;
       if (customSelect && customSelect.classList.contains('custom-dropdown-container')) {
-        customSelect.style.outline = '2px solid var(--danger)';
-        customSelect.style.borderRadius = '6px';
-      }
-      // Show error feedback
-      const errorMsg = language.taskReminderRequired || '⏰ Please set a reminder time before saving.';
-      if (typeof window.showErrorFeedback === 'function') {
-        window.showErrorFeedback(errorMsg);
-      } else {
-        alert(errorMsg);
-      }
-      // Clear highlight after 2s
-      setTimeout(() => {
-        if (reminderRow) {
-          reminderRow.style.borderColor = '';
-          reminderRow.style.boxShadow = '';
+        const toggleBtn = customSelect.querySelector('.custom-dropdown-toggle');
+        if (toggleBtn) {
+          toggleBtn.style.borderColor = 'var(--danger)';
+          toggleBtn.style.boxShadow = '0 0 0 2px rgba(208, 69, 76, 0.2)';
+          toggleBtn.style.transition = 'all 0.2s';
         }
-        if (customSelect && customSelect.classList.contains('custom-dropdown-container')) {
-          customSelect.style.outline = '';
-        }
-      }, 2000);
+      }
       return;
     }
 

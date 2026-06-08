@@ -2733,6 +2733,25 @@ function showToast(msg) {
       }
     }
 
+    function clearCqnReminderErrorHighlight() {
+      if (reminderRow) {
+        reminderRow.style.removeProperty('border-color');
+        reminderRow.style.removeProperty('box-shadow');
+      }
+      const customSelect = cqnReminderSelect?.nextElementSibling;
+      if (customSelect && customSelect.classList.contains('custom-dropdown-container')) {
+        const toggleBtn = customSelect.querySelector('.custom-dropdown-toggle');
+        if (toggleBtn) {
+          toggleBtn.style.removeProperty('border-color');
+          toggleBtn.style.removeProperty('box-shadow');
+        }
+      }
+      if (cqnReminderSelect) {
+        cqnReminderSelect.style.removeProperty('border-color');
+        cqnReminderSelect.style.removeProperty('box-shadow');
+      }
+    }
+
     let fpCqn = null;
     function initCqnFlatpickr(noCalendarMode = false) {
       if (fpCqn) {
@@ -2748,6 +2767,7 @@ function showToast(msg) {
         appendTo: reminderRow,
         onChange: function(selectedDates) {
           if (selectedDates.length > 0) {
+            clearCqnReminderErrorHighlight();
             if (cqnReminderSelect) {
               cqnReminderSelect.value = '';
               const customSelect = cqnReminderSelect.nextElementSibling;
@@ -2818,6 +2838,7 @@ function showToast(msg) {
     if (reminderRow) {
       reminderRow.addEventListener('click', (e) => {
         e.stopPropagation();
+        clearCqnReminderErrorHighlight();
         if (cqnReminderSelect) {
           cqnReminderSelect.value = '';
           const customSelect = cqnReminderSelect.nextElementSibling;
@@ -2840,6 +2861,7 @@ function showToast(msg) {
     const customSelect = cqnReminderSelect?.nextElementSibling;
     if (customSelect) {
       customSelect.addEventListener('click', () => {
+        clearCqnReminderErrorHighlight();
         if (fpCqn) fpCqn.clear();
         syncReminderDimming();
       });
@@ -2847,6 +2869,7 @@ function showToast(msg) {
 
     if (cqnReminderSelect && timeInput) {
       cqnReminderSelect.addEventListener('change', () => {
+        clearCqnReminderErrorHighlight();
         const val = cqnReminderSelect.value;
         if (!val) {
           syncReminderDimming();
@@ -3026,6 +3049,33 @@ function showToast(msg) {
       if (!isNaN(mins)) {
         reminderVal = formatDateTimeLocal(new Date(Date.now() + mins * 60 * 1000));
       }
+    }
+
+    // Validation: Require reminder time when creating a task
+    if (mode === 'task' && !reminderVal) {
+      const reminderRow = document.getElementById('cqnReminderRow');
+      const presetSelect = document.getElementById('cqnReminderSelect');
+
+      if (reminderRow) {
+        reminderRow.style.setProperty('border-color', '#dc2626', 'important');
+        reminderRow.style.setProperty('box-shadow', '0 0 0 2px rgba(220, 38, 38, 0.2)', 'important');
+        reminderRow.style.borderRadius = '6px';
+        reminderRow.style.transition = 'all 0.2s';
+      }
+      const customSelect = presetSelect?.nextElementSibling;
+      if (customSelect && customSelect.classList.contains('custom-dropdown-container')) {
+        const toggleBtn = customSelect.querySelector('.custom-dropdown-toggle');
+        if (toggleBtn) {
+          toggleBtn.style.setProperty('border-color', '#dc2626', 'important');
+          toggleBtn.style.setProperty('box-shadow', '0 0 0 2px rgba(220, 38, 38, 0.2)', 'important');
+          toggleBtn.style.transition = 'all 0.2s';
+        }
+      } else if (presetSelect) {
+        presetSelect.style.setProperty('border-color', '#dc2626', 'important');
+        presetSelect.style.setProperty('box-shadow', '0 0 0 2px rgba(220, 38, 38, 0.2)', 'important');
+        presetSelect.style.transition = 'all 0.2s';
+      }
+      return;
     }
 
     if (mode === 'task' && reminderVal && isRepeatDaily && reminderVal.length === 5 && reminderVal.includes(':')) {
