@@ -142,8 +142,8 @@ async function injectDynamicTheme() {
  */
 async function handleNotificationJump(postId, taskTeamName) {
   try {
-    await chrome.storage.local.set({ [STORAGE_KEYS.SIDEPANEL_TAB]: 'tasks' });
-    await chrome.runtime.sendMessage({ type: MESSAGE_TYPES.OPEN_SIDE_PANEL }).catch(() => {});
+    chrome.runtime.sendMessage({ type: MESSAGE_TYPES.OPEN_SIDE_PANEL }).catch(() => {});
+    chrome.storage.local.set({ [STORAGE_KEYS.SIDEPANEL_TAB]: 'tasks' });
     setTimeout(() => {
       chrome.runtime.sendMessage({ type: 'SWITCH_TAB', tab: 'tasks' }).catch(() => {});
     }, 150);
@@ -431,6 +431,7 @@ function showToast(msg) {
     setTimeout(() => t.remove(), 300);
   }, UI_CONFIG.TOAST_DURATION);
 }
+
 
 (async function () {
   // Inject bridge script to access React Fiber elements in page context
@@ -4205,6 +4206,7 @@ function showToast(msg) {
     injectImageButton();
     injectQuickNoteButtons();
   });
+
 
   /*
   // Safety net: periodic injection check every 3 seconds to handle React DOM recycling and page state changes

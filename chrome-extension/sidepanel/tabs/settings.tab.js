@@ -742,9 +742,28 @@ function setupEventListeners() {
       if (snoozeHint) {
         snoozeHint.innerHTML = language.taskReminderHint.replace('{minutes}', val);
       }
+
+      // Reschedule all pending (not done) task alarms with the new snooze interval
+      try {
+        const res = await chrome.storage.local.get(['memos']);
+        const memos = res['memos'] || [];
+        const pendingTasks = memos.filter(m => m.type === 'task' && !m.done && m.reminder);
+        for (const task of pendingTasks) {
+          const alarmInfo = await chrome.alarms.get(task.id);
+          if (alarmInfo) {
+            // Alarm exists — reschedule it with the new snooze interval from now
+            chrome.alarms.clear(task.id);
+            chrome.alarms.create(task.id, { delayInMinutes: val });
+          }
+        }
+      } catch (err) {
+        console.warn('[ChatOps Ext] Failed to reschedule alarms after snooze change:', err);
+      }
+
       showAutoSaveFeedback();
     });
   }
+
 
   const giphyApiKeyInput = document.getElementById('settingGiphyApiKey');
   if (giphyApiKeyInput) {

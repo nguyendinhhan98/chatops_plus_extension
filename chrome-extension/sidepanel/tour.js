@@ -18,6 +18,7 @@ let isActive = false;
 let spotlightedEl = null;
 let spotlightRect = null; // tight rect used for spotlight (may differ from full element rect)
 let targetTabId = null;   // Mattermost tab ID captured before sidepanel takes focus
+let updateLoopTimer = null; // requestAnimationFrame timer for continuous spotlight updates
 
 // ---------------------------------------------------------------------------
 // Tour step definitions (22 steps)
@@ -365,6 +366,10 @@ export function startTour() {
 
 export function stopTour() {
   isActive = false;
+  if (updateLoopTimer) {
+    cancelAnimationFrame(updateLoopTimer);
+    updateLoopTimer = null;
+  }
   closeModalIfOpen();
   clearSpotlight();
   resetTooltipLayer();
@@ -435,6 +440,8 @@ async function showStep(index) {
   } else if (el) {
     restoreOverlay();
     resetTooltipLayer();
+    spotlightedEl = el;
+    startSpotlightUpdateLoop(800);
     applySpotlight(el);
     positionTooltip(el, true);
   } else {
@@ -555,6 +562,35 @@ function clearSpotlight() {
   }
   spotlightedEl = null;
   spotlightRect = null;
+}
+
+/**
+ * Starts a requestAnimationFrame loop to continuously update the spotlight
+ * coordinates while CSS accordion transitions and smooth scrolling are animating.
+ */
+function startSpotlightUpdateLoop(duration = 800) {
+  if (updateLoopTimer) {
+    cancelAnimationFrame(updateLoopTimer);
+  }
+
+  const startTime = performance.now();
+
+  function loop(now) {
+    if (!isActive) return;
+
+    if (spotlightedEl) {
+      applySpotlight(spotlightedEl);
+      positionTooltip(spotlightedEl, false);
+    }
+
+    if (now - startTime < duration) {
+      updateLoopTimer = requestAnimationFrame(loop);
+    } else {
+      updateLoopTimer = null;
+    }
+  }
+
+  updateLoopTimer = requestAnimationFrame(loop);
 }
 
 // ---------------------------------------------------------------------------

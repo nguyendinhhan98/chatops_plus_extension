@@ -91,6 +91,7 @@ const en = {
   taskReminderHint: '⏰ Starts at selected time — snoozes every {minutes} mins until completed (<a href="#" class="settings-subtab-link" data-subtab="features-snooze" style="color: var(--accent); font-weight: 700; text-decoration: underline;">change in Settings</a>)',
   taskAddBtn: 'Add Task',
   taskEmptyError: 'Task content cannot be empty.',
+  taskReminderRequired: '⏰ Please set a reminder time ("Remind" or "Remind in") before saving the task.',
   noCompletedTasks: 'No completed tasks yet.',
   changeReminderTime: 'Change reminder time',
   editTask: 'Edit Task',
@@ -693,14 +694,14 @@ const en = {
   tourStep2Title: '🎯 Tasks — Manage your work',
   tourStep2Desc: 'Track daily to-dos. Pin any ChatOps message as a task with one hover-click.<br><br>💡 <strong>Pro tip:</strong> Double-click this tab to open the Add Task modal!',
 
-  tourStep3Title: 'Tasks Management',
-  tourStep3Desc: 'Organize your tasks with checkboxes, notes, and reminders to keep track of your progress.',
+  tourStep3Title: 'Create Tasks',
+  tourStep3Desc: 'Create the tasks you want to track and get reminded about at the time you set.',
 
   tourStep4Title: '📒 Notes — Capture ideas',
   tourStep4Desc: 'Save ideas or important ChatOps messages as personal notes. Organize them with custom categories.<br><br>💡 <strong>Pro tip:</strong> Double-click this tab to open the Add Note modal!',
 
-  tourStep5Title: 'Notes Capture',
-  tourStep5Desc: 'Keep your notes organized by category so you can search and reference them later.',
+  tourStep5Title: 'Create Notes',
+  tourStep5Desc: 'Create personal notes by category so you can easily search and reference them later.',
 
   tourStep6Title: '🔔 Missed Messages — Track @mentions',
   tourStep6Desc: 'Never miss an @mention again! Scan channels for messages you have not reacted or replied to.<br><br>💡 <strong>Pro tip:</strong> Double-click this tab to open the scan filters modal!',
@@ -844,6 +845,7 @@ const vi = {
   taskReminderHint: '⏰ Bắt đầu lúc thời gian đã chọn — nhắc lại mỗi {minutes} phút cho đến khi hoàn thành (<a href="#" class="settings-subtab-link" data-subtab="features-snooze" style="color: var(--accent); font-weight: 700; text-decoration: underline;">thay đổi trong Cài đặt</a>)',
   taskAddBtn: 'Thêm công việc',
   taskEmptyError: 'Nội dung công việc không được để trống.',
+  taskReminderRequired: '⏰ Vui lòng chọn thời gian nhắc nhở ("Nhắc" hoặc "Nhắc sau") trước khi lưu công việc.',
   noCompletedTasks: 'Chưa có công việc hoàn thành nào.',
   changeReminderTime: 'Thay đổi thời gian nhắc nhở',
   editTask: 'Sửa công việc',
@@ -1147,10 +1149,10 @@ const vi = {
   floatingButtonsDesc: 'Nút tương tác nhanh & vị trí hiển thị',
   floatingQuickTask: 'Nút tạo công việc nhanh (🎯)',
   floatingQuickNote: 'Nút tạo ghi chú nhanh (📒)',
-  floatingSpamReactions: 'Nút Spam & Revert reaction (🔥/↩️ )',
-  floatingImagePicker: 'Nút Gửi ảnh trong khung chat (🖼️)',
-  floatingQuickReply: 'Nút Phản hồi nhanh (@) (💬)',
-  floatingQuickCopy: 'Nút Sao chép nhanh tin nhắn (📋)',
+  floatingSpamReactions: 'Nút spam & revert reaction (🔥/↩️ )',
+  floatingImagePicker: 'Nút gửi ảnh trong khung chat (🖼️)',
+  floatingQuickReply: 'Nút phản hồi nhanh (@) (💬)',
+  floatingQuickCopy: 'Nút sao chép nhanh tin nhắn (📋)',
   quickReplyBtnTooltip: 'Phản hồi nhanh (@)',
   quickCopyBtnTooltip: 'Sao chép nhanh tin nhắn',
   copiedToClipboard: 'Đã sao chép tin nhắn vào clipboard!',
@@ -1444,14 +1446,14 @@ const vi = {
   tourStep2Title: '🎯 Công việc — Quản lý task',
   tourStep2Desc: 'Theo dõi công việc hàng ngày. Ghim tin nhắn ChatOps thành task chỉ với một hover-click.<br><br>💡 <strong>Mẹo:</strong> Bạn có thể click đúp (double-click) vào tab này để mở modal tạo công việc!',
 
-  tourStep3Title: 'Quản lý công việc',
-  tourStep3Desc: 'Tổ chức và quản lý các công việc cần làm, giúp bạn theo dõi tiến độ một cách hiệu quả nhất.',
+  tourStep3Title: 'Tạo công việc',
+  tourStep3Desc: 'Tạo công việc mà bạn muốn theo dõi và nhắc nhở theo thời gian đã thiết lập',
 
   tourStep4Title: '📒 Ghi chú — Lưu ý tưởng',
   tourStep4Desc: 'Lưu ý tưởng hoặc tin nhắn quan trọng dưới dạng ghi chú cá nhân. Phân loại theo danh mục tuỳ chỉnh.<br><br>💡 <strong>Mẹo:</strong> Bạn có thể click đúp (double-click) vào tab này để mở modal tạo ghi chú!',
 
-  tourStep5Title: 'Lưu trữ ghi chú',
-  tourStep5Desc: 'Lưu trữ các ghi chú cá nhân theo danh mục, giúp bạn dễ dàng tìm kiếm và tra cứu lại sau này.',
+  tourStep5Title: 'Tạo ghi chú',
+  tourStep5Desc: 'Tạo các ghi chú cá nhân theo danh mục, giúp bạn dễ dàng tìm kiếm và tra cứu lại sau này.',
 
   tourStep6Title: '🔔 Tin nhắn bỏ lỡ — Theo dõi @mention',
   tourStep6Desc: 'Không bỏ sót @mention nào nữa! Quét kênh để tìm tin nhắn chưa phản hồi hoặc chưa react.<br><br>💡 <strong>Mẹo:</strong> Bạn có thể click đúp (double-click) vào tab này để mở modal quét tin nhắn!',

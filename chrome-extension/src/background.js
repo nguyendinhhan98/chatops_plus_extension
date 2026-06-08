@@ -100,7 +100,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   switch (message.type) {
     case MESSAGE_TYPES.OPEN_SIDE_PANEL:
       if (chrome.sidePanel && tabId) {
-        chrome.sidePanel.open({ tabId });
+        chrome.sidePanel.setOptions({
+          tabId,
+          path: 'sidepanel/sidepanel.html',
+          enabled: true
+        });
+        chrome.sidePanel.open({ tabId }).catch((err) => {
+          console.error('[ChatOps Ext] sidePanel.open failed in message handler:', err);
+        });
       }
       sendResponse({ ok: true });
       break;

@@ -477,6 +477,40 @@ export function setup(state) {
       }
     }
 
+    // Bắt buộc phải chọn thời gian nhắc nhở
+    if (!reminderVal) {
+      // Highlight both reminder inputs to guide user
+      if (reminderRow) {
+        reminderRow.style.borderColor = 'var(--danger)';
+        reminderRow.style.boxShadow = '0 0 0 2px rgba(231, 76, 60, 0.2)';
+        reminderRow.style.borderRadius = '6px';
+        reminderRow.style.transition = 'all 0.2s';
+      }
+      const customSelect = presetSelect?.nextElementSibling;
+      if (customSelect && customSelect.classList.contains('custom-dropdown-container')) {
+        customSelect.style.outline = '2px solid var(--danger)';
+        customSelect.style.borderRadius = '6px';
+      }
+      // Show error feedback
+      const errorMsg = language.taskReminderRequired || '⏰ Please set a reminder time before saving.';
+      if (typeof window.showErrorFeedback === 'function') {
+        window.showErrorFeedback(errorMsg);
+      } else {
+        alert(errorMsg);
+      }
+      // Clear highlight after 2s
+      setTimeout(() => {
+        if (reminderRow) {
+          reminderRow.style.borderColor = '';
+          reminderRow.style.boxShadow = '';
+        }
+        if (customSelect && customSelect.classList.contains('custom-dropdown-container')) {
+          customSelect.style.outline = '';
+        }
+      }, 2000);
+      return;
+    }
+
     if (reminderVal && isRepeatDaily && reminderVal.length === 5 && reminderVal.includes(':')) {
       const today = new Date();
       const parts = reminderVal.split(':');

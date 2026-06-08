@@ -27,6 +27,17 @@ export function setupSidePanel() {
       updatePanelVisibility(activeInfo.tabId, tab.url);
     } catch (e) {}
   });
+
+  // Query and initialize visibility for all existing tabs on load
+  chrome.tabs.query({}, (tabs) => {
+    if (tabs && tabs.length > 0) {
+      for (const tab of tabs) {
+        if (tab.id && tab.url) {
+          updatePanelVisibility(tab.id, tab.url);
+        }
+      }
+    }
+  });
 }
 
 /**
@@ -49,23 +60,35 @@ export async function updatePanelVisibility(tabId, url) {
  * Toggles side panel open/close
  * @param {number} tabId 
  */
-export async function toggleSidePanel(tabId) {
+export function toggleSidePanel(tabId) {
   const currentState = sidePanelState.get(tabId) || 'CLOSED';
   
   if (currentState === 'CLOSED') {
     try {
-      await chrome.sidePanel.open({ tabId });
-      sidePanelState.set(tabId, 'OPEN');
-      chrome.tabs.sendMessage(tabId, { type: MESSAGE_TYPES.SIDE_PANEL_UPDATE, state: 'OPEN' });
+      chrome.sidePanel.setOptions({
+        tabId,
+        path: 'sidepanel/sidepanel.html',
+        enabled: true
+      });
+      chrome.sidePanel.open({ tabId })
+        .then(() => {
+          sidePanelState.set(tabId, 'OPEN');
+          chrome.tabs.sendMessage(tabId, { type: MESSAGE_TYPES.SIDE_PANEL_UPDATE, state: 'OPEN' });
+        })
+        .catch((err) => {
+          console.error('[ChatOps Ext] sidePanel.open failed:', err);
+        });
     } catch (err) {
-      console.error('[ChatOps Ext] sidePanel.open failed:', err);
+      console.error('[ChatOps Ext] sidePanel.open exception:', err);
     }
   } else {
     try {
-      await chrome.sidePanel.setOptions({ tabId, enabled: false });
-      await chrome.sidePanel.setOptions({ tabId, enabled: true, path: 'sidepanel/sidepanel.html' });
-      sidePanelState.set(tabId, 'CLOSED');
-      chrome.tabs.sendMessage(tabId, { type: MESSAGE_TYPES.SIDE_PANEL_UPDATE, state: 'CLOSED' });
+      chrome.sidePanel.setOptions({ tabId, enabled: false }).then(() => {
+        chrome.sidePanel.setOptions({ tabId, enabled: true, path: 'sidepanel/sidepanel.html' }).then(() => {
+          sidePanelState.set(tabId, 'CLOSED');
+          chrome.tabs.sendMessage(tabId, { type: MESSAGE_TYPES.SIDE_PANEL_UPDATE, state: 'CLOSED' });
+        }).catch(() => {});
+      }).catch(() => {});
     } catch (err) {
       console.error('[ChatOps Ext] sidePanel toggle close failed:', err);
     }
