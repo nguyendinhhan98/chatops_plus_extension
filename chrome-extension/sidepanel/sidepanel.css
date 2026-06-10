@@ -4213,3 +4213,181 @@ span.flatpickr-weekday {
 .tour-spotlight {
   /* Minimal style/no shadow or position change since we use clip-path and tourSpotlightBorder */
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   AI Summarize / Analyze Results
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* AI Summarize button on cards */
+.btn-ai-summarize:hover {
+  color: var(--accent) !important;
+  transform: scale(1.15);
+  background: var(--accent-dim) !important;
+}
+.btn-ai-summarize:active {
+  transform: scale(0.95);
+}
+
+/* AI Result Container */
+.ai-result-container {
+  margin-top: 10px;
+  margin-bottom: 4px;
+  border: 1px solid rgba(28, 88, 217, 0.18);
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(28, 88, 217, 0.03) 0%, rgba(147, 51, 234, 0.02) 100%);
+  overflow: hidden;
+  animation: ai-result-fade-in 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 12px rgba(28, 88, 217, 0.06);
+}
+
+@keyframes ai-result-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 800px;
+  }
+}
+
+/* AI Result Header */
+.ai-result-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(28, 88, 217, 0.05);
+  border-bottom: 1px solid rgba(28, 88, 217, 0.1);
+  flex-wrap: wrap;
+}
+
+.ai-result-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* AI Action Buttons Bar */
+.ai-result-actions-bar {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
+  justify-content: center;
+}
+
+.ai-action-btn {
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--bg-1);
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  outline: none;
+}
+
+.ai-action-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.ai-action-btn.active {
+  background: var(--accent);
+  color: #ffffff;
+  border-color: var(--accent);
+  box-shadow: 0 2px 6px rgba(28, 88, 217, 0.2);
+}
+
+/* Copy & Close buttons */
+.btn-ai-copy,
+.btn-ai-close {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-3);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  outline: none;
+  line-height: 1.4;
+}
+
+.btn-ai-copy:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.btn-ai-close:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.06);
+}
+
+/* AI Result Body */
+.ai-result-body {
+  padding: 12px;
+}
+
+.ai-result-text {
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--text-1);
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.ai-result-error {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #ef4444;
+  font-weight: 500;
+  padding: 4px 0;
+}
+
+/* Shimmer Loading Animation */
+.ai-loading-shimmer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shimmer-line {
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(90deg,
+    rgba(28, 88, 217, 0.06) 25%,
+    rgba(28, 88, 217, 0.12) 50%,
+    rgba(28, 88, 217, 0.06) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer-slide 1.5s ease-in-out infinite;
+  width: 100%;
+}
+
+.shimmer-line.short {
+  width: 60%;
+}
+
+.shimmer-line.medium {
+  width: 80%;
+}
+
+@keyframes shimmer-slide {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}

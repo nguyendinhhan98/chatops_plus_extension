@@ -10,6 +10,8 @@ import { formatRichText } from '../src/utils/formatter.js';
 // Global UI elements shared between the message listeners and page DOM
 let quickNotePopover = null;
 let quickNoteBackdrop = null;
+let aiModalBackdrop = null;
+let aiModalEl = null;
 let imagePickerEl = null;
 let observer = null;
 let globalInsertImageToChat = null;
@@ -3129,13 +3131,16 @@ function showToast(msg) {
     spamEnabled: true,
     memeEnabled: true,
     showTabs: { search: true, tasks: true, notes: true, missed: true, reactions: true },
-    floatingButtons: { quickNote: true, quickTask: true, spamReactions: false, imagePicker: true, quickReply: true, quickCopy: true },
+    floatingButtons: { quickNote: true, quickTask: true, spamReactions: false, imagePicker: true, quickReply: true, quickCopy: true, aiSummarize: true },
     spamEmojis: ['thumbsup', 'heart', 'fire', 'rocket', 'tada', 'laughing', 'smile', 'wink', 'heart_eyes', 'kissing_heart'],
     tabsCompactMode: false,
     snoozeMinutes: 5,
     notificationPosition: 'center',
     notificationAnimation: 'shake-continuous',
-    notificationSize: 'medium'
+    notificationSize: 'medium',
+    aiProvider: 'gemini',
+    geminiApiKey: '',
+    aiCustomPrompt: ''
   };
   let cachedSettings = { ...DEFAULT_SETTINGS };
   let cachedMemos = [];
@@ -3217,13 +3222,14 @@ function showToast(msg) {
     });
 
     const showTabs = cachedSettings.showTabs || { search: true, tasks: true, notes: true, missed: true, reactions: true };
-    const floatingButtons = cachedSettings.floatingButtons || { quickNote: true, quickTask: true, spamReactions: true, reactAlong: false, imagePicker: true, quickReply: false, quickCopy: false };
+    const floatingButtons = cachedSettings.floatingButtons || { quickNote: true, quickTask: true, spamReactions: true, reactAlong: false, imagePicker: true, quickReply: false, quickCopy: false, aiSummarize: true };
     const tasksEnabled = floatingButtons.quickTask !== false;
     const notesEnabled = floatingButtons.quickNote !== false;
     const spamEnabled = floatingButtons.spamReactions !== false;
     const reactAlongEnabled = floatingButtons.reactAlong !== false;
     const replyEnabled = floatingButtons.quickReply !== false;
     const copyEnabled = floatingButtons.quickCopy !== false;
+    const aiSummarizeEnabled = floatingButtons.aiSummarize !== false;
 
     if (!tasksEnabled) {
       document.querySelectorAll('.chatops-action-group .chatops-quick-note-btn.task-btn').forEach(el => el.remove());
@@ -3236,6 +3242,9 @@ function showToast(msg) {
     }
     if (!copyEnabled) {
       document.querySelectorAll('.chatops-action-group .chatops-quick-note-btn.quick-copy-btn').forEach(el => el.remove());
+    }
+    if (!aiSummarizeEnabled) {
+      document.querySelectorAll('.chatops-action-group .chatops-quick-note-btn.ai-summarize-btn').forEach(el => el.remove());
     }
     if (!spamEnabled) {
       document.querySelectorAll('.chatops-action-group .chatops-quick-note-btn.spam-btn, .chatops-action-group .chatops-quick-note-btn.retract-btn').forEach(el => el.remove());
@@ -3598,7 +3607,7 @@ function showToast(msg) {
     }
     
     const showTabs = cachedSettings.showTabs || { search: true, tasks: true, notes: true, missed: true, reactions: true };
-    const floatingButtons = cachedSettings.floatingButtons || { quickNote: true, quickTask: true, spamReactions: true, reactAlong: false, imagePicker: true, quickReply: false, quickCopy: false };
+    const floatingButtons = cachedSettings.floatingButtons || { quickNote: true, quickTask: true, spamReactions: true, reactAlong: false, imagePicker: true, quickReply: false, quickCopy: false, aiSummarize: true };
     
     const isDemo = posts.some(p => p && p.classList && p.classList.contains('chatops-hover-active'));
     const tasksEnabled = isDemo || floatingButtons.quickTask !== false;
@@ -3607,6 +3616,7 @@ function showToast(msg) {
     const reactAlongEnabled = isDemo || floatingButtons.reactAlong !== false;
     const replyEnabled = isDemo || floatingButtons.quickReply !== false;
     const copyEnabled = isDemo || floatingButtons.quickCopy !== false;
+    const aiSummarizeEnabled = isDemo || floatingButtons.aiSummarize !== false;
 
     posts.forEach(postEl => {
       const postId = cleanPostId(postEl);
@@ -3833,6 +3843,24 @@ function showToast(msg) {
         }
       } else {
         chatopsGroup.querySelector('.chatops-quick-note-btn.quick-copy-btn')?.remove();
+      }
+
+      // Inject/Update AI Summarize button (🤖) if enabled
+      if (aiSummarizeEnabled) {
+        let aiBtn = chatopsGroup.querySelector('.chatops-quick-note-btn.ai-summarize-btn');
+        if (!aiBtn) {
+          aiBtn = document.createElement('button');
+          aiBtn.className = 'chatops-quick-note-btn ai-summarize-btn';
+          aiBtn.innerHTML = '🤖';
+          aiBtn.title = language.aiSummarizeTooltip || 'Tóm tắt nội dung AI';
+          aiBtn.addEventListener('click', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            showAiSummarizeMenu(postEl, aiBtn);
+          });
+          chatopsGroup.appendChild(aiBtn);
+        }
+      } else {
+        chatopsGroup.querySelector('.chatops-quick-note-btn.ai-summarize-btn')?.remove();
       }
 
           // Remove delete association button (🗑️) as it is no longer needed on ChatOps
@@ -4247,6 +4275,310 @@ function showToast(msg) {
       visiblePost.scrollIntoView({ behavior: 'smooth', block: 'center' });
     } catch (e) {
       // Ignore
+    }
+  }
+
+  function showAiSummarizeMenu(postEl, aiBtn) {
+    const existing = document.querySelector('.chatops-ai-dropdown');
+    if (existing) existing.remove();
+
+    const dropdown = document.createElement('div');
+    dropdown.className = 'chatops-ai-dropdown';
+
+    const options = [
+      {
+        text: language.aiOptionWholeThread || 'Tóm tắt toàn bộ thread',
+        icon: '💬',
+        action: 'thread'
+      },
+      {
+        text: language.aiOptionJustMessage || 'Chỉ tin nhắn đang chọn',
+        icon: '📝',
+        action: 'post'
+      }
+    ];
+
+    options.forEach(opt => {
+      const item = document.createElement('button');
+      item.className = 'chatops-ai-dropdown-item';
+      item.innerHTML = `<span>${opt.icon}</span> <span>${opt.text}</span>`;
+      item.addEventListener('click', (e) => {
+        e.preventDefault(); e.stopPropagation();
+        dropdown.remove();
+        processAiSummarize(postEl, opt.action);
+      });
+      dropdown.appendChild(item);
+    });
+
+    document.body.appendChild(dropdown);
+
+    const rect = aiBtn.getBoundingClientRect();
+    const dropdownHeight = 76;
+    const dropdownWidth = 190;
+    
+    let top = rect.bottom + window.scrollY;
+    let left = rect.left + window.scrollX - dropdownWidth + rect.width;
+
+    if (rect.bottom + dropdownHeight > window.innerHeight) {
+      top = rect.top + window.scrollY - dropdownHeight - 5;
+    }
+    if (left < 0) left = 5;
+
+    dropdown.style.top = `${top}px`;
+    dropdown.style.left = `${left}px`;
+
+    const clickOutside = (e) => {
+      if (!dropdown.contains(e.target) && e.target !== aiBtn) {
+        dropdown.remove();
+        document.removeEventListener('click', clickOutside);
+      }
+    };
+    setTimeout(() => {
+      document.addEventListener('click', clickOutside);
+    }, 50);
+  }
+
+  function showAiResultModal(initialTitle, initialContent, isError = false, needApiKeyWarning = false) {
+    if (!aiModalBackdrop) {
+      aiModalBackdrop = document.createElement('div');
+      aiModalBackdrop.id = 'chatops-ai-backdrop';
+      aiModalBackdrop.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.45); backdrop-filter: blur(4px); z-index: 999998; display: none; transition: opacity 0.2s ease;';
+      document.body.appendChild(aiModalBackdrop);
+    }
+    if (!aiModalEl) {
+      aiModalEl = document.createElement('div');
+      aiModalEl.id = 'chatops-ai-modal';
+      aiModalEl.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.95); width: 90%; max-width: 550px; background: #ffffff; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.04); z-index: 999999; display: none; flex-direction: column; overflow: hidden; font-family: inherit; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); opacity: 0;';
+      document.body.appendChild(aiModalEl);
+    }
+
+    aiModalEl.innerHTML = `
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid #cbd5e1; background: #f8fafc;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 18px;">🤖</span>
+          <span id="chatops-ai-modal-title" style="font-weight: 700; font-size: 15px; color: #1e293b;">${initialTitle}</span>
+        </div>
+        <button id="chatops-ai-modal-close" style="background: none; border: none; font-size: 20px; color: #94a3b8; cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; line-height: 1;">&times;</button>
+      </div>
+      <div style="padding: 20px; max-height: 380px; overflow-y: auto; box-sizing: border-box; background: #ffffff; color: #334155; line-height: 1.6; font-size: 13.5px;">
+        <div id="chatops-ai-modal-body-content" style="white-space: pre-wrap; word-break: break-word;"></div>
+      </div>
+      <div id="chatops-ai-modal-footer" style="padding: 12px 20px; border-top: 1px solid #e2e8f0; background: #f8fafc; display: flex; align-items: center; justify-content: flex-end; gap: 10px;">
+        <button id="chatops-ai-modal-copy" style="display: none; padding: 8px 16px; font-size: 12.5px; font-weight: 600; color: #ffffff; background: #1c58d9; border: none; border-radius: 6px; cursor: pointer; transition: background 0.15s ease;">📋 ${language.copy || 'Sao chép'}</button>
+        <button id="chatops-ai-modal-btn-close" style="padding: 8px 16px; font-size: 12.5px; font-weight: 600; color: #475569; background: #e2e8f0; border: none; border-radius: 6px; cursor: pointer; transition: background 0.15s ease;">${language.cancel || 'Đóng'}</button>
+      </div>
+    `;
+
+    const bodyContent = aiModalEl.querySelector('#chatops-ai-modal-body-content');
+    const titleEl = aiModalEl.querySelector('#chatops-ai-modal-title');
+    const closeBtn = aiModalEl.querySelector('#chatops-ai-modal-close');
+    const footerCloseBtn = aiModalEl.querySelector('#chatops-ai-modal-btn-close');
+    const copyBtn = aiModalEl.querySelector('#chatops-ai-modal-copy');
+    
+    const hideModal = () => {
+      aiModalEl.style.transform = 'translate(-50%, -50%) scale(0.95)';
+      aiModalEl.style.opacity = '0';
+      aiModalBackdrop.style.opacity = '0';
+      setTimeout(() => {
+        aiModalEl.style.display = 'none';
+        aiModalBackdrop.style.display = 'none';
+      }, 200);
+    };
+
+    closeBtn.addEventListener('click', hideModal);
+    footerCloseBtn.addEventListener('click', hideModal);
+    aiModalBackdrop.addEventListener('click', hideModal);
+
+    if (initialContent === 'LOADING') {
+      bodyContent.innerHTML = `
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 20px 0;">
+          <div class="ai-spinner" style="width: 24px; height: 24px; border-width: 3px;"></div>
+          <div style="font-weight: 600; color: #475569; font-size: 13.5px;" id="ai-loading-text">${language.aiAnalyzing}</div>
+          <div class="ai-loading-shimmer" style="margin-top: 10px; width: 100%;">
+            <div class="shimmer-line long"></div>
+            <div class="shimmer-line medium" style="margin-top: 8px;"></div>
+            <div class="shimmer-line short" style="margin-top: 8px;"></div>
+          </div>
+        </div>
+      `;
+    } else {
+      if (isError) {
+        bodyContent.innerHTML = `
+          <div style="display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; padding: 10px 0;">
+            <span style="font-size: 36px;">⚠️</span>
+            <div style="font-weight: 600; color: #991b1b; font-size: 14px;">${initialContent}</div>
+            ${needApiKeyWarning ? `
+              <p style="margin: 4px 0 0 0; color: #64748b; font-size: 12.5px;">${language.aiApiKeyMissingError}</p>
+            ` : ''}
+          </div>
+        `;
+      } else {
+        bodyContent.textContent = initialContent;
+        copyBtn.style.display = 'block';
+        copyBtn.addEventListener('click', () => {
+          copyToClipboard(initialContent);
+          copyBtn.textContent = '✅ ' + (language.copiedToClipboard || 'Đã sao chép!');
+          setTimeout(() => {
+            copyBtn.innerHTML = `📋 ${language.copy || 'Sao chép'}`;
+          }, 2000);
+        });
+      }
+    }
+
+    aiModalBackdrop.style.display = 'block';
+    aiModalEl.style.display = 'flex';
+    aiModalEl.offsetHeight;
+    
+    aiModalBackdrop.style.opacity = '1';
+    aiModalEl.style.opacity = '1';
+    aiModalEl.style.transform = 'translate(-50%, -50%) scale(1)';
+
+    return {
+      updateContent: (content, isErr = false, apiKeyWarning = false) => {
+        if (isErr) {
+          bodyContent.innerHTML = `
+            <div style="display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; padding: 10px 0;">
+              <span style="font-size: 36px;">⚠️</span>
+              <div style="font-weight: 600; color: #991b1b; font-size: 14px;">${content}</div>
+              ${apiKeyWarning ? `
+                <p style="margin: 4px 0 0 0; color: #64748b; font-size: 12.5px;">${language.aiApiKeyMissingError}</p>
+              ` : ''}
+            </div>
+          `;
+          copyBtn.style.display = 'none';
+        } else {
+          bodyContent.textContent = content;
+          copyBtn.style.display = 'block';
+          const newCopyBtn = copyBtn.cloneNode(true);
+          copyBtn.replaceWith(newCopyBtn);
+          newCopyBtn.addEventListener('click', () => {
+            copyToClipboard(content);
+            newCopyBtn.textContent = '✅ ' + (language.copiedToClipboard || 'Đã sao chép!');
+            setTimeout(() => {
+              newCopyBtn.innerHTML = `📋 ${language.copy || 'Sao chép'}`;
+            }, 2000);
+          });
+        }
+      },
+      updateTitle: (title) => {
+        titleEl.textContent = title;
+      }
+    };
+  }
+
+  async function processAiSummarize(postEl, action) {
+    const postId = cleanPostId(postEl);
+    if (!postId && !postEl.classList.contains('chatops-hover-active')) {
+      showToast('Không tìm thấy ID bài viết!');
+      return;
+    }
+
+    const apiKey = cachedSettings.geminiApiKey ? cachedSettings.geminiApiKey.trim() : '';
+    if (!apiKey) {
+      showAiResultModal(
+        language.aiSummarizeTooltip || 'AI Summarize',
+        'API Key is missing or invalid',
+        true,
+        true
+      );
+      return;
+    }
+
+    const modal = showAiResultModal(
+      action === 'thread' ? (language.aiOptionWholeThread || 'Tóm tắt toàn bộ thread') : (language.aiOptionJustMessage || 'Chỉ tin nhắn đang chọn'),
+      'LOADING'
+    );
+
+    try {
+      let textContent = '';
+      let authorName = '';
+      let mentions = [];
+
+      if (action === 'post') {
+        const msgBodyEl = postEl.querySelector('.post-message__text, .post__body p, [class*="post-message"]');
+        textContent = msgBodyEl ? msgBodyEl.innerText.trim() : '';
+        
+        const username = await getPostUsername(postEl);
+        authorName = username ? `@${username}` : '';
+        
+        const mentionsMatch = textContent.match(/@[a-zA-Z0-9_.-]+/g);
+        if (mentionsMatch) {
+          mentions = [...new Set(mentionsMatch)];
+        }
+      } else {
+        const response = await new Promise((resolve) => {
+          chrome.runtime.sendMessage({
+            type: MESSAGE_TYPES.GET_POST_THREAD,
+            postId: postId
+          }, resolve);
+        });
+
+        if (!response || !response.ok) {
+          throw new Error(response?.error || 'Failed to fetch thread posts');
+        }
+
+        const threadPosts = Object.values(response.thread.posts).sort((a, b) => a.create_at - b.create_at);
+        const userMap = response.userMap || {};
+
+        if (threadPosts.length > 0) {
+          const rootUserId = threadPosts[0].user_id;
+          const rootUsername = userMap[rootUserId];
+          authorName = rootUsername ? `@${rootUsername}` : '';
+        }
+
+        const formattedLines = threadPosts.map(p => {
+          const author = userMap[p.user_id] ? `@${userMap[p.user_id]}` : `@user_${p.user_id.substring(0, 5)}`;
+          return `${author}: ${p.message}`;
+        });
+        textContent = formattedLines.join('\n');
+
+        threadPosts.forEach(p => {
+          const mentionsMatch = p.message.match(/@[a-zA-Z0-9_.-]+/g);
+          if (mentionsMatch) {
+            mentions.push(...mentionsMatch);
+          }
+        });
+        mentions = [...new Set(mentions)];
+      }
+
+      if (!textContent) {
+        throw new Error('Nội dung tin nhắn trống hoặc không thể phân tích!');
+      }
+
+      const promptTemplate = cachedSettings.aiCustomPrompt ? cachedSettings.aiCustomPrompt.trim() : '';
+      let promptText = '';
+      
+      const mentionStr = mentions.length > 0 ? mentions.join(', ') : '';
+      
+      if (promptTemplate) {
+        promptText = promptTemplate
+          .replace(/\{\{input\}\}/g, textContent)
+          .replace(/\{\{from\}\}/g, authorName)
+          .replace(/\{\{mention\}\}/g, mentionStr);
+      } else {
+        promptText = `Hãy tóm tắt và phân tích nội dung sau đây một cách ngắn gọn, súc tích.\nNội dung từ người dùng: ${authorName}\nĐược nhắc đến: ${mentionStr}\nNội dung cần tóm tắt:\n${textContent}`;
+      }
+
+      const aiResponse = await new Promise((resolve) => {
+        chrome.runtime.sendMessage({
+          type: MESSAGE_TYPES.CALL_AI,
+          prompt: promptText,
+          apiKey: apiKey,
+          provider: cachedSettings.aiProvider || 'gemini'
+        }, resolve);
+      });
+
+      if (!aiResponse || !aiResponse.ok) {
+        const isApiKeyErr = aiResponse?.error?.includes('AI_INVALID_KEY') || aiResponse?.error?.includes('401') || aiResponse?.error?.includes('400');
+        throw new Error(isApiKeyErr ? 'API Key is invalid' : (aiResponse?.error || 'AI request failed'));
+      }
+
+      modal.updateContent(aiResponse.result);
+
+    } catch (err) {
+      console.error('[ChatOps Ext] processAiSummarize error:', err);
+      const isApiKeyErr = err.message.includes('API Key is invalid') || err.message.includes('API_INVALID_KEY');
+      modal.updateContent(err.message, true, isApiKeyErr);
     }
   }
 

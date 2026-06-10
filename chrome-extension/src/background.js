@@ -2,7 +2,7 @@
  * Background Service Worker — ChatOps Chrome Extension
  */
 
-import { getConfig, getMyProfile, addPostReaction, deletePostReaction, deletePost, searchUsers, getUsersByIds, getPostReactions } from './api/index.js';
+import { getConfig, getMyProfile, addPostReaction, deletePostReaction, deletePost, searchUsers, getUsersByIds, getPostReactions, getPostThread, callAiProvider } from './api/index.js';
 import { syncCookies, setupCookieSync } from './background/cookie-sync.js';
 import { 
   handleMentionCheck, 
@@ -192,6 +192,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       handleResolveUserId(message.userId, sendResponse);
       return true;
 
+    case MESSAGE_TYPES.GET_POST_THREAD:
+      handleGetPostThread(message.postId, sendResponse);
+      return true;
+
+    case MESSAGE_TYPES.CALL_AI:
+      callAiProvider(message.prompt, message.apiKey, message.provider)
+        .then((result) => sendResponse({ ok: true, result }))
+        .catch((err) => sendResponse({ ok: false, error: err.message }));
+      return true;
+
     case MESSAGE_TYPES.TEST_NOTIFICATION:
       const testType = message.notificationType || 'both';
       loadLanguage().then(() => {
@@ -360,6 +370,48 @@ async function handleResolveUserId(userId, sendResponse) {
     }
   } catch (err) {
     console.error('[ChatOps Ext] handleResolveUserId error:', err);
+    sendResponse({ ok: false, error: err.message });
+  }
+}
+
+/**
+ * Fetches all posts in a thread and maps user IDs to usernames
+ */
+async function handleGetPostThread(postId, sendResponse) {
+  try {
+    if (!postId) {
+      sendResponse({ ok: false, error: 'Empty postId' });
+      return;
+    }
+    const thread = await getPostThread(postId);
+    if (!thread || !thread.posts) {
+      sendResponse({ ok: false, error: 'Thread not found' });
+      return;
+    }
+
+    // Collect all unique user IDs from the thread
+    const userIds = [...new Set(Object.values(thread.posts).map(p => p.user_id))].filter(Boolean);
+
+    // Fetch usernames for these user IDs
+    const userMap = {};
+    if (userIds.length > 0) {
+      try {
+        const users = await getUsersByIds(userIds);
+        if (Array.isArray(users)) {
+          users.forEach(u => {
+            if (u.id && u.username) {
+              userMap[u.id] = u.username;
+            }
+          });
+        }
+      } catch (err) {
+        console.warn('[ChatOps Ext] Failed to resolve user ids for thread:', err);
+      }
+    }
+
+    sendResponse({ ok: true, thread, userMap });
+  } catch (err) {
+    console.error('[ChatOps Ext] handleGetPostThread error:', err);
     sendResponse({ ok: false, error: err.message });
   }
 }

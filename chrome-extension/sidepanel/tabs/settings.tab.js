@@ -2,6 +2,7 @@ import { STORAGE_KEYS, CHATOPS_CONFIG, MESSAGE_TYPES, DEFAULT_MEMES } from '../.
 import { language, setLanguage, applyI18n } from '../../src/lang.js';
 import { getCustomEmojis, getConfig, searchCustomEmojis } from '../../src/api/index.js';
 import { needsChatOpsConversion, convertForChatOps } from '../../src/utils/imageConverter.js';
+import { validateAiApiKey } from '../../src/api/ai.js';
 
 let chatopsUrl = CHATOPS_CONFIG.DEFAULT_URL;
 const customEmojiMap = new Map();
@@ -252,7 +253,8 @@ const DEFAULT_SETTINGS = {
     reactAlong: false,
     imagePicker: true,
     quickReply: false,
-    quickCopy: false
+    quickCopy: false,
+    aiSummarize: true
   },
   memoCategories: ['General', 'Work'],
   spamEnabled: true,
@@ -268,7 +270,10 @@ const DEFAULT_SETTINGS = {
   customButtonsPosition: 'above',
   activeReactionGroupId: 0,
   reactionGroups: null,
-  reactAlongEnabled: false
+  reactAlongEnabled: false,
+  geminiApiKey: '',
+  aiProvider: 'gemini',
+  aiCustomPrompt: ''
 };
 
 /**
@@ -360,6 +365,17 @@ async function loadAndApplySettings() {
   const giphyApiKeyInput = document.getElementById('settingGiphyApiKey');
   if (giphyApiKeyInput) {
     giphyApiKeyInput.value = settings.giphyApiKey || '';
+  }
+
+  const aiProviderSelect = document.getElementById('settingAiProvider');
+  if (aiProviderSelect) {
+    aiProviderSelect.value = settings.aiProvider || 'gemini';
+  }
+  updateAiGuide(settings.aiProvider || 'gemini');
+
+  const geminiApiKeyInput = document.getElementById('settingGeminiApiKey');
+  if (geminiApiKeyInput) {
+    geminiApiKeyInput.value = settings.geminiApiKey || '';
   }
 
   const giphySizeSelect = document.getElementById('settingGiphySize');
@@ -466,6 +482,16 @@ async function loadAndApplySettings() {
   document.getElementById('settingFloatingImagePicker').checked = settings.floatingButtons?.imagePicker !== false;
   document.getElementById('settingFloatingQuickReply').checked = settings.floatingButtons?.quickReply !== false;
   document.getElementById('settingFloatingQuickCopy').checked = settings.floatingButtons?.quickCopy !== false;
+  
+  const settingFloatingAiSummarize = document.getElementById('settingFloatingAiSummarize');
+  if (settingFloatingAiSummarize) {
+    settingFloatingAiSummarize.checked = settings.floatingButtons?.aiSummarize !== false;
+  }
+
+  const settingAiCustomPrompt = document.getElementById('settingAiCustomPrompt');
+  if (settingAiCustomPrompt) {
+    settingAiCustomPrompt.value = settings.aiCustomPrompt || '';
+  }
 
   // Sync disabled/dimmed states
   updateFloatingCheckboxesSync(settings);
@@ -558,11 +584,17 @@ async function loadAndApplySettings() {
     window.convertToCustomDropdown('settingNotificationSize', '220px');
     window.convertToCustomDropdown('settingAppPadding', '200px');
     window.convertToCustomDropdown('settingCustomButtonsPosition', '180px');
+    window.convertToCustomDropdown('settingAiProvider', '220px');
   }
 
   // Validate Giphy API Key on load
   if (settings.giphyApiKey) {
     validateGiphyApiKey(settings.giphyApiKey);
+  }
+
+  // Validate Gemini API Key on load
+  if (settings.geminiApiKey) {
+    validateGeminiApiKey(settings.geminiApiKey);
   }
 }
 
@@ -596,6 +628,98 @@ async function validateGiphyApiKey(key) {
   } catch (err) {
     statusEl.setAttribute('data-i18n', 'giphyConnectionError');
     statusEl.textContent = language.giphyConnectionError;
+    statusEl.style.color = '#ef4444'; // Red
+  }
+}
+
+function updateAiGuide(provider) {
+  const container = document.getElementById('aiGuideContainer');
+  if (!container) return;
+
+  // Clear container
+  container.innerHTML = '';
+
+  let titleKey, noteKey, steps = [];
+  if (provider === 'groq') {
+    titleKey = 'aiGuideTitleGroq';
+    noteKey = 'aiGuideNoteGroq';
+    steps = ['aiGuideStep1Groq', 'aiGuideStep2Groq', 'aiGuideStep3Groq', 'aiGuideStep4Groq'];
+  } else if (provider === 'openrouter') {
+    titleKey = 'aiGuideTitleOpenrouter';
+    noteKey = 'aiGuideNoteOpenrouter';
+    steps = ['aiGuideStep1Openrouter', 'aiGuideStep2Openrouter', 'aiGuideStep3Openrouter', 'aiGuideStep4Openrouter'];
+  } else {
+    // Default to gemini
+    titleKey = 'aiGuideTitleGemini';
+    noteKey = 'aiGuideNoteGemini';
+    steps = ['aiGuideStep1Gemini', 'aiGuideStep2Gemini', 'aiGuideStep3Gemini', 'aiGuideStep4Gemini'];
+  }
+
+  // Create Header
+  const h3 = document.createElement('h3');
+  h3.className = 'settings-title';
+  h3.style.marginTop = '0';
+  h3.setAttribute('data-i18n', titleKey);
+  h3.textContent = language[titleKey] || '';
+  container.appendChild(h3);
+
+  // Create List
+  const ol = document.createElement('ol');
+  ol.style.margin = '0';
+  ol.style.paddingLeft = '18px';
+  ol.style.fontSize = '12.5px';
+  ol.style.color = 'var(--text-2)';
+  ol.style.lineHeight = '2';
+
+  steps.forEach(stepKey => {
+    const li = document.createElement('li');
+    li.setAttribute('data-i18n-html', stepKey);
+    li.innerHTML = language[stepKey] || '';
+    ol.appendChild(li);
+  });
+  container.appendChild(ol);
+
+  // Create Note Box
+  const infoBox = document.createElement('div');
+  infoBox.className = 'settings-info-box';
+  infoBox.style.marginTop = '10px';
+  infoBox.setAttribute('data-i18n-html', noteKey);
+  infoBox.innerHTML = language[noteKey] || '';
+  container.appendChild(infoBox);
+}
+
+async function validateGeminiApiKey(key) {
+  const statusEl = document.getElementById('settingGeminiApiKeyStatus');
+  if (!statusEl) return;
+
+  if (!key) {
+    statusEl.style.display = 'none';
+    statusEl.textContent = '';
+    statusEl.removeAttribute('data-i18n');
+    return;
+  }
+
+  statusEl.setAttribute('data-i18n', 'aiCheckingKey');
+  statusEl.textContent = language.aiCheckingKey;
+  statusEl.style.color = 'var(--text-3)';
+  statusEl.style.display = 'block';
+
+  try {
+    const settings = await getSettings();
+    const provider = settings.aiProvider || 'gemini';
+    const isValid = await validateAiApiKey(key, provider);
+    if (isValid) {
+      statusEl.setAttribute('data-i18n', 'aiValidKey');
+      statusEl.textContent = language.aiValidKey;
+      statusEl.style.color = '#10b981'; // Green
+    } else {
+      statusEl.setAttribute('data-i18n', 'aiInvalidKey');
+      statusEl.textContent = language.aiInvalidKey;
+      statusEl.style.color = '#ef4444'; // Red
+    }
+  } catch (err) {
+    statusEl.setAttribute('data-i18n', 'aiConnectionError');
+    statusEl.textContent = language.aiConnectionError;
     statusEl.style.color = '#ef4444'; // Red
   }
 }
@@ -772,6 +896,40 @@ function setupEventListeners() {
       await updateSettings({ giphyApiKey: val });
       showAutoSaveFeedback();
       validateGiphyApiKey(val);
+    });
+  }
+
+  const aiProviderSelect = document.getElementById('settingAiProvider');
+  if (aiProviderSelect) {
+    aiProviderSelect.addEventListener('change', async (e) => {
+      const val = e.target.value;
+      await updateSettings({ aiProvider: val });
+      showAutoSaveFeedback();
+      updateAiGuide(val);
+      
+      const geminiApiKeyInput = document.getElementById('settingGeminiApiKey');
+      if (geminiApiKeyInput) {
+        validateGeminiApiKey(geminiApiKeyInput.value.trim());
+      }
+    });
+  }
+
+  const geminiApiKeyInput = document.getElementById('settingGeminiApiKey');
+  if (geminiApiKeyInput) {
+    geminiApiKeyInput.addEventListener('change', async (e) => {
+      const val = e.target.value.trim();
+      await updateSettings({ geminiApiKey: val });
+      showAutoSaveFeedback();
+      validateGeminiApiKey(val);
+    });
+  }
+
+  const settingAiCustomPromptTextarea = document.getElementById('settingAiCustomPrompt');
+  if (settingAiCustomPromptTextarea) {
+    settingAiCustomPromptTextarea.addEventListener('change', async (e) => {
+      const val = e.target.value.trim();
+      await updateSettings({ aiCustomPrompt: val });
+      showAutoSaveFeedback();
     });
   }
 
@@ -1043,6 +1201,7 @@ function setupEventListeners() {
   bindFloatingToggle('settingFloatingImagePicker', 'imagePicker');
   bindFloatingToggle('settingFloatingQuickReply', 'quickReply');
   bindFloatingToggle('settingFloatingQuickCopy', 'quickCopy');
+  bindFloatingToggle('settingFloatingAiSummarize', 'aiSummarize');
 
   const btnTabStd = document.getElementById('emojiTabStandard');
   const btnTabCustom = document.getElementById('emojiTabCustom');
@@ -3076,7 +3235,8 @@ export function updateFloatingCheckboxesSync(settings) {
     { row: 'rowFloatingQuickNote', chk: 'settingFloatingQuickNote' },
     { row: 'rowFloatingSpamReactions', chk: 'settingFloatingSpamReactions' },
     { row: 'rowFloatingReactAlong', chk: 'settingReactAlongEnabled' },
-    { row: 'rowFloatingImagePicker', chk: 'settingFloatingImagePicker' }
+    { row: 'rowFloatingImagePicker', chk: 'settingFloatingImagePicker' },
+    { row: 'rowFloatingAiSummarize', chk: 'settingFloatingAiSummarize' }
   ];
   ids.forEach(({ row, chk }) => {
     const rowEl = document.getElementById(row);

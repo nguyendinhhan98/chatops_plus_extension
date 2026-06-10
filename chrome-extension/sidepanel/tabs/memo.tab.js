@@ -6,6 +6,7 @@
 import { escapeHtml, makePermalinkSync, formatRelativeTime, formatRichText } from '../../src/utils/index.js';
 import { CHATOPS_CONFIG, STORAGE_KEYS, TABS } from '../../src/constants.js';
 import { language } from '../../src/lang.js';
+import { summarizeText, analyzeText } from '../../src/api/ai.js';
 
 function getCategoryDisplayName(cat) {
   if (!cat) return '';
@@ -493,6 +494,43 @@ export function setup(state) {
         loadMemos();
       }
     }
+
+    // AI Summarize trigger
+    const btnAi = e.target.closest('.btn-ai-summarize');
+    if (btnAi) {
+      const id = btnAi.dataset.id;
+      handleAiSummarize(id, 'note');
+    }
+
+    // AI Action select
+    const aiActionBtn = e.target.closest('.ai-action-btn');
+    if (aiActionBtn) {
+      const id = aiActionBtn.dataset.id;
+      const action = aiActionBtn.dataset.action;
+      handleAiSummarize(id, 'note', action);
+    }
+
+    // AI Close result
+    if (e.target.closest('.btn-ai-close')) {
+      const container = e.target.closest('.ai-result-container');
+      if (container) container.remove();
+    }
+
+    // AI Copy result
+    const btnAiCopy = e.target.closest('.btn-ai-copy');
+    if (btnAiCopy) {
+      const container = btnAiCopy.closest('.ai-result-container');
+      const textEl = container?.querySelector('.ai-result-text');
+      if (textEl) {
+        try {
+          await navigator.clipboard.writeText(textEl.textContent);
+          const original = btnAiCopy.textContent;
+          btnAiCopy.textContent = '✓';
+          btnAiCopy.style.color = 'var(--success)';
+          setTimeout(() => { btnAiCopy.textContent = original; btnAiCopy.style.color = ''; }, 1500);
+        } catch {}
+      }
+    }
   });
 
   // Handle note category inline editing
@@ -657,6 +695,130 @@ export async function loadMemos() {
 }
 
 /**
+ * Handle AI Summarize/Analyze click
+ * @param {string} id - Item ID (Note ID or Post ID)
+ * @param {string} type - 'note' or 'post'
+ * @param {string} action - AI action type (summarize, actionItems, translate, rewrite)
+ */
+export async function handleAiSummarize(id, type = 'note', action = 'summarize') {
+  // Get API key
+  const res = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS, STORAGE_KEYS.MEMOS]);
+  const settings = res[STORAGE_KEYS.SETTINGS] || {};
+  const apiKey = settings.geminiApiKey;
+  const provider = settings.aiProvider || 'gemini';
+
+  if (!apiKey) {
+    if (typeof window.showErrorFeedback === 'function') {
+      window.showErrorFeedback(`${language.aiNoApiKey} ${language.aiNoApiKeySetup}`);
+    }
+    return;
+  }
+
+  // Get content to analyze
+  let content = '';
+  if (type === 'note') {
+    const memos = res[STORAGE_KEYS.MEMOS] || [];
+    const note = memos.find(m => m.id === id);
+    if (note) {
+      content = note.note || '';
+    }
+  } else if (type === 'post') {
+    const card = document.getElementById('item_' + id);
+    if (card) {
+      const bodyEl = card.querySelector('.post-body');
+      if (bodyEl) {
+        content = bodyEl.textContent || '';
+      }
+    }
+  }
+
+  if (!content.trim()) {
+    if (typeof window.showErrorFeedback === 'function') {
+      window.showErrorFeedback(language.aiEmptyResponse);
+    }
+    return;
+  }
+
+  // Find the card and show loading
+  const card = document.getElementById('item_' + id);
+  if (!card) return;
+
+  // Remove existing AI result if any
+  const existingResult = card.querySelector('.ai-result-container');
+  if (existingResult) existingResult.remove();
+
+  // Determine current language for AI output
+  const currentLang = settings.app_lang || 'vi';
+
+  // Create result container with loading state
+  const resultEl = document.createElement('div');
+  resultEl.className = 'ai-result-container';
+  resultEl.innerHTML = `
+    <div class="ai-result-header">
+      <span class="ai-result-label">${language.aiSummaryLabel}</span>
+      <div class="ai-result-actions-bar">
+        <button class="ai-action-btn ${action === 'summarize' ? 'active' : ''}" data-id="${id}" data-type="${type}" data-action="summarize">${language.aiActionSummarize}</button>
+        <button class="ai-action-btn ${action === 'actionItems' ? 'active' : ''}" data-id="${id}" data-type="${type}" data-action="actionItems">${language.aiActionItems}</button>
+        <button class="ai-action-btn ${action === 'translate' ? 'active' : ''}" data-id="${id}" data-type="${type}" data-action="translate">${language.aiActionTranslate}</button>
+        <button class="ai-action-btn ${action === 'rewrite' ? 'active' : ''}" data-id="${id}" data-type="${type}" data-action="rewrite">${language.aiActionRewrite}</button>
+      </div>
+      <div style="display:flex; gap:4px; align-items:center;">
+        <button class="btn-ai-copy" title="${language.aiCopyResult}">${language.aiCopyResult}</button>
+        <button class="btn-ai-close" title="${language.aiCloseResult}">✕</button>
+      </div>
+    </div>
+    <div class="ai-result-body">
+      <div class="ai-loading-shimmer">
+        <div class="shimmer-line"></div>
+        <div class="shimmer-line short"></div>
+        <div class="shimmer-line"></div>
+        <div class="shimmer-line medium"></div>
+      </div>
+    </div>
+  `;
+
+  // Insert after note content row or post body
+  const contentRow = card.querySelector('.note-content-row');
+  const postBody = card.querySelector('.post-body');
+  if (contentRow) {
+    contentRow.after(resultEl);
+  } else if (postBody) {
+    postBody.after(resultEl);
+  } else {
+    card.appendChild(resultEl);
+  }
+
+  // Call AI API
+  try {
+    let result;
+    if (action === 'summarize') {
+      result = await summarizeText(content, apiKey, currentLang, provider);
+    } else {
+      result = await analyzeText(content, apiKey, action, currentLang, provider);
+    }
+
+    // Replace loading with result
+    const bodyEl = resultEl.querySelector('.ai-result-body');
+    bodyEl.innerHTML = `<div class="ai-result-text">${escapeHtml(result).replace(/\n/g, '<br>')}</div>`;
+  } catch (err) {
+    const bodyEl = resultEl.querySelector('.ai-result-body');
+    let errorMsg = language.aiErrorGeneric;
+
+    if (err.message === 'AI_RATE_LIMIT') {
+      errorMsg = language.aiRateLimitError;
+    } else if (err.message === 'AI_INVALID_KEY') {
+      errorMsg = language.aiInvalidKey;
+    } else if (err.message === 'AI_FORBIDDEN') {
+      errorMsg = language.aiForbiddenError;
+    } else if (err.message === 'AI_EMPTY_RESPONSE') {
+      errorMsg = language.aiEmptyResponse;
+    }
+
+    bodyEl.innerHTML = `<div class="ai-result-error">${escapeHtml(errorMsg)}</div>`;
+  }
+}
+
+/**
  * Renders a note card component
  */
 function renderNoteCard(note, categories = ['General', 'Work']) {
@@ -720,6 +882,9 @@ function renderNoteCard(note, categories = ['General', 'Work']) {
         </div>
         <div class="memo-actions">
           ${permalink ? `<a href="${permalink}" class="post-jump-link" data-post-id="${note.postId || ''}" title="${language.memoViewOriginal}">↗</a>` : ''}
+          <button class="btn-ai-summarize" data-id="${note.id}" title="${language.aiSummarizeBtnTooltip || 'AI Summarize'}" style="background:none; border:none; padding:4px; cursor:pointer; color:var(--accent); display:inline-flex; align-items:center; justify-content:center; outline:none; transition: color 0.2s, transform 0.15s; margin:0; font-size:14px; border-radius:4px;">
+            <span style="pointer-events:none; font-size:14px;">🤖</span>
+          </button>
           <button class="btn-edit-memo" data-id="${note.id}" title="${language.editNote}">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none; opacity:0.85;">
               <path d="M12 20h9"></path>

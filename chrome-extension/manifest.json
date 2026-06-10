@@ -14,7 +14,10 @@
     "contextMenus"
   ],
   "host_permissions": [
-    "https://chat.runsystem.vn/*"
+    "https://chat.runsystem.vn/*",
+    "https://generativelanguage.googleapis.com/*",
+    "https://api.groq.com/*",
+    "https://openrouter.ai/*"
   ],
   "content_scripts": [
     {

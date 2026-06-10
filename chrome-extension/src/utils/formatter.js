@@ -136,8 +136,11 @@ export function renderPostList(posts, usersMap, baseUrl, teamName, channelsMap, 
           <span class="post-time" style="font-size:11px; color:var(--text-3); flex-shrink:0; margin-left:8px;">${formatUnixMsToVN(post.create_at)}</span>
         </div>
         <div class="post-body collapsible-body collapsed" style="margin-top:4px;">${contentHtml}</div>
-        <div class="post-actions">
+        <div class="post-actions" style="display: flex; gap: 6px; align-items: center;">
            <a href="${permalink}" class="post-jump-link" data-post-id="${post.id}" data-root-id="${post.root_id || ''}" title="${language.viewMessage}">↗</a>
+           <button class="btn-ai-summarize" data-id="${post.id}" data-type="post" title="${language.aiSummarizeBtnTooltip || 'AI Summarize'}" style="background:none; border:none; padding:4px; cursor:pointer; color:var(--accent); display:inline-flex; align-items:center; justify-content:center; outline:none; transition: color 0.2s, transform 0.15s; margin:0; font-size:14px; border-radius:4px;">
+             <span style="pointer-events:none; font-size:14px;">🤖</span>
+           </button>
         </div>
       </div>
     `;
@@ -221,8 +224,11 @@ export function renderMentionItem(post, author, permalink) {
         <span class="post-time" title="${formatUnixMsToVN(post.create_at)}" style="flex-shrink: 0; margin-left: 8px; font-size:11px; color:var(--text-3);">${formatRelativeTime(post.create_at)}</span>
       </div>
       <div class="post-body collapsible-body collapsed" style="margin-top:4px;">${escapedText}</div>
-      <div class="post-actions">
+      <div class="post-actions" style="display: flex; gap: 6px; align-items: center;">
         <a href="${permalink}" target="_blank" class="post-jump-link" data-post-id="${post.id}" data-root-id="${post.root_id || ''}" title="${language.openInChatOps || 'Open in ChatOps'}">↗</a>
+        <button class="btn-ai-summarize" data-id="${post.id}" data-type="post" title="${language.aiSummarizeBtnTooltip || 'AI Summarize'}" style="background:none; border:none; padding:4px; cursor:pointer; color:var(--accent); display:inline-flex; align-items:center; justify-content:center; outline:none; transition: color 0.2s, transform 0.15s; margin:0; font-size:14px; border-radius:4px;">
+          <span style="pointer-events:none; font-size:14px;">🤖</span>
+        </button>
       </div>
       <div class="mention-reactions-row" style="display: flex; gap: 8px; align-items: center; justify-content: flex-end; margin-top: 8px;">
         <button class="mention-react-btn" data-post-id="${post.id}" data-emoji="white_check_mark" title="React with :white_check_mark:">✅</button>
