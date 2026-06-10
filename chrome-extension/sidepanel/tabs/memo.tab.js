@@ -494,43 +494,6 @@ export function setup(state) {
         loadMemos();
       }
     }
-
-    // AI Summarize trigger
-    const btnAi = e.target.closest('.btn-ai-summarize');
-    if (btnAi) {
-      const id = btnAi.dataset.id;
-      handleAiSummarize(id, 'note');
-    }
-
-    // AI Action select
-    const aiActionBtn = e.target.closest('.ai-action-btn');
-    if (aiActionBtn) {
-      const id = aiActionBtn.dataset.id;
-      const action = aiActionBtn.dataset.action;
-      handleAiSummarize(id, 'note', action);
-    }
-
-    // AI Close result
-    if (e.target.closest('.btn-ai-close')) {
-      const container = e.target.closest('.ai-result-container');
-      if (container) container.remove();
-    }
-
-    // AI Copy result
-    const btnAiCopy = e.target.closest('.btn-ai-copy');
-    if (btnAiCopy) {
-      const container = btnAiCopy.closest('.ai-result-container');
-      const textEl = container?.querySelector('.ai-result-text');
-      if (textEl) {
-        try {
-          await navigator.clipboard.writeText(textEl.textContent);
-          const original = btnAiCopy.textContent;
-          btnAiCopy.textContent = '✓';
-          btnAiCopy.style.color = 'var(--success)';
-          setTimeout(() => { btnAiCopy.textContent = original; btnAiCopy.style.color = ''; }, 1500);
-        } catch {}
-      }
-    }
   });
 
   // Handle note category inline editing
@@ -704,8 +667,15 @@ export async function handleAiSummarize(id, type = 'note', action = 'summarize')
   // Get API key
   const res = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS, STORAGE_KEYS.MEMOS]);
   const settings = res[STORAGE_KEYS.SETTINGS] || {};
-  const apiKey = settings.geminiApiKey;
   const provider = settings.aiProvider || 'gemini';
+  let apiKey = '';
+  if (provider === 'gemini') {
+    apiKey = settings.geminiApiKey;
+  } else if (provider === 'groq') {
+    apiKey = settings.groqApiKey;
+  } else if (provider === 'openrouter') {
+    apiKey = settings.openrouterApiKey;
+  }
 
   if (!apiKey) {
     if (typeof window.showErrorFeedback === 'function') {
@@ -882,9 +852,6 @@ function renderNoteCard(note, categories = ['General', 'Work']) {
         </div>
         <div class="memo-actions">
           ${permalink ? `<a href="${permalink}" class="post-jump-link" data-post-id="${note.postId || ''}" title="${language.memoViewOriginal}">↗</a>` : ''}
-          <button class="btn-ai-summarize" data-id="${note.id}" title="${language.aiSummarizeBtnTooltip || 'AI Summarize'}" style="background:none; border:none; padding:4px; cursor:pointer; color:var(--accent); display:inline-flex; align-items:center; justify-content:center; outline:none; transition: color 0.2s, transform 0.15s; margin:0; font-size:14px; border-radius:4px;">
-            <span style="pointer-events:none; font-size:14px;">🤖</span>
-          </button>
           <button class="btn-edit-memo" data-id="${note.id}" title="${language.editNote}">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none; opacity:0.85;">
               <path d="M12 20h9"></path>

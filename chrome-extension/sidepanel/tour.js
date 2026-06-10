@@ -209,6 +209,17 @@ function getSteps() {
       scrollTo:      '#accordionGiphy',
     },
 
+    // ── Settings > Features — AI Summarize ──────────────────────────────
+    {
+      selector:      '#accordionAI',
+      titleKey:      'tourStepAiTitle',
+      descKey:       'tourStepAiDesc',
+      tab:           'settings',
+      subtab:        'features',
+      openAccordion: 'accordionAI',
+      scrollTo:      '#accordionAI',
+    },
+
     // ── Step 16: Settings > Features — Note Categories ───────────────────
     {
       selector:      '#accordionNoteCategories',
@@ -338,6 +349,31 @@ export function startTour() {
       } else {
         markSeen();
         stopTour();
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (!isActive) return;
+
+      // Do not hijack arrow keys when focus is inside text inputs or fields
+      const tag = document.activeElement?.tagName?.toLowerCase();
+      const isEditable = document.activeElement?.isContentEditable;
+      if (tag === 'input' || tag === 'textarea' || isEditable) {
+        return;
+      }
+
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        const btnNext = document.getElementById('tourBtnNext');
+        if (btnNext && btnNext.style.visibility !== 'hidden') {
+          btnNext.click();
+        }
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        const btnPrev = document.getElementById('tourBtnPrev');
+        if (btnPrev && btnPrev.style.visibility !== 'hidden') {
+          btnPrev.click();
+        }
       }
     });
 

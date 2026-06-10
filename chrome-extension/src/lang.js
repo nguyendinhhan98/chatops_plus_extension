@@ -399,7 +399,9 @@ const en = {
   floatingQuickCopy: 'Quick Copy Message Button (📋)',
   floatingAiSummarize: 'AI Summarize Button (🤖)',
   aiCustomPromptTitle: 'Custom Prompt',
-  aiCustomPromptDesc: 'Customize the prompt template for AI analysis. Use {{input}}, {{from}}, and {{mention}} as placeholders.',
+  aiCustomPromptDesc: 'Configure the command template sent to the AI. Where: {{input}} is the message content, {{from}} is the sender, and {{mention}} is the mentioned users.',
+  aiModelTitle: 'Model Name',
+  aiModelDesc: 'The AI model name to use (e.g. gemini-2.0-flash, llama-3.3-70b-versatile, openrouter/free...)',
   aiCustomPromptPlaceholder: 'Enter custom prompt...',
   aiOptionJustMessage: 'Just selected message',
   aiOptionWholeThread: 'Summarize whole thread',
@@ -818,6 +820,12 @@ const en = {
   aiActionItems: '✅ Action Items',
   aiActionTranslate: '🌐 Translate',
   aiActionRewrite: '✍️ Rewrite',
+  tourStepAiTitle: '🤖 AI Summarize & Settings',
+  tourStepAiDesc: 'Configure your AI provider (Gemini, Groq, OpenRouter), API keys, and custom prompts to summarize and analyze messages instantly.',
+  tourKeyboardHint: '⌨️ Use Arrow keys (← / →) to navigate',
+  aiInvalidModel: '❌ Model Name is invalid or not supported.',
+  whatsNewBannerText: '✨ <b>New Features:</b> Instantly summarize conversation threads with AI!',
+  whatsNewBannerLink: 'Setup AI',
 };
 
 // Vietnamese Dictionary
@@ -1215,7 +1223,9 @@ const vi = {
   floatingQuickCopy: 'Nút sao chép nhanh tin nhắn (📋)',
   floatingAiSummarize: 'Nút tóm tắt AI (🤖)',
   aiCustomPromptTitle: 'Custom Prompt cho AI',
-  aiCustomPromptDesc: 'Tùy chỉnh mẫu prompt gửi cho AI. Sử dụng các biến {{input}}, {{from}}, và {{mention}} làm vị trí điền thông tin.',
+  aiCustomPromptDesc: 'Thiết lập câu lệnh gửi cho AI. Trong đó: {{input}} là nội dung tin nhắn, {{from}} là người gửi, và {{mention}} là người được nhắc đến.',
+  aiModelTitle: 'Tên Model',
+  aiModelDesc: 'Tên Model AI cần sử dụng (ví dụ: gemini-2.0-flash, llama-3.3-70b-versatile, openrouter/free...)',
   aiCustomPromptPlaceholder: 'Nhập mẫu prompt tùy chỉnh tại đây...',
   aiOptionJustMessage: 'Chỉ tin nhắn đang chọn',
   aiOptionWholeThread: 'Tóm tắt toàn bộ thread',
@@ -1630,6 +1640,12 @@ const vi = {
   aiActionItems: '✅ Action Items',
   aiActionTranslate: '🌐 Dịch',
   aiActionRewrite: '✍️ Viết lại',
+  tourStepAiTitle: '🤖 Cấu hình AI Tóm tắt',
+  tourStepAiDesc: 'Thiết lập nhà cung cấp AI (Gemini, Groq, OpenRouter), API Key và Custom Prompt để tóm tắt, phân tích tin nhắn nhanh chóng.',
+  tourKeyboardHint: '⌨️ Dùng phím mũi tên (← / →) để di chuyển',
+  aiInvalidModel: '❌ Tên Model không hợp lệ hoặc không được hỗ trợ.',
+  whatsNewBannerText: '✨ <b>Tính năng mới:</b> Tóm tắt nội dung cuộc trò chuyện bằng AI siêu nhanh!',
+  whatsNewBannerLink: 'Thiết lập ngay',
 };
 
 // Swaps the active language dictionary key-value pairs in-place

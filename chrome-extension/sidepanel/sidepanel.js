@@ -96,6 +96,106 @@ async function init() {
 
   // Show interactive onboarding tour for first-time installation
   checkAndAutoStartTour();
+
+  // Initialize What's New banner and iframe integration
+  setupWhatsNewAndIframe();
+}
+
+/**
+ * Handles "What's New" banner logic and custom close behavior inside PWA iframe.
+ */
+function setupWhatsNewAndIframe() {
+  // 1. Detect if running inside PWA mode (explicitly loaded via ?mode=pwa query parameter)
+  const urlParams = new URLSearchParams(window.location.search);
+  const isPwaMode = urlParams.get('mode') === 'pwa';
+  
+  if (isPwaMode) {
+    document.body.classList.add('pwa-mode');
+  }
+  
+  const closeIframeBtn = document.getElementById('btnHeaderCloseIframe');
+  if (closeIframeBtn) {
+    if (isPwaMode) {
+      closeIframeBtn.style.display = 'block';
+      closeIframeBtn.addEventListener('click', () => {
+        window.parent.postMessage({ type: 'CLOSE_PWA_SIDE_PANEL' }, '*');
+      });
+    } else {
+      closeIframeBtn.style.display = 'none';
+    }
+  }
+
+  // 2. Check and display "What's New" banner
+  try {
+    const currentVersion = chrome.runtime.getManifest().version;
+    const versionKey = `whats_new_seen_${currentVersion}`;
+    chrome.storage.local.get([versionKey], (res) => {
+      // If versionKey is not set to true, show the banner
+      if (res[versionKey] === false) {
+        const banner = document.getElementById('whatsNewBanner');
+        if (banner) {
+          banner.style.display = 'flex';
+        }
+        // Automatically clear the red badge since the user is now in the sidepanel
+        chrome.runtime.sendMessage({ type: MESSAGE_TYPES.RESET_BADGE });
+      }
+    });
+
+    const banner = document.getElementById('whatsNewBanner');
+    const bannerLink = document.getElementById('whatsNewBannerLink');
+    const bannerClose = document.getElementById('btnWhatsNewBannerClose');
+
+    const dismissBanner = () => {
+      if (banner) banner.style.display = 'none';
+      chrome.storage.local.set({ [versionKey]: true });
+    };
+
+    if (bannerLink) {
+      bannerLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        dismissBanner();
+        
+        // Navigate to Settings -> Features -> AI Summarize accordion
+        switchTab('settings');
+        const featuresSubTabBtn = document.querySelector(`#settingsSubTabs .memo-sub-tab[data-section="features"]`);
+        if (featuresSubTabBtn) {
+          featuresSubTabBtn.click();
+        }
+        
+        // Expand the AI accordion and scroll to it
+        setTimeout(() => {
+          const accordion = document.getElementById('accordionAI');
+          if (accordion) {
+            if (!accordion.classList.contains('open')) {
+              const header = accordion.querySelector('.settings-accordion-header');
+              if (header) {
+                header.click();
+              }
+            } else {
+              const container = document.getElementById('settingsScrollContainer');
+              if (container) {
+                const containerRect = container.getBoundingClientRect();
+                const accRect = accordion.getBoundingClientRect();
+                const relativeTop = accRect.top - containerRect.top + container.scrollTop;
+                container.scrollTo({ top: relativeTop - 12, behavior: 'smooth' });
+              } else {
+                accordion.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }
+            }
+          }
+        }, 150);
+      });
+    }
+
+    if (bannerClose) {
+      bannerClose.addEventListener('click', (e) => {
+        e.preventDefault();
+        dismissBanner();
+      });
+    }
+  } catch (err) {
+    console.error('[ChatOps Ext] Failed to setup whats new banner:', err);
+  }
 }
 
 /**

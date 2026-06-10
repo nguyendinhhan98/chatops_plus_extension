@@ -17,20 +17,24 @@
 <body>
   <div class="panel-container">
     <!-- ─── Header (compact action bar only) ─── -->
-    <div class="workspace-header" style="display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 8px 10px 8px 12px; box-sizing: border-box; width: 100%;">
+    <div class="workspace-header">
       <!-- Brand & Version -->
       <div class="header-brand">
         <span class="header-brand-logo">ChatOps++</span>
         <span id="header-version" class="header-brand-version">v3.3.7</span>
       </div>
       <!-- Right: Action Buttons -->
-      <div style="display: flex; align-items: center; gap: 6px;">
+      <div class="header-actions">
+        <!-- Close button if running in iframe (starts hidden) -->
+        <button id="btnHeaderCloseIframe" data-i18n-title="closeIframeTooltip" title="Close Panel" style="display: none;">
+          ×
+        </button>
         <!-- Language Toggle Flag Button -->
-        <button id="btnHeaderLang" data-i18n-title="langToggleTooltip" title="Switch to Vietnamese" style="font-size: 11px; font-weight: 700; color: var(--accent); margin: 0;">
+        <button id="btnHeaderLang" data-i18n-title="langToggleTooltip" title="Switch to Vietnamese">
           EN
         </button>
         <!-- Coffee Icon Button to open Donate Modal -->
-        <button id="btnHeaderCoffee" data-i18n-title="supportVibecodingTitle" title="Support Vibecoding" style="margin: 0;">
+        <button id="btnHeaderCoffee" data-i18n-title="supportVibecodingTitle" title="Support Vibecoding">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: block;">
             <path d="M18 8h1a4 4 0 0 1 0 8h-1"></path>
             <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path>
@@ -40,13 +44,13 @@
           </svg>
         </button>
         <!-- Star Icon Button to open Chrome Web Store reviews -->
-        <button id="btnHeaderRate" data-i18n-title="rateExtensionTooltip" title="Rate 5 Stars" style="margin: 0;">
+        <button id="btnHeaderRate" data-i18n-title="rateExtensionTooltip" title="Rate 5 Stars">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: block;">
             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="var(--accent)"></polygon>
           </svg>
         </button>
         <!-- Help / Guide Button -->
-        <button id="btnHeaderHelp" data-i18n-title="systemHelpTooltip" title="System Help & Tips" style="font-weight: 700; color: var(--accent); font-size: 15px; font-family: monospace; margin: 0;">
+        <button id="btnHeaderHelp" data-i18n-title="systemHelpTooltip" title="System Help & Tips">
           ?
         </button>
       </div>
@@ -95,6 +99,15 @@
         <span class="tab-label" data-i18n="settingsTabLabel">Settings</span>
       </button>
     </nav>
+
+    <!-- Whats New Banner (hidden by default) -->
+    <div id="whatsNewBanner">
+      <div style="flex: 1; margin-right: 8px;">
+        <span id="whatsNewBannerText" data-i18n-html="whatsNewBannerText">✨ <b>Tính năng AI mới:</b> Tóm tắt nội dung cuộc trò chuyện bằng AI siêu nhanh!</span>
+        <a href="#" id="whatsNewBannerLink" data-i18n="whatsNewBannerLink" style="color: #67e8f9; text-decoration: underline; font-weight: 600; margin-left: 6px; white-space: nowrap;">Thiết lập ngay</a>
+      </div>
+      <button id="btnWhatsNewBannerClose">×</button>
+    </div>
 
 
 
@@ -865,7 +878,7 @@
                 <div class="settings-row" style="margin-top: 10px;">
                   <select id="settingAiProvider" class="custom-select" style="width: 100%; max-width: none;">
                     <option value="gemini">Google Gemini</option>
-                    <option value="groq">Groq (Llama 3)</option>
+                    <option value="groq">Groq (Llama 3) - Recommended</option>
                     <option value="openrouter">OpenRouter (Gemini & Llama Free)</option>
                   </select>
                 </div>
@@ -876,6 +889,14 @@
                 <div class="settings-row" style="margin-top: 12px; display: flex; flex-direction: column; gap: 6px;">
                   <input type="text" id="settingGeminiApiKey" class="settings-input-text" data-i18n-placeholder="aiApiKeyPlaceholder" placeholder="Paste API Key here..." style="width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; outline: none; background: var(--bg-1); color: var(--text-1); font-family: inherit;">
                   <div id="settingGeminiApiKeyStatus" style="font-size: 11px; font-weight: 600; display: none;"></div>
+                </div>
+              </div>
+              <div style="margin-bottom:14px; margin-top:14px; padding-top:14px; border-top:1px dashed var(--border);">
+                <h3 class="settings-title" data-i18n="aiModelTitle">Model Name</h3>
+                <p class="settings-desc" data-i18n="aiModelDesc">Tên Model AI cần sử dụng (ví dụ: gemini-2.0-flash, llama-3.3-70b-versatile, openrouter/free...)</p>
+                <div class="settings-row" style="margin-top: 12px; display: flex; flex-direction: column; gap: 6px;">
+                  <input type="text" id="settingAiModel" class="settings-input-text" placeholder="Enter AI model name..." style="width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; outline: none; background: var(--bg-1); color: var(--text-1); font-family: inherit;">
+                  <div id="settingAiModelStatus" style="font-size: 11px; font-weight: 600; display: none;"></div>
                 </div>
               </div>
               <div style="margin-bottom:14px; margin-top:14px; padding-top:14px; border-top:1px dashed var(--border);">
@@ -1475,7 +1496,7 @@
       }
     }
 
-    #btnHeaderCoffee, #btnHeaderLang, #btnHeaderHelp, #btnHeaderRate, #btnHeaderTabsCompact {
+    #btnHeaderCoffee, #btnHeaderLang, #btnHeaderHelp, #btnHeaderRate, #btnHeaderTabsCompact, #btnHeaderCloseIframe {
       background: #ffffff;
       border: none;
       border-radius: 50%;
@@ -1493,13 +1514,54 @@
       margin-left: 4px;
     }
 
-    #btnHeaderCoffee:hover, #btnHeaderLang:hover, #btnHeaderHelp:hover, #btnHeaderRate:hover, #btnHeaderTabsCompact:hover {
+    #btnHeaderCloseIframe {
+      color: var(--accent) !important;
+      font-weight: 700 !important;
+      font-size: 20px !important;
+      line-height: 1 !important;
+    }
+
+    #btnHeaderLang {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    #btnHeaderHelp {
+      font-weight: 700;
+      color: var(--accent);
+      font-family: monospace;
+      font-size: 15px;
+    }
+
+    /* PWA mode custom overrides for header buttons */
+    body.pwa-mode #btnHeaderCoffee,
+    body.pwa-mode #btnHeaderLang,
+    body.pwa-mode #btnHeaderHelp,
+    body.pwa-mode #btnHeaderRate,
+    body.pwa-mode #btnHeaderTabsCompact,
+    body.pwa-mode #btnHeaderCloseIframe {
+      width: 25px;
+      height: 25px;
+      font-size: 13px;
+      margin-left: 0;
+    }
+
+    body.pwa-mode #btnHeaderCloseIframe {
+      font-size: 18px !important;
+    }
+
+    body.pwa-mode #btnHeaderHelp {
+      font-size: 13px;
+    }
+
+    #btnHeaderCoffee:hover, #btnHeaderLang:hover, #btnHeaderHelp:hover, #btnHeaderRate:hover, #btnHeaderTabsCompact:hover, #btnHeaderCloseIframe:hover {
       background: #ffffff !important;
       transform: scale(1.18) rotate(12deg);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
 
-    #btnHeaderCoffee:active, #btnHeaderLang:active, #btnHeaderHelp:active, #btnHeaderRate:active, #btnHeaderTabsCompact:active {
+    #btnHeaderCoffee:active, #btnHeaderLang:active, #btnHeaderHelp:active, #btnHeaderRate:active, #btnHeaderTabsCompact:active, #btnHeaderCloseIframe:active {
       transform: scale(0.95);
     }
 
@@ -1685,7 +1747,7 @@
         <h3 id="spGlobalModalTitle" class="sp-modal-title">Action</h3>
         <button id="spGlobalModalClose" class="sp-modal-close-btn" data-i18n-title="closeModal" title="Close modal">&times;</button>
       </div>
-      <div id="spGlobalModalBody" class="sp-modal-body">
+      <div class="sp-modal-body" id="spGlobalModalBody">
         <!-- Form elements moved in/out dynamically here -->
       </div>
     </div>
@@ -1706,6 +1768,7 @@
       <button class="tour-btn tour-btn-prev" id="tourBtnPrev">← Back</button>
       <button class="tour-btn tour-btn-next" id="tourBtnNext">Next →</button>
     </div>
+    <div class="tour-keyboard-hint" data-i18n="tourKeyboardHint">⌨️ Use Arrow keys (← / →) to navigate</div>
   </div>
 
   <script src="sidepanel.js" type="module"></script>

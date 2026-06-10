@@ -75,7 +75,7 @@ export async function callAiProvider(prompt, apiKey, provider = 'gemini', option
     };
   } else if (provider === 'openrouter') {
     url = 'https://openrouter.ai/api/v1/chat/completions';
-    model = options.model || 'google/gemini-2.0-flash:free';
+    model = options.model || 'openrouter/free';
     headers = {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${apiKey}`,
@@ -218,12 +218,15 @@ ${text}
  * @param {string} [provider='gemini'] - The AI provider name
  * @returns {Promise<boolean>} true if valid
  */
-export async function validateAiApiKey(apiKey, provider = 'gemini') {
-  if (!apiKey || apiKey.trim().length === 0) return false;
+export async function validateAiApiKey(apiKey, provider = 'gemini', modelName = null) {
+  if (!apiKey || apiKey.trim().length === 0) {
+    return { isValid: false, errorType: 'key' };
+  }
 
   try {
     if (provider === 'gemini') {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+      const model = modelName || 'gemini-2.0-flash';
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
       const body = {
         contents: [{ parts: [{ text: 'Hi' }] }],
         generationConfig: { maxOutputTokens: 5 }
@@ -233,18 +236,36 @@ export async function validateAiApiKey(apiKey, provider = 'gemini') {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       });
-      return response.ok;
+      
+      if (response.ok) {
+        return { isValid: true, errorType: null };
+      }
+
+      const status = response.status;
+      if (status === 404) {
+        return { isValid: false, errorType: 'model' };
+      } else if (status === 400 || status === 401 || status === 403) {
+        try {
+          const data = await response.json();
+          const msg = data.error?.message?.toLowerCase() || '';
+          if (msg.includes('not found') || msg.includes('model')) {
+            return { isValid: false, errorType: 'model' };
+          }
+        } catch (_) {}
+        return { isValid: false, errorType: 'key' };
+      }
+      return { isValid: false, errorType: 'unknown' };
     }
 
     let url, model;
     if (provider === 'groq') {
       url = 'https://api.groq.com/openai/v1/chat/completions';
-      model = 'llama-3.3-70b-versatile';
+      model = modelName || 'llama-3.3-70b-versatile';
     } else if (provider === 'openrouter') {
       url = 'https://openrouter.ai/api/v1/chat/completions';
-      model = 'google/gemini-2.0-flash:free';
+      model = modelName || 'openrouter/free';
     } else {
-      return false;
+      return { isValid: false, errorType: 'provider' };
     }
 
     const body = {
@@ -262,9 +283,27 @@ export async function validateAiApiKey(apiKey, provider = 'gemini') {
       body: JSON.stringify(body)
     });
 
-    return response.ok;
+    if (response.ok) {
+      return { isValid: true, errorType: null };
+    }
+
+    const status = response.status;
+    if (status === 401 || status === 403) {
+      return { isValid: false, errorType: 'key' };
+    }
+
+    try {
+      const data = await response.json();
+      const msg = data.error?.message?.toLowerCase() || '';
+      const code = data.error?.code?.toLowerCase() || '';
+      if (msg.includes('model') || msg.includes('not found') || code.includes('model_not_found') || status === 404) {
+        return { isValid: false, errorType: 'model' };
+      }
+    } catch (_) {}
+
+    return { isValid: false, errorType: 'key' };
   } catch {
-    return false;
+    return { isValid: false, errorType: 'network' };
   }
 }
 
@@ -272,5 +311,6 @@ export async function validateAiApiKey(apiKey, provider = 'gemini') {
  * Backward compatibility wrapper
  */
 export async function validateGeminiApiKey(apiKey) {
-  return validateAiApiKey(apiKey, 'gemini');
+  const result = await validateAiApiKey(apiKey, 'gemini');
+  return result.isValid;
 }

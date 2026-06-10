@@ -144,7 +144,7 @@ async function injectDynamicTheme() {
  */
 async function handleNotificationJump(postId, taskTeamName) {
   try {
-    chrome.runtime.sendMessage({ type: MESSAGE_TYPES.OPEN_SIDE_PANEL }).catch(() => {});
+    openSidePanel();
     chrome.storage.local.set({ [STORAGE_KEYS.SIDEPANEL_TAB]: 'tasks' });
     setTimeout(() => {
       chrome.runtime.sendMessage({ type: 'SWITCH_TAB', tab: 'tasks' }).catch(() => {});
@@ -449,6 +449,12 @@ function showToast(msg) {
 
   await loadLanguage();
   injectDynamicTheme();
+
+  function openSidePanel() {
+    try {
+      chrome.runtime.sendMessage({ type: MESSAGE_TYPES.OPEN_SIDE_PANEL }).catch(() => {});
+    } catch (err) {}
+  }
 
   let isFloatingBtnClosed = false;
 
@@ -2331,7 +2337,7 @@ function showToast(msg) {
               [STORAGE_KEYS.SIDEPANEL_TAB]: 'settings',
               sidePanelSubTab: 'features-gif'
             });
-            chrome.runtime.sendMessage({ type: MESSAGE_TYPES.OPEN_SIDE_PANEL }).catch(() => {});
+            openSidePanel();
           });
         }
         return;
@@ -2397,7 +2403,7 @@ function showToast(msg) {
               [STORAGE_KEYS.SIDEPANEL_TAB]: 'settings',
               sidePanelSubTab: 'features-gif'
             });
-            chrome.runtime.sendMessage({ type: MESSAGE_TYPES.OPEN_SIDE_PANEL }).catch(() => {});
+            openSidePanel();
           });
         }
         return;
@@ -2425,7 +2431,7 @@ function showToast(msg) {
               [STORAGE_KEYS.SIDEPANEL_TAB]: 'settings',
               sidePanelSubTab: 'features-gif'
             });
-            chrome.runtime.sendMessage({ type: MESSAGE_TYPES.OPEN_SIDE_PANEL }).catch(() => {});
+            openSidePanel();
           });
         }
         return;
@@ -3140,7 +3146,16 @@ function showToast(msg) {
     notificationSize: 'medium',
     aiProvider: 'gemini',
     geminiApiKey: '',
-    aiCustomPrompt: ''
+    groqApiKey: '',
+    openrouterApiKey: '',
+    geminiModel: 'gemini-2.0-flash',
+    groqModel: 'llama-3.3-70b-versatile',
+    openrouterModel: 'openrouter/free',
+    aiCustomPrompt: `Hãy tóm tắt nội dung sau đây một cách đầy đủ nhất có thể
+Nội dung từ người dùng: {{from}}
+Được nhắc đến: {{mention}}
+Nội dung cần tóm tắt:
+{{input}}`
   };
   let cachedSettings = { ...DEFAULT_SETTINGS };
   let cachedMemos = [];
@@ -3156,6 +3171,9 @@ function showToast(msg) {
         showTabs: { ...DEFAULT_SETTINGS.showTabs, ...raw.showTabs },
         floatingButtons: { ...DEFAULT_SETTINGS.floatingButtons, ...raw.floatingButtons }
       };
+      if (!cachedSettings.aiCustomPrompt || !cachedSettings.aiCustomPrompt.trim()) {
+        cachedSettings.aiCustomPrompt = DEFAULT_SETTINGS.aiCustomPrompt;
+      }
     }
     if (res[STORAGE_KEYS.MEMOS]) {
       cachedMemos = res[STORAGE_KEYS.MEMOS];
@@ -4060,7 +4078,7 @@ function showToast(msg) {
         });
         
         // Open the sidepanel programmatically!
-        chrome.runtime.sendMessage({ type: MESSAGE_TYPES.OPEN_SIDE_PANEL });
+        openSidePanel();
       }
     }
   });
@@ -4213,6 +4231,10 @@ function showToast(msg) {
       openQuickNote(postEl, null, message.mode, message.text);
     } else if (message.type === 'SHOW_HOVER_DEMO') {
       showHoverDemo(message.active);
+    } else if (message.type === 'TOGGLE_PWA_SIDE_PANEL') {
+      togglePwaSidePanel(message.forceState);
+    } else if (message.type === 'SHOW_TOAST') {
+      showToast(message.message);
     }
   });
 
@@ -4473,7 +4495,16 @@ function showToast(msg) {
       return;
     }
 
-    const apiKey = cachedSettings.geminiApiKey ? cachedSettings.geminiApiKey.trim() : '';
+    const provider = cachedSettings.aiProvider || 'gemini';
+    let apiKey = '';
+    if (provider === 'gemini') {
+      apiKey = cachedSettings.geminiApiKey ? cachedSettings.geminiApiKey.trim() : '';
+    } else if (provider === 'groq') {
+      apiKey = cachedSettings.groqApiKey ? cachedSettings.groqApiKey.trim() : '';
+    } else if (provider === 'openrouter') {
+      apiKey = cachedSettings.openrouterApiKey ? cachedSettings.openrouterApiKey.trim() : '';
+    }
+
     if (!apiKey) {
       showAiResultModal(
         language.aiSummarizeTooltip || 'AI Summarize',
@@ -4545,18 +4576,20 @@ function showToast(msg) {
         throw new Error('Nội dung tin nhắn trống hoặc không thể phân tích!');
       }
 
-      const promptTemplate = cachedSettings.aiCustomPrompt ? cachedSettings.aiCustomPrompt.trim() : '';
-      let promptText = '';
-      
+      const promptTemplate = cachedSettings.aiCustomPrompt || '';
       const mentionStr = mentions.length > 0 ? mentions.join(', ') : '';
-      
-      if (promptTemplate) {
-        promptText = promptTemplate
-          .replace(/\{\{input\}\}/g, textContent)
-          .replace(/\{\{from\}\}/g, authorName)
-          .replace(/\{\{mention\}\}/g, mentionStr);
-      } else {
-        promptText = `Hãy tóm tắt và phân tích nội dung sau đây một cách ngắn gọn, súc tích.\nNội dung từ người dùng: ${authorName}\nĐược nhắc đến: ${mentionStr}\nNội dung cần tóm tắt:\n${textContent}`;
+      const promptText = promptTemplate
+        .replace(/\{\{input\}\}/g, textContent)
+        .replace(/\{\{from\}\}/g, authorName)
+        .replace(/\{\{mention\}\}/g, mentionStr);
+
+      let modelName = '';
+      if (provider === 'gemini') {
+        modelName = cachedSettings.geminiModel || 'gemini-2.0-flash';
+      } else if (provider === 'groq') {
+        modelName = cachedSettings.groqModel || 'llama-3.3-70b-versatile';
+      } else if (provider === 'openrouter') {
+        modelName = cachedSettings.openrouterModel || 'openrouter/free';
       }
 
       const aiResponse = await new Promise((resolve) => {
@@ -4564,7 +4597,8 @@ function showToast(msg) {
           type: MESSAGE_TYPES.CALL_AI,
           prompt: promptText,
           apiKey: apiKey,
-          provider: cachedSettings.aiProvider || 'gemini'
+          provider: provider,
+          model: modelName
         }, resolve);
       });
 
@@ -4576,7 +4610,7 @@ function showToast(msg) {
       modal.updateContent(aiResponse.result);
 
     } catch (err) {
-      console.error('[ChatOps Ext] processAiSummarize error:', err);
+      console.error('[ChatOps Ext] <processA></processA>iSummarize error:', err);
       const isApiKeyErr = err.message.includes('API Key is invalid') || err.message.includes('API_INVALID_KEY');
       modal.updateContent(err.message, true, isApiKeyErr);
     }
@@ -4587,6 +4621,194 @@ function showToast(msg) {
   runWithObserverDisabled(() => {
     injectImageButton();
     injectQuickNoteButtons();
+  });
+
+  // --- ChatOps PWA Custom Side Panel Fallback (iframe drawer) ---
+  let pwaSidePanelContainer = null;
+  let pwaSidePanelOpen = false;
+
+  function togglePwaSidePanel(forceState) {
+    const shouldOpen = (forceState === undefined) ? !pwaSidePanelOpen : (forceState === 'OPEN');
+    if (shouldOpen) {
+      openPwaSidePanel();
+    } else {
+      closePwaSidePanel();
+    }
+  }
+
+  function openPwaSidePanel() {
+    if (pwaSidePanelOpen) return;
+
+    if (!pwaSidePanelContainer) {
+      pwaSidePanelContainer = document.createElement('div');
+      pwaSidePanelContainer.id = 'chatops-ext-pwa-sidepanel-container';
+      
+      // Styling the container as a right-hand sliding panel drawer
+      pwaSidePanelContainer.style.cssText = `
+        position: fixed !important;
+        top: 0 !important;
+        right: 0 !important;
+        width: 360px !important;
+        height: 100vh !important;
+        z-index: 999999 !important;
+        box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15) !important;
+        border-left: 1px solid var(--border, #e5e7eb) !important;
+        background: var(--bg-1, #ffffff) !important;
+        transform: translateX(100%) !important;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        display: block !important;
+      `;
+
+      const iframe = document.createElement('iframe');
+      iframe.src = chrome.runtime.getURL('sidepanel/sidepanel.html?mode=pwa');
+      iframe.style.cssText = `
+        width: 100% !important;
+        height: 100% !important;
+        border: none !important;
+        display: block !important;
+        background: transparent !important;
+      `;
+
+      // Drag resizer bar on the left edge of the sidepanel container
+      const resizer = document.createElement('div');
+      resizer.id = 'chatops-ext-pwa-resizer';
+      resizer.style.cssText = `
+        position: absolute !important;
+        top: 0 !important;
+        left: -3px !important; /* Center active drag zone along left edge */
+        width: 8px !important;
+        height: 100% !important;
+        cursor: ew-resize !important;
+        z-index: 1000000 !important;
+        background: transparent !important;
+      `;
+
+      // Floating resize indicator handle centered vertically on the left edge
+      const handle = document.createElement('div');
+      handle.id = 'chatops-ext-pwa-resizer-handle';
+      handle.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; display: block; color: var(--accent, #1c58d9);">
+          <path d="M5 12h14M5 12l4-4m-4 4l4 4m10-8l4 4-4 4"/>
+        </svg>
+      `;
+      handle.style.cssText = `
+        position: absolute !important;
+        top: 50% !important;
+        left: -8px !important; /* Float exactly on the edge */
+        transform: translateY(-50%) !important;
+        width: 20px !important;
+        height: 36px !important;
+        background: var(--bg-1, #ffffff) !important;
+        border: 1px solid var(--border, #e5e7eb) !important;
+        border-radius: 6px 0 0 6px !important;
+        box-shadow: -3px 0 10px rgba(0, 0, 0, 0.12) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        cursor: ew-resize !important;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+        pointer-events: none !important; /* Mouse events pass to resizer bar */
+      `;
+
+      let isResizing = false;
+
+      resizer.addEventListener('mouseenter', () => {
+        handle.style.opacity = '1';
+        handle.style.visibility = 'visible';
+        handle.style.boxShadow = '-3px 0 14px rgba(28, 88, 217, 0.2)';
+      });
+      resizer.addEventListener('mouseleave', () => {
+        if (!isResizing) {
+          handle.style.opacity = '0';
+          handle.style.visibility = 'hidden';
+          handle.style.boxShadow = '-3px 0 10px rgba(0, 0, 0, 0.12)';
+        }
+      });
+
+      resizer.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        isResizing = true;
+        handle.style.opacity = '1';
+        handle.style.visibility = 'visible';
+        handle.style.background = 'var(--accent-dim, rgba(28, 88, 217, 0.08))';
+        document.body.style.cursor = 'ew-resize';
+        iframe.style.pointerEvents = 'none'; // Prevent iframe from swallowing events during resize
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if (!isResizing) return;
+        const newWidth = window.innerWidth - e.clientX;
+        const minWidth = 320; // Set a minimum width of 320px
+        if (newWidth >= minWidth && newWidth <= window.innerWidth * 0.75) {
+          pwaSidePanelContainer.style.width = `${newWidth}px`;
+          chrome.storage.local.set({ pwa_sidepanel_width: newWidth });
+
+          const rootEl = document.getElementById('root') || document.body;
+          rootEl.style.transition = 'none';
+          rootEl.style.marginRight = `${newWidth}px`;
+          rootEl.style.width = `calc(100% - ${newWidth}px)`;
+        }
+      });
+
+      window.addEventListener('mouseup', () => {
+        if (isResizing) {
+          isResizing = false;
+          handle.style.opacity = '0';
+          handle.style.visibility = 'hidden';
+          handle.style.background = 'var(--bg-1, #ffffff)';
+          document.body.style.cursor = '';
+          iframe.style.pointerEvents = 'auto';
+
+          const rootEl = document.getElementById('root') || document.body;
+          rootEl.style.transition = 'margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+        }
+      });
+
+      resizer.appendChild(handle);
+      pwaSidePanelContainer.appendChild(resizer);
+      pwaSidePanelContainer.appendChild(iframe);
+      document.body.appendChild(pwaSidePanelContainer);
+    }
+
+    // Load saved width from local storage and apply shifting
+    chrome.storage.local.get(['pwa_sidepanel_width'], (res) => {
+      const savedWidth = res.pwa_sidepanel_width || 360;
+      if (pwaSidePanelContainer) {
+        pwaSidePanelContainer.style.width = `${savedWidth}px`;
+      }
+      
+      const rootEl = document.getElementById('root') || document.body;
+      rootEl.style.transition = 'margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+      rootEl.style.marginRight = `${savedWidth}px`;
+      rootEl.style.width = `calc(100% - ${savedWidth}px)`;
+    });
+
+    // Trigger reflow to ensure the transform transition plays
+    pwaSidePanelContainer.getBoundingClientRect();
+    pwaSidePanelContainer.style.transform = 'translateX(0)';
+    pwaSidePanelOpen = true;
+  }
+
+  function closePwaSidePanel() {
+    if (!pwaSidePanelOpen || !pwaSidePanelContainer) return;
+    pwaSidePanelContainer.style.transform = 'translateX(100%)';
+    pwaSidePanelOpen = false;
+
+    // Reset layout squeeze/shift on main page content
+    const rootEl = document.getElementById('root') || document.body;
+    rootEl.style.transition = 'margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+    rootEl.style.marginRight = '0px';
+    rootEl.style.width = '';
+  }
+
+  // Listen for close message from the iframe side panel page
+  window.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'CLOSE_PWA_SIDE_PANEL') {
+      closePwaSidePanel();
+    }
   });
 
 

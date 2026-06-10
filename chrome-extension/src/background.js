@@ -11,7 +11,9 @@ import {
 import { 
   setupSidePanel, 
   toggleSidePanel, 
-  sidePanelState 
+  sidePanelState,
+  getWindowTypeForTab,
+  initializePanelManager
 } from './background/panel-manager.js';
 import { ALARMS, UI_CONFIG, MESSAGE_TYPES, CHATOPS_CONFIG, STORAGE_KEYS } from './constants.js';
 import { language, loadLanguage } from './lang.js';
@@ -38,7 +40,8 @@ function setupContextMenus() {
 /**
  * Initialize extension services
  */
-function initialize() {
+async function initialize() {
+  await initializePanelManager();
   setupSidePanel();
   setupCookieSync();
   syncCookies();
@@ -56,6 +59,15 @@ chrome.runtime.onInstalled.addListener((details) => {
     delayInMinutes: 1,
     periodInMinutes: UI_CONFIG.MENTION_CHECK_INTERVAL_MINUTES,
   });
+
+  if (details?.reason === 'update' || details?.reason === 'install') {
+    const currentVersion = chrome.runtime.getManifest().version;
+    const versionKey = `whats_new_seen_${currentVersion}`;
+    chrome.storage.local.set({ [versionKey]: false });
+
+    chrome.action.setBadgeText({ text: 'NEW' });
+    chrome.action.setBadgeBackgroundColor({ color: '#ef4444' });
+  }
 
   initialize();
 });
@@ -80,6 +92,13 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 // Initialize on startup
 initialize();
 
+// Handle clicks on the extension toolbar icon (fires on tabs where native sidepanel is disabled)
+chrome.action.onClicked.addListener((tab) => {
+  if (tab && tab.id) {
+    toggleSidePanel(tab.id);
+  }
+});
+
 /**
  * Alarm listener for periodic tasks
  */
@@ -99,15 +118,27 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   switch (message.type) {
     case MESSAGE_TYPES.OPEN_SIDE_PANEL:
-      if (chrome.sidePanel && tabId) {
-        chrome.sidePanel.setOptions({
-          tabId,
-          path: 'sidepanel/sidepanel.html',
-          enabled: true
-        });
-        chrome.sidePanel.open({ tabId }).catch((err) => {
-          console.error('[ChatOps Ext] sidePanel.open failed in message handler:', err);
-        });
+      if (tabId) {
+        const winType = getWindowTypeForTab(tabId);
+        if (winType === 'app' || winType === 'popup') {
+          chrome.tabs.sendMessage(tabId, { type: 'TOGGLE_PWA_SIDE_PANEL', forceState: 'OPEN' }).catch(() => {});
+        } else if (chrome.sidePanel) {
+          chrome.sidePanel.setOptions({
+            tabId,
+            path: 'sidepanel/sidepanel.html',
+            enabled: true
+          });
+          chrome.sidePanel.open({ tabId }).catch((err) => {
+            console.warn('[ChatOps Ext] sidePanel.open failed in message handler:', err);
+            chrome.storage.local.get(['active_language'], (res) => {
+              const isVi = res.active_language !== 'en';
+              const msg = isVi 
+                ? '🔔 Vui lòng click vào biểu tượng ChatOps++ trên thanh công cụ trình duyệt để mở Panel!' 
+                : '🔔 Please click the ChatOps++ icon on the browser toolbar to open the Panel!';
+              chrome.tabs.sendMessage(tabId, { type: 'SHOW_TOAST', message: msg }).catch(() => {});
+            });
+          });
+        }
       }
       sendResponse({ ok: true });
       break;
@@ -197,7 +228,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return true;
 
     case MESSAGE_TYPES.CALL_AI:
-      callAiProvider(message.prompt, message.apiKey, message.provider)
+      callAiProvider(message.prompt, message.apiKey, message.provider, { model: message.model })
         .then((result) => sendResponse({ ok: true, result }))
         .catch((err) => sendResponse({ ok: false, error: err.message }));
       return true;
@@ -595,8 +626,25 @@ chrome.notifications.onClicked.addListener(async (notificationId) => {
       }
       
       // Open the side panel for this tab
-      if (chrome.sidePanel && activeTabId) {
-        await chrome.sidePanel.open({ tabId: activeTabId }).catch(() => {});
+      if (activeTabId) {
+        chrome.tabs.get(activeTabId, (currentTab) => {
+          if (chrome.runtime.lastError || !currentTab) return;
+          chrome.windows.get(currentTab.windowId, (win) => {
+            if (win && (win.type === 'app' || win.type === 'popup')) {
+              chrome.tabs.sendMessage(activeTabId, { type: 'TOGGLE_PWA_SIDE_PANEL', forceState: 'OPEN' }).catch(() => {});
+            } else if (chrome.sidePanel) {
+              chrome.sidePanel.open({ tabId: activeTabId }).catch(() => {
+                chrome.storage.local.get(['active_language'], (res) => {
+                  const isVi = res.active_language !== 'en';
+                  const msg = isVi 
+                    ? '🔔 Vui lòng click vào biểu tượng ChatOps++ trên thanh công cụ trình duyệt để mở Panel!' 
+                    : '🔔 Please click the ChatOps++ icon on the browser toolbar to open the Panel!';
+                  chrome.tabs.sendMessage(activeTabId, { type: 'SHOW_TOAST', message: msg }).catch(() => {});
+                });
+              });
+            }
+          });
+        });
         // Send a real-time message to switch to the "tasks" tab in case it's already open
         setTimeout(() => {
           chrome.runtime.sendMessage({ type: 'SWITCH_TAB', tab: 'tasks' }).catch(() => {});

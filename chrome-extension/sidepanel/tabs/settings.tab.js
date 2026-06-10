@@ -272,8 +272,17 @@ const DEFAULT_SETTINGS = {
   reactionGroups: null,
   reactAlongEnabled: false,
   geminiApiKey: '',
-  aiProvider: 'gemini',
-  aiCustomPrompt: ''
+  groqApiKey: '',
+  openrouterApiKey: '',
+  geminiModel: 'gemini-2.0-flash',
+  groqModel: 'llama-3.3-70b-versatile',
+  openrouterModel: 'openrouter/free',
+  aiProvider: 'groq',
+  aiCustomPrompt: `Hãy tóm tắt nội dung sau đây một cách đầy đủ nhất có thể
+Nội dung từ người dùng: {{from}}
+Được nhắc đến: {{mention}}
+Nội dung cần tóm tắt:
+{{input}}`
 };
 
 /**
@@ -296,6 +305,9 @@ export async function getSettings() {
     floatingButtons: { ...DEFAULT_SETTINGS.floatingButtons, ...rawSettings.floatingButtons },
     promoteTabs: { ...DEFAULT_SETTINGS.promoteTabs, ...rawSettings.promoteTabs }
   };
+  if (!settings.aiCustomPrompt || !settings.aiCustomPrompt.trim()) {
+    settings.aiCustomPrompt = DEFAULT_SETTINGS.aiCustomPrompt;
+  }
   window.activeSettings = settings;
 
   if (!settings.reactionGroups) {
@@ -368,14 +380,36 @@ async function loadAndApplySettings() {
   }
 
   const aiProviderSelect = document.getElementById('settingAiProvider');
+  const provider = settings.aiProvider || 'gemini';
   if (aiProviderSelect) {
-    aiProviderSelect.value = settings.aiProvider || 'gemini';
+    aiProviderSelect.value = provider;
   }
-  updateAiGuide(settings.aiProvider || 'gemini');
+  updateAiGuide(provider);
 
   const geminiApiKeyInput = document.getElementById('settingGeminiApiKey');
   if (geminiApiKeyInput) {
-    geminiApiKeyInput.value = settings.geminiApiKey || '';
+    let key = '';
+    if (provider === 'gemini') {
+      key = settings.geminiApiKey || '';
+    } else if (provider === 'groq') {
+      key = settings.groqApiKey || '';
+    } else if (provider === 'openrouter') {
+      key = settings.openrouterApiKey || '';
+    }
+    geminiApiKeyInput.value = key;
+  }
+
+  const settingAiModelInput = document.getElementById('settingAiModel');
+  if (settingAiModelInput) {
+    let model = '';
+    if (provider === 'gemini') {
+      model = settings.geminiModel || 'gemini-2.0-flash';
+    } else if (provider === 'groq') {
+      model = settings.groqModel || 'llama-3.3-70b-versatile';
+    } else if (provider === 'openrouter') {
+      model = settings.openrouterModel || 'openrouter/free';
+    }
+    settingAiModelInput.value = model;
   }
 
   const giphySizeSelect = document.getElementById('settingGiphySize');
@@ -592,9 +626,18 @@ async function loadAndApplySettings() {
     validateGiphyApiKey(settings.giphyApiKey);
   }
 
-  // Validate Gemini API Key on load
-  if (settings.geminiApiKey) {
-    validateGeminiApiKey(settings.geminiApiKey);
+  // Validate Active API Key on load
+  const activeProvider = settings.aiProvider || 'gemini';
+  let activeKey = '';
+  if (activeProvider === 'gemini') {
+    activeKey = settings.geminiApiKey;
+  } else if (activeProvider === 'groq') {
+    activeKey = settings.groqApiKey;
+  } else if (activeProvider === 'openrouter') {
+    activeKey = settings.openrouterApiKey;
+  }
+  if (activeKey) {
+    validateGeminiApiKey(activeKey);
   }
 }
 
@@ -690,7 +733,14 @@ function updateAiGuide(provider) {
 
 async function validateGeminiApiKey(key) {
   const statusEl = document.getElementById('settingGeminiApiKeyStatus');
+  const modelStatusEl = document.getElementById('settingAiModelStatus');
   if (!statusEl) return;
+
+  if (modelStatusEl) {
+    modelStatusEl.style.display = 'none';
+    modelStatusEl.textContent = '';
+    modelStatusEl.removeAttribute('data-i18n');
+  }
 
   if (!key) {
     statusEl.style.display = 'none';
@@ -707,15 +757,31 @@ async function validateGeminiApiKey(key) {
   try {
     const settings = await getSettings();
     const provider = settings.aiProvider || 'gemini';
-    const isValid = await validateAiApiKey(key, provider);
-    if (isValid) {
+    const modelInput = document.getElementById('settingAiModel');
+    const modelName = modelInput ? modelInput.value.trim() : null;
+    
+    const result = await validateAiApiKey(key, provider, modelName);
+    if (result.isValid) {
       statusEl.setAttribute('data-i18n', 'aiValidKey');
       statusEl.textContent = language.aiValidKey;
       statusEl.style.color = '#10b981'; // Green
     } else {
-      statusEl.setAttribute('data-i18n', 'aiInvalidKey');
-      statusEl.textContent = language.aiInvalidKey;
-      statusEl.style.color = '#ef4444'; // Red
+      if (result.errorType === 'model') {
+        statusEl.setAttribute('data-i18n', 'aiValidKey');
+        statusEl.textContent = language.aiValidKey;
+        statusEl.style.color = '#10b981'; // Green
+
+        if (modelStatusEl) {
+          modelStatusEl.setAttribute('data-i18n', 'aiInvalidModel');
+          modelStatusEl.textContent = language.aiInvalidModel || '❌ Tên Model không hợp lệ hoặc không được hỗ trợ.';
+          modelStatusEl.style.color = '#ef4444'; // Red
+          modelStatusEl.style.display = 'block';
+        }
+      } else {
+        statusEl.setAttribute('data-i18n', 'aiInvalidKey');
+        statusEl.textContent = language.aiInvalidKey;
+        statusEl.style.color = '#ef4444'; // Red
+      }
     }
   } catch (err) {
     statusEl.setAttribute('data-i18n', 'aiConnectionError');
@@ -907,9 +973,32 @@ function setupEventListeners() {
       showAutoSaveFeedback();
       updateAiGuide(val);
       
+      const settings = await getSettings();
       const geminiApiKeyInput = document.getElementById('settingGeminiApiKey');
       if (geminiApiKeyInput) {
-        validateGeminiApiKey(geminiApiKeyInput.value.trim());
+        let key = '';
+        if (val === 'gemini') {
+          key = settings.geminiApiKey || '';
+        } else if (val === 'groq') {
+          key = settings.groqApiKey || '';
+        } else if (val === 'openrouter') {
+          key = settings.openrouterApiKey || '';
+        }
+        geminiApiKeyInput.value = key;
+        validateGeminiApiKey(key);
+      }
+
+      const settingAiModelInput = document.getElementById('settingAiModel');
+      if (settingAiModelInput) {
+        let model = '';
+        if (val === 'gemini') {
+          model = settings.geminiModel || 'gemini-2.0-flash';
+        } else if (val === 'groq') {
+          model = settings.groqModel || 'llama-3.3-70b-versatile';
+        } else if (val === 'openrouter') {
+          model = settings.openrouterModel || 'openrouter/free';
+        }
+        settingAiModelInput.value = model;
       }
     });
   }
@@ -918,9 +1007,45 @@ function setupEventListeners() {
   if (geminiApiKeyInput) {
     geminiApiKeyInput.addEventListener('change', async (e) => {
       const val = e.target.value.trim();
-      await updateSettings({ geminiApiKey: val });
+      const providerSelect = document.getElementById('settingAiProvider');
+      const provider = providerSelect ? providerSelect.value : 'gemini';
+      const updateObj = {};
+      if (provider === 'gemini') {
+        updateObj.geminiApiKey = val;
+      } else if (provider === 'groq') {
+        updateObj.groqApiKey = val;
+      } else if (provider === 'openrouter') {
+        updateObj.openrouterApiKey = val;
+      }
+      await updateSettings(updateObj);
       showAutoSaveFeedback();
       validateGeminiApiKey(val);
+    });
+  }
+
+  const settingAiModelInput = document.getElementById('settingAiModel');
+  if (settingAiModelInput) {
+    settingAiModelInput.addEventListener('change', async (e) => {
+      const val = e.target.value.trim();
+      const providerSelect = document.getElementById('settingAiProvider');
+      const provider = providerSelect ? providerSelect.value : 'gemini';
+      const updateObj = {};
+      if (provider === 'gemini') {
+        updateObj.geminiModel = val;
+      } else if (provider === 'groq') {
+        updateObj.groqModel = val;
+      } else if (provider === 'openrouter') {
+        updateObj.openrouterModel = val;
+      }
+      await updateSettings(updateObj);
+      showAutoSaveFeedback();
+
+      // Validate the API key against the new model immediately
+      const keyInput = document.getElementById('settingGeminiApiKey');
+      const key = keyInput ? keyInput.value.trim() : '';
+      if (key) {
+        validateGeminiApiKey(key);
+      }
     });
   }
 
@@ -1818,6 +1943,8 @@ function setupEventListeners() {
       elementId = 'settingSnoozeMinutes';
     } else if (subtabName === 'features-gif') {
       elementId = 'settingGiphyApiKey';
+    } else if (subtabName === 'features-ai') {
+      elementId = 'settingAiProvider';
     } else if (subtabName === 'categories') {
       elementId = 'settingNewCategory';
     }

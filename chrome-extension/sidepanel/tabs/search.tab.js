@@ -27,7 +27,6 @@ import {
 } from '../../src/utils/index.js';
 import { UI_CONFIG } from '../../src/constants.js';
 import { language } from '../../src/lang.js';
-import { handleAiSummarize } from './memo.tab.js';
 
 let _state = null;
 let searchState = { page: 0, hasMore: false, terms: '', isSearching: false };
@@ -109,54 +108,7 @@ export function setup(state) {
   document.getElementById('spSearchBefore')?.addEventListener('change', updateSearchButtonState);
   document.getElementById('spSearchBefore')?.addEventListener('input', updateSearchButtonState);
 
-  // Handle AI click actions on search result list
-  const searchResultsEl = document.getElementById('spSearchResults');
-  if (searchResultsEl) {
-    searchResultsEl.addEventListener('click', async (e) => {
-      // AI Summarize trigger
-      const btnAi = e.target.closest('.btn-ai-summarize');
-      if (btnAi) {
-        const id = btnAi.dataset.id;
-        const type = btnAi.dataset.type || 'post';
-        handleAiSummarize(id, type, 'summarize');
-        return;
-      }
 
-      // AI Action select
-      const aiActionBtn = e.target.closest('.ai-action-btn');
-      if (aiActionBtn) {
-        const id = aiActionBtn.dataset.id;
-        const type = aiActionBtn.dataset.type || 'post';
-        const action = aiActionBtn.dataset.action;
-        handleAiSummarize(id, type, action);
-        return;
-      }
-
-      // AI Close result
-      if (e.target.closest('.btn-ai-close')) {
-        const container = e.target.closest('.ai-result-container');
-        if (container) container.remove();
-        return;
-      }
-
-      // AI Copy result
-      const btnAiCopy = e.target.closest('.btn-ai-copy');
-      if (btnAiCopy) {
-        const container = btnAiCopy.closest('.ai-result-container');
-        const textEl = container?.querySelector('.ai-result-text');
-        if (textEl) {
-          try {
-            await navigator.clipboard.writeText(textEl.textContent);
-            const original = btnAiCopy.textContent;
-            btnAiCopy.textContent = '✓';
-            btnAiCopy.style.color = 'var(--success)';
-            setTimeout(() => { btnAiCopy.textContent = original; btnAiCopy.style.color = ''; }, 1500);
-          } catch {}
-        }
-        return;
-      }
-    });
-  }
 
   // Set initial state
   updateSearchButtonState();

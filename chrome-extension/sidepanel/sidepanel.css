@@ -134,14 +134,33 @@ body {
 .workspace-header {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-  padding: 6px 12px;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 8px 10px 8px 12px;
   background: var(--header-bg, var(--accent));
   border-bottom: 1px solid var(--nav-border);
   flex-shrink: 0;
   box-shadow: 0 2px 10px rgba(0,0,0,0.1);
   min-height: 36px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* PWA mode custom overrides */
+.pwa-mode .workspace-header {
+  gap: 4px;
+  padding: 7px 8px;
+}
+
+.pwa-mode .header-actions {
+  gap: 4px;
 }
 
 .workspace-brand {
@@ -4026,6 +4045,19 @@ span.flatpickr-weekday {
   padding-bottom: 2px;
 }
 
+/* PWA mode custom overrides for logo/version */
+.pwa-mode .header-brand {
+  gap: 4px;
+}
+.pwa-mode .header-brand-logo {
+  font-size: 13px;
+  white-space: nowrap;
+}
+.pwa-mode .header-brand-version {
+  padding: 1px 4px;
+  padding-bottom: 1.5px;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    Interactive Onboarding Tour
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -4390,4 +4422,47 @@ span.flatpickr-weekday {
 @keyframes shimmer-slide {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
+}
+
+.tour-keyboard-hint {
+  font-size: 10px;
+  color: var(--text-3, #64748b);
+  text-align: center;
+  margin-top: 6px;
+  opacity: 0.85;
+}
+
+/* Whats New Announcement Banner */
+#whatsNewBanner {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(135deg, #4f46e5, #4338ca);
+  color: #ffffff;
+  padding: 10px 14px;
+  font-size: 12px;
+  line-height: 1.4;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  z-index: 100;
+}
+
+#btnWhatsNewBannerClose {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 2px 6px;
+  margin: 0;
+  line-height: 1;
+  border-radius: 4px;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+#btnWhatsNewBannerClose:hover {
+  opacity: 1;
 }
