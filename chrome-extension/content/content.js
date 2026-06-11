@@ -7,6 +7,31 @@ import { language, loadLanguage } from '../src/lang.js';
 import { needsChatOpsConversion, convertForChatOps } from '../src/utils/imageConverter.js';
 import { formatRichText } from '../src/utils/formatter.js';
 
+const DEFAULT_SETTINGS = {
+  spamEnabled: true,
+  memeEnabled: true,
+  showTabs: { search: true, tasks: true, notes: true, missed: true, reactions: true },
+  floatingButtons: { quickNote: true, quickTask: true, spamReactions: false, imagePicker: true, quickReply: true, quickCopy: true, aiSummarize: true },
+  spamEmojis: ['thumbsup', 'heart', 'fire', 'rocket', 'tada', 'laughing', 'smile', 'wink', 'heart_eyes', 'kissing_heart'],
+  tabsCompactMode: false,
+  snoozeMinutes: 5,
+  notificationPosition: 'center',
+  notificationAnimation: 'shake-continuous',
+  notificationSize: 'medium',
+  aiProvider: 'gemini',
+  geminiApiKey: '',
+  groqApiKey: '',
+  openrouterApiKey: '',
+  geminiModel: 'gemini-2.0-flash',
+  groqModel: 'llama-3.3-70b-versatile',
+  openrouterModel: 'openrouter/free',
+  aiCustomPrompt: `Hãy tóm tắt nội dung sau đây một cách đầy đủ nhất có thể
+Nội dung từ người dùng: {{from}}
+Được nhắc đến: {{mention}}
+Nội dung cần tóm tắt:
+{{input}}`
+};
+
 // Global UI elements shared between the message listeners and page DOM
 let quickNotePopover = null;
 let quickNoteBackdrop = null;
@@ -212,7 +237,8 @@ async function showReminderBanner(text, taskId, isTask = false, postId = null, t
   // Play notification sound if enabled
   try {
     const resSettings = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS]);
-    settings = resSettings[STORAGE_KEYS.SETTINGS] || {};
+    const rawSettings = resSettings[STORAGE_KEYS.SETTINGS] || {};
+    settings = { ...DEFAULT_SETTINGS, ...rawSettings };
     if (settings.soundNotification) {
       playNotificationSound();
     }
@@ -230,7 +256,7 @@ async function showReminderBanner(text, taskId, isTask = false, postId = null, t
   // Determine container position style & direction based on settings
   let positionCss = 'top: 24px; right: 20px;';
   let alignCss = 'align-items: flex-end;';
-  const pos = settings.notificationPosition || 'top-right';
+  const pos = settings.notificationPosition || 'center';
   if (pos === 'top-left') {
     positionCss = 'top: 24px; left: 20px;';
     alignCss = 'align-items: flex-start;';
@@ -269,7 +295,7 @@ async function showReminderBanner(text, taskId, isTask = false, postId = null, t
   const isLongText = text.length > 80 || text.includes('\n');
   const escText = text.replace(/</g, '&lt;');
 
-  const animStyle = settings.notificationAnimation || 'default';
+  const animStyle = settings.notificationAnimation || 'shake-continuous';
   const animationClass = animStyle !== 'default' ? `animation-${animStyle}` : '';
   const sizeClass = `size-${size}`;
 
@@ -294,23 +320,17 @@ async function showReminderBanner(text, taskId, isTask = false, postId = null, t
         ${postId ? `<button class="crb-jump-btn" data-post-id="${postId}">${language.viewMessage}</button>` : ''}
       </div>
     ` : ''}
-    <div class="crb-progress"></div>
+    <div class="crb-progress" style="display: none !important;"></div>
   `;
   container.appendChild(banner);
 
-  const duration = isTask ? UI_CONFIG.TASK_BANNER_DURATION : UI_CONFIG.BANNER_DURATION;
   const progressEl = banner.querySelector('.crb-progress');
-  progressEl.style.animationDuration = `${duration}ms`;
 
   setTimeout(() => banner.classList.add('visible'), 10);
 
-  let closeTimer = setTimeout(() => {
-    banner.classList.remove('visible');
-    setTimeout(() => banner.remove(), 400);
-  }, duration);
+  let closeTimer = null; // Indefinite display
 
   banner.querySelector('.crb-close').addEventListener('click', () => {
-    if (closeTimer) clearTimeout(closeTimer);
     banner.classList.remove('visible');
     setTimeout(() => banner.remove(), 400);
   });
@@ -321,7 +341,6 @@ async function showReminderBanner(text, taskId, isTask = false, postId = null, t
       if (e.target.closest('.crb-close') || e.target.closest('.crb-collapse-btn')) {
         return;
       }
-      if (closeTimer) clearTimeout(closeTimer);
       banner.classList.remove('visible');
       setTimeout(() => banner.remove(), 400);
       await handleNotificationJump(postId, taskTeamName);
@@ -344,26 +363,6 @@ async function showReminderBanner(text, taskId, isTask = false, postId = null, t
         e.stopPropagation();
         const isCollapsed = textEl.classList.toggle('collapsed');
         collBtn.classList.toggle('expanded', !isCollapsed);
-        if (isCollapsed) {
-          // Reschedule a short auto-close timer (3 seconds) when collapsed back
-          if (closeTimer) clearTimeout(closeTimer);
-          closeTimer = setTimeout(() => {
-            banner.classList.remove('visible');
-            setTimeout(() => banner.remove(), 400);
-          }, 3000);
-        } else {
-          // Reset the close timer to a generous 15 seconds when expanded so it eventually closes
-          if (closeTimer) clearTimeout(closeTimer);
-          closeTimer = setTimeout(() => {
-            banner.classList.remove('visible');
-            setTimeout(() => banner.remove(), 400);
-          }, 15000);
-          
-          if (progressEl) {
-            progressEl.style.animationPlayState = 'paused';
-            progressEl.style.opacity = '0';
-          }
-        }
       });
     }
   }
@@ -371,7 +370,6 @@ async function showReminderBanner(text, taskId, isTask = false, postId = null, t
   if (isTask && taskId) {
     banner.querySelector('.crb-done-btn').addEventListener('click', (e) => {
       e.stopPropagation();
-      if (closeTimer) clearTimeout(closeTimer);
       chrome.runtime.sendMessage({ type: MESSAGE_TYPES.MARK_TASK_DONE, taskId });
       banner.classList.remove('visible');
       setTimeout(() => banner.remove(), 400);
@@ -381,20 +379,16 @@ async function showReminderBanner(text, taskId, isTask = false, postId = null, t
     if (skipBtn) {
       skipBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (closeTimer) clearTimeout(closeTimer);
         chrome.runtime.sendMessage({ type: MESSAGE_TYPES.SKIP_TASK_DAILY, taskId });
         banner.classList.remove('visible');
         setTimeout(() => banner.remove(), 400);
       });
     }
 
-
-
     const jumpBtn = banner.querySelector('.crb-jump-btn');
     if (jumpBtn) {
       jumpBtn.addEventListener('click', async (e) => {
         e.stopPropagation();
-        if (closeTimer) clearTimeout(closeTimer);
         banner.classList.remove('visible');
         setTimeout(() => banner.remove(), 400);
         await handleNotificationJump(postId, taskTeamName);
@@ -402,6 +396,7 @@ async function showReminderBanner(text, taskId, isTask = false, postId = null, t
     }
   }
 }
+
 
 /**
  * Displays a toast notification
@@ -3133,30 +3128,6 @@ function showToast(msg) {
     showToast(mode === 'note' ? (language.quickNoteSaveSuccess || 'Đã lưu ghi chú') : (language.quickTaskSaveSuccess || 'Đã lưu công việc'));
   }
 
-  const DEFAULT_SETTINGS = {
-    spamEnabled: true,
-    memeEnabled: true,
-    showTabs: { search: true, tasks: true, notes: true, missed: true, reactions: true },
-    floatingButtons: { quickNote: true, quickTask: true, spamReactions: false, imagePicker: true, quickReply: true, quickCopy: true, aiSummarize: true },
-    spamEmojis: ['thumbsup', 'heart', 'fire', 'rocket', 'tada', 'laughing', 'smile', 'wink', 'heart_eyes', 'kissing_heart'],
-    tabsCompactMode: false,
-    snoozeMinutes: 5,
-    notificationPosition: 'center',
-    notificationAnimation: 'shake-continuous',
-    notificationSize: 'medium',
-    aiProvider: 'gemini',
-    geminiApiKey: '',
-    groqApiKey: '',
-    openrouterApiKey: '',
-    geminiModel: 'gemini-2.0-flash',
-    groqModel: 'llama-3.3-70b-versatile',
-    openrouterModel: 'openrouter/free',
-    aiCustomPrompt: `Hãy tóm tắt nội dung sau đây một cách đầy đủ nhất có thể
-Nội dung từ người dùng: {{from}}
-Được nhắc đến: {{mention}}
-Nội dung cần tóm tắt:
-{{input}}`
-  };
   let cachedSettings = { ...DEFAULT_SETTINGS };
   let cachedMemos = [];
   let myUserId = '';

@@ -210,7 +210,9 @@ export function setup(state) {
 
   document.getElementById('spSearchFrom').addEventListener('input', (e) => {
     // If user types manually, clear the stored username
-    delete e.target.dataset.username;
+    if (e.isTrusted) {
+      delete e.target.dataset.username;
+    }
   });
 
 

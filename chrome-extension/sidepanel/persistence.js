@@ -13,6 +13,7 @@ export function saveState(selectors) {
     search: {
       terms: document.getElementById('spSearchTerms')?.value || '',
       from: document.getElementById('spSearchFrom')?.value || '',
+      fromUsername: document.getElementById('spSearchFrom')?.dataset.username || '',
       inChannels: selectors.searchInMS ? selectors.searchInMS.getSelected() : [],
       after: document.getElementById('spSearchAfter')?.value || '',
       before: document.getElementById('spSearchBefore')?.value || '',
@@ -48,6 +49,11 @@ export function restoreState(selectors) {
       const fromEl = document.getElementById('spSearchFrom');
       if (fromEl) {
         fromEl.value = s.search.from || '';
+        if (s.search.fromUsername) {
+          fromEl.dataset.username = s.search.fromUsername;
+        } else {
+          delete fromEl.dataset.username;
+        }
         fromEl.dispatchEvent(new Event('input', { bubbles: true }));
       }
       
