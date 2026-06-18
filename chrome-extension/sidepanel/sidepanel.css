@@ -4112,8 +4112,8 @@ span.flatpickr-weekday {
 
 .tour-skip-btn {
   font-size: 11px;
-  font-weight: 600;
-  color: var(--text-3, #94a3b8);
+  font-weight: 700;
+  color: var(--text-2, #475569);
   background: transparent;
   border: none;
   cursor: pointer;
@@ -4122,7 +4122,7 @@ span.flatpickr-weekday {
   transition: color 0.15s;
 }
 .tour-skip-btn:hover {
-  color: var(--text-1, #1e293b);
+  color: var(--accent, #1c58d9);
 }
 
 .tour-title {
@@ -4432,37 +4432,67 @@ span.flatpickr-weekday {
   opacity: 0.85;
 }
 
-/* Whats New Announcement Banner */
-#whatsNewBanner {
-  display: none;
-  align-items: center;
-  justify-content: space-between;
-  background: linear-gradient(135deg, #4f46e5, #4338ca);
-  color: #ffffff;
-  padding: 10px 14px;
-  font-size: 12px;
-  line-height: 1.4;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  position: relative;
-  z-index: 100;
+/* ─── Search Channel Group ─── */
+.search-channel-group {
+  border: 1px solid var(--border-hover);
+  border-left: 3px solid var(--accent-border);
+  background: var(--bg-1);
+  border-radius: var(--radius);
+  padding: 10px 10px 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 2px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
 }
-
-#btnWhatsNewBannerClose {
-  background: transparent;
-  border: none;
-  color: #ffffff;
-  font-size: 16px;
+.search-channel-group::before {
+  content: attr(data-label);
+  display: block;
+  font-size: 10px;
   font-weight: 700;
-  cursor: pointer;
-  padding: 2px 6px;
-  margin: 0;
-  line-height: 1;
-  border-radius: 4px;
-  opacity: 0.8;
-  transition: opacity 0.2s;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 2px;
+}
+.search-channel-group .search-performance-warning {
+  margin-top: 0;
+}
+.search-channel-group .checkbox-label {
+  margin-left: 0;
 }
 
-#btnWhatsNewBannerClose:hover {
-  opacity: 1;
+/* ─── Task Done Badge ─── */
+.task-done-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px 3px 6px;
+  border-radius: 20px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
 }
+.task-done-badge:hover {
+  border-color: var(--accent);
+  background: var(--bg-3);
+}
+.task-done-badge.is-done {
+  background: rgba(61, 184, 135, 0.08);
+  border-color: var(--success);
+}
+.task-done-badge.is-done:hover {
+  background: rgba(61, 184, 135, 0.15);
+}
+.task-done-text {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-2);
+  line-height: 1;
+}
+.task-done-badge.is-done .task-done-text {
+  color: var(--success);
+}
+

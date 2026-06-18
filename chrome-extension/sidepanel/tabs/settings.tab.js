@@ -2,7 +2,7 @@ import { STORAGE_KEYS, CHATOPS_CONFIG, MESSAGE_TYPES, DEFAULT_MEMES } from '../.
 import { language, setLanguage, applyI18n } from '../../src/lang.js';
 import { getCustomEmojis, getConfig, searchCustomEmojis } from '../../src/api/index.js';
 import { needsChatOpsConversion, convertForChatOps } from '../../src/utils/imageConverter.js';
-import { validateAiApiKey } from '../../src/api/ai.js';
+
 
 let chatopsUrl = CHATOPS_CONFIG.DEFAULT_URL;
 const customEmojiMap = new Map();
@@ -222,7 +222,7 @@ let _state = null;
 const DEFAULT_SETTINGS = {
   snoozeMinutes: 5,
   notificationPosition: 'center',
-  notificationAnimation: 'shake-continuous',
+  notificationAnimation: 'default',
   notificationSize: 'medium',
   headerColor: '#1c58d9',
   headerTextColor: '#ffffff',
@@ -253,8 +253,7 @@ const DEFAULT_SETTINGS = {
     reactAlong: false,
     imagePicker: true,
     quickReply: false,
-    quickCopy: false,
-    aiSummarize: true
+    quickCopy: false
   },
   memoCategories: ['General', 'Work'],
   spamEnabled: true,
@@ -262,7 +261,6 @@ const DEFAULT_SETTINGS = {
   giphyApiKey: '',
   giphySize: '200',
   spamEmojis: ['thumbsup', 'heart', 'fire', 'rocket', 'tada', 'laughing', 'smile', 'wink', 'heart_eyes', 'kissing_heart'],
-  autoCleanupDays: 30,
   notificationType: 'in-page',
   appPadding: '12px',
   quickDelete: false,
@@ -270,19 +268,7 @@ const DEFAULT_SETTINGS = {
   customButtonsPosition: 'above',
   activeReactionGroupId: 0,
   reactionGroups: null,
-  reactAlongEnabled: false,
-  geminiApiKey: '',
-  groqApiKey: '',
-  openrouterApiKey: '',
-  geminiModel: 'gemini-2.0-flash',
-  groqModel: 'llama-3.3-70b-versatile',
-  openrouterModel: 'openrouter/free',
-  aiProvider: 'groq',
-  aiCustomPrompt: `Hãy tóm tắt nội dung sau đây một cách đầy đủ nhất có thể
-Nội dung từ người dùng: {{from}}
-Được nhắc đến: {{mention}}
-Nội dung cần tóm tắt:
-{{input}}`
+  reactAlongEnabled: false
 };
 
 /**
@@ -379,48 +365,12 @@ async function loadAndApplySettings() {
     giphyApiKeyInput.value = settings.giphyApiKey || '';
   }
 
-  const aiProviderSelect = document.getElementById('settingAiProvider');
-  const provider = settings.aiProvider || 'gemini';
-  if (aiProviderSelect) {
-    aiProviderSelect.value = provider;
-  }
-  updateAiGuide(provider);
-
-  const geminiApiKeyInput = document.getElementById('settingGeminiApiKey');
-  if (geminiApiKeyInput) {
-    let key = '';
-    if (provider === 'gemini') {
-      key = settings.geminiApiKey || '';
-    } else if (provider === 'groq') {
-      key = settings.groqApiKey || '';
-    } else if (provider === 'openrouter') {
-      key = settings.openrouterApiKey || '';
-    }
-    geminiApiKeyInput.value = key;
-  }
-
-  const settingAiModelInput = document.getElementById('settingAiModel');
-  if (settingAiModelInput) {
-    let model = '';
-    if (provider === 'gemini') {
-      model = settings.geminiModel || 'gemini-2.0-flash';
-    } else if (provider === 'groq') {
-      model = settings.groqModel || 'llama-3.3-70b-versatile';
-    } else if (provider === 'openrouter') {
-      model = settings.openrouterModel || 'openrouter/free';
-    }
-    settingAiModelInput.value = model;
-  }
 
   const giphySizeSelect = document.getElementById('settingGiphySize');
   if (giphySizeSelect) {
     giphySizeSelect.value = settings.giphySize || '200';
   }
   
-  const autoCleanupSelect = document.getElementById('settingsAutoCleanupDays');
-  if (autoCleanupSelect) {
-    autoCleanupSelect.value = settings.autoCleanupDays !== undefined ? settings.autoCleanupDays : 30;
-  }
 
   const notificationTypeSelect = document.getElementById('settingNotificationType');
   if (notificationTypeSelect) {
@@ -517,15 +467,6 @@ async function loadAndApplySettings() {
   document.getElementById('settingFloatingQuickReply').checked = settings.floatingButtons?.quickReply !== false;
   document.getElementById('settingFloatingQuickCopy').checked = settings.floatingButtons?.quickCopy !== false;
   
-  const settingFloatingAiSummarize = document.getElementById('settingFloatingAiSummarize');
-  if (settingFloatingAiSummarize) {
-    settingFloatingAiSummarize.checked = settings.floatingButtons?.aiSummarize !== false;
-  }
-
-  const settingAiCustomPrompt = document.getElementById('settingAiCustomPrompt');
-  if (settingAiCustomPrompt) {
-    settingAiCustomPrompt.value = settings.aiCustomPrompt || '';
-  }
 
   // Sync disabled/dimmed states
   updateFloatingCheckboxesSync(settings);
@@ -607,18 +548,14 @@ async function loadAndApplySettings() {
     snoozeHint.innerHTML = language.taskReminderHint.replace('{minutes}', settings.snoozeMinutes);
   }
 
-  // Update cloud sync status
-  updateSyncStatusText();
 
   if (typeof window.convertToCustomDropdown === 'function') {
-    window.convertToCustomDropdown('settingsAutoCleanupDays');
     window.convertToCustomDropdown('settingNotificationType', '220px');
     window.convertToCustomDropdown('settingNotificationPosition', '220px');
     window.convertToCustomDropdown('settingNotificationAnimation', '220px');
     window.convertToCustomDropdown('settingNotificationSize', '220px');
     window.convertToCustomDropdown('settingAppPadding', '200px');
     window.convertToCustomDropdown('settingCustomButtonsPosition', '180px');
-    window.convertToCustomDropdown('settingAiProvider', '220px');
   }
 
   // Validate Giphy API Key on load
@@ -626,19 +563,6 @@ async function loadAndApplySettings() {
     validateGiphyApiKey(settings.giphyApiKey);
   }
 
-  // Validate Active API Key on load
-  const activeProvider = settings.aiProvider || 'gemini';
-  let activeKey = '';
-  if (activeProvider === 'gemini') {
-    activeKey = settings.geminiApiKey;
-  } else if (activeProvider === 'groq') {
-    activeKey = settings.groqApiKey;
-  } else if (activeProvider === 'openrouter') {
-    activeKey = settings.openrouterApiKey;
-  }
-  if (activeKey) {
-    validateGeminiApiKey(activeKey);
-  }
 }
 
 async function validateGiphyApiKey(key) {
@@ -675,120 +599,6 @@ async function validateGiphyApiKey(key) {
   }
 }
 
-function updateAiGuide(provider) {
-  const container = document.getElementById('aiGuideContainer');
-  if (!container) return;
-
-  // Clear container
-  container.innerHTML = '';
-
-  let titleKey, noteKey, steps = [];
-  if (provider === 'groq') {
-    titleKey = 'aiGuideTitleGroq';
-    noteKey = 'aiGuideNoteGroq';
-    steps = ['aiGuideStep1Groq', 'aiGuideStep2Groq', 'aiGuideStep3Groq', 'aiGuideStep4Groq'];
-  } else if (provider === 'openrouter') {
-    titleKey = 'aiGuideTitleOpenrouter';
-    noteKey = 'aiGuideNoteOpenrouter';
-    steps = ['aiGuideStep1Openrouter', 'aiGuideStep2Openrouter', 'aiGuideStep3Openrouter', 'aiGuideStep4Openrouter'];
-  } else {
-    // Default to gemini
-    titleKey = 'aiGuideTitleGemini';
-    noteKey = 'aiGuideNoteGemini';
-    steps = ['aiGuideStep1Gemini', 'aiGuideStep2Gemini', 'aiGuideStep3Gemini', 'aiGuideStep4Gemini'];
-  }
-
-  // Create Header
-  const h3 = document.createElement('h3');
-  h3.className = 'settings-title';
-  h3.style.marginTop = '0';
-  h3.setAttribute('data-i18n', titleKey);
-  h3.textContent = language[titleKey] || '';
-  container.appendChild(h3);
-
-  // Create List
-  const ol = document.createElement('ol');
-  ol.style.margin = '0';
-  ol.style.paddingLeft = '18px';
-  ol.style.fontSize = '12.5px';
-  ol.style.color = 'var(--text-2)';
-  ol.style.lineHeight = '2';
-
-  steps.forEach(stepKey => {
-    const li = document.createElement('li');
-    li.setAttribute('data-i18n-html', stepKey);
-    li.innerHTML = language[stepKey] || '';
-    ol.appendChild(li);
-  });
-  container.appendChild(ol);
-
-  // Create Note Box
-  const infoBox = document.createElement('div');
-  infoBox.className = 'settings-info-box';
-  infoBox.style.marginTop = '10px';
-  infoBox.setAttribute('data-i18n-html', noteKey);
-  infoBox.innerHTML = language[noteKey] || '';
-  container.appendChild(infoBox);
-}
-
-async function validateGeminiApiKey(key) {
-  const statusEl = document.getElementById('settingGeminiApiKeyStatus');
-  const modelStatusEl = document.getElementById('settingAiModelStatus');
-  if (!statusEl) return;
-
-  if (modelStatusEl) {
-    modelStatusEl.style.display = 'none';
-    modelStatusEl.textContent = '';
-    modelStatusEl.removeAttribute('data-i18n');
-  }
-
-  if (!key) {
-    statusEl.style.display = 'none';
-    statusEl.textContent = '';
-    statusEl.removeAttribute('data-i18n');
-    return;
-  }
-
-  statusEl.setAttribute('data-i18n', 'aiCheckingKey');
-  statusEl.textContent = language.aiCheckingKey;
-  statusEl.style.color = 'var(--text-3)';
-  statusEl.style.display = 'block';
-
-  try {
-    const settings = await getSettings();
-    const provider = settings.aiProvider || 'gemini';
-    const modelInput = document.getElementById('settingAiModel');
-    const modelName = modelInput ? modelInput.value.trim() : null;
-    
-    const result = await validateAiApiKey(key, provider, modelName);
-    if (result.isValid) {
-      statusEl.setAttribute('data-i18n', 'aiValidKey');
-      statusEl.textContent = language.aiValidKey;
-      statusEl.style.color = '#10b981'; // Green
-    } else {
-      if (result.errorType === 'model') {
-        statusEl.setAttribute('data-i18n', 'aiValidKey');
-        statusEl.textContent = language.aiValidKey;
-        statusEl.style.color = '#10b981'; // Green
-
-        if (modelStatusEl) {
-          modelStatusEl.setAttribute('data-i18n', 'aiInvalidModel');
-          modelStatusEl.textContent = language.aiInvalidModel || '❌ Tên Model không hợp lệ hoặc không được hỗ trợ.';
-          modelStatusEl.style.color = '#ef4444'; // Red
-          modelStatusEl.style.display = 'block';
-        }
-      } else {
-        statusEl.setAttribute('data-i18n', 'aiInvalidKey');
-        statusEl.textContent = language.aiInvalidKey;
-        statusEl.style.color = '#ef4444'; // Red
-      }
-    }
-  } catch (err) {
-    statusEl.setAttribute('data-i18n', 'aiConnectionError');
-    statusEl.textContent = language.aiConnectionError;
-    statusEl.style.color = '#ef4444'; // Red
-  }
-}
 
 function setupEventListeners() {
   const fileInput = document.getElementById('sidepanel-meme-upload');
@@ -965,98 +775,6 @@ function setupEventListeners() {
     });
   }
 
-  const aiProviderSelect = document.getElementById('settingAiProvider');
-  if (aiProviderSelect) {
-    aiProviderSelect.addEventListener('change', async (e) => {
-      const val = e.target.value;
-      await updateSettings({ aiProvider: val });
-      showAutoSaveFeedback();
-      updateAiGuide(val);
-      
-      const settings = await getSettings();
-      const geminiApiKeyInput = document.getElementById('settingGeminiApiKey');
-      if (geminiApiKeyInput) {
-        let key = '';
-        if (val === 'gemini') {
-          key = settings.geminiApiKey || '';
-        } else if (val === 'groq') {
-          key = settings.groqApiKey || '';
-        } else if (val === 'openrouter') {
-          key = settings.openrouterApiKey || '';
-        }
-        geminiApiKeyInput.value = key;
-        validateGeminiApiKey(key);
-      }
-
-      const settingAiModelInput = document.getElementById('settingAiModel');
-      if (settingAiModelInput) {
-        let model = '';
-        if (val === 'gemini') {
-          model = settings.geminiModel || 'gemini-2.0-flash';
-        } else if (val === 'groq') {
-          model = settings.groqModel || 'llama-3.3-70b-versatile';
-        } else if (val === 'openrouter') {
-          model = settings.openrouterModel || 'openrouter/free';
-        }
-        settingAiModelInput.value = model;
-      }
-    });
-  }
-
-  const geminiApiKeyInput = document.getElementById('settingGeminiApiKey');
-  if (geminiApiKeyInput) {
-    geminiApiKeyInput.addEventListener('change', async (e) => {
-      const val = e.target.value.trim();
-      const providerSelect = document.getElementById('settingAiProvider');
-      const provider = providerSelect ? providerSelect.value : 'gemini';
-      const updateObj = {};
-      if (provider === 'gemini') {
-        updateObj.geminiApiKey = val;
-      } else if (provider === 'groq') {
-        updateObj.groqApiKey = val;
-      } else if (provider === 'openrouter') {
-        updateObj.openrouterApiKey = val;
-      }
-      await updateSettings(updateObj);
-      showAutoSaveFeedback();
-      validateGeminiApiKey(val);
-    });
-  }
-
-  const settingAiModelInput = document.getElementById('settingAiModel');
-  if (settingAiModelInput) {
-    settingAiModelInput.addEventListener('change', async (e) => {
-      const val = e.target.value.trim();
-      const providerSelect = document.getElementById('settingAiProvider');
-      const provider = providerSelect ? providerSelect.value : 'gemini';
-      const updateObj = {};
-      if (provider === 'gemini') {
-        updateObj.geminiModel = val;
-      } else if (provider === 'groq') {
-        updateObj.groqModel = val;
-      } else if (provider === 'openrouter') {
-        updateObj.openrouterModel = val;
-      }
-      await updateSettings(updateObj);
-      showAutoSaveFeedback();
-
-      // Validate the API key against the new model immediately
-      const keyInput = document.getElementById('settingGeminiApiKey');
-      const key = keyInput ? keyInput.value.trim() : '';
-      if (key) {
-        validateGeminiApiKey(key);
-      }
-    });
-  }
-
-  const settingAiCustomPromptTextarea = document.getElementById('settingAiCustomPrompt');
-  if (settingAiCustomPromptTextarea) {
-    settingAiCustomPromptTextarea.addEventListener('change', async (e) => {
-      const val = e.target.value.trim();
-      await updateSettings({ aiCustomPrompt: val });
-      showAutoSaveFeedback();
-    });
-  }
 
   const giphySizeSelect = document.getElementById('settingGiphySize');
   if (giphySizeSelect) {
@@ -2035,147 +1753,7 @@ function setupEventListeners() {
 
   window.navigateToSettingsSubtab = navigateToSubtab;
 
-  // Cloud Sync click listeners
-  const btnBackup = document.getElementById('btnSyncCloudBackup');
-  const btnRestore = document.getElementById('btnSyncCloudRestore');
-  
-  if (btnBackup) {
-    btnBackup.addEventListener('click', async () => {
-      try {
-        btnBackup.disabled = true;
-        btnBackup.textContent = '⏳ ' + language.backingUp;
-        
-        // Get memos from local
-        const localRes = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
-        const memos = localRes[STORAGE_KEYS.MEMOS] || [];
-        
-        // Fetch all current keys in sync to clean up older sync_memo_ keys
-        const allSyncData = await chrome.storage.sync.get(null);
-        const oldKeys = Object.keys(allSyncData).filter(k => k.startsWith('sync_memo_') || k === STORAGE_KEYS.MEMOS);
-        
-        if (oldKeys.length > 0) {
-          await chrome.storage.sync.remove(oldKeys);
-        }
-        
-        // Save each memo as an individual key to bypass the 8KB limit per item
-        const syncObj = {};
-        memos.forEach(m => {
-          try {
-            if (m && typeof m === 'object' && m.id) {
-              syncObj[`sync_memo_${m.id}`] = m;
-            }
-          } catch (e) {
-            console.warn('[ChatOps Ext] Ignoring invalid memo item:', m, e);
-          }
-        });
-        
-        if (Object.keys(syncObj).length > 0) {
-          await chrome.storage.sync.set(syncObj);
-        }
-        
-        // Save last sync time
-        await chrome.storage.local.set({ last_cloud_sync_time: Date.now() });
-        
-        await updateSyncStatusText();
-        showAutoSaveFeedback();
-        
-        showSuccessFeedback(language.backupSuccess);
-      } catch (err) {
-        console.error('[ChatOps Ext] Cloud backup error:', err);
-        showErrorFeedback(language.backupFailed);
-      } finally {
-        btnBackup.disabled = false;
-        btnBackup.textContent = '☁️ ' + language.backupToCloud;
-      }
-    });
-  }
-  
-  if (btnRestore) {
-    btnRestore.addEventListener('click', async () => {
-      try {
-        const confirmRestore = confirm(language.confirmRestore);
-        if (!confirmRestore) return;
-        
-        btnRestore.disabled = true;
-        btnRestore.textContent = '⏳ ' + language.restoring;
-        
-        // Get all keys from sync
-        const allSyncData = await chrome.storage.sync.get(null);
-        
-        // Support both monolithic old layout and new split-key layout
-        let memos = [];
-        if (allSyncData[STORAGE_KEYS.MEMOS] && Array.isArray(allSyncData[STORAGE_KEYS.MEMOS])) {
-          memos = allSyncData[STORAGE_KEYS.MEMOS];
-        } else {
-          memos = Object.keys(allSyncData)
-            .filter(k => k.startsWith('sync_memo_'))
-            .map(k => allSyncData[k]);
-        }
-        
-        // Sort memos by createdAt in descending order (newest first) to maintain consistent order
-        memos.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-        
-        // Save to local
-        await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
-        
-        // Save sync time
-        await chrome.storage.local.set({ last_cloud_sync_time: Date.now() });
-        
-        await updateSyncStatusText();
-        showAutoSaveFeedback();
-        
-        // Force reload all UI tabs
-        chrome.runtime.sendMessage({ type: MESSAGE_TYPES.MEMO_UPDATED });
-        
-        showSuccessFeedback(language.restoreSuccess);
-      } catch (err) {
-        console.error('[ChatOps Ext] Cloud restore error:', err);
-        showErrorFeedback(language.restoreFailed);
-      } finally {
-        btnRestore.disabled = false;
-        btnRestore.textContent = '🔄 ' + language.restoreFromCloud;
-      }
-    });
-  }
 
-  // Auto-Cleanup settings change listener
-  const cleanupSelect = document.getElementById('settingsAutoCleanupDays');
-  if (cleanupSelect) {
-    cleanupSelect.addEventListener('change', async (e) => {
-      const days = parseInt(e.target.value, 10);
-      await updateSettings({ autoCleanupDays: days });
-      showAutoSaveFeedback();
-      
-      // Instantly run cleanup if days is changed to a positive number
-      if (days > 0) {
-        runAutoCleanup();
-      }
-    });
-  }
-
-  // Manual cleanup trigger
-  const btnManualCleanup = document.getElementById('btnManualCleanupNow');
-  if (btnManualCleanup) {
-    btnManualCleanup.addEventListener('click', async () => {
-      const confirmCleanup = confirm(language.confirmCleanup);
-      if (!confirmCleanup) return;
-      
-      btnManualCleanup.disabled = true;
-      btnManualCleanup.textContent = '⏳ ' + language.cleaningUp;
-      
-      try {
-        const deletedCount = await runAutoCleanupForce();
-        await updateStorageUsageDisplay();
-        showSuccessFeedback(language.cleanupSuccess.replace('{count}', deletedCount));
-      } catch (err) {
-        console.error('[ChatOps Ext] Manual cleanup error:', err);
-        showErrorFeedback(language.cleanupFailed);
-      } finally {
-        btnManualCleanup.disabled = false;
-        btnManualCleanup.textContent = '🧹 ' + language.cleanUpNow;
-      }
-    });
-  }
 
   // Listen for storage changes to sync custom images reactively
   chrome.storage.onChanged.addListener((changes, areaName) => {
@@ -2232,53 +1810,6 @@ function setupEventListeners() {
   });
 }
 
-async function updateSyncStatusText() {
-  const syncStatusEl = document.getElementById('syncStatusMessage');
-  if (!syncStatusEl) return;
-  
-  const res = await chrome.storage.local.get(['last_cloud_sync_time']);
-  const lastSync = res.last_cloud_sync_time;
-  
-  if (lastSync) {
-    const date = new Date(lastSync);
-    const hrs = String(date.getHours()).padStart(2, '0');
-    const mins = String(date.getMinutes()).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const timeStr = `${hrs}:${mins} - ${day}/${month}`;
-    syncStatusEl.innerHTML = language.lastSyncText.replace('{time}', timeStr);
-  } else {
-    syncStatusEl.innerHTML = language.neverSyncedText;
-  }
-
-  // Update storage usage display
-  updateStorageUsageDisplay();
-}
-
-function formatBytes(bytes) {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-}
-
-async function updateStorageUsageDisplay() {
-  const displayEl = document.getElementById('storageUsageDisplay');
-  if (!displayEl) return;
-  
-  try {
-    const localBytes = await chrome.storage.local.getBytesInUse(null);
-    const syncBytes = await chrome.storage.sync.getBytesInUse(null);
-    
-    displayEl.innerHTML = language.storageUsageText
-      .replace('{local}', formatBytes(localBytes))
-      .replace('{sync}', formatBytes(syncBytes));
-  } catch (err) {
-    console.error('[ChatOps Ext] Failed to get storage usage:', err);
-    displayEl.textContent = 'N/A';
-  }
-}
 
 let autoSaveTimeoutId = null;
 
@@ -3296,63 +2827,7 @@ export function compressSidepanelImage(file, maxWidth, maxHeight, quality, callb
   reader.readAsDataURL(file);
 }
 
-export async function runAutoCleanup() {
-  const settings = await getSettings();
-  const days = settings.autoCleanupDays;
-  if (days === 0) return 0; // 0 means Never
-  
-  const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
-  const memos = res[STORAGE_KEYS.MEMOS] || [];
-  
-  let cutoffTime;
-  if (days === -1) {
-    cutoffTime = Date.now() + 10000; // Immediately (with 10s system tolerance)
-  } else {
-    cutoffTime = Date.now() - (days * 24 * 60 * 60 * 1000);
-  }
-  
-  let deletedCount = 0;
-  const cleanMemos = memos.filter(m => {
-    if (m && m.done) {
-      const completedTime = m.doneAt || m.createdAt || 0;
-      if (completedTime < cutoffTime) {
-        deletedCount++;
-        if (m.id) chrome.alarms.clear(m.id);
-        return false;
-      }
-    }
-    return true;
-  });
-  
-  if (deletedCount > 0) {
-    await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: cleanMemos });
-    console.log(`[ChatOps Ext] Auto-cleaned ${deletedCount} completed items (mode: ${days} days).`);
-    chrome.runtime.sendMessage({ type: MESSAGE_TYPES.MEMO_UPDATED });
-  }
-  return deletedCount;
-}
 
-export async function runAutoCleanupForce() {
-  // For the manual "Clean up now" button, immediately clear ALL completed items without date filtering
-  const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
-  const memos = res[STORAGE_KEYS.MEMOS] || [];
-  
-  let deletedCount = 0;
-  const cleanMemos = memos.filter(m => {
-    if (m && m.done) {
-      deletedCount++;
-      if (m.id) chrome.alarms.clear(m.id);
-      return false;
-    }
-    return true;
-  });
-  
-  if (deletedCount > 0) {
-    await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: cleanMemos });
-    chrome.runtime.sendMessage({ type: MESSAGE_TYPES.MEMO_UPDATED });
-  }
-  return deletedCount;
-}
 
 export function updateFloatingCheckboxesSync(settings) {
   // Disabling a menu tab should no longer affect its corresponding floating buttons.

@@ -405,6 +405,8 @@ export async function performSpSearch(isLoadMore = false) {
     searchState.page = 0;
     searchState.hasMore = true;
     searchState.isCancelled = false; // Reset cancellation flag
+
+
     
     resultsEl.innerHTML = `
       <div style="font-size: 12.5px; color: var(--text-2); text-align: center; margin-bottom: 14px; padding: 0 16px; line-height: 1.45; font-style: italic;">
@@ -465,11 +467,13 @@ export async function performSpSearch(isLoadMore = false) {
       );
       
       const allPosts = [];
+      const seenPostIds = new Set();
       results.forEach((res, index) => {
         const teamName = teams[index]?.name;
         if (res && res.order && res.posts) {
           res.order.forEach(id => {
-            if (res.posts[id]) {
+            if (res.posts[id] && !seenPostIds.has(id)) {
+              seenPostIds.add(id);
               const post = res.posts[id];
               post.teamName = teamName;
               allPosts.push(post);

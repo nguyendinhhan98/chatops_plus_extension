@@ -83,6 +83,7 @@ const en = {
   taskPlaceholder: 'Enter task name...',
   taskMarkIncomplete: 'Mark as incomplete',
   taskMarkDone: 'Mark as completed',
+  taskMarkDoneShort: 'Done',
   taskNoContent: '(No content)',
   taskOverdue: 'Overdue',
   taskDelete: 'Delete',
@@ -286,9 +287,9 @@ const en = {
   taskTextareaPlaceholder: 'Add new task... (Shift + Enter to save)',
   remindInPreset: 'Remind in...',
   noteTextareaPlaceholder: 'Write a note... (Shift + Enter to save)',
-  categoryLabelPrefix: '📁 Category:',
+  categoryLabelPrefix: 'Category:',
   customizeCategories: '➕ Customize Categories',
-  memoAddBtn: '📒 Add Note',
+  memoAddBtn: 'Add Note',
   last24Hours: 'Last 24 hours',
   last48Hours: 'Last 48 hours',
   last72Hours: 'Last 72 hours',
@@ -824,8 +825,6 @@ const en = {
   tourStepAiDesc: 'Configure your AI provider (Gemini, Groq, OpenRouter), API keys, and custom prompts to summarize and analyze messages instantly.',
   tourKeyboardHint: '⌨️ Use Arrow keys (← / →) to navigate',
   aiInvalidModel: '❌ Model Name is invalid or not supported.',
-  whatsNewBannerText: '✨ <b>New Features:</b> Instantly summarize conversation threads with AI!',
-  whatsNewBannerLink: 'Setup AI',
 };
 
 // Vietnamese Dictionary
@@ -905,6 +904,7 @@ const vi = {
   taskPlaceholder: 'Nhập tên công việc...',
   taskMarkIncomplete: 'Đánh dấu chưa hoàn thành',
   taskMarkDone: 'Đánh dấu đã hoàn thành',
+  taskMarkDoneShort: 'Hoàn thành',
   taskNoContent: '(Không có nội dung)',
   taskOverdue: 'Quá hạn',
   taskDelete: 'Xóa',
@@ -1108,9 +1108,9 @@ const vi = {
   taskTextareaPlaceholder: 'Thêm công việc mới... (Shift + Enter để lưu)',
   remindInPreset: 'Nhắc sau...',
   noteTextareaPlaceholder: 'Viết ghi chú... (Shift + Enter để lưu)',
-  categoryLabelPrefix: '📁 Danh mục:',
+  categoryLabelPrefix: 'Danh mục:',
   customizeCategories: '➕ Tùy chỉnh',
-  memoAddBtn: '📒 Thêm ghi chú',
+  memoAddBtn: 'Thêm ghi chú',
   last24Hours: '24 giờ qua',
   last48Hours: '48 giờ qua',
   last72Hours: '72 giờ qua',
@@ -1644,8 +1644,6 @@ const vi = {
   tourStepAiDesc: 'Thiết lập nhà cung cấp AI (Gemini, Groq, OpenRouter), API Key và Custom Prompt để tóm tắt, phân tích tin nhắn nhanh chóng.',
   tourKeyboardHint: '⌨️ Dùng phím mũi tên (← / →) để di chuyển',
   aiInvalidModel: '❌ Tên Model không hợp lệ hoặc không được hỗ trợ.',
-  whatsNewBannerText: '✨ <b>Tính năng mới:</b> Tóm tắt nội dung cuộc trò chuyện bằng AI siêu nhanh!',
-  whatsNewBannerLink: 'Thiết lập ngay',
 };
 
 // Swaps the active language dictionary key-value pairs in-place

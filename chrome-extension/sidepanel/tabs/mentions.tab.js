@@ -501,6 +501,14 @@ async function scanMentionsDeep() {
       }
     }
 
+    // Deduplicate target channels by channel_id
+    const seenChannels = new Set();
+    targetChannels = targetChannels.filter(c => {
+      if (seenChannels.has(c.channel_id)) return false;
+      seenChannels.add(c.channel_id);
+      return true;
+    });
+
     const scanResults = [];
     let processed = 0;
 

@@ -6,7 +6,6 @@
 import { escapeHtml, makePermalinkSync, formatRelativeTime, formatRichText } from '../../src/utils/index.js';
 import { CHATOPS_CONFIG, STORAGE_KEYS, TABS } from '../../src/constants.js';
 import { language } from '../../src/lang.js';
-import { summarizeText, analyzeText } from '../../src/api/ai.js';
 
 function getCategoryDisplayName(cat) {
   if (!cat) return '';
@@ -563,7 +562,7 @@ export async function renderCategories() {
   const tabsContainer = document.getElementById('memoCategoryTabs');
   
   if (quickSelect) {
-    quickSelect.innerHTML = categories.map(c => `<option value="${c}">📁 ${getCategoryDisplayName(c)}</option>`).join('');
+    quickSelect.innerHTML = categories.map(c => `<option value="${c}">${getCategoryDisplayName(c)}</option>`).join('');
     
     // Set default value based on active category sub-tab
     if (activeMemoCategory !== 'all' && categories.includes(activeMemoCategory)) {
@@ -657,136 +656,7 @@ export async function loadMemos() {
   });
 }
 
-/**
- * Handle AI Summarize/Analyze click
- * @param {string} id - Item ID (Note ID or Post ID)
- * @param {string} type - 'note' or 'post'
- * @param {string} action - AI action type (summarize, actionItems, translate, rewrite)
- */
-export async function handleAiSummarize(id, type = 'note', action = 'summarize') {
-  // Get API key
-  const res = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS, STORAGE_KEYS.MEMOS]);
-  const settings = res[STORAGE_KEYS.SETTINGS] || {};
-  const provider = settings.aiProvider || 'gemini';
-  let apiKey = '';
-  if (provider === 'gemini') {
-    apiKey = settings.geminiApiKey;
-  } else if (provider === 'groq') {
-    apiKey = settings.groqApiKey;
-  } else if (provider === 'openrouter') {
-    apiKey = settings.openrouterApiKey;
-  }
 
-  if (!apiKey) {
-    if (typeof window.showErrorFeedback === 'function') {
-      window.showErrorFeedback(`${language.aiNoApiKey} ${language.aiNoApiKeySetup}`);
-    }
-    return;
-  }
-
-  // Get content to analyze
-  let content = '';
-  if (type === 'note') {
-    const memos = res[STORAGE_KEYS.MEMOS] || [];
-    const note = memos.find(m => m.id === id);
-    if (note) {
-      content = note.note || '';
-    }
-  } else if (type === 'post') {
-    const card = document.getElementById('item_' + id);
-    if (card) {
-      const bodyEl = card.querySelector('.post-body');
-      if (bodyEl) {
-        content = bodyEl.textContent || '';
-      }
-    }
-  }
-
-  if (!content.trim()) {
-    if (typeof window.showErrorFeedback === 'function') {
-      window.showErrorFeedback(language.aiEmptyResponse);
-    }
-    return;
-  }
-
-  // Find the card and show loading
-  const card = document.getElementById('item_' + id);
-  if (!card) return;
-
-  // Remove existing AI result if any
-  const existingResult = card.querySelector('.ai-result-container');
-  if (existingResult) existingResult.remove();
-
-  // Determine current language for AI output
-  const currentLang = settings.app_lang || 'vi';
-
-  // Create result container with loading state
-  const resultEl = document.createElement('div');
-  resultEl.className = 'ai-result-container';
-  resultEl.innerHTML = `
-    <div class="ai-result-header">
-      <span class="ai-result-label">${language.aiSummaryLabel}</span>
-      <div class="ai-result-actions-bar">
-        <button class="ai-action-btn ${action === 'summarize' ? 'active' : ''}" data-id="${id}" data-type="${type}" data-action="summarize">${language.aiActionSummarize}</button>
-        <button class="ai-action-btn ${action === 'actionItems' ? 'active' : ''}" data-id="${id}" data-type="${type}" data-action="actionItems">${language.aiActionItems}</button>
-        <button class="ai-action-btn ${action === 'translate' ? 'active' : ''}" data-id="${id}" data-type="${type}" data-action="translate">${language.aiActionTranslate}</button>
-        <button class="ai-action-btn ${action === 'rewrite' ? 'active' : ''}" data-id="${id}" data-type="${type}" data-action="rewrite">${language.aiActionRewrite}</button>
-      </div>
-      <div style="display:flex; gap:4px; align-items:center;">
-        <button class="btn-ai-copy" title="${language.aiCopyResult}">${language.aiCopyResult}</button>
-        <button class="btn-ai-close" title="${language.aiCloseResult}">✕</button>
-      </div>
-    </div>
-    <div class="ai-result-body">
-      <div class="ai-loading-shimmer">
-        <div class="shimmer-line"></div>
-        <div class="shimmer-line short"></div>
-        <div class="shimmer-line"></div>
-        <div class="shimmer-line medium"></div>
-      </div>
-    </div>
-  `;
-
-  // Insert after note content row or post body
-  const contentRow = card.querySelector('.note-content-row');
-  const postBody = card.querySelector('.post-body');
-  if (contentRow) {
-    contentRow.after(resultEl);
-  } else if (postBody) {
-    postBody.after(resultEl);
-  } else {
-    card.appendChild(resultEl);
-  }
-
-  // Call AI API
-  try {
-    let result;
-    if (action === 'summarize') {
-      result = await summarizeText(content, apiKey, currentLang, provider);
-    } else {
-      result = await analyzeText(content, apiKey, action, currentLang, provider);
-    }
-
-    // Replace loading with result
-    const bodyEl = resultEl.querySelector('.ai-result-body');
-    bodyEl.innerHTML = `<div class="ai-result-text">${escapeHtml(result).replace(/\n/g, '<br>')}</div>`;
-  } catch (err) {
-    const bodyEl = resultEl.querySelector('.ai-result-body');
-    let errorMsg = language.aiErrorGeneric;
-
-    if (err.message === 'AI_RATE_LIMIT') {
-      errorMsg = language.aiRateLimitError;
-    } else if (err.message === 'AI_INVALID_KEY') {
-      errorMsg = language.aiInvalidKey;
-    } else if (err.message === 'AI_FORBIDDEN') {
-      errorMsg = language.aiForbiddenError;
-    } else if (err.message === 'AI_EMPTY_RESPONSE') {
-      errorMsg = language.aiEmptyResponse;
-    }
-
-    bodyEl.innerHTML = `<div class="ai-result-error">${escapeHtml(errorMsg)}</div>`;
-  }
-}
 
 /**
  * Renders a note card component

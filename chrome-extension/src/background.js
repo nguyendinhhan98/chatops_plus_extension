@@ -2,7 +2,7 @@
  * Background Service Worker — ChatOps Chrome Extension
  */
 
-import { getConfig, getMyProfile, addPostReaction, deletePostReaction, deletePost, searchUsers, getUsersByIds, getPostReactions, getPostThread, callAiProvider } from './api/index.js';
+import { getConfig, getMyProfile, addPostReaction, deletePostReaction, deletePost, searchUsers, getUsersByIds, getPostReactions, getPostThread } from './api/index.js';
 import { syncCookies, setupCookieSync } from './background/cookie-sync.js';
 import { 
   handleMentionCheck, 
@@ -60,14 +60,6 @@ chrome.runtime.onInstalled.addListener((details) => {
     periodInMinutes: UI_CONFIG.MENTION_CHECK_INTERVAL_MINUTES,
   });
 
-  if (details?.reason === 'update' || details?.reason === 'install') {
-    const currentVersion = chrome.runtime.getManifest().version;
-    const versionKey = `whats_new_seen_${currentVersion}`;
-    chrome.storage.local.set({ [versionKey]: false });
-
-    chrome.action.setBadgeText({ text: 'NEW' });
-    chrome.action.setBadgeBackgroundColor({ color: '#ef4444' });
-  }
 
   initialize();
 });
@@ -170,10 +162,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sendResponse({ open: true });
       break;
 
-    case MESSAGE_TYPES.SET_TASK_ALARM:
-      chrome.alarms.create(message.taskId, { when: message.time });
-      sendResponse({ ok: true });
+    case MESSAGE_TYPES.SET_TASK_ALARM: {
+      const alarmTime = message.time;
+      if (!alarmTime || alarmTime <= Date.now()) {
+        // Don't schedule alarm for past times — this prevents immediate firing
+        // when user sets a daily task with a past time (time was already adjusted to tomorrow by saveTask)
+        // If alarmTime is still past here (e.g. edge case), skip it safely.
+        console.warn('[ChatOps Ext] Skipping alarm with past/invalid time:', message.taskId, new Date(alarmTime));
+        sendResponse({ ok: false, reason: 'past_time' });
+      } else {
+        chrome.alarms.create(message.taskId, { when: alarmTime });
+        sendResponse({ ok: true });
+      }
       break;
+    }
 
     case MESSAGE_TYPES.MARK_TASK_DONE:
       handleMarkTaskDone(message.taskId, sendResponse);
@@ -227,11 +229,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       handleGetPostThread(message.postId, sendResponse);
       return true;
 
-    case MESSAGE_TYPES.CALL_AI:
-      callAiProvider(message.prompt, message.apiKey, message.provider, { model: message.model })
-        .then((result) => sendResponse({ ok: true, result }))
-        .catch((err) => sendResponse({ ok: false, error: err.message }));
-      return true;
 
     case MESSAGE_TYPES.TEST_NOTIFICATION:
       const testType = message.notificationType || 'both';
@@ -283,16 +280,34 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       });
       return true;
 
+    case 'DISMISS_REMINDER':
+      broadcastDismissReminder(message.taskId);
+      sendResponse({ ok: true });
+      break;
+
     default:
       sendResponse({ error: 'Unknown message type' });
   }
 });
 
 /**
+ * Broadcasts message to all Mattermost tabs to dismiss task reminder banner
+ */
+function broadcastDismissReminder(taskId) {
+  if (!taskId) return;
+  chrome.tabs.query({ url: `${CHATOPS_CONFIG.DEFAULT_URL}/*` }).then((tabs) => {
+    for (const tab of tabs) {
+      chrome.tabs.sendMessage(tab.id, { type: 'DISMISS_REMINDER', taskId }).catch(() => {});
+    }
+  });
+}
+
+/**
  * Marks a task as completed and clears its alarm
  */
 function handleMarkTaskDone(taskId, sendResponse) {
   chrome.alarms.clear(taskId);
+  broadcastDismissReminder(taskId);
   chrome.storage.local.get([STORAGE_KEYS.MEMOS], (res) => {
     const memos = res[STORAGE_KEYS.MEMOS] || [];
     const task = memos.find(m => m.id === taskId);
@@ -325,6 +340,7 @@ function handleMarkTaskDone(taskId, sendResponse) {
  */
 function handleSkipTaskDaily(taskId, sendResponse) {
   chrome.alarms.clear(taskId);
+  broadcastDismissReminder(taskId);
   chrome.storage.local.get([STORAGE_KEYS.MEMOS], (res) => {
     const memos = res[STORAGE_KEYS.MEMOS] || [];
     const task = memos.find(m => m.id === taskId);

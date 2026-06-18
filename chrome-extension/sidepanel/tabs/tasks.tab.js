@@ -66,33 +66,11 @@ export function setup(state) {
   const taskInputRow = quickInput?.closest('.task-quick-input-row');
 
   function syncReminderDimming() {
+    // Both "Nhắc" and "Nhắc sau" can be selected independently — no dimming needed
     const customSelect = presetSelect?.nextElementSibling;
-    const hasDate = reminderInput && reminderInput.value.trim() !== '';
-    const hasPreset = presetSelect && presetSelect.value !== '';
-
-    if (hasDate) {
-      if (customSelect && customSelect.classList.contains('custom-dropdown-container')) {
-        customSelect.style.opacity = '0.35';
-        customSelect.style.transition = 'opacity 0.2s ease';
-      }
-      if (reminderRow) {
-        reminderRow.style.opacity = '1';
-      }
-    } else if (hasPreset) {
-      if (reminderRow) {
-        reminderRow.style.opacity = '0.35';
-        reminderRow.style.transition = 'opacity 0.2s ease';
-      }
-      if (customSelect && customSelect.classList.contains('custom-dropdown-container')) {
-        customSelect.style.opacity = '1';
-      }
-    } else {
-      if (reminderRow) {
-        reminderRow.style.opacity = '1';
-      }
-      if (customSelect && customSelect.classList.contains('custom-dropdown-container')) {
-        customSelect.style.opacity = '1';
-      }
+    if (reminderRow) reminderRow.style.opacity = '1';
+    if (customSelect && customSelect.classList.contains('custom-dropdown-container')) {
+      customSelect.style.opacity = '1';
     }
   }
 
@@ -399,7 +377,7 @@ export function setup(state) {
           const customSelect = presetSelect.nextElementSibling;
           if (customSelect && customSelect.classList.contains('custom-dropdown-container')) {
             const selectedText = customSelect.querySelector('.custom-dropdown-selected-text');
-            if (selectedText) selectedText.textContent = 'Remind in...';
+            if (selectedText) selectedText.textContent = language.remindInPreset || 'Nhắc sau...';
           }
         }
         if (checklistContainer) {
@@ -655,6 +633,7 @@ export function setup(state) {
       const memos = (res[STORAGE_KEYS.MEMOS] || []).filter(m => m.id !== id);
       await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
       chrome.alarms.clear(id);
+      chrome.runtime.sendMessage({ type: 'DISMISS_REMINDER', taskId: id }).catch(() => {});
       loadTasks();
     }
 
@@ -679,6 +658,7 @@ export function setup(state) {
         await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
         if (e.target.checked) {
           chrome.alarms.clear(id);
+          chrome.runtime.sendMessage({ type: 'DISMISS_REMINDER', taskId: id }).catch(() => {});
         } else {
           const snoozeMins = settings.snoozeMinutes || 5;
           chrome.runtime.sendMessage({ type: MESSAGE_TYPES.SET_TASK_ALARM, taskId: id, time: Date.now() + snoozeMins * 60 * 1000 });
@@ -970,10 +950,11 @@ export async function loadTasks() {
   const allItems = res[STORAGE_KEYS.MEMOS] || [];
   const tasks = allItems.filter(m => m.type === 'task');
 
-  // Update badge
   const pendingCount = tasks.filter(t => !t.done).length;
   const taskBadge = document.getElementById('taskTabBadge');
-  if (taskBadge) taskBadge.textContent = pendingCount > 0 ? pendingCount : '';
+  if (taskBadge) {
+    taskBadge.textContent = pendingCount > 0 ? pendingCount : '';
+  }
 
   const now = Date.now();
   const pending = tasks.filter(t => !t.done);
@@ -1157,10 +1138,15 @@ function renderTaskCard(task, now) {
         ` : ''}
       </div>
       <div class="memo-footer" style="margin-top:6px; padding-top:6px; border-top:1px solid var(--border);">
-        <div class="memo-meta" style="display:flex; align-items:center; gap:6px;">
-          <label class="memo-checkbox-container footer-checkbox" title="${task.done ? language.taskMarkIncomplete : language.taskMarkDone}">
-            <input type="checkbox" class="task-checkbox" data-id="${task.id}" ${task.done ? 'checked' : ''}>
-            <span class="memo-checkmark-custom"></span>
+        <div class="memo-meta" style="display:flex; align-items:center; gap:8px;">
+          <label class="task-done-badge ${task.done ? 'is-done' : ''}" title="${task.done ? language.taskMarkIncomplete : language.taskMarkDone}">
+            <div class="memo-checkbox-container footer-checkbox" style="margin: 0; position: relative;">
+              <input type="checkbox" class="task-checkbox" data-id="${task.id}" ${task.done ? 'checked' : ''}>
+              <span class="memo-checkmark-custom"></span>
+            </div>
+            <span class="task-done-text">
+              ${task.done ? (language.taskCompleted || 'Completed') : (language.taskMarkDoneShort || 'Hoàn thành')}
+            </span>
           </label>
           <span class="sp-card-date">${formatRelativeTime(task.createdAt)}</span>
         </div>

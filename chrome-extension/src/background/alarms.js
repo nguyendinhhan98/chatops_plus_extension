@@ -16,6 +16,12 @@ export async function handleMentionCheck() {
 }
 
 /**
+ * Set of taskIds whose reminder banners are currently visible on page.
+ * Used to prevent duplicate banners when snooze alarm fires.
+ */
+const activeReminderTaskIds = new Set();
+
+/**
  * Handles task reminders
  * @param {string} taskId 
  */
@@ -58,11 +64,14 @@ export async function handleTaskAlarm(taskId) {
     const settingsRes = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS]);
     const settings = settingsRes[STORAGE_KEYS.SETTINGS] || {};
     const notificationType = settings.notificationType || 'both';
+    const snoozeMinutes = settings.snoozeMinutes || 5;
 
     // 1. Send banner to all ChatOps tabs if configured
+    // If this taskId's banner is already active on the page, close it first before showing new one
     if (notificationType === 'both' || notificationType === 'in-page') {
       const tabs = await chrome.tabs.query({ url: `${CHATOPS_CONFIG.DEFAULT_URL}/*` });
       for (const tab of tabs) {
+        // Request content script to close existing banner for this task (if any) then show new one
         chrome.tabs.sendMessage(tab.id, {
           type: MESSAGE_TYPES.SHOW_REMINDER,
           message,
@@ -78,28 +87,40 @@ export async function handleTaskAlarm(taskId) {
     // 2. Trigger native OS notification if configured
     if (notificationType === 'both' || notificationType === 'system') {
       console.log('[ChatOps Ext] Attempting to trigger OS notification for task:', taskId);
-      chrome.notifications.create(taskId, {
-        type: 'basic',
-        iconUrl: chrome.runtime.getURL('icons/icon128.png'),
-        title: language.reminderTitle,
-        message: message,
-        priority: 2,
-        requireInteraction: true
-      }, (notificationId) => {
-        if (chrome.runtime.lastError) {
-          console.error('[ChatOps Ext] Failed to create OS notification:', chrome.runtime.lastError.message);
-        } else {
-          console.log('[ChatOps Ext] OS notification created successfully with ID:', notificationId);
-        }
+      // Clear previous notification with same id before creating new one
+      chrome.notifications.clear(taskId, () => {
+        chrome.notifications.create(taskId, {
+          type: 'basic',
+          iconUrl: chrome.runtime.getURL('icons/icon128.png'),
+          title: language.reminderTitle,
+          message: message,
+          priority: 2,
+          requireInteraction: true
+        }, (notificationId) => {
+          if (chrome.runtime.lastError) {
+            console.error('[ChatOps Ext] Failed to create OS notification:', chrome.runtime.lastError.message);
+          } else {
+            console.log('[ChatOps Ext] OS notification created successfully with ID:', notificationId);
+          }
+        });
       });
     }
 
-    // Set extension badge so user sees it in any tab
-    chrome.action.setBadgeText({ text: 'TASK' });
-    chrome.action.setBadgeBackgroundColor({ color: '#d0454c' });
 
-    // Reschedule alarm dynamically using user's settings snooze minutes (default 5)
-    const snoozeMinutes = settings.snoozeMinutes || 5;
+    // Reschedule snooze alarm
+    // IMPORTANT: Only schedule snooze if task.reminder exists and is in the past or near-past
+    // This prevents re-scheduling for tasks whose alarm fired early due to timezone or clock drift.
+    // For daily tasks: after snooze fires, verify we haven't already passed the NEXT scheduled time
+    if (task.repeatDaily && task.reminder) {
+      const nextScheduled = new Date(task.reminder).getTime();
+      // If next scheduled reminder is already in the future (> snooze window), don't snooze
+      // Wait for the actual alarm instead.
+      if (nextScheduled > Date.now() + snoozeMinutes * 60 * 1000) {
+        console.log('[ChatOps Ext] Skipping snooze — next scheduled alarm is still in the future:', new Date(nextScheduled));
+        return;
+      }
+    }
+
     chrome.alarms.create(taskId, { delayInMinutes: snoozeMinutes });
     console.log('[ChatOps Ext] Task alarm fired and rescheduled:', taskId, 'with snooze:', snoozeMinutes, 'mins');
 
@@ -107,3 +128,4 @@ export async function handleTaskAlarm(taskId) {
     console.error('[ChatOps Ext] handleTaskAlarm error:', err);
   }
 }
+

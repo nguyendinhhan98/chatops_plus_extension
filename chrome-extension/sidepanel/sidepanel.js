@@ -8,7 +8,8 @@ import { setup as setupMentions, reset as resetMentions, getSelects as getMentio
 
 import { setup as setupMemo, loadMemos, renderCategories } from './tabs/memo.tab.js';
 import { setup as setupTasks, loadTasks } from './tabs/tasks.tab.js';
-import { setup as setupSettings, getSettings, updateSettings, applyThemeToDOM, applyTabRepositioning, applyTabVisibilityToDOM, runAutoCleanup, renderSidepanelMemes, applyTabOrderToDOM, renderTabOrderList } from './tabs/settings.tab.js';
+import { setup as setupSettings, getSettings, updateSettings, applyThemeToDOM, applyTabRepositioning, applyTabVisibilityToDOM, renderSidepanelMemes, applyTabOrderToDOM, renderTabOrderList } from './tabs/settings.tab.js';
+
 import { getMyProfile, getMyTeams, getConfig } from '../src/api/index.js';
 import { escapeHtml } from '../src/utils/index.js';
 
@@ -86,8 +87,6 @@ async function init() {
   setupLanguageToggle();
   updateRateLinks();
   
-  // Background silent auto cleanup
-  runAutoCleanup().catch(e => console.error('[ChatOps Ext] Auto cleanup error:', e));
   
   const selectors = { ...getSearchSelects(), ...getMentionsSelects() };
   restoreState(selectors);
@@ -97,14 +96,14 @@ async function init() {
   // Show interactive onboarding tour for first-time installation
   checkAndAutoStartTour();
 
-  // Initialize What's New banner and iframe integration
-  setupWhatsNewAndIframe();
+  // Initialize iframe integration for PWA mode
+  setupPwaMode();
 }
 
 /**
- * Handles "What's New" banner logic and custom close behavior inside PWA iframe.
+ * Handles custom close behavior inside PWA iframe.
  */
-function setupWhatsNewAndIframe() {
+function setupPwaMode() {
   // 1. Detect if running inside PWA mode (explicitly loaded via ?mode=pwa query parameter)
   const urlParams = new URLSearchParams(window.location.search);
   const isPwaMode = urlParams.get('mode') === 'pwa';
@@ -125,77 +124,6 @@ function setupWhatsNewAndIframe() {
     }
   }
 
-  // 2. Check and display "What's New" banner
-  try {
-    const currentVersion = chrome.runtime.getManifest().version;
-    const versionKey = `whats_new_seen_${currentVersion}`;
-    chrome.storage.local.get([versionKey], (res) => {
-      // If versionKey is not set to true, show the banner
-      if (res[versionKey] === false) {
-        const banner = document.getElementById('whatsNewBanner');
-        if (banner) {
-          banner.style.display = 'flex';
-        }
-        // Automatically clear the red badge since the user is now in the sidepanel
-        chrome.runtime.sendMessage({ type: MESSAGE_TYPES.RESET_BADGE });
-      }
-    });
-
-    const banner = document.getElementById('whatsNewBanner');
-    const bannerLink = document.getElementById('whatsNewBannerLink');
-    const bannerClose = document.getElementById('btnWhatsNewBannerClose');
-
-    const dismissBanner = () => {
-      if (banner) banner.style.display = 'none';
-      chrome.storage.local.set({ [versionKey]: true });
-    };
-
-    if (bannerLink) {
-      bannerLink.addEventListener('click', (e) => {
-        e.preventDefault();
-        dismissBanner();
-        
-        // Navigate to Settings -> Features -> AI Summarize accordion
-        switchTab('settings');
-        const featuresSubTabBtn = document.querySelector(`#settingsSubTabs .memo-sub-tab[data-section="features"]`);
-        if (featuresSubTabBtn) {
-          featuresSubTabBtn.click();
-        }
-        
-        // Expand the AI accordion and scroll to it
-        setTimeout(() => {
-          const accordion = document.getElementById('accordionAI');
-          if (accordion) {
-            if (!accordion.classList.contains('open')) {
-              const header = accordion.querySelector('.settings-accordion-header');
-              if (header) {
-                header.click();
-              }
-            } else {
-              const container = document.getElementById('settingsScrollContainer');
-              if (container) {
-                const containerRect = container.getBoundingClientRect();
-                const accRect = accordion.getBoundingClientRect();
-                const relativeTop = accRect.top - containerRect.top + container.scrollTop;
-                container.scrollTo({ top: relativeTop - 12, behavior: 'smooth' });
-              } else {
-                accordion.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              }
-            }
-          }
-        }, 150);
-      });
-    }
-
-    if (bannerClose) {
-      bannerClose.addEventListener('click', (e) => {
-        e.preventDefault();
-        dismissBanner();
-      });
-    }
-  } catch (err) {
-    console.error('[ChatOps Ext] Failed to setup whats new banner:', err);
-  }
 }
 
 /**

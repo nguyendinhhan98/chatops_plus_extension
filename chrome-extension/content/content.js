@@ -16,7 +16,7 @@ const DEFAULT_SETTINGS = {
   tabsCompactMode: false,
   snoozeMinutes: 5,
   notificationPosition: 'center',
-  notificationAnimation: 'shake-continuous',
+  notificationAnimation: 'default',
   notificationSize: 'medium',
   aiProvider: 'gemini',
   geminiApiKey: '',
@@ -233,6 +233,15 @@ function playNotificationSound() {
 async function showReminderBanner(text, taskId, isTask = false, postId = null, taskTeamName = null, isDaily = false) {
   await injectDynamicTheme();
 
+  // If there's already a banner for this taskId, do not display a new one to prevent duplication/jumping
+  if (taskId) {
+    const existingBanner = document.querySelector(`.chatops-reminder-banner[data-task-id="${taskId}"]`);
+    if (existingBanner) {
+      console.log('[ChatOps Ext] Banner already visible for task:', taskId);
+      return;
+    }
+  }
+
   let settings = {};
   // Play notification sound if enabled
   try {
@@ -295,12 +304,13 @@ async function showReminderBanner(text, taskId, isTask = false, postId = null, t
   const isLongText = text.length > 80 || text.includes('\n');
   const escText = text.replace(/</g, '&lt;');
 
-  const animStyle = settings.notificationAnimation || 'shake-continuous';
+  const animStyle = settings.notificationAnimation || 'default';
   const animationClass = animStyle !== 'default' ? `animation-${animStyle}` : '';
   const sizeClass = `size-${size}`;
 
   const banner = document.createElement('div');
   banner.className = `chatops-reminder-banner ${sizeClass} ${animationClass}`;
+  if (taskId) banner.dataset.taskId = taskId;
   banner.innerHTML = `
     <div class="crb-inner">
       <div class="crb-icon">${isTask ? '📋' : '⏰'}</div>
@@ -484,11 +494,7 @@ function showToast(msg) {
   closeIconBtn.title = language.floatingBtnHide;
   btn.appendChild(closeIconBtn);
 
-  // Red badge for pending tasks count
-  const badgeEl = document.createElement('div');
-  badgeEl.id = 'chatops-ext-floating-badge';
-  badgeEl.className = 'chatops-floating-badge hidden';
-  btn.appendChild(badgeEl);
+  // Red badge for pending tasks count disabled per user request
 
   closeIconBtn.addEventListener('click', (e) => {
     e.preventDefault();
@@ -551,29 +557,7 @@ function showToast(msg) {
   }
 
   async function updateFloatingBadgeCount() {
-    if (!chrome.runtime?.id) return;
-    try {
-      const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
-      const allItems = res[STORAGE_KEYS.MEMOS] || [];
-      const pendingTasks = allItems.filter(m => m.type === 'task' && !m.done);
-      const count = pendingTasks.length;
-
-      const badge = document.getElementById('chatops-ext-floating-badge');
-      if (badge) {
-        if (count > 0) {
-          badge.textContent = count;
-          badge.classList.remove('hidden');
-        } else {
-          badge.textContent = '';
-          badge.classList.add('hidden');
-        }
-      }
-    } catch (err) {
-      if (err.message && err.message.includes('Extension context invalidated')) {
-        return;
-      }
-      console.error('[ChatOps Ext] Failed to update badge count:', err);
-    }
+    // Disabled per user request
   }
 
   alignButtonToSidebar();
@@ -2657,10 +2641,10 @@ function showToast(msg) {
         <div id="cqn-note-section" style="margin-bottom: 12px; width: 100%; display: none; overflow: visible !important;">
           <div style="font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase; margin-bottom:4px;">${language.categoryLabel}</div>
           <select id="cqn-category" class="custom-select" style="width:100%; height: 34px; font-size: 12.5px; border-radius: 6px; border:1px solid #cbd5e1; background:#fff; outline:none; cursor:pointer; box-sizing: border-box;">
-            <option value="general">📁 ${language.categoryGeneral}</option>
-            <option value="work">📁 ${language.categoryWork}</option>
-            <option value="personal">📁 ${language.categoryPersonal}</option>
-            <option value="ideas">📁 ${language.categoryIdeas}</option>
+            <option value="general">${language.categoryGeneral}</option>
+            <option value="work">${language.categoryWork}</option>
+            <option value="personal">${language.categoryPersonal}</option>
+            <option value="ideas">${language.categoryIdeas}</option>
           </select>
         </div>
 
@@ -2897,7 +2881,7 @@ function showToast(msg) {
       const cqnCategorySelect = document.getElementById('cqn-category');
       if (cqnCategorySelect) {
         cqnCategorySelect.innerHTML = categories.map(c => `
-          <option value="${c}">📁 ${getCategoryDisplayName(c)}</option>
+          <option value="${c}">${getCategoryDisplayName(c)}</option>
         `).join('');
         
         if (activeFilter !== 'all' && categories.includes(activeFilter)) {
@@ -4159,6 +4143,14 @@ function showToast(msg) {
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === MESSAGE_TYPES.SHOW_REMINDER) {
       showReminderBanner(message.message, message.taskId, message.isTask, message.postId, message.teamName, message.isDaily);
+    } else if (message.type === 'DISMISS_REMINDER') {
+      if (message.taskId) {
+        const banner = document.querySelector(`.chatops-reminder-banner[data-task-id="${message.taskId}"]`);
+        if (banner) {
+          banner.classList.remove('visible');
+          banner.remove();
+        }
+      }
     } else if (message.type === 'APP_LANG_CHANGED') {
       (async () => {
         await loadLanguage();

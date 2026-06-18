@@ -209,16 +209,6 @@ function getSteps() {
       scrollTo:      '#accordionGiphy',
     },
 
-    // ── Settings > Features — AI Summarize ──────────────────────────────
-    {
-      selector:      '#accordionAI',
-      titleKey:      'tourStepAiTitle',
-      descKey:       'tourStepAiDesc',
-      tab:           'settings',
-      subtab:        'features',
-      openAccordion: 'accordionAI',
-      scrollTo:      '#accordionAI',
-    },
 
     // ── Step 16: Settings > Features — Note Categories ───────────────────
     {
@@ -264,27 +254,6 @@ function getSteps() {
       scrollTo:      '#accordionThemeColors',
     },
 
-    // ── Step 20: Settings > Data — Cloud Sync ────────────────────────────
-    {
-      selector:      '#cloudSyncConfigArea',
-      titleKey:      'tourStep20Title',
-      descKey:       'tourStep20Desc',
-      tab:           'settings',
-      subtab:        'data',
-      innerSubtab:   'sync-cloud',
-      scrollTo:      '#cloudSyncConfigArea',
-    },
-
-    // ── Step 21: Settings > Data — Cleanup & Space ───────────────────────
-    {
-      selector:      '#settings-section-data',
-      titleKey:      'tourStep21Title',
-      descKey:       'tourStep21Desc',
-      tab:           'settings',
-      subtab:        'data',
-      innerSubtab:   'sync-cleanup',
-      scrollTo:      '#settings-section-data',
-    },
 
     // ── Step 22: Done ────────────────────────────────────────────────────
     {
