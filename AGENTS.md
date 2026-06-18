@@ -14,9 +14,8 @@
 - 🔍 **Search** — Tìm kiếm posts nâng cao (keyword, người gửi, channel, thời gian)
 - 🔔 **Mentions** — Quét mentions bị bỏ lỡ trong tất cả channels
 - 🖼️ **Image Picker** — Thư viện ảnh tùy chỉnh + Giphy integration + image editor
-- 🤖 **AI Summarize** — Tóm tắt/phân tích thread bằng Gemini/Groq/OpenRouter
 - 🔥 **Quick Reactions** — Spam react, clone reactions, undo reactions
-- ⚙️ **Settings** — Cấu hình toàn diện (theme, notifications, AI, emojis, v.v.)
+- ⚙️ **Settings** — Cấu hình toàn diện (theme, notifications, emojis, v.v.)
 
 ---
 
@@ -66,7 +65,6 @@ chatops_mcp/
         ├── api/
         │   ├── index.js           # Barrel export
         │   ├── client.js          # HTTP client (auth, headers)
-        │   ├── ai.js              # Gemini/Groq/OpenRouter integration
         │   ├── channels.js        # Channels API
         │   ├── posts.js           # Posts API
         │   ├── teams.js           # Teams API
@@ -102,18 +100,16 @@ chatops_mcp/
 │  │  ├── panel-     │    │  ├── tabs/search.tab.js           │ │
 │  │  │   manager.js│    │  └── tabs/settings.tab.js         │ │
 │  │  └── api/       │    └─────────────────────────────────┘ │
-│  │      ├── ai.js  │                    │                    │
-│  │      ├── users  │    ┌───────────────▼─────────────────┐ │
-│  │      ├── posts  │    │       Content Scripts            │ │
-│  │      ├── channels    │   (chạy trên chat.runsystem.vn)  │ │
-│  │      ├── teams  │    │                                  │ │
+│  │      ├── users  │                    │                    │
+│  │      ├── posts  │    ┌───────────────▼─────────────────┐ │
+│  │      ├── channels    │       Content Scripts            │ │
+│  │      ├── teams  │    │   (chạy trên chat.runsystem.vn)  │ │
 │  │      └── emojis │    │  loader.js → content.js (ESM)    │ │
 │  └─────────────────┘    │  ├── inject.js (main world)      │ │
 │           │              │  │   └── React Fiber bridge      │ │
 │           │              │  ├── MutationObserver            │ │
 │           │              │  ├── Quick Actions Buttons       │ │
 │           │              │  ├── Image Picker + Editor       │ │
-│           │              │  ├── AI Summarize Modal          │ │
 │           │              │  ├── Quick Note/Task Popover     │ │
 │           │              │  └── PWA Panel (iframe fallback) │ │
 │           └──────────────┘                                  │
@@ -121,12 +117,9 @@ chatops_mcp/
 │                   chrome.storage.local                      │
 └─────────────────────────────────────────────────────────────┘
            │
-           ▼ External APIs
+            ▼ External APIs
   ┌────────────────────────────────────┐
   │  Mattermost API (chat.runsystem.vn/api/v4)              │
-  │  Google Gemini API                                       │
-  │  Groq API                                                │
-  │  OpenRouter API                                          │
   │  Giphy API                                               │
   └──────────────────────────────────────────────────────────┘
 ```
@@ -151,8 +144,8 @@ Communication giữa các components dùng `chrome.runtime.sendMessage()`. Toàn
 | `RETRACT_POST_REACTIONS` | content | background | Xóa tất cả reactions của mình |
 | `CLONE_POST_REACTIONS` | content | background | Copy reactions từ post sang post khác |
 | `DELETE_POST` | content | background | Xóa post |
-| `CALL_AI` | content | background | Gọi AI provider |
 | `GET_POST_THREAD` | content | background | Lấy toàn bộ thread |
+| `GET_CHANNEL_FILES` | content | background | Lấy toàn bộ files/ảnh trong channel |
 | `RESOLVE_DISPLAY_NAME` | content | background | Resolve display name → username |
 | `RESOLVE_USER_ID` | content | background | Resolve userId → username |
 | `SHOW_REMINDER` | background | content | Hiển thị reminder banner |
@@ -224,7 +217,7 @@ chrome.storage.local['chatops_settings'] = {
   floatingButtons: {
     quickNote: true, quickTask: true, spamReactions: true,
     reactAlong: true, imagePicker: true, quickReply: true,
-    quickCopy: true, aiSummarize: true
+    quickCopy: true
   },
   // Notifications
   notificationType: 'both',         // 'in-page' | 'system' | 'both'
@@ -232,11 +225,6 @@ chrome.storage.local['chatops_settings'] = {
   notificationAnimation: 'slide',
   notificationSize: 'medium',
   snoozeMinutes: 5,
-  // AI
-  aiProvider: 'gemini',
-  aiApiKey: '',
-  aiModel: '',
-  aiCustomPrompt: '',
   // Reactions
   spamEmojis: [],
   reactionGroups: {},
@@ -370,6 +358,7 @@ const settings = await getSettings();
 5. **Wrap DOM mutations** trong `runWithObserverDisabled()` khi đang trong content.js.
 6. **Check `chrome.runtime.lastError`** sau mỗi API call tới chrome.runtime.
 7. **Guard observer disconnect**: `if (!chrome.runtime?.id) { observer.disconnect(); return; }` khi extension bị reload.
+8. **Cập nhật tài liệu (Markdown) khi thay đổi chức năng**: Mỗi khi thêm, sửa hoặc xóa bất kỳ tính năng/chức năng nào trong codebase, PHẢI cập nhật ngay lập tức tất cả các tệp tài liệu markdown liên quan (bao gồm `AGENTS.md`, `README.md`, `PRIVACY_POLICY.md` và các tệp tài liệu trong `.agents/docs/`). Đảm bảo thông tin tài liệu luôn khớp 100% với code thực tế.
 
 ### ❌ KHÔNG làm:
 1. Không import từ `node_modules` — Extension không có bundler. Chỉ dùng libraries đã được bundled vào `sidepanel/`.
@@ -448,7 +437,7 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
 
 ## 10. Phiên Bản & Cập Nhật
 
-- **Version**: 3.4.4 (trong `manifest.json` và `package.json`)
+- **Version**: 3.4.6 (trong `manifest.json` và `package.json`)
 - Khi bump version: cập nhật **cả hai** file.
 - Extension dùng **Manifest V3** — không dùng persistent background page, không dùng `chrome.extension.getBackgroundPage()`.
 
@@ -458,10 +447,10 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
 
 | Tài liệu | Nội dung |
 |---|---|
-| [architecture.md](chrome-extension/docs/architecture.md) | Kiến trúc hệ thống đầy đủ, luồng dữ liệu |
-| [background.md](chrome-extension/docs/background.md) | Service Worker, alarms, cookie sync, panel manager |
-| [content-scripts.md](chrome-extension/docs/content-scripts.md) | Content scripts, React bridge, DOM injection |
-| [sidepanel.md](chrome-extension/docs/sidepanel.md) | Side panel, tabs, state management |
-| [api.md](chrome-extension/docs/api.md) | API layer, HTTP client, AI integration |
-| [utils.md](chrome-extension/docs/utils.md) | Utilities, i18n, image conversion |
-| [contributing.md](chrome-extension/docs/contributing.md) | Hướng dẫn đóng góp, coding standards |
+| [architecture.md](.agents/docs/architecture.md) | Kiến trúc hệ thống đầy đủ, luồng dữ liệu |
+| [background.md](.agents/docs/background.md) | Service Worker, alarms, cookie sync, panel manager |
+| [content-scripts.md](.agents/docs/content-scripts.md) | Content scripts, React bridge, DOM injection |
+| [sidepanel.md](.agents/docs/sidepanel.md) | Side panel, tabs, state management |
+| [api.md](.agents/docs/api.md) | API layer, HTTP client |
+| [utils.md](.agents/docs/utils.md) | Utilities, i18n, image conversion |
+| [contributing.md](.agents/docs/contributing.md) | Hướng dẫn đóng góp, coding standards |

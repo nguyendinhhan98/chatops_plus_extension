@@ -1,10 +1,10 @@
 # 🚀 ChatOps++ — Chrome Extension (Manifest V3)
 
-[![Version](https://img.shields.io/badge/version-3.4.4-blue.svg)](https://chrome.google.com/webstore/devconsole/)
+[![Version](https://img.shields.io/badge/version-3.4.6-blue.svg)](https://chrome.google.com/webstore/devconsole/)
 [![Platform](https://img.shields.io/badge/platform-Chrome%20%7C%20Edge%20%7C%20Opera-lightgrey.svg)]()
 [![Manifest Version](https://img.shields.io/badge/manifest-V3-orange.svg)]()
 
-**ChatOps++** là một tiện ích mở rộng (Chrome Extension) mạnh mẽ, được thiết kế để tối ưu hóa và tăng hiệu suất làm việc lên tới 1000% cho người dùng sử dụng Mattermost tại `https://chat.runsystem.vn`. Extension bổ sung các tính năng quản lý công việc, ghi chú, tìm kiếm nâng cao, tích hợp trí tuệ nhân tạo (AI) và các phím tắt phản hồi nhanh.
+**ChatOps++** là một tiện ích mở rộng (Chrome Extension) mạnh mẽ, được thiết kế để tối ưu hóa và tăng hiệu suất làm việc lên tới 1000% cho người dùng sử dụng Mattermost tại `https://chat.runsystem.vn`. Extension bổ sung các tính năng quản lý công việc, ghi chú, tìm kiếm nâng cao và các phím tắt phản hồi nhanh.
 
 ---
 
@@ -32,12 +32,7 @@
 * Kết nối trực tiếp với Giphy API để tìm và gửi ảnh động (GIF) nhanh chóng.
 * Bộ chỉnh sửa ảnh (image editor) cơ bản tích hợp sẵn.
 
-### 🤖 6. Tóm Tắt & Phân Tích Bằng AI (AI Summarize)
-* Tóm tắt toàn bộ luồng hội thoại (thread) chỉ với một click.
-* Hỗ trợ nhiều nhà cung cấp AI hàng đầu: **Google Gemini**, **Groq**, và **OpenRouter**.
-* Cho phép tùy chỉnh Prompt AI theo nhu cầu công việc của riêng bạn.
-
-### 🔥 7. Tương Tác Nhanh (Quick Reactions)
+### 🔥 6. Tương Tác Nhanh (Quick Reactions)
 * Cho phép thả hàng loạt biểu cảm (spam react) vào post.
 * Tính năng sao chép (clone) emoji reaction từ post này sang post khác.
 * Thu hồi toàn bộ reaction cá nhân chỉ với một thao tác.
@@ -48,7 +43,7 @@
 
 * **Core:** HTML, CSS thuần (Vanilla CSS), JavaScript ESM (ES Modules).
 * **Kiến trúc:** Chrome Extension Manifest V3.
-  * **Service Worker (Background):** Quản lý cookie sync, alarms nhắc nhở, API AI và điều hướng Side Panel.
+  * **Service Worker (Background):** Quản lý cookie sync, alarms nhắc nhở và điều hướng Side Panel.
   * **Content Scripts:** Can thiệp an toàn vào DOM của Mattermost, sử dụng React Fiber Bridge để tương tác trực tiếp với giao diện trò chuyện.
   * **Side Panel UI:** Cung cấp thanh tiện ích bên cạnh (native panel) giúp tương tác song song khi đang làm việc.
 * **Thư viện tích hợp:** `flatpickr` (Date Picker), `gifenc` (GIF encoder).
@@ -70,7 +65,7 @@ chatops_mcp/
     │   └── tabs/                  # Code xử lý logic cho từng Tab (Tasks, Memo,...)
     └── src/                       # Thư mục chứa code logic dùng chung (Shared ESM)
         ├── background.js          # Service Worker chính
-        ├── api/                   # Gọi API của Mattermost và AI
+        ├── api/                   # Gọi API của Mattermost
         └── utils/                 # Các hàm tiện ích hỗ trợ định dạng, thời gian
 ```
 
@@ -98,7 +93,6 @@ cd mcp-chatops/chrome-extension
 1. Truy cập vào trang Mattermost của công ty tại: `https://chat.runsystem.vn` và đăng nhập.
 2. Mở **Side Panel** của ChatOps++ bằng cách click vào biểu tượng extension hoặc click vào nút toggle được thêm trực tiếp trên giao diện Mattermost.
 3. Vào tab **Cài đặt (Settings)** để thiết lập:
-   * **AI API Key** (Gemini/Groq/OpenRouter) để sử dụng tính năng tóm tắt.
    * Giao diện, màu sắc chủ đạo, thứ tự các tab hiển thị.
 
 ---
@@ -107,7 +101,6 @@ cd mcp-chatops/chrome-extension
 
 Dữ liệu của bạn hoàn toàn bảo mật. Chi tiết xem tại [PRIVACY_POLICY.md](./PRIVACY_POLICY.md).
 * ChatOps++ xử lý mọi thông tin (ghi chú, tác vụ, cài đặt) **ngay tại máy cục bộ của bạn** qua `chrome.storage.local`.
-* Dữ liệu trò chuyện chỉ được gửi đến máy chủ của nhà cung cấp AI khi bạn chủ động nhấn nút yêu cầu tóm tắt và sử dụng API Key cá nhân của bạn.
 
 ---
 

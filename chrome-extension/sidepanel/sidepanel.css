@@ -4496,3 +4496,9 @@ span.flatpickr-weekday {
   color: var(--success);
 }
 
+/* Prevent dropdowns from being clipped or covered by other positioned cards in lists */
+.memo-item:has(.custom-dropdown-menu:not([style*="display: none"])),
+.task-item:has(.custom-dropdown-menu:not([style*="display: none"])) {
+  z-index: 100 !important;
+}
+

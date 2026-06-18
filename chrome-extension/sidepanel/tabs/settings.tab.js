@@ -291,9 +291,6 @@ export async function getSettings() {
     floatingButtons: { ...DEFAULT_SETTINGS.floatingButtons, ...rawSettings.floatingButtons },
     promoteTabs: { ...DEFAULT_SETTINGS.promoteTabs, ...rawSettings.promoteTabs }
   };
-  if (!settings.aiCustomPrompt || !settings.aiCustomPrompt.trim()) {
-    settings.aiCustomPrompt = DEFAULT_SETTINGS.aiCustomPrompt;
-  }
   window.activeSettings = settings;
 
   if (!settings.reactionGroups) {
@@ -1661,8 +1658,6 @@ function setupEventListeners() {
       elementId = 'settingSnoozeMinutes';
     } else if (subtabName === 'features-gif') {
       elementId = 'settingGiphyApiKey';
-    } else if (subtabName === 'features-ai') {
-      elementId = 'settingAiProvider';
     } else if (subtabName === 'categories') {
       elementId = 'settingNewCategory';
     }

@@ -2,7 +2,7 @@
  * Background Service Worker — ChatOps Chrome Extension
  */
 
-import { getConfig, getMyProfile, addPostReaction, deletePostReaction, deletePost, searchUsers, getUsersByIds, getPostReactions, getPostThread } from './api/index.js';
+import { getConfig, getMyProfile, addPostReaction, deletePostReaction, deletePost, searchUsers, getUsersByIds, getPostReactions, getPostThread, getChannelFiles } from './api/index.js';
 import { syncCookies, setupCookieSync } from './background/cookie-sync.js';
 import { 
   handleMentionCheck, 
@@ -229,6 +229,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       handleGetPostThread(message.postId, sendResponse);
       return true;
 
+    case MESSAGE_TYPES.GET_CHANNEL_FILES:
+      getChannelFiles(message.channelId, message.page || 0, message.perPage || 50)
+        .then((data) => sendResponse({ ok: true, data }))
+        .catch((err) => sendResponse({ ok: false, error: err.message }));
+      return true;
 
     case MESSAGE_TYPES.TEST_NOTIFICATION:
       const testType = message.notificationType || 'both';

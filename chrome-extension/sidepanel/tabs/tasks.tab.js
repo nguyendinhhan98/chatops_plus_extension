@@ -772,6 +772,12 @@ export function setup(state) {
               </div>
             </div>
           `;
+          
+          const selectEl = contentEl.querySelector('.inline-edit-category');
+          if (selectEl && typeof window.convertToCustomDropdown === 'function') {
+            window.convertToCustomDropdown(selectEl, '110px', '22px');
+          }
+
           const ta = contentEl.querySelector('.inline-edit-textarea');
           if (ta) {
             ta.style.boxSizing = 'border-box';
@@ -1066,6 +1072,13 @@ export async function loadTasks() {
       }
     });
   }
+
+  // Convert task category selects to custom dropdowns
+  taskList.querySelectorAll('.task-edit-category').forEach(select => {
+    if (typeof window.convertToCustomDropdown === 'function') {
+      window.convertToCustomDropdown(select, '95px', '22px');
+    }
+  });
 }
 
 /**

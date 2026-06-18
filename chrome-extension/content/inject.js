@@ -133,4 +133,48 @@
       detail: { postId, username: info.username, userId: info.userId }
     }));
   });
+
+  function findChannelIdFromDom() {
+    try {
+      const textbox = document.getElementById('post_textbox') || document.getElementById('reply_textbox');
+      if (!textbox) return null;
+      const key = Object.keys(textbox).find(
+        k => k.startsWith('__reactFiber$') || k.startsWith('__reactInternalInstance$')
+      );
+      if (!key) return null;
+      
+      let fiber = textbox[key];
+      let depth = 0;
+      while (fiber && depth < 50) {
+        const props = fiber.memoizedProps;
+        if (props) {
+          if (props.channelId) return props.channelId;
+          if (props.channel && props.channel.id) return props.channel.id;
+          if (props.postId && props.channelId) return props.channelId;
+        }
+        fiber = fiber.return;
+        depth++;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  window.addEventListener('chatops-current-channel-request', () => {
+    let channelId = null;
+    try {
+      const store = getStore();
+      if (store) {
+        const state = store.getState();
+        channelId = state?.entities?.channels?.currentChannelId || null;
+      }
+    } catch (_) {}
+
+    if (!channelId) {
+      channelId = findChannelIdFromDom();
+    }
+
+    window.dispatchEvent(new CustomEvent('chatops-current-channel-response', {
+      detail: { channelId }
+    }));
+  });
 })();

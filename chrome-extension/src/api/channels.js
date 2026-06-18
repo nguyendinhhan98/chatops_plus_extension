@@ -42,3 +42,19 @@ export async function getMyChannelMembers(teamId) {
   return request(`/users/me/teams/${teamId}/channels/members`);
 }
 
+export async function getChannelFiles(channelId, page = 0) {
+  const res = await request(`/channels/${channelId}/posts?page=${page}&per_page=100`);
+  if (!res || !res.order || !res.posts) {
+    return { files: [], hasMore: false };
+  }
+  const fileInfos = [];
+  for (const postId of res.order) {
+    const post = res.posts[postId];
+    if (post && post.metadata && post.metadata.files) {
+      fileInfos.push(...post.metadata.files);
+    }
+  }
+  const hasMore = res.order && res.order.length >= 100;
+  return { files: fileInfos, hasMore };
+}
+

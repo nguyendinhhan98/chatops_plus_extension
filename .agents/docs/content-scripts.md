@@ -23,7 +23,6 @@ loader.js      ─── Entry point, bridge ESM limitation của Chrome
             ├── Quick Action Buttons → Inject vào mỗi post
             ├── Image Picker → Inject cạnh emoji button
             ├── Quick Note/Task Popover → Modal
-            ├── AI Summarize Modal → Modal
             ├── Reminder Banner → Fixed overlay
             └── PWA Panel → Iframe fallback
 ```
@@ -224,9 +223,6 @@ Function quan trọng nhất. Inject action buttons vào mỗi Mattermost post.
    📋 quick-copy-btn (floatingButtons.quickCopy):
      Click → Extract post text → copyToClipboard(text)
    
-   🤖 ai-summarize-btn (floatingButtons.aiSummarize):
-     Click → showAiSummarizeMenu(postEl, btn)
-   
    🔥 spam-btn (floatingButtons.spamReactions):
      Click → sendMessage(SPAM_POST_REACTIONS, { postId })
    
@@ -350,34 +346,7 @@ openImageResizeModal(sources)
   └── insertImageToChat(finalDataUrl)
 ```
 
-### 4.6 AI Summarize
-
-```
-showAiSummarizeMenu(postEl, aiBtn)
-  ├── Dropdown: "Tóm tắt thread" / "Tin nhắn này"
-  └── Khi chọn:
-
-processAiSummarize(postEl, action)
-  │
-  ├── action='post':
-  │   ├── Extract post text từ DOM
-  │   └── getPostUsername(postEl) → author
-  │
-  ├── action='thread':
-  │   ├── sendMessage(GET_POST_THREAD, { postId })
-  │   └── Format: "@author: message\n@author2: reply\n..."
-  │
-  ├── Build prompt:
-  │   ├── Nếu có cachedSettings.aiCustomPrompt:
-  │   │   Replace {{input}}, {{from}}, {{mention}} placeholders
-  │   └── Nếu không: dùng default prompt từ api/ai.js
-  │
-  └── sendMessage(CALL_AI, { provider, apiKey, model, prompt })
-        → background.js → api/ai.js → External AI API
-        → updateModal(response) ← shimmer → result text
-```
-
-### 4.7 Reminder Banner — `showReminderBanner()`
+### 4.6 Reminder Banner — `showReminderBanner()`
 
 ```
 showReminderBanner(text, taskId, isTask, postId, taskTeamName, isDaily)
@@ -401,7 +370,7 @@ showReminderBanner(text, taskId, isTask, postId, taskTeamName, isDaily)
       top-center, bottom-center, center
 ```
 
-### 4.8 PWA Side Panel
+### 4.7 PWA Side Panel
 
 Khi Chrome native Side Panel API không hoạt động (PWA window):
 

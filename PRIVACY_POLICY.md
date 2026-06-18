@@ -10,14 +10,12 @@ ChatOps++ is designed as a client-side productivity tool for Mattermost. We resp
 
 * **Mattermost Integration:** The Extension interacts directly with your Mattermost instance hosted at `https://chat.runsystem.vn`. It accesses posts, channels, teams, and user information to display task reminders, scan mentions, and perform searches.
 * **Authentication and Cookies:** The Extension syncs your Mattermost session cookies to authenticate API requests directly to your Mattermost server. This data is handled securely via the `chrome.cookies` API and is never transmitted to any external servers.
-* **AI Summarization:** If you use the AI features (summarizing threads using Gemini, Groq, or OpenRouter), the content of the selected thread is sent to the respective AI provider endpoint (`generativelanguage.googleapis.com`, `api.groq.com`, or `openrouter.ai`) only when you trigger the summarization.
 * **Local Storage:** All user configuration, settings, task lists, memos, and custom images are stored locally on your device via the `chrome.storage.local` and `chrome.storage.sync` APIs.
 
 ## 2. Third-Party Services
 
 We do not sell, trade, or transfer your data to outside parties. Data is only sent to:
 * Your company's Mattermost server (`https://chat.runsystem.vn`).
-* The AI API providers you configure (Google Gemini, Groq, or OpenRouter) strictly for processing your translation/summarization requests.
 
 ## 3. Data Retention
 

@@ -119,7 +119,6 @@ Các placeholders thường dùng: `{count}`, `{hours}`, `{minutes}`, `{channels
 | Image Picker | `imagePicker`, `uploadImage`, `storageUsed`... | ~20 |
 | Reactions | `spamReactions`, `retractReactions`, `reactAlong`... | ~15 |
 | Settings | ~100+ keys cho mọi setting |
-| AI | `aiSummarize`, `summarize`, `actionItems`, `translate`... | ~25 |
 | Tour | `tourStep1Title`, `tourStep1Desc`... (22 steps × 2) | ~44 |
 | User Guide | `userGuideHtml` (HTML tĩnh) | 2 (en+vi) |
 

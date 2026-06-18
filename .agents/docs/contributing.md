@@ -425,10 +425,10 @@ Cập nhật **cả 2** file:
 
 ```json
 // manifest.json
-{ "version": "3.4.5" }
+{ "version": "3.4.6" }
 
 // package.json
-{ "version": "3.4.5" }
+{ "version": "3.4.6" }
 ```
 
 ---
@@ -445,7 +445,7 @@ git commit -m "fix: prevent observer loop when injecting buttons"
 git commit -m "docs: update AGENTS.md with new message types"
 git commit -m "refactor: extract helper function from content.js"
 git commit -m "style: fix alignment of action buttons"
-git commit -m "chore: bump version to 3.4.5"
+git commit -m "chore: bump version to 3.4.6"
 ```
 
 ### Commit Prefixes

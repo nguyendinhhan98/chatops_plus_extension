@@ -35,16 +35,13 @@ ChatOps++ là Chrome Extension (Manifest V3) được thiết kế theo kiến t
 │   ├── src/background/alarms.js        Task reminders, mention check  │
 │   ├── src/background/cookie-sync.js   Auth token management          │
 │   ├── src/background/panel-manager.js Side panel lifecycle           │
-│   └── src/api/                        Mattermost & AI API calls      │
+│   └── src/api/                        Mattermost API calls           │
 └───────────────────────────────┬─────────────────────────────────────┘
                                 │ fetch() / HTTP
 ┌───────────────────────────────▼─────────────────────────────────────┐
 │                      LAYER 3: EXTERNAL SERVICES                      │
 │                                                                      │
 │   Mattermost API (chat.runsystem.vn/api/v4)                         │
-│   Google Gemini API (generativelanguage.googleapis.com)              │
-│   Groq API (api.groq.com)                                            │
-│   OpenRouter API (openrouter.ai)                                     │
 │   Giphy API (api.giphy.com)                                          │
 └─────────────────────────────────────────────────────────────────────┘
 ```
@@ -77,7 +74,6 @@ src/background.js
 │   ├── Task actions      → chrome.storage (update memos)
 │   ├── User resolution   → api/users.js (searchUsers, getUsersByIds)
 │   ├── Thread fetch      → api/posts.js (getPostThread)
-│   ├── AI calls          → api/ai.js (callAiProvider)
 │   └── Panel control     → panel-manager.js (toggle, update state)
 │
 └── COOKIE SYNC (chrome.cookies.onChanged)
@@ -110,7 +106,6 @@ content/loader.js
     │   │   ├── 📒 Note button
     │   │   ├── 💬 Quick Reply
     │   │   ├── 📋 Quick Copy
-    │   │   ├── 🤖 AI Summarize
     │   │   ├── 🔥 Spam Reactions
     │   │   ├── ↩️ Retract Reactions
     │   │   ├── 🎭 React-Along (Clone)
@@ -126,9 +121,6 @@ content/loader.js
     │   │   ├── Flatpickr datetime picker
     │   │   ├── Preset offsets (+5m/+15m/+30m/+1h/...)
     │   │   └── Repeat daily option
-    │   │
-    │   ├── AI Summarize Modal
-    │   │   └── Shimmer loading → result with copy button
     │   │
     │   ├── Reminder Banner (fixed position)
     │   │   ├── 6 positions × 3 sizes × multiple animations
@@ -252,40 +244,7 @@ handleTaskAlarm(taskId)   [alarms.js]
   └── Reschedule sau snoozeMinutes phút
 ```
 
-### 3.3 AI Summarize Flow
-
-```
-User click 🤖 AI button trên post
-          │
-          ▼
-showAiSummarizeMenu()
-  └── Dropdown: Thread / Single Post
-          │
-          ▼
-processAiSummarize(postEl, action)
-  ├── action='post': Extract post text + author
-  ├── action='thread':
-  │     sendMessage(GET_POST_THREAD, { postId })
-  │         │
-  │         ▼ background.js
-  │     getPostThread(postId)   [api/posts.js]
-  │     getUsersByIds(userIds)  [api/users.js]
-  │     return { thread, userMap }
-  │
-  ├── Build prompt (với custom template nếu có)
-  └── sendMessage(CALL_AI, { provider, apiKey, model, prompt })
-          │
-          ▼ background.js
-      callAiProvider(prompt, apiKey, provider)  [api/ai.js]
-          │
-          ▼ External AI API
-      return response text
-          │
-          ▼
-      updateModal(content)  ← shimmer → result
-```
-
-### 3.4 Image Upload Flow
+### 3.3 Image Upload Flow
 
 ```
 User chọn ảnh từ Image Picker
@@ -312,7 +271,7 @@ openImageResizeModal(sources)
               Mattermost nhận file như người dùng paste thông thường
 ```
 
-### 3.5 Username Resolution Flow (3-layer fallback)
+### 3.4 Username Resolution Flow (3-layer fallback)
 
 ```
 getPostUsername(postEl)
@@ -352,7 +311,7 @@ chrome.storage.local (Unlimited storage permission)
 │
 ├── chatops_config      Config + auth credentials (auto-sync từ cookies)
 ├── chatops_state       App state
-├── chatops_settings    User preferences (theme, notifications, AI, ...)
+├── chatops_settings    User preferences (theme, notifications, ...)
 ├── chatops_memos       Array: tất cả tasks + memos
 ├── custom_memes        Array: base64 images library
 ├── sidepanel_tab       Current active tab
@@ -379,9 +338,6 @@ localStorage (Side Panel origin)
 - **No inline event handlers** trong HTML — Dùng addEventListener
 - External hosts được whitelist trong `host_permissions`:
   - `https://chat.runsystem.vn/*` — Mattermost
-  - `https://generativelanguage.googleapis.com/*` — Gemini
-  - `https://api.groq.com/*` — Groq
-  - `https://openrouter.ai/*` — OpenRouter
 
 ### World Isolation
 - **Isolated World** (content.js): Không access `window` của trang, không access React Fiber

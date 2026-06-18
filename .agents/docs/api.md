@@ -6,9 +6,7 @@
 
 ## 1. Tổng Quan
 
-API layer cung cấp interface để gọi các external APIs:
-- **Mattermost REST API v4** — Backend chính
-- **AI APIs** — Gemini, Groq, OpenRouter
+API layer cung cấp interface để gọi Mattermost REST API v4 (Backend chính).
 
 Tất cả API calls **phải chạy trong background script** (Service Worker). Content scripts và sidepanel không được phép gọi Mattermost API trực tiếp — phải gửi message tới background.
 
@@ -20,8 +18,7 @@ src/api/
 ├── posts.js      ← /posts endpoints
 ├── channels.js   ← /channels endpoints
 ├── teams.js      ← /teams endpoints
-├── emojis.js     ← /emoji endpoints
-└── ai.js         ← Gemini / Groq / OpenRouter
+└── emojis.js     ← /emoji endpoints
 ```
 
 ---
@@ -191,89 +188,7 @@ Trả về array `ChannelMember` objects với `last_viewed_at`, `msg_count`, `m
 
 ---
 
-## 8. AI Integration (`src/api/ai.js`)
-
-### Providers Được Hỗ Trợ
-
-| Provider | Default Model | Base URL | Format |
-|---|---|---|---|
-| `gemini` | `gemini-2.0-flash` | `generativelanguage.googleapis.com` | Gemini-specific |
-| `groq` | `llama-3.3-70b-versatile` | `api.groq.com` | OpenAI-compatible |
-| `openrouter` | `openrouter/free` | `openrouter.ai` | OpenAI-compatible |
-
-### `callAiProvider(prompt, apiKey, provider='gemini', options)`
-
-**Gemini request format:**
-```json
-{
-  "contents": [{ "parts": [{ "text": "prompt" }] }],
-  "generationConfig": {
-    "temperature": 0.4,
-    "maxOutputTokens": 1024
-  }
-}
-```
-
-**Groq/OpenRouter request format (OpenAI-compatible):**
-```json
-{
-  "model": "llama-3.3-70b-versatile",
-  "messages": [{ "role": "user", "content": "prompt" }],
-  "temperature": 0.4,
-  "max_tokens": 1024
-}
-```
-
-**Error codes chuẩn hóa:**
-| Code | Ý nghĩa |
-|---|---|
-| `AI_INVALID_KEY` | API key sai hoặc không tồn tại |
-| `AI_RATE_LIMIT` | Vượt rate limit (HTTP 429) |
-| `AI_FORBIDDEN` | Không có quyền truy cập (HTTP 403) |
-| `AI_EMPTY_RESPONSE` | AI trả về response rỗng |
-| `AI_INVALID_PROVIDER` | Provider string không hợp lệ |
-
-### `analyzeText(text, apiKey, action, lang, provider)`
-
-**4 action types:**
-
-```js
-// action = 'summarize'
-// Tóm tắt nội dung dạng bullet points
-// → "• Point 1\n• Point 2\n..."
-
-// action = 'actionItems'
-// Trích xuất việc cần làm
-// → "1. Do X by tomorrow\n2. Follow up with Y\n..."
-
-// action = 'translate'
-// lang='vi' → dịch sang Tiếng Việt
-// lang='en' → dịch sang English
-
-// action = 'rewrite'
-// Viết lại chuyên nghiệp, lịch sự hơn
-```
-
-### `validateAiApiKey(apiKey, provider='gemini', modelName=null)`
-
-Test API key với một request thực (prompt "Hi", maxTokens=5):
-
-```js
-const result = await validateAiApiKey('your-key', 'gemini');
-// result = {
-//   isValid: true,
-//   errorType: null   // 'key' | 'model' | 'network' | 'unknown'
-// }
-```
-
-**Error type phân loại:**
-- `key` — API key sai → hướng dẫn lấy key mới
-- `model` — Model name không tồn tại → hướng dẫn chọn model khác
-- `network` — Lỗi mạng → kiểm tra kết nối
-
----
-
-## 9. Patterns Khi Dùng API
+## 8. Patterns Khi Dùng API
 
 ### Pattern 1: Gọi từ Background Handler
 ```js
@@ -324,7 +239,7 @@ const [usersMap, channelsMap] = await Promise.all([
 
 ---
 
-## 10. Mattermost API Response Formats
+## 9. Mattermost API Response Formats
 
 ### User Object
 ```json
