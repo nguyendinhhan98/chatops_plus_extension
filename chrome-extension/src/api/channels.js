@@ -58,3 +58,8 @@ export async function getChannelFiles(channelId, page = 0) {
   return { files: fileInfos, hasMore };
 }
 
+export async function getChannelStats(channelId) {
+  return request(`/channels/${channelId}/stats`);
+}
+
+

@@ -93,6 +93,10 @@
         <span class="tab-icon">🔥</span>
         <span class="tab-label" data-i18n="toolsReactionsSubTab">Reactions</span>
       </button>
+      <button class="tab-btn" data-tab="tools-files" data-i18n-title="toolsFilesSubTab" title="Files">
+        <span class="tab-icon">📁</span>
+        <span class="tab-label" data-i18n="toolsFilesSubTab">Files</span>
+      </button>
       <!-- Settings tab -->
       <button class="tab-btn" data-tab="settings" data-i18n-title="settingsTabLabel" title="Settings">
         <span class="tab-icon">⚙️</span>
@@ -313,6 +317,7 @@
           <button class="memo-sub-tab active" data-section="search" data-i18n="toolsSearchSubTab">Search</button>
           <button class="memo-sub-tab" data-section="images" data-i18n="toolsImagesSubTab">Images</button>
           <button class="memo-sub-tab" data-section="reactions" data-i18n="toolsReactionsSubTab">Reactions</button>
+          <button class="memo-sub-tab" data-section="files" data-i18n="toolsFilesSubTab">Files</button>
         </div>
       </div>
 
@@ -527,6 +532,43 @@
             <div id="customEmojiLoading" data-i18n="loadingMoreEmojis"
               style="text-align:center; padding:10px; color:var(--text-3); font-size:12px; display:none;">Loading more emojis...</div>
           </div>
+        </div>
+      </div>
+
+      <!-- Section: Files -->
+      <div id="tools-section-files" class="tools-tab-panel" style="display:none; flex-direction:column; flex:1; overflow:hidden; position:relative; width:100%; box-sizing:border-box; background:var(--bg-1);">
+        <div style="padding: 12px var(--app-padding, 16px); display: flex; flex-direction: column; gap: 8px; flex: 1; overflow: hidden; height: 100%; box-sizing: border-box;">
+          
+          <!-- Channel Selector -->
+          <div style="display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; width: 100%; box-sizing: border-box;">
+            <label style="font-size: 11px; font-weight: 600; color: var(--text-2);" data-i18n="selectChannelLabel">Chọn kênh chat:</label>
+            <select id="chatops-tools-files-channel-select" style="padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; outline: none; font-family: inherit; width: 100%; background: var(--bg-1); color: var(--text-1); box-sizing: border-box; cursor: pointer;">
+              <!-- Option tags populated dynamically -->
+            </select>
+          </div>
+
+          <!-- Segmented Filter Bar -->
+          <div class="chatops-picker-files-filters" style="display: flex; gap: 4px; flex-shrink: 0; background: var(--bg-2); border: 1px solid var(--border); border-radius: 6px; padding: 2px; box-sizing: border-box; width: 100%;">
+            <button type="button" class="chatops-picker-filter-btn active" id="chatops-tools-filter-images" data-filter="images" data-i18n="filterImages" style="flex: 1; outline: none; font-family: inherit; font-size: 11px; padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px; background: transparent; cursor: pointer; color: var(--text-2);">Images</button>
+            <button type="button" class="chatops-picker-filter-btn" id="chatops-tools-filter-documents" data-filter="documents" data-i18n="filterDocuments" style="flex: 1; outline: none; font-family: inherit; font-size: 11px; padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px; background: transparent; cursor: pointer; color: var(--text-2);">Documents</button>
+          </div>
+          <!-- Grid Area with Loading Overlay -->
+          <div style="position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column;">
+            <div id="chatops-tools-files-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; flex: 1; overflow-y: auto; padding: 2px;">
+              <!-- Channel files rendered here -->
+            </div>
+            
+            <!-- Loading overlay -->
+            <div id="chatops-tools-files-loading-overlay" style="position: absolute; top:0; left:0; right:0; bottom:0; background: rgba(255,255,255,0.7); display:none; align-items:center; justify-content:center; z-index:100; border-radius: 4px;">
+              <div class="spinner"></div>
+            </div>
+          </div>
+
+          <!-- Pagination Bar -->
+          <div id="chatops-tools-files-pagination" style="display: none; align-items: center; justify-content: center; gap: 4px; padding: 8px 0 2px; border-top: 1px solid var(--border); flex-shrink: 0; flex-wrap: wrap;">
+            <!-- Pagination buttons -->
+          </div>
+
         </div>
       </div>
     </div>
@@ -1032,6 +1074,26 @@
                   <div class="menu-tab-sub-options" id="promoteReactionsWrapper">
                     <label class="menu-tab-promote-row">
                       <input type="checkbox" id="settingPromoteReactions" class="premium-checkbox">
+                      <span data-i18n="promoteToMainTab">Promote to Main Tab</span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Files Card -->
+                <div class="menu-tab-card">
+                  <div class="menu-tab-card-header">
+                    <div class="menu-tab-info">
+                      <span class="menu-tab-icon">📁</span>
+                      <span class="menu-tab-name" data-i18n="toolsFilesSubTab">Files</span>
+                    </div>
+                    <label class="premium-switch">
+                      <input type="checkbox" id="settingShowFiles" checked>
+                      <span class="premium-slider"></span>
+                    </label>
+                  </div>
+                  <div class="menu-tab-sub-options" id="promoteFilesWrapper">
+                    <label class="menu-tab-promote-row">
+                      <input type="checkbox" id="settingPromoteFiles" class="premium-checkbox">
                       <span data-i18n="promoteToMainTab">Promote to Main Tab</span>
                     </label>
                   </div>

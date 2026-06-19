@@ -156,6 +156,7 @@ Communication giữa các components dùng `chrome.runtime.sendMessage()`. Toàn
 | `SHOW_HOVER_DEMO` | sidepanel | content | Demo hover buttons |
 | `APP_LANG_CHANGED` | sidepanel | content | Reload ngôn ngữ |
 | `SHOW_TOAST` | background/sidepanel | content | Hiện toast trên trang |
+| `INSERT_TEXT_TO_CHAT` | sidepanel | content | Chèn văn bản/hình ảnh vào khung chat Mattermost |
 
 ---
 
@@ -437,7 +438,7 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
 
 ## 10. Phiên Bản & Cập Nhật
 
-- **Version**: 3.4.6 (trong `manifest.json` và `package.json`)
+- **Version**: 3.4.7 (trong `manifest.json` và `package.json`)
 - Khi bump version: cập nhật **cả hai** file.
 - Extension dùng **Manifest V3** — không dùng persistent background page, không dùng `chrome.extension.getBackgroundPage()`.
 

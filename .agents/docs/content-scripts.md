@@ -313,7 +313,7 @@ Nếu url là http/https:
 #### Image Editor (`openImageEditor`)
 
 Canvas-based drawing editor:
-- **Tools**: Brush, Shapes (Rect/Circle/Triangle/Line dropdown), Arrow, Text, Eraser
+- **Tools**: Brush, Shapes (Rect/Circle/Triangle/Line dropdown), Arrow, Text, Eraser, **Upload Custom Background** (cho phép tải ảnh cá nhân lên làm nền để vẽ đè).
 - **Colors**: 6 preset + native color wheel
 - **Size**: Slider 2–50px
 - **Undo**: Stack tối đa 20 states (ctx.getImageData snapshots)

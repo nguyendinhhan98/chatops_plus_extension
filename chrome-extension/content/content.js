@@ -702,7 +702,7 @@ function showToast(msg) {
     const yourImagesHeaderEl = imagePickerEl.querySelector('#chatops-your-images-header');
     if (yourImagesHeaderEl) yourImagesHeaderEl.textContent = language.yourImages || 'YOUR IMAGES';
     
-    // Draw button and upload image button
+    // Draw button, Draw upload button, and upload image button
     const drawBtnEl = imagePickerEl.querySelector('#chatops-draw-btn');
     if (drawBtnEl) {
       drawBtnEl.innerHTML = `🎨 ${language.drawBtn || 'Tự vẽ'}`;
@@ -945,6 +945,12 @@ function showToast(msg) {
         if (span) span.textContent = language.drawResetBtn || 'Xóa hết';
       }
 
+      const uploadBgBtn = overlay.querySelector('#chatops-image-editor-upload-bg');
+      if (uploadBgBtn) {
+        const span = uploadBgBtn.querySelector('span');
+        if (span) span.textContent = language.editorUploadBgBtn || 'Tải ảnh nền';
+      }
+
       const cancelBtn = overlay.querySelector('.chatops-image-editor-btn-cancel');
       if (cancelBtn) cancelBtn.textContent = language.cancel;
 
@@ -1037,6 +1043,16 @@ function showToast(msg) {
             </div>
 
             <div style="flex: 1; min-width: 10px;"></div>
+
+            <button class="chatops-image-editor-action-btn" id="chatops-image-editor-upload-bg" title="Upload Background">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+              <span>${language.editorUploadBgBtn || 'Tải ảnh nền'}</span>
+            </button>
+            <input type="file" id="chatops-image-editor-bg-file" accept="image/*" style="display: none;" />
 
             <button class="chatops-image-editor-action-btn" id="chatops-image-editor-undo" title="Undo">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
@@ -1242,6 +1258,86 @@ function showToast(msg) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       saveState();
     };
+
+    const uploadBgBtn = editorOverlay.querySelector('#chatops-image-editor-upload-bg');
+    const bgFileInput = editorOverlay.querySelector('#chatops-image-editor-bg-file');
+    if (uploadBgBtn && bgFileInput) {
+      uploadBgBtn.onclick = (e) => {
+        e.preventDefault();
+        bgFileInput.click();
+      };
+
+      bgFileInput.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        bgFileInput.value = '';
+
+        if (!file.type.startsWith('image/')) {
+          showToast(language.uploadOnlyImages || 'Please upload image files only.');
+          return;
+        }
+
+        showToast(language.webpConvertingToast || 'Converting image... Please wait.');
+
+        let fileDataUrl = '';
+        let fileType = file.type;
+
+        if (needsChatOpsConversion(file.type, file.name)) {
+          try {
+            const converted = await convertForChatOps(file);
+            fileDataUrl = converted.dataUrl;
+            fileType = converted.type;
+          } catch (err) {
+            console.error('[ChatOps] Background image conversion failed:', err);
+          }
+        }
+
+        if (!fileDataUrl) {
+          fileDataUrl = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (ev) => resolve(ev.target.result);
+            reader.readAsDataURL(file);
+          });
+        }
+
+        const newImg = new Image();
+        newImg.onload = () => {
+          activeImgObj.src = fileDataUrl;
+          activeImgObj.mimeType = fileType || 'image/png';
+          activeImgObj.origWidth = newImg.naturalWidth;
+          activeImgObj.origHeight = newImg.naturalHeight;
+          activeImgObj.aspect = newImg.naturalWidth / newImg.naturalHeight;
+
+          canvas.width = newImg.naturalWidth;
+          canvas.height = newImg.naturalHeight;
+          bgImg.src = newImg.src;
+
+          let displayWidth = newImg.naturalWidth;
+          let displayHeight = newImg.naturalHeight;
+          
+          const maxW = Math.max(500, window.innerWidth - 120);
+          const maxH = Math.max(400, window.innerHeight - 240);
+          
+          let scale = 1;
+          if (displayWidth > maxW || displayHeight > maxH) {
+            scale = Math.min(maxW / displayWidth, maxH / displayHeight);
+          }
+          
+          displayWidth = Math.round(displayWidth * scale);
+          displayHeight = Math.round(displayHeight * scale);
+          const container = editorOverlay.querySelector('.chatops-image-editor-canvas-container');
+          if (container) {
+            container.style.width = displayWidth + 'px';
+            container.style.height = displayHeight + 'px';
+          }
+
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          editorUndoHistory = [];
+          saveState();
+        };
+        newImg.src = fileDataUrl;
+      };
+    }
 
     function getMousePos(e) {
       const rect = canvas.getBoundingClientRect();
@@ -1955,6 +2051,7 @@ function showToast(msg) {
       });
     }
 
+
     const fileInput = document.getElementById('chatops-image-upload-input');
     if (fileInput) {
       fileInput.addEventListener('change', async (e) => {
@@ -2151,10 +2248,17 @@ function showToast(msg) {
               <button type="button" class="chatops-picker-filter-btn active" data-filter="images">${language.filterImages || 'Ảnh'}</button>
               <button type="button" class="chatops-picker-filter-btn" data-filter="documents">${language.filterDocuments || 'Tài liệu'}</button>
             </div>
-            <div id="chatops-picker-files-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; flex: 1; overflow-y: auto; padding: 2px;">
-              <!-- Channel files rendered here -->
+            <div style="position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column;">
+              <div id="chatops-picker-files-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; flex: 1; overflow-y: auto; padding: 2px;">
+                <!-- Channel files rendered here -->
+              </div>
+              <div id="chatops-picker-files-loading-overlay" style="position: absolute; top:0; left:0; right:0; bottom:0; background: rgba(255,255,255,0.7); display:none; align-items:center; justify-content:center; z-index:100;">
+                <div class="spinner"></div>
+              </div>
             </div>
-            <button id="chatops-picker-files-load-more" style="display:none !important; margin-top:4px; padding:5px 12px; border:1px solid #ddd; border-radius:6px; background:#f5f5f7; font-size:11px; cursor:pointer; font-family:inherit; font-weight:600; color:#555;">${language.loadMoreFiles || 'Tải thêm'}</button>
+            <div id="chatops-picker-files-pagination" style="display: none; align-items: center; justify-content: center; gap: 4px; padding: 6px 0 2px; border-top: 1px solid #cbd5e1; flex-shrink: 0; flex-wrap: wrap;">
+              <!-- Pagination buttons -->
+            </div>
           </div>
         </div>
 
@@ -2222,8 +2326,7 @@ function showToast(msg) {
             });
             activeFilesFilter = 'images';
             const channelId = await getCurrentChannelId();
-            currentFilesPage = 0;
-            loadChannelFiles(channelId, false);
+            loadChannelFiles(channelId, true);
           }
         });
       });
@@ -2231,11 +2334,12 @@ function showToast(msg) {
       // Segmented filter button listeners
       const filterBtns = imagePickerEl.querySelectorAll('.chatops-picker-filter-btn');
       filterBtns.forEach(btn => {
-        btn.addEventListener('click', (e) => {
+        btn.addEventListener('click', async (e) => {
           filterBtns.forEach(b => b.classList.remove('active'));
           e.target.classList.add('active');
           activeFilesFilter = e.target.dataset.filter;
-          renderFilteredChannelFiles();
+          const channelId = await getCurrentChannelId();
+          loadChannelFiles(channelId, true);
         });
       });
 
@@ -2346,20 +2450,7 @@ function showToast(msg) {
             }
           }
         });
-        // Infinite scroll listener
-        pickerFilesGrid.addEventListener('scroll', async () => {
-          if (isLoadingFiles || !hasMoreFiles) return;
 
-          const threshold = 30;
-          const isNearBottom = pickerFilesGrid.scrollHeight - pickerFilesGrid.scrollTop - pickerFilesGrid.clientHeight < threshold;
-          if (isNearBottom) {
-            const channelId = await getCurrentChannelId();
-            if (channelId) {
-              currentFilesPage += 1;
-              loadChannelFiles(channelId, true);
-            }
-          }
-        });
       }
 
       loadCustomImages();
@@ -2422,7 +2513,61 @@ function showToast(msg) {
   let hasMoreFiles = false;
   let isLoadingFiles = false;
   let allLoadedChannelFiles = [];
+  let allChannelFiles = [];
+  let filesSearchQuery = '';
   let activeFilesFilter = 'images'; // 'images' | 'documents'
+  let filesNextPostPage = 0;
+  let filesHasMorePosts = true;
+  let filesTotalCount = 0;
+
+  function renderPagination(currentPage, totalPages, containerId, onPageClick) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.innerHTML = '';
+    if (totalPages <= 1) {
+      container.style.display = 'none';
+      return;
+    }
+    container.style.display = 'flex';
+
+    const createBtn = (pageNumber, label, isActive = false) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = isActive ? 'chatops-picker-filter-btn active' : 'chatops-picker-filter-btn';
+      btn.style.cssText = 'padding: 4px 8px !important; font-size: 11px !important; outline: none !important; font-family: inherit !important; min-width: 26px; flex: none !important; margin: 0 2px;';
+      btn.textContent = label;
+      if (!isActive) {
+        btn.addEventListener('click', () => onPageClick(pageNumber));
+      }
+      return btn;
+    };
+
+    const createEllipsis = () => {
+      const span = document.createElement('span');
+      span.style.cssText = 'font-size: 11px; font-weight: 600; color: #888; margin: 0 2px; display: inline-block; width: 14px; text-align: center;';
+      span.textContent = '...';
+      return span;
+    };
+
+    const pagesToShow = new Set();
+    pagesToShow.add(0);
+    pagesToShow.add(totalPages - 1);
+    for (let p = Math.max(0, currentPage - 2); p <= Math.min(totalPages - 1, currentPage + 2); p++) {
+      pagesToShow.add(p);
+    }
+    const sortedPages = Array.from(pagesToShow).sort((a, b) => a - b);
+
+    let lastPage = -1;
+    sortedPages.forEach((p) => {
+      if (lastPage !== -1) {
+        if (p - lastPage > 1) {
+          container.appendChild(createEllipsis());
+        }
+      }
+      container.appendChild(createBtn(p, String(p + 1), p === currentPage));
+      lastPage = p;
+    });
+  }
 
   function getCurrentChannelId() {
     return new Promise((resolve) => {
@@ -2530,99 +2675,125 @@ function showToast(msg) {
     textarea.dispatchEvent(new Event('input', { bubbles: true }));
   }
 
-  async function loadChannelFiles(channelId, append = false) {
+  async function loadChannelFiles(channelId, reset = true) {
     const grid = document.getElementById('chatops-picker-files-grid');
-    const loadMoreBtn = document.getElementById('chatops-picker-files-load-more');
+    const loadingOverlay = document.getElementById('chatops-picker-files-loading-overlay');
+    const paginationContainer = document.getElementById('chatops-picker-files-pagination');
     if (!grid) return;
 
     if (!channelId) {
       grid.innerHTML = `<div style="grid-column: span 3; padding: 20px; text-align: center; color: #888;">${language.noChannelFiles || 'Không tìm thấy ảnh hoặc file nào trong kênh này.'}</div>`;
-      if (loadMoreBtn) loadMoreBtn.style.display = 'none';
+      if (paginationContainer) paginationContainer.style.display = 'none';
       return;
+    }
+
+    if (reset) {
+      currentFilesPage = 0;
+      allChannelFiles = [];
+      filesNextPostPage = 0;
+      filesHasMorePosts = true;
+      filesTotalCount = 0;
+
+      try {
+        const statsRes = await new Promise((resolve) => {
+          chrome.runtime.sendMessage({
+            type: MESSAGE_TYPES.GET_CHANNEL_STATS,
+            channelId
+          }, resolve);
+        });
+        if (statsRes && statsRes.ok && statsRes.data) {
+          filesTotalCount = statsRes.data.files_count || 0;
+        }
+      } catch (e) {
+        console.error('[ChatOps Ext] Error loading stats:', e);
+      }
     }
 
     if (isLoadingFiles) return;
     isLoadingFiles = true;
 
-    if (!append) {
-      currentFilesPage = 0;
-      allLoadedChannelFiles = [];
-      grid.innerHTML = `<div style="grid-column: span 3; padding: 20px; text-align: center; color: #888;">${language.channelFilesLoading || 'Đang tải ảnh và file...'}</div>`;
-    } else {
-      if (loadMoreBtn) {
-        loadMoreBtn.disabled = true;
-        loadMoreBtn.textContent = language.loading || 'Đang tải...';
-      }
-    }
+    grid.innerHTML = `<div style="grid-column: span 3; padding: 20px; text-align: center; color: #888;">${language.channelFilesLoading || 'Đang tải ảnh và file...'}</div>`;
+    if (loadingOverlay) loadingOverlay.style.display = 'flex';
+    if (paginationContainer) paginationContainer.style.display = 'none';
 
     try {
-      const response = await new Promise((resolve) => {
-        chrome.runtime.sendMessage({
-          type: MESSAGE_TYPES.GET_CHANNEL_FILES,
-          channelId,
-          page: currentFilesPage
-        }, resolve);
-      });
+      const itemsPerPage = 24;
+      const targetCount = (currentFilesPage + 1) * itemsPerPage;
 
-      if (!response || !response.ok || !response.data) {
-        throw new Error(response?.error || 'Failed to load files');
-      }
+      let currentFiltered = getFilteredFilesList();
+      while (currentFiltered.length < targetCount && filesHasMorePosts) {
+        const res = await new Promise((resolve) => {
+          chrome.runtime.sendMessage({
+            type: MESSAGE_TYPES.GET_CHANNEL_FILES,
+            channelId,
+            page: filesNextPostPage
+          }, resolve);
+        });
 
-      const { files, hasMore } = response.data;
-      hasMoreFiles = hasMore;
+        if (res && res.ok && res.data) {
+          const files = res.data.files || [];
+          const hasMore = res.data.hasMore;
 
-      if (!append) {
-        grid.innerHTML = '';
-      }
-
-      // Append new page files to cache
-      allLoadedChannelFiles.push(...files);
-
-      // Render the current active filter view
-      renderFilteredChannelFiles();
-
-      // Infinite scroll fallback: if more files exist and we don't have enough to show scrollbar, load next page automatically
-      if (hasMoreFiles && grid.scrollHeight <= grid.clientHeight + 10) {
-        setTimeout(async () => {
-          const nextChannelId = await getCurrentChannelId();
-          if (nextChannelId === channelId && hasMoreFiles && !isLoadingFiles) {
-            currentFilesPage += 1;
-            loadChannelFiles(channelId, true);
+          if (files.length > 0) {
+            allChannelFiles.push(...files);
+            const seen = new Set();
+            allChannelFiles = allChannelFiles.filter(f => {
+              if (!f.id || seen.has(f.id)) return false;
+              seen.add(f.id);
+              return true;
+            });
           }
-        }, 100);
+
+          if (!hasMore || files.length === 0) {
+            filesHasMorePosts = false;
+          }
+        } else {
+          filesHasMorePosts = false;
+        }
+
+        filesNextPostPage++;
+        currentFiltered = getFilteredFilesList();
       }
+
+      renderFilteredChannelFiles();
 
     } catch (err) {
       console.error('[ChatOps Ext] Failed to load channel files:', err);
-      if (!append) {
-        grid.innerHTML = `<div style="grid-column: span 3; padding: 20px; text-align: center; color: #d32f2f;">${language.errorLoading || 'Lỗi khi tải dữ liệu'}</div>`;
-      }
+      grid.innerHTML = `<div style="grid-column: span 3; padding: 20px; text-align: center; color: #d32f2f;">${language.errorLoading || 'Lỗi khi tải dữ liệu'}</div>`;
     } finally {
       isLoadingFiles = false;
-      if (loadMoreBtn) {
-        loadMoreBtn.disabled = false;
-        loadMoreBtn.textContent = language.loadMoreFiles || 'Tải thêm';
-        loadMoreBtn.style.display = 'none'; // Always hide since we auto loadmore
-      }
+      if (loadingOverlay) loadingOverlay.style.display = 'none';
     }
   }
 
-  function renderFilteredChannelFiles() {
-    const grid = document.getElementById('chatops-picker-files-grid');
-    if (!grid) return;
-
-    const filtered = allLoadedChannelFiles.filter(file => {
+  function getFilteredFilesList() {
+    return allChannelFiles.filter(file => {
       const filename = file.name || 'file';
       const ext = (file.extension || filename.split('.').pop() || '').toLowerCase();
       const mime = file.mime_type || '';
       const isImage = mime.startsWith('image/') || ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp'].includes(ext);
 
       if (activeFilesFilter === 'images') {
-        return isImage;
+        if (!isImage) return false;
       } else {
-        return !isImage;
+        if (isImage) return false;
       }
+
+      if (filesSearchQuery.trim() !== '') {
+        const query = filesSearchQuery.toLowerCase();
+        if (!filename.toLowerCase().includes(query)) return false;
+      }
+
+      return true;
     });
+  }
+
+  function renderFilteredChannelFiles() {
+    const grid = document.getElementById('chatops-picker-files-grid');
+    const paginationContainer = document.getElementById('chatops-picker-files-pagination');
+    if (!grid) return;
+
+    const filtered = getFilteredFilesList();
 
     grid.innerHTML = '';
 
@@ -2631,10 +2802,36 @@ function showToast(msg) {
         ? (language.noChannelImages || 'Không tìm thấy ảnh nào trong kênh này.')
         : (language.noChannelFiles || 'Không tìm thấy file nào trong kênh này.');
       grid.innerHTML = `<div style="grid-column: span 3; padding: 20px; text-align: center; color: #888;">${msg}</div>`;
+      if (paginationContainer) paginationContainer.style.display = 'none';
       return;
     }
 
-    renderChannelFilesGrid(grid, filtered);
+    const itemsPerPage = 24;
+    let totalPages = Math.ceil(filtered.length / itemsPerPage);
+    if (filesHasMorePosts) {
+      const estimatedTotal = Math.max(filtered.length + itemsPerPage, filesTotalCount || 0);
+      totalPages = Math.max(totalPages + 1, Math.ceil(estimatedTotal / itemsPerPage));
+    }
+
+    if (currentFilesPage >= totalPages) currentFilesPage = totalPages - 1;
+    if (currentFilesPage < 0) currentFilesPage = 0;
+
+    const startIdx = currentFilesPage * itemsPerPage;
+    const endIdx = startIdx + itemsPerPage;
+    const pageItems = filtered.slice(startIdx, endIdx);
+
+    renderChannelFilesGrid(grid, pageItems);
+
+    if (paginationContainer) {
+      const channelId = getActiveChannelIdFromDom(); // helper fallback to make sure channelId is correct
+      getCurrentChannelId().then(cid => {
+        const finalChannelId = cid || channelId;
+        renderPagination(currentFilesPage, totalPages, 'chatops-picker-files-pagination', (pageNumber) => {
+          currentFilesPage = pageNumber;
+          loadChannelFiles(finalChannelId, false);
+        });
+      });
+    }
   }
 
   function renderChannelFilesGrid(grid, files) {
@@ -4596,6 +4793,29 @@ function showToast(msg) {
     } else if (message.type === 'INSERT_IMAGE_TO_CHAT') {
       if (typeof globalInsertImageToChat === 'function') {
         globalInsertImageToChat(message.url);
+      }
+    } else if (message.type === 'INSERT_TEXT_TO_CHAT') {
+      let textarea = activeChatTextarea;
+      if (!textarea) {
+        const targetId = imagePickerEl?.dataset.activeTextbox || 'post_textbox';
+        textarea = document.getElementById(targetId);
+        if (!textarea) {
+          if (targetId === 'reply_textbox') {
+            textarea = document.querySelector('#reply_textbox, .sidebar-right textarea, .rhs-thread textarea, .sidebar--right textarea, [placeholder*="reply" i]');
+          } else {
+            textarea = document.querySelector('#post_textbox, .post-create-body textarea, [placeholder*="write" i]');
+          }
+        }
+      }
+      if (textarea) {
+        const textToInsert = message.text || '';
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const text = textarea.value;
+        textarea.value = text.substring(0, start) + textToInsert + text.substring(end);
+        textarea.focus();
+        textarea.selectionStart = textarea.selectionEnd = start + textToInsert.length;
+        textarea.dispatchEvent(new Event('input', { bubbles: true }));
       }
     } else if (message.action === 'open_post_thread') {
       handleOpenPostThread(message.postId, message.rootId);

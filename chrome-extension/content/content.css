@@ -864,25 +864,29 @@ html body #chatops-quick-note-popover textarea#cqn-note-text {
 }
 .chatops-picker-sub-tab {
   flex: 1 !important;
-  border: none !important;
-  background: none !important;
+  border: 1px solid #94a3b8 !important;
+  background: #ffffff !important;
   font-size: 11px !important;
   font-weight: 600 !important;
   padding: 4px 6px !important;
   border-radius: 4px !important;
   cursor: pointer !important;
   text-align: center !important;
-  color: #475569 !important;
+  color: #1e293b !important;
   transition: all 0.2s ease !important;
   outline: none !important;
   font-family: inherit !important;
+  box-sizing: border-box !important;
 }
 .chatops-picker-sub-tab:hover {
-  background: #e2e8f0 !important;
-  color: #1e293b !important;
+  background: #f8fafc !important;
+  border-color: #64748b !important;
+  color: #0f172a !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
 }
 .chatops-picker-sub-tab.active {
   background: #1c58d9 !important;
+  border-color: #1c58d9 !important;
   color: #ffffff !important;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
 }
@@ -2181,27 +2185,31 @@ body.chatops-pwa-active #root {
 
 .chatops-picker-filter-btn {
   flex: 1 !important;
-  border: none !important;
-  background: none !important;
+  border: 1px solid #94a3b8 !important;
+  background: #ffffff !important;
   font-size: 10px !important;
   font-weight: 600 !important;
   padding: 4px 6px !important;
   border-radius: 4px !important;
   cursor: pointer !important;
   text-align: center !important;
-  color: #475569 !important;
+  color: #1e293b !important;
   transition: all 0.2s ease !important;
   outline: none !important;
   font-family: inherit !important;
+  box-sizing: border-box !important;
 }
 
 .chatops-picker-filter-btn:hover {
-  background: #e2e8f0 !important;
-  color: #1e293b !important;
+  background: #f8fafc !important;
+  border-color: #64748b !important;
+  color: #0f172a !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
 }
 
 .chatops-picker-filter-btn.active {
   background: #1c58d9 !important;
+  border-color: #1c58d9 !important;
   color: #ffffff !important;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
 }

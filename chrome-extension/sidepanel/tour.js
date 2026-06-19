@@ -166,7 +166,17 @@ function getSteps() {
       scrollInto:  true,
     },
 
-    // ── Step 12: Settings overview ───────────────────────────────────────
+    // ── Step 13: Files (inside Tools) ──────────────────────────────────
+    {
+      selector:    '#chatops-tools-files-grid',
+      titleKey:    'tourStepFilesTitle',
+      descKey:     'tourStepFilesDesc',
+      tab:         'tools',
+      subtab:      'files',
+      scrollInto:  true,
+    },
+
+    // ── Step 14: Settings overview ───────────────────────────────────────
     {
       selector: '[data-tab="settings"]',
       titleKey: 'tourStep12Title',

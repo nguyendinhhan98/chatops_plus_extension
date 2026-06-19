@@ -21,7 +21,7 @@ sidepanel.js           ← Orchestrator / Router
     ├── memo.tab.js    ← Tab ghi chú
     ├── mentions.tab.js← Tab mentions
     ├── search.tab.js  ← Tab tìm kiếm
-    └── settings.tab.js← Tab cài đặt
+    └── settings.tab.js← Tab cài đặt (bao gồm tệp tin & ảnh trong kênh)
 ```
 
 ---
