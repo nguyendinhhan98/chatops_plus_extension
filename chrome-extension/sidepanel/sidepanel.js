@@ -524,7 +524,7 @@ function setupTabs() {
       let tabId = 'settings';
       let sectionId = '';
 
-      if (subtabName.startsWith('reactions-') || subtabName === 'tools-search' || subtabName === 'tools-files') {
+      if (subtabName.startsWith('reactions-') || subtabName === 'tools-search') {
         tabId = 'tools';
         if (subtabName === 'reactions-picker') {
           sectionId = 'reactions';
@@ -532,8 +532,6 @@ function setupTabs() {
           sectionId = 'images';
         } else if (subtabName === 'tools-search') {
           sectionId = 'search';
-        } else if (subtabName === 'tools-files' || subtabName === 'reactions-files') {
-          sectionId = 'files';
         }
       } else if (subtabName.startsWith('features-') || subtabName === 'categories') {
         tabId = 'settings';

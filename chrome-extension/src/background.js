@@ -2,7 +2,7 @@
  * Background Service Worker — ChatOps Chrome Extension
  */
 
-import { getConfig, getMyProfile, addPostReaction, deletePostReaction, deletePost, searchUsers, getUsersByIds, getPostReactions, getPostThread, getChannelFiles, getChannelStats } from './api/index.js';
+import { getConfig, getMyProfile, addPostReaction, deletePostReaction, deletePost, searchUsers, getUsersByIds, getPostReactions, getPostThread } from './api/index.js';
 import { syncCookies, setupCookieSync } from './background/cookie-sync.js';
 import { 
   handleMentionCheck, 
@@ -98,7 +98,8 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name === ALARMS.MENTION_CHECK) {
     handleMentionCheck();
   } else if (alarm.name.startsWith(ALARMS.TASK_PREFIX)) {
-    handleTaskAlarm(alarm.name);
+    // Pass alarm.scheduledTime so the handler can detect stale/suspended alarms
+    handleTaskAlarm(alarm.name, alarm.scheduledTime);
   }
 });
 
@@ -229,18 +230,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       handleGetPostThread(message.postId, sendResponse);
       return true;
 
-    case MESSAGE_TYPES.GET_CHANNEL_FILES:
-      getChannelFiles(message.channelId, message.page || 0, message.perPage || 50)
-        .then((data) => sendResponse({ ok: true, data }))
-        .catch((err) => sendResponse({ ok: false, error: err.message }));
-      return true;
-
-    case MESSAGE_TYPES.GET_CHANNEL_STATS:
-      getChannelStats(message.channelId)
-        .then((data) => sendResponse({ ok: true, data }))
-        .catch((err) => sendResponse({ ok: false, error: err.message }));
-      return true;
-
     case MESSAGE_TYPES.TEST_NOTIFICATION:
       const testType = message.notificationType || 'both';
       loadLanguage().then(() => {
@@ -325,6 +314,11 @@ function handleMarkTaskDone(taskId, sendResponse) {
     if (task) {
       task.done = true;
       task.doneAt = Date.now();
+      if (task.taskCategory === 'checklist' && task.checklist) {
+        task.checklist.forEach(item => {
+          item.done = true;
+        });
+      }
       if (task.repeatDaily) {
         // Reschedule for tomorrow
         const currentReminder = new Date(task.reminder || Date.now());

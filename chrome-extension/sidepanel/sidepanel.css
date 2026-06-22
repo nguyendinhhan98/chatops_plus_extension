@@ -981,24 +981,28 @@ textarea.search-form-textarea {
   margin-top: -2px !important;
 }
 
-/* ─── Post Item ─── */
 .post-item {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 8px 10px;
-  border-bottom: 1px solid var(--border);
+  gap: 6px;
+  padding: 12px;
   background: var(--bg);
-  transition: background var(--transition);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 12px;
+  transition: all var(--transition);
   position: relative;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
 
 .post-item:nth-child(even) {
   background: var(--bg-2);
+  border-color: var(--border-hover);
 }
 
 .post-item:hover {
-  background: rgba(28, 88, 217, 0.06) !important;
+  border-color: var(--accent);
+  box-shadow: 0 4px 12px rgba(28, 88, 217, 0.08);
 }
 
 .post-avatar { width: 32px; height: 32px; flex-shrink: 0; }
@@ -4496,9 +4500,10 @@ span.flatpickr-weekday {
   color: var(--success);
 }
 
-/* Prevent dropdowns from being clipped or covered by other positioned cards in lists */
 .memo-item:has(.custom-dropdown-menu:not([style*="display: none"])),
 .task-item:has(.custom-dropdown-menu:not([style*="display: none"])) {
   z-index: 100 !important;
 }
+
+
 

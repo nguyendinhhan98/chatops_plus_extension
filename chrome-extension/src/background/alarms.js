@@ -16,16 +16,43 @@ export async function handleMentionCheck() {
 }
 
 /**
- * Set of taskIds whose reminder banners are currently visible on page.
- * Used to prevent duplicate banners when snooze alarm fires.
+ * Reschedules a daily task to the next occurrence of its configured daily time.
+ * Updates task.reminder in storage and creates a new Chrome alarm.
+ * @param {Object} task - the task object (will be mutated)
+ * @param {Array} memos - full memos array (will be persisted)
  */
-const activeReminderTaskIds = new Set();
+async function rescheduleToNextDailyOccurrence(task, memos) {
+  // Extract HH:mm from the stored reminder string (format: "YYYY-MM-DD HH:mm")
+  const reminderStr = task.reminder || '';
+  const timeMatch = reminderStr.match(/(\d{2}):(\d{2})$/);
+
+  const now = new Date();
+  let nextTime = new Date();
+
+  if (timeMatch) {
+    nextTime.setHours(parseInt(timeMatch[1], 10), parseInt(timeMatch[2], 10), 0, 0);
+    // If that time today has already passed, push to tomorrow
+    if (nextTime.getTime() <= now.getTime()) {
+      nextTime.setDate(nextTime.getDate() + 1);
+    }
+  } else {
+    // Fallback: schedule 24 hours from now
+    nextTime = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  }
+
+  task.reminder = formatDateTime(nextTime);
+  await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
+  chrome.alarms.create(task.id, { when: nextTime.getTime() });
+  console.log('[ChatOps Ext] Daily task rescheduled to next occurrence:', task.id, '->', nextTime.toLocaleString());
+}
 
 /**
  * Handles task reminders
- * @param {string} taskId 
+ * @param {string} taskId
+ * @param {number} [alarmScheduledTime] - The time the alarm was originally scheduled to fire (ms).
+ *   Passed from chrome.alarms.onAlarm event. Used to detect stale/suspended alarms.
  */
-export async function handleTaskAlarm(taskId) {
+export async function handleTaskAlarm(taskId, alarmScheduledTime) {
   try {
     await loadLanguage();
     const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
@@ -55,23 +82,51 @@ export async function handleTaskAlarm(taskId) {
       }
     }
 
+    // === STALE ALARM GUARD ===
+    // Chrome Alarms are suspended when the browser is closed. When Chrome restarts,
+    // all overdue alarms fire immediately. If an alarm fires significantly later than
+    // its scheduled time (e.g. snooze alarm from last Friday fires on Monday morning),
+    // it is "stale" — we must NOT show a notification. Instead:
+    //   - Daily tasks: reschedule silently to the next correct occurrence.
+    //   - One-time tasks: the moment is missed, clear the alarm (task stays in list as pending).
+    const settingsRes = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS]);
+    const settings = settingsRes[STORAGE_KEYS.SETTINGS] || {};
+    const staleThresholdMinutes = settings.staleThresholdMinutes ?? 30;
+    const STALE_THRESHOLD_MS = staleThresholdMinutes * 60 * 1000;
+    const now = Date.now();
+
+    if (alarmScheduledTime && (now - alarmScheduledTime > STALE_THRESHOLD_MS)) {
+      console.warn(
+        '[ChatOps Ext] Stale alarm detected for task:', taskId,
+        '— scheduled:', new Date(alarmScheduledTime).toLocaleString(),
+        '— now:', new Date(now).toLocaleString(),
+        '— delay:', Math.round((now - alarmScheduledTime) / 60000), 'min'
+      );
+
+      if (task.repeatDaily) {
+        await rescheduleToNextDailyOccurrence(task, memos);
+      } else {
+        chrome.alarms.clear(taskId);
+        console.log('[ChatOps Ext] Stale one-time alarm cleared (task left as pending):', taskId);
+      }
+      return; // Do NOT show any notification
+    }
+
+    // --- Alarm is fresh — proceed to notify ---
+
     let message = '';
     if (task.postText) message += task.postText.slice(0, 100);
     if (task.note) message += (message ? ' — ' : '') + task.note;
     if (!message) message = language.reminderTaskDefault;
 
-    // Get notification settings
-    const settingsRes = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS]);
-    const settings = settingsRes[STORAGE_KEYS.SETTINGS] || {};
+    // Get notification settings (reuse `settings` already loaded above for stale guard)
     const notificationType = settings.notificationType || 'both';
     const snoozeMinutes = settings.snoozeMinutes || 5;
 
     // 1. Send banner to all ChatOps tabs if configured
-    // If this taskId's banner is already active on the page, close it first before showing new one
     if (notificationType === 'both' || notificationType === 'in-page') {
       const tabs = await chrome.tabs.query({ url: `${CHATOPS_CONFIG.DEFAULT_URL}/*` });
       for (const tab of tabs) {
-        // Request content script to close existing banner for this task (if any) then show new one
         chrome.tabs.sendMessage(tab.id, {
           type: MESSAGE_TYPES.SHOW_REMINDER,
           message,
@@ -106,26 +161,13 @@ export async function handleTaskAlarm(taskId) {
       });
     }
 
-
-    // Reschedule snooze alarm
-    // IMPORTANT: Only schedule snooze if task.reminder exists and is in the past or near-past
-    // This prevents re-scheduling for tasks whose alarm fired early due to timezone or clock drift.
-    // For daily tasks: after snooze fires, verify we haven't already passed the NEXT scheduled time
-    if (task.repeatDaily && task.reminder) {
-      const nextScheduled = new Date(task.reminder).getTime();
-      // If next scheduled reminder is already in the future (> snooze window), don't snooze
-      // Wait for the actual alarm instead.
-      if (nextScheduled > Date.now() + snoozeMinutes * 60 * 1000) {
-        console.log('[ChatOps Ext] Skipping snooze — next scheduled alarm is still in the future:', new Date(nextScheduled));
-        return;
-      }
-    }
-
+    // 3. Schedule snooze alarm so notification repeats until user acts (Done / Skip).
+    // The stale guard above ensures that if Chrome was suspended and this snooze
+    // alarm fires much later, it will be discarded gracefully instead of looping.
     chrome.alarms.create(taskId, { delayInMinutes: snoozeMinutes });
-    console.log('[ChatOps Ext] Task alarm fired and rescheduled:', taskId, 'with snooze:', snoozeMinutes, 'mins');
+    console.log('[ChatOps Ext] Task alarm fired, snooze scheduled in', snoozeMinutes, 'min:', taskId);
 
   } catch (err) {
     console.error('[ChatOps Ext] handleTaskAlarm error:', err);
   }
 }
-

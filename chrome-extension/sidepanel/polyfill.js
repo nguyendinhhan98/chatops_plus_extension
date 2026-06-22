@@ -166,7 +166,7 @@ window.convertToCustomDropdown = function(selectOrId, width = null, height = nul
     <div class="custom-dropdown" style="position: relative; width: 100%; box-sizing: border-box; font-family: var(--font); overflow: visible !important;">
       <button type="button" class="custom-dropdown-toggle ${isCompact ? 'sp-compact-select' : ''}" data-category="${optionVal.toLowerCase()}"
         style="${toggleStyle}">
-        <span class="custom-dropdown-selected-text" style="font-weight: 600; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; text-align: center; justify-content: center; line-height: 1; display: inline-flex; align-items: center; height: 100%; margin: 0; padding: 0;">${initialText}</span>
+        <span class="custom-dropdown-selected-text" style="font-weight: 600; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; text-align: left; justify-content: flex-start; line-height: 1; display: inline-flex; align-items: center; height: 100%; margin: 0; padding: 0;">${initialText}</span>
         <span class="custom-dropdown-arrow" style="font-size: 8px; opacity: 0.6; transition: transform 0.2s ease; margin-left: 2px; flex-shrink: 0; line-height: 1; display: inline-flex; align-items: center; height: 100%;">▼</span>
       </button>
       <ul class="custom-dropdown-menu"

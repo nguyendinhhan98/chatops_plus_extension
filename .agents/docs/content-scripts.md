@@ -310,6 +310,17 @@ Nếu url là http/https:
   3. Trigger React input events
 ```
 
+#### `insertAndMaybeSend(url, forceSend = false)`
+
+Wrapper xung quanh `insertImageToChat` hỗ trợ tự động gửi tin nhắn:
+1. Gọi `insertImageToChat(url)` để chèn ảnh/GIF.
+2. Kiểm tra nếu `forceSend` được bật hoặc cài đặt `pickerAutoSend` là `true`.
+3. Nếu gửi trực tiếp: chờ 150ms để text/attachment load rồi tự động thực hiện:
+   - Gọi `parentForm.requestSubmit()` để gửi form một cách native và độc lập với ngôn ngữ hiển thị.
+   - Nếu không thành công, tìm và nhấp vào nút Gửi sử dụng các bộ chọn đa ngôn ngữ (`send`, `gửi`).
+   - Nếu vẫn thất bại, dispatch phím `Enter` giả lập vào textarea.
+
+
 #### Image Editor (`openImageEditor`)
 
 Canvas-based drawing editor:

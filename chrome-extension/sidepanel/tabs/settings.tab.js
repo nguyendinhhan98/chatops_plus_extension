@@ -1,9 +1,7 @@
 import { STORAGE_KEYS, CHATOPS_CONFIG, MESSAGE_TYPES, DEFAULT_MEMES } from '../../src/constants.js';
 import { language, setLanguage, applyI18n } from '../../src/lang.js';
-import { getCustomEmojis, getConfig, searchCustomEmojis, getMyChannels } from '../../src/api/index.js';
+import { getCustomEmojis, getConfig, searchCustomEmojis } from '../../src/api/index.js';
 import { needsChatOpsConversion, convertForChatOps } from '../../src/utils/imageConverter.js';
-
-
 let chatopsUrl = CHATOPS_CONFIG.DEFAULT_URL;
 const customEmojiMap = new Map();
 let cachedCustomEmojis = []; // Local cache of loaded custom emojis
@@ -221,6 +219,7 @@ let _state = null;
 
 const DEFAULT_SETTINGS = {
   snoozeMinutes: 5,
+  staleThresholdMinutes: 30,
   notificationPosition: 'center',
   notificationAnimation: 'default',
   notificationSize: 'medium',
@@ -236,8 +235,7 @@ const DEFAULT_SETTINGS = {
     tasks: true, // Always true
     notes: true,
     missed: true,
-    reactions: true,
-    files: true
+    reactions: true
   },
   promoteTabs: {
     tasks: true,
@@ -245,8 +243,7 @@ const DEFAULT_SETTINGS = {
     search: true,
     images: false,
     reactions: false,
-    mentions: true,
-    files: false
+    mentions: true
   },
   floatingButtons: {
     quickNote: true,
@@ -359,6 +356,11 @@ async function loadAndApplySettings() {
     snoozeInput.value = settings.snoozeMinutes;
   }
 
+  const staleThresholdInput = document.getElementById('settingStaleThresholdMinutes');
+  if (staleThresholdInput) {
+    staleThresholdInput.value = settings.staleThresholdMinutes ?? 30;
+  }
+
   const giphyApiKeyInput = document.getElementById('settingGiphyApiKey');
   if (giphyApiKeyInput) {
     giphyApiKeyInput.value = settings.giphyApiKey || '';
@@ -433,13 +435,9 @@ async function loadAndApplySettings() {
   document.getElementById('settingShowTasks').checked = settings.showTabs.tasks !== false;
   document.getElementById('settingShowNotes').checked = settings.showTabs.notes !== false;
   document.getElementById('settingShowMissed').checked = settings.showTabs.missed !== false;
-  
 
   const settingShowReactionsEl = document.getElementById('settingShowReactions');
   if (settingShowReactionsEl) settingShowReactionsEl.checked = settings.showTabs.reactions !== false;
-
-  const settingShowFilesEl = document.getElementById('settingShowFiles');
-  if (settingShowFilesEl) settingShowFilesEl.checked = settings.showTabs.files !== false;
 
   // Apply promote toggles
   const promoteTasksEl = document.getElementById('settingPromoteTasks');
@@ -460,9 +458,6 @@ async function loadAndApplySettings() {
   const promoteReactionsEl = document.getElementById('settingPromoteReactions');
   if (promoteReactionsEl) promoteReactionsEl.checked = settings.promoteTabs?.reactions === true;
 
-  const promoteFilesEl = document.getElementById('settingPromoteFiles');
-  if (promoteFilesEl) promoteFilesEl.checked = settings.promoteTabs?.files === true;
-
   // Apply floating buttons checkboxes
   document.getElementById('settingFloatingQuickTask').checked = settings.floatingButtons?.quickTask !== false;
   document.getElementById('settingFloatingQuickNote').checked = settings.floatingButtons?.quickNote !== false;
@@ -471,7 +466,6 @@ async function loadAndApplySettings() {
   document.getElementById('settingFloatingImagePicker').checked = settings.floatingButtons?.imagePicker !== false;
   document.getElementById('settingFloatingQuickReply').checked = settings.floatingButtons?.quickReply !== false;
   document.getElementById('settingFloatingQuickCopy').checked = settings.floatingButtons?.quickCopy !== false;
-  
 
   // Sync disabled/dimmed states
   updateFloatingCheckboxesSync(settings);
@@ -769,6 +763,17 @@ function setupEventListeners() {
     });
   }
 
+  const staleThresholdInput = document.getElementById('settingStaleThresholdMinutes');
+  if (staleThresholdInput) {
+    staleThresholdInput.addEventListener('change', async (e) => {
+      let val = parseInt(e.target.value, 10);
+      if (isNaN(val) || val < 5) val = 5;
+      e.target.value = val;
+      await updateSettings({ staleThresholdMinutes: val });
+      showAutoSaveFeedback();
+    });
+  }
+
 
   const giphyApiKeyInput = document.getElementById('settingGiphyApiKey');
   if (giphyApiKeyInput) {
@@ -991,7 +996,6 @@ function setupEventListeners() {
   bindTabToggle('settingShowNotes', 'notes');
   bindTabToggle('settingShowMissed', 'missed');
   bindTabToggle('settingShowReactions', 'reactions');
-  bindTabToggle('settingShowFiles', 'files');
 
   const bindPromoteToggle = (elementId, key) => {
     const el = document.getElementById(elementId);
@@ -1018,8 +1022,6 @@ function setupEventListeners() {
   bindPromoteToggle('settingPromoteMentions', 'mentions');
   bindPromoteToggle('settingPromoteImages', 'images');
   bindPromoteToggle('settingPromoteReactions', 'reactions');
-  bindPromoteToggle('settingPromoteFiles', 'files');
-
 
   // Floating buttons toggle saving
   const bindFloatingToggle = (checkboxId, key) => {
@@ -1430,7 +1432,7 @@ function setupEventListeners() {
       if (!upBtn && !downBtn) return;
       
       const settings = await getSettings();
-      const defaultOrder = ['tasks', 'memo', 'mentions', 'tools-search', 'tools-images', 'tools-reactions', 'tools-files', 'tools'];
+      const defaultOrder = ['tasks', 'memo', 'mentions', 'tools-search', 'tools-images', 'tools-reactions', 'tools'];
       let order = settings.tabOrder || [...defaultOrder];
       const missingKeys = defaultOrder.filter(key => !order.includes(key));
       if (missingKeys.length > 0) {
@@ -1445,8 +1447,7 @@ function setupEventListeners() {
           search: true,
           images: false,
           reactions: false,
-          mentions: true,
-          files: false
+          mentions: true
         };
         if (promoteTabs.tasks === undefined) promoteTabs.tasks = true;
         if (promoteTabs.notes === undefined) promoteTabs.notes = true;
@@ -1458,7 +1459,6 @@ function setupEventListeners() {
           (!promoteTabs.search && (settings.showTabs.search !== false)) ||
           (!promoteTabs.images && (settings.memeEnabled !== false)) ||
           (!promoteTabs.reactions && (settings.showTabs.reactions !== false)) ||
-          (!promoteTabs.files && (settings.showTabs.files !== false)) ||
           (promoteTabs.mentions === false && (settings.showTabs.missed !== false))
         );
 
@@ -1470,7 +1470,6 @@ function setupEventListeners() {
         if (id === 'tools-search') return (settings.showTabs.search !== false) && (promoteTabs.search === true);
         if (id === 'tools-images') return (settings.memeEnabled !== false) && (promoteTabs.images === true);
         if (id === 'tools-reactions') return (settings.showTabs.reactions !== false) && (promoteTabs.reactions === true);
-        if (id === 'tools-files') return (settings.showTabs.files !== false) && (promoteTabs.files === true);
         return false;
       };
 
@@ -1582,8 +1581,6 @@ function setupEventListeners() {
           renderStandardEmojiGrid(settings);
           renderCustomEmojiGrid(settings, document.getElementById('customEmojiSearchInput')?.value || '');
         });
-      } else if (sectionId === 'files') {
-        loadSidepanelFiles();
       }
     }
   });
@@ -1818,35 +1815,7 @@ function setupEventListeners() {
       }
     });
   });
-
-  // Files Tab Sub-section Event Listeners
-  const toolsFilterImages = document.getElementById('chatops-tools-filter-images');
-  const toolsFilterDocuments = document.getElementById('chatops-tools-filter-documents');
-  if (toolsFilterImages && toolsFilterDocuments) {
-    toolsFilterImages.addEventListener('click', () => {
-      toolsFilterImages.classList.add('active');
-      toolsFilterDocuments.classList.remove('active');
-      sidepanelActiveFilesFilter = 'images';
-      loadSidepanelFiles(true);
-    });
-    toolsFilterDocuments.addEventListener('click', () => {
-      toolsFilterDocuments.classList.add('active');
-      toolsFilterImages.classList.remove('active');
-      sidepanelActiveFilesFilter = 'documents';
-      loadSidepanelFiles(true);
-    });
-  }
-
-  const sidepanelChannelSelect = document.getElementById('chatops-tools-files-channel-select');
-  if (sidepanelChannelSelect) {
-    sidepanelChannelSelect.addEventListener('change', (e) => {
-      sidepanelCurrentChannelId = e.target.value;
-      loadSidepanelFiles(true);
-    });
-  }
-
 }
-
 
 let autoSaveTimeoutId = null;
 
@@ -2438,7 +2407,6 @@ export function applyTabRepositioning(settings, showTabs) {
     { key: 'search', elId: 'tools-section-search', defaultPromoted: false },
     { key: 'images', elId: 'tools-section-images', defaultPromoted: false },
     { key: 'reactions', elId: 'tools-section-reactions', defaultPromoted: false },
-    { key: 'files', elId: 'tools-section-files', defaultPromoted: false },
     { key: 'mentions', elId: 'tab-mentions', defaultPromoted: true }
   ];
 
@@ -2456,7 +2424,6 @@ export function applyTabRepositioning(settings, showTabs) {
     else if (key === 'search') isTabEnabled = showTabs.search !== false && (promoted || toolsEnabled);
     else if (key === 'images') isTabEnabled = settings.memeEnabled !== false && (promoted || toolsEnabled);
     else if (key === 'reactions') isTabEnabled = showTabs.reactions !== false && (promoted || toolsEnabled);
-    else if (key === 'files') isTabEnabled = showTabs.files !== false && (promoted || toolsEnabled);
     else if (key === 'mentions') isTabEnabled = showTabs.missed !== false && (promoted || toolsEnabled);
 
     if (promoted) {
@@ -2473,7 +2440,6 @@ export function applyTabRepositioning(settings, showTabs) {
       else if (key === 'search') tabNavId = 'tools-search';
       else if (key === 'images') tabNavId = 'tools-images';
       else if (key === 'reactions') tabNavId = 'tools-reactions';
-      else if (key === 'files') tabNavId = 'tools-files';
       else if (key === 'mentions') tabNavId = 'mentions';
 
       if (isTabEnabled && activeTabId === tabNavId) {
@@ -2503,7 +2469,6 @@ export function applyTabRepositioning(settings, showTabs) {
         else if (key === 'search') tabSubSectionId = 'search';
         else if (key === 'images') tabSubSectionId = 'images';
         else if (key === 'reactions') tabSubSectionId = 'reactions';
-        else if (key === 'files') tabSubSectionId = 'files';
         else if (key === 'mentions') tabSubSectionId = 'mentions';
 
         if (activeSub === tabSubSectionId) {
@@ -2534,9 +2499,6 @@ export function applyTabRepositioning(settings, showTabs) {
       }
       if (!promoteTabs.reactions && (showTabs.reactions !== false)) {
         subTabsHtml += `<button class="memo-sub-tab" data-section="reactions" data-i18n="toolsReactionsSubTab">${language.toolsReactionsSubTab || 'Reactions'}</button>`;
-      }
-      if (!promoteTabs.files && (showTabs.files !== false)) {
-        subTabsHtml += `<button class="memo-sub-tab" data-section="files" data-i18n="toolsFilesSubTab">${language.toolsFilesSubTab || 'Files'}</button>`;
       }
       if (promoteTabs.mentions === false && (showTabs.missed !== false)) {
         subTabsHtml += `<button class="memo-sub-tab" data-section="mentions" data-i18n="toolsMentionsSubTab">${language.toolsMentionsSubTab || 'Mentions'}</button>`;
@@ -2581,8 +2543,7 @@ export function applyTabVisibilityToDOM(settings) {
     search: true,
     images: false,
     reactions: false,
-    mentions: true,
-    files: false
+    mentions: true
   };
   
   // Set default values for promoteTabs if undefined
@@ -2599,8 +2560,7 @@ export function applyTabVisibilityToDOM(settings) {
     { enabled: showTabs.search !== false, wrapperId: 'promoteSearchWrapper' },
     { enabled: showTabs.missed !== false, wrapperId: 'promoteMentionsWrapper' },
     { enabled: memeEnabled !== false, wrapperId: 'promoteImagesWrapper' },
-    { enabled: showTabs.reactions !== false, wrapperId: 'promoteReactionsWrapper' },
-    { enabled: showTabs.files !== false, wrapperId: 'promoteFilesWrapper' }
+    { enabled: showTabs.reactions !== false, wrapperId: 'promoteReactionsWrapper' }
   ];
   wrapperPairs.forEach(({ enabled, wrapperId }) => {
     const wrapper = document.getElementById(wrapperId);
@@ -2620,8 +2580,7 @@ export function applyTabVisibilityToDOM(settings) {
     { key: 'search', checkboxId: 'settingShowSearch', cardEl: document.getElementById('settingShowSearch')?.closest('.menu-tab-card') },
     { key: 'mentions', checkboxId: 'settingShowMissed', cardEl: document.getElementById('settingShowMissed')?.closest('.menu-tab-card') },
     { key: 'images', checkboxId: 'settingMemeEnabled', cardEl: document.getElementById('settingMemeEnabled')?.closest('.menu-tab-card') },
-    { key: 'reactions', checkboxId: 'settingShowReactions', cardEl: document.getElementById('settingShowReactions')?.closest('.menu-tab-card') },
-    { key: 'files', checkboxId: 'settingShowFiles', cardEl: document.getElementById('settingShowFiles')?.closest('.menu-tab-card') }
+    { key: 'reactions', checkboxId: 'settingShowReactions', cardEl: document.getElementById('settingShowReactions')?.closest('.menu-tab-card') }
   ];
 
   dimPairs.forEach(({ key, checkboxId, cardEl }) => {
@@ -2633,7 +2592,6 @@ export function applyTabVisibilityToDOM(settings) {
                      : key === 'mentions' ? promoteTabs.mentions !== false
                      : key === 'images' ? promoteTabs.images === true
                      : key === 'reactions' ? promoteTabs.reactions === true
-                     : key === 'files' ? promoteTabs.files === true
                      : promoteTabs[key] === true;
                      
     if (!isPromoted && !toolsEnabled) {
@@ -2650,7 +2608,6 @@ export function applyTabVisibilityToDOM(settings) {
   const notesVisible = showTabs.notes !== false && (promoteTabs.notes !== false || toolsEnabled);
   const mentionsVisible = showTabs.missed !== false && (promoteTabs.mentions !== false || toolsEnabled);
   const reactionsVisible = showTabs.reactions !== false && (promoteTabs.reactions === true || toolsEnabled);
-  const filesVisible = showTabs.files !== false && (promoteTabs.files === true || toolsEnabled);
   const searchVisible = showTabs.search !== false && (promoteTabs.search === true || toolsEnabled);
   const imagesVisible = memeEnabled !== false && (promoteTabs.images === true || toolsEnabled);
   
@@ -2661,7 +2618,6 @@ export function applyTabVisibilityToDOM(settings) {
     (!promoteTabs.search && (showTabs.search !== false)) ||
     (!promoteTabs.images && (memeEnabled !== false)) ||
     (!promoteTabs.reactions && (showTabs.reactions !== false)) ||
-    (!promoteTabs.files && (showTabs.files !== false)) ||
     (promoteTabs.mentions === false && (showTabs.missed !== false))
   );
 
@@ -2687,13 +2643,9 @@ export function applyTabVisibilityToDOM(settings) {
   const toolsReactionsBtn = document.querySelector('.tab-btn[data-tab="tools-reactions"]');
   if (toolsReactionsBtn) toolsReactionsBtn.style.display = (showTabs.reactions !== false && promoteTabs.reactions === true) ? 'flex' : 'none';
 
-  const toolsFilesBtn = document.querySelector('.tab-btn[data-tab="tools-files"]');
-  if (toolsFilesBtn) toolsFilesBtn.style.display = (showTabs.files !== false && promoteTabs.files === true) ? 'flex' : 'none';
-  
   // Settings is visible in navigation
   const settingsBtn = document.querySelector('.tab-btn[data-tab="settings"]');
   if (settingsBtn) settingsBtn.style.display = 'flex';
-
 
   // Find first active visible tab dynamically based on DOM sequence
   const visibleBtn = Array.from(document.querySelectorAll('.tab-nav .tab-btn')).find(btn => btn.style.display !== 'none');
@@ -3016,7 +2968,7 @@ export async function renderTabOrderList() {
   if (!container) return;
 
   const settings = await getSettings();
-  const defaultOrder = ['tasks', 'memo', 'mentions', 'tools-search', 'tools-images', 'tools-reactions', 'tools-files', 'tools'];
+  const defaultOrder = ['tasks', 'memo', 'mentions', 'tools-search', 'tools-images', 'tools-reactions', 'tools'];
   let order = settings.tabOrder || [...defaultOrder];
   const missingKeys = defaultOrder.filter(key => !order.includes(key));
   if (missingKeys.length > 0) {
@@ -3031,8 +2983,7 @@ export async function renderTabOrderList() {
       search: true,
       images: false,
       reactions: false,
-      mentions: true,
-      files: false
+      mentions: true
     };
     if (promoteTabs.tasks === undefined) promoteTabs.tasks = true;
     if (promoteTabs.notes === undefined) promoteTabs.notes = true;
@@ -3044,7 +2995,6 @@ export async function renderTabOrderList() {
       (!promoteTabs.search && (settings.showTabs.search !== false)) ||
       (!promoteTabs.images && (settings.memeEnabled !== false)) ||
       (!promoteTabs.reactions && (settings.showTabs.reactions !== false)) ||
-      (!promoteTabs.files && (settings.showTabs.files !== false)) ||
       (promoteTabs.mentions === false && (settings.showTabs.missed !== false))
     );
 
@@ -3056,7 +3006,6 @@ export async function renderTabOrderList() {
     if (id === 'tools-search') return (settings.showTabs.search !== false) && (promoteTabs.search === true);
     if (id === 'tools-images') return (settings.memeEnabled !== false) && (promoteTabs.images === true);
     if (id === 'tools-reactions') return (settings.showTabs.reactions !== false) && (promoteTabs.reactions === true);
-    if (id === 'tools-files') return (settings.showTabs.files !== false) && (promoteTabs.files === true);
     return false;
   };
 
@@ -3069,7 +3018,6 @@ export async function renderTabOrderList() {
     'tools-search': { icon: '🔍', labelKey: 'toolsSearchSubTab', fallback: 'Search' },
     'tools-images': { icon: '🖼️', labelKey: 'toolsImagesSubTab', fallback: 'Images' },
     'tools-reactions': { icon: '🔥', labelKey: 'toolsReactionsSubTab', fallback: 'Reactions' },
-    'tools-files': { icon: '📁', labelKey: 'toolsFilesSubTab', fallback: 'Files' },
     tools: { icon: '⚡', labelKey: 'toolsTabLabel', fallback: 'Other Tools' },
     settings: { icon: '⚙️', labelKey: 'settingsTabLabel', fallback: 'Settings' }
   };
@@ -3098,393 +3046,3 @@ export async function renderTabOrderList() {
 
   container.innerHTML = html;
 }
-
-// --- Files Tab Sub-section Logic in Sidepanel ---
-let sidepanelActiveFilesFilter = 'images'; // 'images' | 'documents'
-let sidepanelCurrentFilesPage = 0;
-let sidepanelAllChannelFiles = [];
-let sidepanelFilesSearchQuery = '';
-let sidepanelIsLoadingFiles = false;
-let sidepanelNextPostPage = 0;
-let sidepanelHasMorePosts = true;
-let sidepanelFilesTotalCount = 0;
-let sidepanelChannelsLoaded = false;
-let sidepanelCurrentChannelId = null;
-let sidepanelLastTeamId = null;
-
-async function populateSidepanelChannels() {
-  const select = document.getElementById('chatops-tools-files-channel-select');
-  if (!select) return;
-
-  try {
-    const team = _state?.getTeam();
-    const teamId = team?.id;
-    if (!teamId) {
-      select.innerHTML = `<option value="">${language.noChannelFiles || 'Chọn kênh...'}</option>`;
-      return;
-    }
-
-    let channels = [];
-    if (teamId === 'all') {
-      const teams = _state.getTeams() || [];
-      const lists = await Promise.all(teams.map(t => getMyChannels(t.id).catch(() => [])));
-      const all = lists.flat();
-      const seen = new Set();
-      channels = all.filter(c => {
-        if (!c || !c.id || seen.has(c.id)) return false;
-        seen.add(c.id);
-        return true;
-      });
-    } else {
-      channels = await getMyChannels(teamId);
-    }
-
-    channels.sort((a, b) => (a.display_name || '').localeCompare(b.display_name || ''));
-
-    select.innerHTML = '';
-    channels.forEach(ch => {
-      const opt = document.createElement('option');
-      opt.value = ch.id;
-      opt.textContent = ch.display_name || ch.name || ch.id;
-      select.appendChild(opt);
-    });
-
-    let activeChannelId = null;
-    try {
-      const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (activeTab && activeTab.id) {
-        activeChannelId = await new Promise((resolve) => {
-          chrome.tabs.sendMessage(activeTab.id, { type: 'GET_ACTIVE_CHANNEL_ID_FROM_CONTENT' }, (res) => {
-            if (chrome.runtime.lastError) {
-              resolve(null);
-            } else {
-              resolve(res?.channelId || null);
-            }
-          });
-        });
-      }
-    } catch (e) {
-      console.error('[ChatOps Ext] Error getting active channel ID:', e);
-    }
-
-    if (activeChannelId && channels.some(c => c.id === activeChannelId)) {
-      select.value = activeChannelId;
-      sidepanelCurrentChannelId = activeChannelId;
-    } else if (channels.length > 0) {
-      select.value = channels[0].id;
-      sidepanelCurrentChannelId = channels[0].id;
-    }
-
-    sidepanelChannelsLoaded = true;
-
-  } catch (err) {
-    console.error('[ChatOps Ext] Failed to load channels in sidepanel files tab:', err);
-  }
-}
-
-async function loadSidepanelFiles(reset = true) {
-  const grid = document.getElementById('chatops-tools-files-grid');
-  const loadingOverlay = document.getElementById('chatops-tools-files-loading-overlay');
-  const paginationContainer = document.getElementById('chatops-tools-files-pagination');
-  if (!grid) return;
-
-  const currentTeamId = _state?.getTeam()?.id;
-  if (currentTeamId !== sidepanelLastTeamId) {
-    sidepanelChannelsLoaded = false;
-    sidepanelLastTeamId = currentTeamId;
-  }
-
-  if (!sidepanelChannelsLoaded) {
-    await populateSidepanelChannels();
-  }
-
-  const channelId = sidepanelCurrentChannelId;
-  if (!channelId) {
-    grid.innerHTML = `<div style="grid-column: span 3; padding: 20px; text-align: center; color: #888;">${language.noChannelFiles || 'Vui lòng chọn một kênh chat để xem tệp/ảnh.'}</div>`;
-    if (paginationContainer) paginationContainer.style.display = 'none';
-    return;
-  }
-
-  if (reset) {
-    sidepanelCurrentFilesPage = 0;
-    sidepanelAllChannelFiles = [];
-    sidepanelNextPostPage = 0;
-    sidepanelHasMorePosts = true;
-    sidepanelFilesTotalCount = 0;
-
-    try {
-      const statsRes = await new Promise((resolve) => {
-        chrome.runtime.sendMessage({
-          type: MESSAGE_TYPES.GET_CHANNEL_STATS,
-          channelId
-        }, resolve);
-      });
-      if (statsRes && statsRes.ok && statsRes.data) {
-        sidepanelFilesTotalCount = statsRes.data.files_count || 0;
-      }
-    } catch (e) {
-      console.error('[ChatOps Ext] Error loading stats in sidepanel:', e);
-    }
-  }
-
-  if (sidepanelIsLoadingFiles) return;
-  sidepanelIsLoadingFiles = true;
-
-  grid.innerHTML = `<div style="grid-column: span 3; padding: 20px; text-align: center; color: #888;">${language.channelFilesLoading || 'Đang tải ảnh và file...'}</div>`;
-  if (loadingOverlay) loadingOverlay.style.display = 'flex';
-  if (paginationContainer) paginationContainer.style.display = 'none';
-
-  try {
-    const itemsPerPage = 12;
-    const targetCount = (sidepanelCurrentFilesPage + 1) * itemsPerPage;
-
-    let currentFiltered = getFilteredSidepanelFilesList();
-    while (currentFiltered.length < targetCount && sidepanelHasMorePosts) {
-      const res = await new Promise((resolve) => {
-        chrome.runtime.sendMessage({
-          type: MESSAGE_TYPES.GET_CHANNEL_FILES,
-          channelId,
-          page: sidepanelNextPostPage
-        }, resolve);
-      });
-
-      if (res && res.ok && res.data) {
-        const files = res.data.files || [];
-        const hasMore = res.data.hasMore;
-
-        if (files.length > 0) {
-          sidepanelAllChannelFiles.push(...files);
-          const seen = new Set();
-          sidepanelAllChannelFiles = sidepanelAllChannelFiles.filter(f => {
-            if (!f.id || seen.has(f.id)) return false;
-            seen.add(f.id);
-            return true;
-          });
-        }
-
-        if (!hasMore || files.length === 0) {
-          sidepanelHasMorePosts = false;
-        }
-      } else {
-        sidepanelHasMorePosts = false;
-      }
-
-      sidepanelNextPostPage++;
-      currentFiltered = getFilteredSidepanelFilesList();
-    }
-
-    renderFilteredSidepanelFiles();
-
-  } catch (err) {
-    console.error('[ChatOps Ext] Failed to load channel files in sidepanel:', err);
-    grid.innerHTML = `<div style="grid-column: span 3; padding: 20px; text-align: center; color: #d32f2f;">${language.errorLoading || 'Lỗi khi tải dữ liệu'}</div>`;
-  } finally {
-    sidepanelIsLoadingFiles = false;
-    if (loadingOverlay) loadingOverlay.style.display = 'none';
-  }
-}
-
-function getFilteredSidepanelFilesList() {
-  return sidepanelAllChannelFiles.filter(file => {
-    const filename = file.name || 'file';
-    const ext = (file.extension || filename.split('.').pop() || '').toLowerCase();
-    const mime = file.mime_type || '';
-    const isImage = mime.startsWith('image/') || ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp'].includes(ext);
-
-    if (sidepanelActiveFilesFilter === 'images') {
-      if (!isImage) return false;
-    } else {
-      if (isImage) return false;
-    }
-
-    if (sidepanelFilesSearchQuery.trim() !== '') {
-      const query = sidepanelFilesSearchQuery.toLowerCase();
-      if (!filename.toLowerCase().includes(query)) return false;
-    }
-
-    return true;
-  });
-}
-
-function renderFilteredSidepanelFiles() {
-  const grid = document.getElementById('chatops-tools-files-grid');
-  const paginationContainer = document.getElementById('chatops-tools-files-pagination');
-  if (!grid) return;
-
-  const filtered = getFilteredSidepanelFilesList();
-
-  grid.innerHTML = '';
-
-  if (filtered.length === 0) {
-    const msg = sidepanelActiveFilesFilter === 'images'
-      ? (language.noChannelImages || 'Không tìm thấy ảnh nào trong kênh này.')
-      : (language.noChannelFiles || 'Không tìm thấy file nào trong kênh này.');
-    grid.innerHTML = `<div style="grid-column: span 3; padding: 20px; text-align: center; color: #888;">${msg}</div>`;
-    if (paginationContainer) paginationContainer.style.display = 'none';
-    return;
-  }
-
-  const itemsPerPage = 12;
-  let totalPages = Math.ceil(filtered.length / itemsPerPage);
-  if (sidepanelHasMorePosts) {
-    const estimatedTotal = Math.max(filtered.length + itemsPerPage, sidepanelFilesTotalCount || 0);
-    totalPages = Math.max(totalPages + 1, Math.ceil(estimatedTotal / itemsPerPage));
-  }
-
-  if (sidepanelCurrentFilesPage >= totalPages) sidepanelCurrentFilesPage = totalPages - 1;
-  if (sidepanelCurrentFilesPage < 0) sidepanelCurrentFilesPage = 0;
-
-  const startIdx = sidepanelCurrentFilesPage * itemsPerPage;
-  const endIdx = startIdx + itemsPerPage;
-  const pageItems = filtered.slice(startIdx, endIdx);
-
-  renderSidepanelFilesGrid(grid, pageItems);
-
-  if (paginationContainer) {
-    renderSidepanelPagination(sidepanelCurrentFilesPage, totalPages, 'chatops-tools-files-pagination', (pageNumber) => {
-      sidepanelCurrentFilesPage = pageNumber;
-      loadSidepanelFiles(false);
-    });
-  }
-}
-
-function renderSidepanelFilesGrid(grid, files) {
-  files.forEach(file => {
-    const fileId = file.id;
-    const filename = file.name || 'file';
-    const ext = (file.extension || filename.split('.').pop() || '').toLowerCase();
-    const mime = file.mime_type || '';
-    const isImage = mime.startsWith('image/') || ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp'].includes(ext);
-
-    const item = document.createElement('div');
-    item.className = 'chatops-picker-file-item';
-    item.style.cssText = 'position: relative; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; background: var(--bg-2); cursor: pointer; aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; box-sizing: border-box; transition: transform 0.2s, box-shadow 0.2s;';
-    
-    item.addEventListener('mouseenter', () => {
-      item.style.transform = 'scale(1.03)';
-      item.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
-    });
-    item.addEventListener('mouseleave', () => {
-      item.style.transform = 'none';
-      item.style.boxShadow = 'none';
-    });
-
-    if (isImage) {
-      const imgUrl = `/api/v4/files/${fileId}`;
-      const img = document.createElement('img');
-      img.src = imgUrl;
-      img.style.cssText = 'width: 100%; height: 100%; object-fit: cover; display: block;';
-      img.alt = filename;
-      
-      img.onerror = () => {
-        img.style.display = 'none';
-        const fallback = document.createElement('span');
-        fallback.style.cssText = 'font-size: 24px;';
-        fallback.textContent = '🖼️';
-        item.appendChild(fallback);
-      };
-      
-      item.appendChild(img);
-      item.title = filename;
-
-      item.addEventListener('click', async () => {
-        const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        if (activeTab) {
-          chrome.tabs.sendMessage(activeTab.id, {
-            type: 'INSERT_IMAGE_TO_CHAT',
-            url: imgUrl
-          });
-        }
-      });
-    } else {
-      const fileUrl = `/api/v4/files/${fileId}`;
-      item.title = filename;
-
-      const icon = document.createElement('span');
-      icon.style.cssText = 'font-size: 24px; margin-bottom: 4px;';
-      
-      let emoji = '📁';
-      if (['pdf'].includes(ext)) emoji = '📕';
-      else if (['doc', 'docx'].includes(ext)) emoji = '📘';
-      else if (['xls', 'xlsx'].includes(ext)) emoji = '📗';
-      else if (['ppt', 'pptx'].includes(ext)) emoji = '📙';
-      else if (['zip', 'rar', 'tar', 'gz'].includes(ext)) emoji = '📦';
-      else if (['txt', 'md'].includes(ext)) emoji = '📝';
-      
-      icon.textContent = emoji;
-      item.appendChild(icon);
-
-      const nameLabel = document.createElement('span');
-      nameLabel.style.cssText = 'font-size: 9px; max-width: 90%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-2); font-weight: 500;';
-      nameLabel.textContent = filename;
-      item.appendChild(nameLabel);
-
-      item.addEventListener('click', async () => {
-        const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        if (activeTab) {
-          chrome.tabs.sendMessage(activeTab.id, {
-            type: 'INSERT_TEXT_TO_CHAT',
-            text: `[${filename}](${fileUrl})`
-          });
-        }
-      });
-    }
-
-    grid.appendChild(item);
-  });
-}
-
-function renderSidepanelPagination(currentPage, totalPages, containerId, onPageClick) {
-  const container = document.getElementById(containerId);
-  if (!container) return;
-  container.innerHTML = '';
-  if (totalPages <= 1) {
-    container.style.display = 'none';
-    return;
-  }
-  container.style.display = 'flex';
-
-  const createBtn = (pageNumber, label, isActive = false) => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = isActive ? 'chatops-picker-filter-btn active' : 'chatops-picker-filter-btn';
-    btn.style.cssText = 'padding: 4px 6px !important; font-size: 10px !important; outline: none !important; font-family: inherit !important; min-width: 22px; flex: none !important; margin: 0 1px; border: 1px solid var(--border); border-radius: 4px; background: transparent; cursor: pointer; color: var(--text-2);';
-    btn.textContent = label;
-    if (isActive) {
-      btn.style.background = 'var(--accent)';
-      btn.style.color = '#ffffff';
-      btn.style.borderColor = 'var(--accent)';
-    } else {
-      btn.addEventListener('click', () => onPageClick(pageNumber));
-    }
-    return btn;
-  };
-
-  const createEllipsis = () => {
-    const span = document.createElement('span');
-    span.style.cssText = 'font-size: 10px; font-weight: 600; color: #888; margin: 0 1px; display: inline-block; width: 10px; text-align: center;';
-    span.textContent = '...';
-    return span;
-  };
-
-  const pagesToShow = new Set();
-  pagesToShow.add(0);
-  pagesToShow.add(totalPages - 1);
-  for (let p = Math.max(0, currentPage - 2); p <= Math.min(totalPages - 1, currentPage + 2); p++) {
-    pagesToShow.add(p);
-  }
-  const sortedPages = Array.from(pagesToShow).sort((a, b) => a - b);
-
-  let lastPage = -1;
-  sortedPages.forEach((p) => {
-    if (lastPage !== -1) {
-      if (p - lastPage > 1) {
-        container.appendChild(createEllipsis());
-      }
-    }
-    container.appendChild(createBtn(p, String(p + 1), p === currentPage));
-    lastPage = p;
-  });
-}
-
-

@@ -134,6 +134,37 @@
     }));
   });
 
+  window.addEventListener('chatops-post-message-request', (e) => {
+    const postId = e.detail.postId;
+    const el =
+      document.getElementById('post_' + postId) ||
+      document.getElementById('rhsPost_' + postId);
+
+    let message = null;
+    if (el) {
+      const fiberKey = Object.keys(el).find(
+        k => k.startsWith('__reactFiber$') || k.startsWith('__reactInternalInstance$')
+      );
+      if (fiberKey) {
+        let fiber = el[fiberKey];
+        let depth = 0;
+        while (fiber && depth < 40) {
+          const props = fiber.memoizedProps;
+          if (props && props.post && typeof props.post === 'object') {
+            message = props.post.message || null;
+            break;
+          }
+          fiber = fiber.return;
+          depth++;
+        }
+      }
+    }
+
+    window.dispatchEvent(new CustomEvent('chatops-post-message-response', {
+      detail: { postId, message }
+    }));
+  });
+
   function findChannelIdFromDom() {
     try {
       const textbox = document.getElementById('post_textbox') || document.getElementById('reply_textbox');

@@ -25,6 +25,28 @@ export function formatRichText(unsafe) {
   if (typeof unsafe !== 'string') return unsafe;
   let html = escapeHtml(unsafe);
   
+  const placeholders = [];
+  function getPlaceholder(value, type, meta = {}) {
+    const index = placeholders.length;
+    placeholders.push({ value, type, meta });
+    return `CHATOPSTOKEN${index}TOKEN`;
+  }
+
+  // 1. Tokenize Markdown images: ![alt](url)
+  html = html.replace(/!\[([^\]]*)\]\((https?:\/\/[^\)]+|\/[^\)]+)\)/g, (match, alt, url) => {
+    return getPlaceholder(match, 'image', { alt, url });
+  });
+
+  // 2. Tokenize Markdown links: [text](url)
+  html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, (match, text, url) => {
+    return getPlaceholder(match, 'link', { text, url });
+  });
+
+  // 3. Tokenize raw URLs (excluding links already processed or quotes)
+  html = html.replace(/(^|[^"'])(https?:\/\/[^\s<]+)/g, (match, prefix, url) => {
+    return prefix + getPlaceholder(url, 'url', { url });
+  });
+
   // Convert newlines to <br>
   html = html.replace(/\n/g, '<br>');
   
@@ -38,22 +60,40 @@ export function formatRichText(unsafe) {
   // Parse italic *text* or _text_
   html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
   html = html.replace(/_([^_]+)_/g, '<em>$1</em>');
-  
-  // Parse Markdown images ![alt](url)
-  html = html.replace(/!\[([^\]]*)\]\((https?:\/\/[^\)]+|\/[^\)]+)\)/g, (match, alt, url) => {
-    let altText = alt ? alt.trim() : '';
-    if (!altText || altText.toLowerCase() === 'image') {
-      altText = language.imagePlaceholder || 'Image';
-    }
-    return `<img src="${url}" alt="${escapeHtml(altText)}" class="meme-img" style="max-width: 50%; height: auto; display: block; border-radius: 4px; margin-top: 6px; cursor: zoom-in;" />`;
-  });
 
-  // Parse Markdown links [text](url)
-  html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2" target="_blank" class="post-link" style="color:var(--accent);text-decoration:underline;word-break:break-all;">$1</a>');
-  
-  // Parse raw URLs (excluding links already processed or quotes)
-  html = html.replace(/(^|[^"'])(https?:\/\/[^\s<]+)/g, '$1<a href="$2" target="_blank" class="post-link" style="color:var(--accent);text-decoration:underline;word-break:break-all;">$2</a>');
-  
+  // Helper to strip HTML tags (literal or escaped) from href
+  function cleanUrlForHref(url) {
+    if (typeof url !== 'string') return url;
+    let cleaned = url;
+    cleaned = cleaned.replace(/<\/?[a-zA-Z][^>]*>/g, '');
+    cleaned = cleaned.replace(/&lt;\/?[a-zA-Z][^&]*&gt;/gi, '');
+    return cleaned;
+  }
+
+  // Restore placeholders
+  for (let i = 0; i < placeholders.length; i++) {
+    const token = `CHATOPSTOKEN${i}TOKEN`;
+    const p = placeholders[i];
+    let replacement = '';
+
+    if (p.type === 'image') {
+      let altText = p.meta.alt ? p.meta.alt.trim() : '';
+      if (!altText || altText.toLowerCase() === 'image') {
+        altText = language.imagePlaceholder || 'Image';
+      }
+      const safeHref = cleanUrlForHref(p.meta.url);
+      replacement = `<img src="${safeHref}" alt="${escapeHtml(altText)}" class="meme-img" style="max-width: 50%; height: auto; display: block; border-radius: 4px; margin-top: 6px; cursor: zoom-in;" />`;
+    } else if (p.type === 'link') {
+      const safeHref = cleanUrlForHref(p.meta.url);
+      replacement = `<a href="${safeHref}" target="_blank" class="post-link" style="color:var(--accent);text-decoration:underline;word-break:break-all;">${p.meta.text}</a>`;
+    } else if (p.type === 'url') {
+      const safeHref = cleanUrlForHref(p.meta.url);
+      replacement = `<a href="${safeHref}" target="_blank" class="post-link" style="color:var(--accent);text-decoration:underline;word-break:break-all;">${p.meta.url}</a>`;
+    }
+
+    html = html.replace(token, replacement);
+  }
+
   return html;
 }
 

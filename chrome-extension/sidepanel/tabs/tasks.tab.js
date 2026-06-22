@@ -1025,16 +1025,21 @@ export async function loadTasks() {
       noCalendar: isRepeatDaily,
       enableTime: true,
       dateFormat: isRepeatDaily ? "H:i" : "Y-m-d H:i",
-      onChange: async (selectedDates, dateStr) => {
+      onClose: async (selectedDates, dateStr) => {
         const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
         const memos = res[STORAGE_KEYS.MEMOS] || [];
         const taskIndex = memos.findIndex(m => m.id === id);
         
         if (taskIndex !== -1) {
+          const oldReminder = memos[taskIndex].reminder;
           let finalReminder = dateStr || null;
           if (dateStr && isRepeatDaily && dateStr.length === 5 && dateStr.includes(':')) {
             const todayStr = new Date().toISOString().split('T')[0];
             finalReminder = `${todayStr} ${dateStr}`;
+          }
+
+          if (oldReminder === finalReminder) {
+            return;
           }
 
           memos[taskIndex].reminder = finalReminder;

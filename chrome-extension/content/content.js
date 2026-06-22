@@ -1045,11 +1045,6 @@ function showToast(msg) {
             <div style="flex: 1; min-width: 10px;"></div>
 
             <button class="chatops-image-editor-action-btn" id="chatops-image-editor-upload-bg" title="Upload Background">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                <circle cx="8.5" cy="8.5" r="1.5"/>
-                <polyline points="21 15 16 10 5 21"/>
-              </svg>
               <span>${language.editorUploadBgBtn || 'Tải ảnh nền'}</span>
             </button>
             <input type="file" id="chatops-image-editor-bg-file" accept="image/*" style="display: none;" />
@@ -1848,7 +1843,7 @@ function showToast(msg) {
       if (!activeImgObj) return;
 
       // 1. Submit to Chat
-      insertImageToChat(activeImgObj.testDataUrl);
+      insertAndMaybeSend(activeImgObj.testDataUrl);
 
       // 2. Save to Image Library
       const res = await chrome.storage.local.get(['custom_memes']);
@@ -1901,7 +1896,7 @@ function showToast(msg) {
       if (!activeImgObj) return;
 
       // 1. Submit to Chat
-      insertImageToChat(activeImgObj.testDataUrl);
+      insertAndMaybeSend(activeImgObj.testDataUrl);
 
       // 2. Remove image from slide deck
       imagesArray.splice(currentIndex, 1);
@@ -2103,7 +2098,7 @@ function showToast(msg) {
       container.addEventListener('click', async (e) => {
         const img = e.target.closest('.chatops-custom-image-item');
         if (img) {
-          insertImageToChat(img.src);
+          insertAndMaybeSend(img.src);
           if (imagePickerEl) imagePickerEl.classList.add('hidden');
           return;
         }
@@ -2196,7 +2191,6 @@ function showToast(msg) {
           <div class="chatops-picker-sub-tabs">
             <button type="button" class="chatops-picker-sub-tab active" data-tab="library">${language.imageLibraryTab}</button>
             <button type="button" class="chatops-picker-sub-tab" data-tab="gifs">${language.gifLibraryTab}</button>
-            <button type="button" class="chatops-picker-sub-tab" data-tab="files">${language.channelFilesTab || 'Files'}</button>
           </div>
         </div>
         
@@ -2241,26 +2235,7 @@ function showToast(msg) {
           </div>
         </div>
 
-        <!-- Panel 3: Channel Files -->
-        <div id="chatops-picker-panel-files" class="chatops-picker-panel">
-          <div style="padding: 6px 12px 10px; display: flex; flex-direction: column; gap: 6px; flex: 1; overflow: hidden; height: 100%; box-sizing: border-box;">
-            <div class="chatops-picker-files-filters">
-              <button type="button" class="chatops-picker-filter-btn active" data-filter="images">${language.filterImages || 'Ảnh'}</button>
-              <button type="button" class="chatops-picker-filter-btn" data-filter="documents">${language.filterDocuments || 'Tài liệu'}</button>
-            </div>
-            <div style="position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column;">
-              <div id="chatops-picker-files-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; flex: 1; overflow-y: auto; padding: 2px;">
-                <!-- Channel files rendered here -->
-              </div>
-              <div id="chatops-picker-files-loading-overlay" style="position: absolute; top:0; left:0; right:0; bottom:0; background: rgba(255,255,255,0.7); display:none; align-items:center; justify-content:center; z-index:100;">
-                <div class="spinner"></div>
-              </div>
-            </div>
-            <div id="chatops-picker-files-pagination" style="display: none; align-items: center; justify-content: center; gap: 4px; padding: 6px 0 2px; border-top: 1px solid #cbd5e1; flex-shrink: 0; flex-wrap: wrap;">
-              <!-- Pagination buttons -->
-            </div>
-          </div>
-        </div>
+
 
         <!-- Picker Footer with Auto-send toggle -->
         <div class="chatops-image-picker-footer" style="padding: 8px 12px; border-top: 1px solid #e0e0e5; background: #f5f5f7; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;">
@@ -2317,29 +2292,7 @@ function showToast(msg) {
             if (currentQuery.trim() === '') {
               loadPickerGifs('');
             }
-          } else if (tabName === 'files') {
-            // Reset filters to images by default when clicking files tab
-            const filterBtns = imagePickerEl.querySelectorAll('.chatops-picker-filter-btn');
-            filterBtns.forEach(b => {
-              if (b.dataset.filter === 'images') b.classList.add('active');
-              else b.classList.remove('active');
-            });
-            activeFilesFilter = 'images';
-            const channelId = await getCurrentChannelId();
-            loadChannelFiles(channelId, true);
           }
-        });
-      });
-
-      // Segmented filter button listeners
-      const filterBtns = imagePickerEl.querySelectorAll('.chatops-picker-filter-btn');
-      filterBtns.forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-          filterBtns.forEach(b => b.classList.remove('active'));
-          e.target.classList.add('active');
-          activeFilesFilter = e.target.dataset.filter;
-          const channelId = await getCurrentChannelId();
-          loadChannelFiles(channelId, true);
         });
       });
 
@@ -2380,78 +2333,7 @@ function showToast(msg) {
         });
       }
 
-      // Files tab Grid interactions
-      const pickerFilesGrid = document.getElementById('chatops-picker-files-grid');
-      if (pickerFilesGrid) {
-        pickerFilesGrid.addEventListener('click', (e) => {
-          const previewBtn = e.target.closest('.chatops-file-preview-btn');
-          const downloadBtn = e.target.closest('.chatops-file-download-btn');
-          const insertBtn = e.target.closest('.chatops-file-insert-btn');
-          const clickedCard = e.target.closest('.chatops-picker-meme-item');
 
-          if (previewBtn) {
-            e.stopPropagation();
-            const url = previewBtn.dataset.url;
-            const isImage = previewBtn.dataset.isImage === 'true';
-            if (isImage) {
-              openImagePreview(url);
-            } else {
-              window.open(url, '_blank');
-            }
-            return;
-          }
-
-          if (downloadBtn) {
-            e.stopPropagation();
-            const url = downloadBtn.dataset.url;
-            const name = downloadBtn.dataset.name;
-            downloadFile(url, name);
-            return;
-          }
-
-          if (insertBtn) {
-            e.stopPropagation();
-            const url = insertBtn.dataset.url;
-            const name = insertBtn.dataset.name;
-            const isImage = insertBtn.dataset.isImage === 'true';
-            insertAndMaybeSend(url, name, isImage);
-            imagePickerEl.classList.add('hidden');
-            return;
-          }
-
-          if (clickedCard) {
-            e.stopPropagation();
-            const url = clickedCard.dataset.url;
-            const name = clickedCard.dataset.name;
-            const imgEl = clickedCard.querySelector('img');
-            const isImage = !!imgEl;
-            if (isImage) {
-              insertAndMaybeSend(url, name, isImage);
-              imagePickerEl.classList.add('hidden');
-            } else {
-              downloadFile(url, name);
-            }
-          }
-        });
-
-        // Double-click to preview in full
-        pickerFilesGrid.addEventListener('dblclick', (e) => {
-          const clickedCard = e.target.closest('.chatops-picker-meme-item');
-          if (clickedCard) {
-            e.stopPropagation();
-            const url = clickedCard.dataset.url;
-            const name = clickedCard.dataset.name;
-            const imgEl = clickedCard.querySelector('img');
-            const isImage = !!imgEl;
-            if (isImage) {
-              openImagePreview(url);
-            } else {
-              downloadFile(url, name);
-            }
-          }
-        });
-
-      }
 
       loadCustomImages();
       registerCustomImageEvents();
@@ -2508,413 +2390,7 @@ function showToast(msg) {
     }
   }
 
-  /* ─── Files and Auto-Send Utilities ─── */
-  let currentFilesPage = 0;
-  let hasMoreFiles = false;
-  let isLoadingFiles = false;
-  let allLoadedChannelFiles = [];
-  let allChannelFiles = [];
-  let filesSearchQuery = '';
-  let activeFilesFilter = 'images'; // 'images' | 'documents'
-  let filesNextPostPage = 0;
-  let filesHasMorePosts = true;
-  let filesTotalCount = 0;
 
-  function renderPagination(currentPage, totalPages, containerId, onPageClick) {
-    const container = document.getElementById(containerId);
-    if (!container) return;
-    container.innerHTML = '';
-    if (totalPages <= 1) {
-      container.style.display = 'none';
-      return;
-    }
-    container.style.display = 'flex';
-
-    const createBtn = (pageNumber, label, isActive = false) => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = isActive ? 'chatops-picker-filter-btn active' : 'chatops-picker-filter-btn';
-      btn.style.cssText = 'padding: 4px 8px !important; font-size: 11px !important; outline: none !important; font-family: inherit !important; min-width: 26px; flex: none !important; margin: 0 2px;';
-      btn.textContent = label;
-      if (!isActive) {
-        btn.addEventListener('click', () => onPageClick(pageNumber));
-      }
-      return btn;
-    };
-
-    const createEllipsis = () => {
-      const span = document.createElement('span');
-      span.style.cssText = 'font-size: 11px; font-weight: 600; color: #888; margin: 0 2px; display: inline-block; width: 14px; text-align: center;';
-      span.textContent = '...';
-      return span;
-    };
-
-    const pagesToShow = new Set();
-    pagesToShow.add(0);
-    pagesToShow.add(totalPages - 1);
-    for (let p = Math.max(0, currentPage - 2); p <= Math.min(totalPages - 1, currentPage + 2); p++) {
-      pagesToShow.add(p);
-    }
-    const sortedPages = Array.from(pagesToShow).sort((a, b) => a - b);
-
-    let lastPage = -1;
-    sortedPages.forEach((p) => {
-      if (lastPage !== -1) {
-        if (p - lastPage > 1) {
-          container.appendChild(createEllipsis());
-        }
-      }
-      container.appendChild(createBtn(p, String(p + 1), p === currentPage));
-      lastPage = p;
-    });
-  }
-
-  function getCurrentChannelId() {
-    return new Promise((resolve) => {
-      const onResponse = (e) => {
-        window.removeEventListener('chatops-current-channel-response', onResponse);
-        resolve(e.detail.channelId);
-      };
-      window.addEventListener('chatops-current-channel-response', onResponse);
-      window.dispatchEvent(new CustomEvent('chatops-current-channel-request'));
-      
-      setTimeout(() => {
-        window.removeEventListener('chatops-current-channel-response', onResponse);
-        resolve(null);
-      }, 500);
-    });
-  }
-
-  async function downloadFile(url, filename) {
-    try {
-      showToast('Đang chuẩn bị tải file...');
-      const res = await fetch(url);
-      if (!res.ok) throw new Error('Network response was not ok');
-      const blob = await res.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.style.display = 'none';
-      a.href = blobUrl;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(blobUrl);
-      a.remove();
-      showToast('Đang tải file xuống...');
-    } catch (err) {
-      console.error('[ChatOps Ext] Failed to download file:', err);
-      showToast('Không thể tải file, hãy thử lại!');
-    }
-  }
-
-  function insertAndMaybeSend(url, filename = 'file', isImage = true) {
-    if (isImage) {
-      insertImageToChat(url);
-    } else {
-      insertFileLinkToChat(url, filename);
-    }
-    if (pickerAutoSend) {
-      setTimeout(() => {
-        let textarea = activeChatTextarea;
-        if (!textarea) {
-          const targetId = imagePickerEl?.dataset.activeTextbox || 'post_textbox';
-          textarea = document.getElementById(targetId);
-          if (!textarea) {
-            if (targetId === 'reply_textbox') {
-              textarea = document.querySelector('#reply_textbox, .sidebar-right textarea, .rhs-thread textarea, .sidebar--right textarea, [placeholder*="reply" i]');
-            } else {
-              textarea = document.querySelector('#post_textbox, .post-create-body textarea, [placeholder*="write" i]');
-            }
-          }
-        }
-        if (textarea) {
-          const container = textarea.closest('.post-create-body, .input-container, .post-body__cell, .post-create, form, [class*="post-create"]');
-          if (container) {
-            const sendBtn = container.querySelector('.send-button, button[class*="send"], button[type="submit"]');
-            if (sendBtn && !sendBtn.disabled) {
-              sendBtn.click();
-              return;
-            }
-          }
-          const enterEvent = new KeyboardEvent('keydown', {
-            key: 'Enter',
-            code: 'Enter',
-            keyCode: 13,
-            which: 13,
-            bubbles: true,
-            cancelable: true
-          });
-          textarea.dispatchEvent(enterEvent);
-        }
-      }, 150);
-    }
-  }
-
-  function insertFileLinkToChat(url, filename) {
-    let textarea = activeChatTextarea;
-    if (!textarea) {
-      const targetId = imagePickerEl?.dataset.activeTextbox || 'post_textbox';
-      textarea = document.getElementById(targetId);
-      if (!textarea) {
-        if (targetId === 'reply_textbox') {
-          textarea = document.querySelector('#reply_textbox, .sidebar-right textarea, .rhs-thread textarea, .sidebar--right textarea, [placeholder*="reply" i]');
-        } else {
-          textarea = document.querySelector('#post_textbox, .post-create-body textarea, [placeholder*="write" i]');
-        }
-      }
-    }
-    if (!textarea) return;
-
-    const markdown = `[${filename}](${url})`;
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const text = textarea.value;
-    textarea.value = text.substring(0, start) + markdown + text.substring(end);
-    textarea.focus();
-    textarea.selectionStart = textarea.selectionEnd = start + markdown.length;
-    textarea.dispatchEvent(new Event('input', { bubbles: true }));
-  }
-
-  async function loadChannelFiles(channelId, reset = true) {
-    const grid = document.getElementById('chatops-picker-files-grid');
-    const loadingOverlay = document.getElementById('chatops-picker-files-loading-overlay');
-    const paginationContainer = document.getElementById('chatops-picker-files-pagination');
-    if (!grid) return;
-
-    if (!channelId) {
-      grid.innerHTML = `<div style="grid-column: span 3; padding: 20px; text-align: center; color: #888;">${language.noChannelFiles || 'Không tìm thấy ảnh hoặc file nào trong kênh này.'}</div>`;
-      if (paginationContainer) paginationContainer.style.display = 'none';
-      return;
-    }
-
-    if (reset) {
-      currentFilesPage = 0;
-      allChannelFiles = [];
-      filesNextPostPage = 0;
-      filesHasMorePosts = true;
-      filesTotalCount = 0;
-
-      try {
-        const statsRes = await new Promise((resolve) => {
-          chrome.runtime.sendMessage({
-            type: MESSAGE_TYPES.GET_CHANNEL_STATS,
-            channelId
-          }, resolve);
-        });
-        if (statsRes && statsRes.ok && statsRes.data) {
-          filesTotalCount = statsRes.data.files_count || 0;
-        }
-      } catch (e) {
-        console.error('[ChatOps Ext] Error loading stats:', e);
-      }
-    }
-
-    if (isLoadingFiles) return;
-    isLoadingFiles = true;
-
-    grid.innerHTML = `<div style="grid-column: span 3; padding: 20px; text-align: center; color: #888;">${language.channelFilesLoading || 'Đang tải ảnh và file...'}</div>`;
-    if (loadingOverlay) loadingOverlay.style.display = 'flex';
-    if (paginationContainer) paginationContainer.style.display = 'none';
-
-    try {
-      const itemsPerPage = 24;
-      const targetCount = (currentFilesPage + 1) * itemsPerPage;
-
-      let currentFiltered = getFilteredFilesList();
-      while (currentFiltered.length < targetCount && filesHasMorePosts) {
-        const res = await new Promise((resolve) => {
-          chrome.runtime.sendMessage({
-            type: MESSAGE_TYPES.GET_CHANNEL_FILES,
-            channelId,
-            page: filesNextPostPage
-          }, resolve);
-        });
-
-        if (res && res.ok && res.data) {
-          const files = res.data.files || [];
-          const hasMore = res.data.hasMore;
-
-          if (files.length > 0) {
-            allChannelFiles.push(...files);
-            const seen = new Set();
-            allChannelFiles = allChannelFiles.filter(f => {
-              if (!f.id || seen.has(f.id)) return false;
-              seen.add(f.id);
-              return true;
-            });
-          }
-
-          if (!hasMore || files.length === 0) {
-            filesHasMorePosts = false;
-          }
-        } else {
-          filesHasMorePosts = false;
-        }
-
-        filesNextPostPage++;
-        currentFiltered = getFilteredFilesList();
-      }
-
-      renderFilteredChannelFiles();
-
-    } catch (err) {
-      console.error('[ChatOps Ext] Failed to load channel files:', err);
-      grid.innerHTML = `<div style="grid-column: span 3; padding: 20px; text-align: center; color: #d32f2f;">${language.errorLoading || 'Lỗi khi tải dữ liệu'}</div>`;
-    } finally {
-      isLoadingFiles = false;
-      if (loadingOverlay) loadingOverlay.style.display = 'none';
-    }
-  }
-
-  function getFilteredFilesList() {
-    return allChannelFiles.filter(file => {
-      const filename = file.name || 'file';
-      const ext = (file.extension || filename.split('.').pop() || '').toLowerCase();
-      const mime = file.mime_type || '';
-      const isImage = mime.startsWith('image/') || ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp'].includes(ext);
-
-      if (activeFilesFilter === 'images') {
-        if (!isImage) return false;
-      } else {
-        if (isImage) return false;
-      }
-
-      if (filesSearchQuery.trim() !== '') {
-        const query = filesSearchQuery.toLowerCase();
-        if (!filename.toLowerCase().includes(query)) return false;
-      }
-
-      return true;
-    });
-  }
-
-  function renderFilteredChannelFiles() {
-    const grid = document.getElementById('chatops-picker-files-grid');
-    const paginationContainer = document.getElementById('chatops-picker-files-pagination');
-    if (!grid) return;
-
-    const filtered = getFilteredFilesList();
-
-    grid.innerHTML = '';
-
-    if (filtered.length === 0) {
-      const msg = activeFilesFilter === 'images'
-        ? (language.noChannelImages || 'Không tìm thấy ảnh nào trong kênh này.')
-        : (language.noChannelFiles || 'Không tìm thấy file nào trong kênh này.');
-      grid.innerHTML = `<div style="grid-column: span 3; padding: 20px; text-align: center; color: #888;">${msg}</div>`;
-      if (paginationContainer) paginationContainer.style.display = 'none';
-      return;
-    }
-
-    const itemsPerPage = 24;
-    let totalPages = Math.ceil(filtered.length / itemsPerPage);
-    if (filesHasMorePosts) {
-      const estimatedTotal = Math.max(filtered.length + itemsPerPage, filesTotalCount || 0);
-      totalPages = Math.max(totalPages + 1, Math.ceil(estimatedTotal / itemsPerPage));
-    }
-
-    if (currentFilesPage >= totalPages) currentFilesPage = totalPages - 1;
-    if (currentFilesPage < 0) currentFilesPage = 0;
-
-    const startIdx = currentFilesPage * itemsPerPage;
-    const endIdx = startIdx + itemsPerPage;
-    const pageItems = filtered.slice(startIdx, endIdx);
-
-    renderChannelFilesGrid(grid, pageItems);
-
-    if (paginationContainer) {
-      const channelId = getActiveChannelIdFromDom(); // helper fallback to make sure channelId is correct
-      getCurrentChannelId().then(cid => {
-        const finalChannelId = cid || channelId;
-        renderPagination(currentFilesPage, totalPages, 'chatops-picker-files-pagination', (pageNumber) => {
-          currentFilesPage = pageNumber;
-          loadChannelFiles(finalChannelId, false);
-        });
-      });
-    }
-  }
-
-  function renderChannelFilesGrid(grid, files) {
-    files.forEach(file => {
-      const fileId = file.id;
-      const filename = file.name || 'file';
-      const ext = (file.extension || filename.split('.').pop() || '').toLowerCase();
-      const mime = file.mime_type || '';
-      const isImage = mime.startsWith('image/') || ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp'].includes(ext);
-      const fileUrl = `/api/v4/files/${fileId}`;
-
-      const card = document.createElement('div');
-      card.className = 'chatops-picker-meme-item';
-      card.dataset.url = fileUrl;
-      card.dataset.name = filename;
-      card.style.position = 'relative';
-      card.style.cursor = 'pointer';
-
-      let innerHtml = '';
-      if (isImage) {
-        const previewUrl = `/api/v4/files/${fileId}/preview` || fileUrl;
-        innerHtml = `<img src="${previewUrl}" class="chatops-custom-image-item" loading="lazy" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;" />`;
-      } else {
-        // Document / File icon picker
-        let icon = '📄';
-        let iconBg = '#f1f5f9';
-        let iconColor = '#475569';
-        
-        if (['pdf'].includes(ext)) {
-          icon = '📕';
-          iconBg = '#fef2f2';
-          iconColor = '#ef4444';
-        } else if (['doc', 'docx'].includes(ext)) {
-          icon = '📘';
-          iconBg = '#eff6ff';
-          iconColor = '#3b82f6';
-        } else if (['xls', 'xlsx', 'csv'].includes(ext)) {
-          icon = '📗';
-          iconBg = '#f0fdf4';
-          iconColor = '#22c55e';
-        } else if (['ppt', 'pptx'].includes(ext)) {
-          icon = '📙';
-          iconBg = '#fff7ed';
-          iconColor = '#f97316';
-        } else if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) {
-          icon = '📦';
-          iconBg = '#faf5ff';
-          iconColor = '#a855f7';
-        } else if (['txt', 'md', 'json', 'xml'].includes(ext)) {
-          icon = '📝';
-          iconBg = '#f8fafc';
-          iconColor = '#64748b';
-        }
-
-        innerHtml = `
-          <div style="width: 100%; height: 100%; background: ${iconBg}; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 4px; padding: 6px; box-sizing: border-box; border: 1px solid #e2e8f0; position: relative;">
-            <span style="font-size: 24px; margin-bottom: 4px; line-height: 1;">${icon}</span>
-            <span class="chatops-file-card-name" style="font-size: 9px; font-weight: 600; color: ${iconColor}; text-align: center; word-break: break-all; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.2; width: 100%;">${filename}</span>
-          </div>
-        `;
-      }
-
-      card.innerHTML = `
-        ${innerHtml}
-        <div class="chatops-file-actions-overlay">
-          ${isImage ? `
-          <button type="button" class="chatops-file-action-btn chatops-file-preview-btn" data-url="${fileUrl}" data-is-image="${isImage}" title="${language.previewImage || 'Xem trước'}">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none; display:block;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-          </button>
-          ` : ''}
-          <button type="button" class="chatops-file-action-btn chatops-file-download-btn" data-url="${fileUrl}" data-name="${filename}" title="${language.taskDelete || 'Tải xuống'}">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none; display:block;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-          </button>
-          ${isImage ? `
-          <button type="button" class="chatops-file-action-btn chatops-file-insert-btn" data-url="${fileUrl}" data-name="${filename}" data-is-image="${isImage}" title="${language.insertToChat || 'Gửi'}">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none; display:block;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-          </button>
-          ` : ''}
-        </div>
-      `;
-      grid.appendChild(card);
-    });
-  }
 
   let cachedPickerTrendingGifs = [];
   let cachedPickerTrendingApiKey = '';
@@ -3053,8 +2529,6 @@ function showToast(msg) {
     }
   }
 
-
-
   function dataURLtoBlob(dataurl) {
     var arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
         bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
@@ -3065,7 +2539,6 @@ function showToast(msg) {
   }
 
   function insertImageToChat(url) {
-    globalInsertImageToChat = insertImageToChat;
     let textarea = activeChatTextarea;
     if (!textarea) {
       const targetId = imagePickerEl?.dataset.activeTextbox || 'post_textbox';
@@ -3114,13 +2587,91 @@ function showToast(msg) {
     }
 
     const markdown = `![image](${url})`;
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const text = textarea.value;
-    textarea.value = text.substring(0, start) + markdown + text.substring(end);
-    textarea.focus();
-    textarea.selectionStart = textarea.selectionEnd = start + markdown.length;
-    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+    insertTextIntoTextarea(textarea, markdown);
+  }
+
+  globalInsertImageToChat = insertImageToChat;
+
+  function insertAndMaybeSend(url, forceSend = false) {
+    insertImageToChat(url);
+    const shouldSend = forceSend || pickerAutoSend;
+    if (shouldSend) {
+      let attempts = 0;
+      const checkAndSend = () => {
+        attempts++;
+        let textarea = activeChatTextarea;
+        if (!textarea) {
+          const targetId = imagePickerEl?.dataset.activeTextbox || 'post_textbox';
+          textarea = document.getElementById(targetId);
+          if (!textarea) {
+            if (targetId === 'reply_textbox') {
+              textarea = document.querySelector('#reply_textbox, .sidebar-right textarea, .rhs-thread textarea, .sidebar--right textarea, [placeholder*="reply" i]');
+            } else {
+              textarea = document.querySelector('#post_textbox, .post-create-body textarea, [placeholder*="write" i]');
+            }
+          }
+        }
+        if (!textarea) return;
+
+        const parentForm = textarea.closest('form');
+        let isUploading = false;
+        if (parentForm) {
+          // Check for progress bars, loading spinners, uploading elements, etc.
+          const progressEl = parentForm.querySelector('[class*="progress" i], [class*="loading" i], [class*="spinner" i], [class*="uploading" i]');
+          if (progressEl) {
+            isUploading = true;
+          }
+          // Check if send button is disabled
+          const sendBtn = parentForm.querySelector('button[type="submit"], button.send-button, .send-button button, button[aria-label*="send" i], button[title*="send" i], button[aria-label*="gửi" i], button[title*="gửi" i]');
+          if (sendBtn && (sendBtn.disabled || sendBtn.classList.contains('disabled'))) {
+            isUploading = true;
+          }
+        }
+
+        // If uploading and we haven't hit the 5-second limit, try again in 100ms
+        if (isUploading && attempts < 50) {
+          setTimeout(checkAndSend, 100);
+          return;
+        }
+
+        // Try form requestSubmit first
+        if (parentForm && typeof parentForm.requestSubmit === 'function') {
+          try {
+            parentForm.requestSubmit();
+            return;
+          } catch (err) {
+            console.error('[ChatOps++] requestSubmit failed, falling back:', err);
+          }
+        }
+
+        // Fallback: Try to click the native send button (English & Vietnamese selectors)
+        let sendBtn = null;
+        if (parentForm) {
+          sendBtn = parentForm.querySelector('button[type="submit"], button.send-button, .send-button button, button[aria-label*="send" i], button[title*="send" i], button[aria-label*="gửi" i], button[title*="gửi" i]');
+        }
+        if (!sendBtn) {
+          sendBtn = document.querySelector('button.send-button, .send-button button, button[aria-label*="send" i], button[title*="send" i], button[aria-label*="gửi" i], button[title*="gửi" i]');
+        }
+
+        if (sendBtn) {
+          sendBtn.click();
+        } else {
+          // Fallback: Dispatch Enter key event
+          const enterEvent = new KeyboardEvent('keydown', {
+            key: 'Enter',
+            code: 'Enter',
+            keyCode: 13,
+            which: 13,
+            bubbles: true,
+            cancelable: true
+          });
+          textarea.dispatchEvent(enterEvent);
+        }
+      };
+
+      // Start check/send cycle after 150ms to allow file upload to initialize in DOM
+      setTimeout(checkAndSend, 150);
+    }
   }
 
   // --- Quick Task on Messages ---
@@ -3155,7 +2706,7 @@ function showToast(msg) {
       <div class="custom-dropdown" style="position: relative; width: 100%; box-sizing: border-box; font-family: var(--font); overflow: visible !important;">
         <button type="button" class="custom-dropdown-toggle"
           style="width: 100%; height: 34px; font-size: 11.5px; border-radius: 6px; border: 1px solid #cbd5e1; background: #ffffff; color: #1a1a1c; cursor: pointer; outline: none; display: flex !important; align-items: center !important; justify-content: space-between !important; padding: 0 10px !important; margin: 0 !important; font-weight: 400; transition: all 0.2s ease; box-sizing: border-box; line-height: 1 !important;">
-          <span class="custom-dropdown-selected-text" style="font-weight: 400; font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; text-align: center; justify-content: center; line-height: 1; display: inline-flex; align-items: center; height: 100%; margin: 0; padding: 0;">${initialText}</span>
+          <span class="custom-dropdown-selected-text" style="font-weight: 400; font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; text-align: left; justify-content: flex-start; line-height: 1; display: inline-flex; align-items: center; height: 100%; margin: 0; padding: 0;">${initialText}</span>
           <span class="custom-dropdown-arrow" style="font-size: 9px; opacity: 0.6; transition: transform 0.2s ease; margin-left: 2px; flex-shrink: 0; line-height: 1; display: inline-flex; align-items: center; height: 100%;">▼</span>
         </button>
         <ul class="custom-dropdown-menu"
@@ -3869,6 +3420,29 @@ function showToast(msg) {
     injectImageButton();
   }
 
+  async function getPostRawMessage(postId) {
+    return new Promise((resolve) => {
+      let timeoutId;
+      const handler = (e) => {
+        if (e.detail.postId === postId) {
+          window.removeEventListener('chatops-post-message-response', handler);
+          clearTimeout(timeoutId);
+          resolve(e.detail.message);
+        }
+      };
+      window.addEventListener('chatops-post-message-response', handler);
+
+      window.dispatchEvent(new CustomEvent('chatops-post-message-request', {
+        detail: { postId }
+      }));
+
+      timeoutId = setTimeout(() => {
+        window.removeEventListener('chatops-post-message-response', handler);
+        resolve(null);
+      }, 200);
+    });
+  }
+
   async function getPostUsername(postEl) {
     if (!postEl) return null;
 
@@ -4435,10 +4009,17 @@ function showToast(msg) {
           copyBtn.className = 'chatops-quick-note-btn quick-copy-btn';
           copyBtn.innerHTML = '📋';
           copyBtn.title = language.quickCopyBtnTooltip || 'Sao chép nhanh tin nhắn';
-          copyBtn.addEventListener('click', (e) => {
+          copyBtn.addEventListener('click', async (e) => {
             e.preventDefault(); e.stopPropagation();
-            const msgBodyEl = postEl.querySelector('.post-message__text, .post__body p, [class*="post-message"]');
-            const msgTextFull = msgBodyEl ? msgBodyEl.innerText.trim() : '';
+            const postId = cleanPostId(postEl);
+            let msgTextFull = null;
+            if (postId) {
+              msgTextFull = await getPostRawMessage(postId);
+            }
+            if (!msgTextFull) {
+              const msgBodyEl = postEl.querySelector('.post-message__text, .post__body p, [class*="post-message"]');
+              msgTextFull = msgBodyEl ? msgBodyEl.innerText.trim() : '';
+            }
             if (!msgTextFull) {
               showToast(language.quickCopyTextOnlyError || 'Sao chép nhanh chỉ hỗ trợ tin nhắn dạng văn bản.');
               return;
@@ -4791,9 +4372,7 @@ function showToast(msg) {
         if (updateImageEditorTranslations) updateImageEditorTranslations();
       })();
     } else if (message.type === 'INSERT_IMAGE_TO_CHAT') {
-      if (typeof globalInsertImageToChat === 'function') {
-        globalInsertImageToChat(message.url);
-      }
+      insertAndMaybeSend(message.url, true);
     } else if (message.type === 'INSERT_TEXT_TO_CHAT') {
       let textarea = activeChatTextarea;
       if (!textarea) {
@@ -4809,13 +4388,7 @@ function showToast(msg) {
       }
       if (textarea) {
         const textToInsert = message.text || '';
-        const start = textarea.selectionStart;
-        const end = textarea.selectionEnd;
-        const text = textarea.value;
-        textarea.value = text.substring(0, start) + textToInsert + text.substring(end);
-        textarea.focus();
-        textarea.selectionStart = textarea.selectionEnd = start + textToInsert.length;
-        textarea.dispatchEvent(new Event('input', { bubbles: true }));
+        insertTextIntoTextarea(textarea, textToInsert);
       }
     } else if (message.action === 'open_post_thread') {
       handleOpenPostThread(message.postId, message.rootId);

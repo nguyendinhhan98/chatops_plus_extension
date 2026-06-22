@@ -20,7 +20,7 @@ export async function getConfig() {
  */
 export async function request(path, options = {}) {
   const config = await getConfig();
-  const url = `${config.chatopsUrl}/api/v4${path}`;
+  const url = path.startsWith('/plugins') ? `${config.chatopsUrl}${path}` : `${config.chatopsUrl}/api/v4${path}`;
 
   const headers = {
     'Content-Type': 'application/json',
