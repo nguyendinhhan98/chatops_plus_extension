@@ -95,6 +95,7 @@ export async function handleTaskAlarm(taskId, alarmScheduledTime) {
     const STALE_THRESHOLD_MS = staleThresholdMinutes * 60 * 1000;
     const now = Date.now();
 
+    // Guard 1: alarm.scheduledTime is stale (Chrome was suspended/closed)
     if (alarmScheduledTime && (now - alarmScheduledTime > STALE_THRESHOLD_MS)) {
       console.warn(
         '[ChatOps Ext] Stale alarm detected for task:', taskId,
@@ -108,6 +109,26 @@ export async function handleTaskAlarm(taskId, alarmScheduledTime) {
       } else {
         chrome.alarms.clear(taskId);
         console.log('[ChatOps Ext] Stale one-time alarm cleared (task left as pending):', taskId);
+      }
+      return; // Do NOT show any notification
+    }
+
+    // Guard 2: snooze loop — alarm.scheduledTime is fresh (5 min ago), but task.reminder is
+    // hours in the past because user never clicked Done/Skip. Without this guard the snooze
+    // chain runs forever.
+    const originalReminderTime = task.reminder ? new Date(task.reminder).getTime() : null;
+    if (originalReminderTime && (now - originalReminderTime > STALE_THRESHOLD_MS)) {
+      console.warn(
+        '[ChatOps Ext] Snooze loop guard triggered for task:', taskId,
+        '— original reminder:', new Date(originalReminderTime).toLocaleString(),
+        '— overdue by:', Math.round((now - originalReminderTime) / 60000), 'min'
+      );
+
+      if (task.repeatDaily) {
+        await rescheduleToNextDailyOccurrence(task, memos);
+      } else {
+        chrome.alarms.clear(taskId);
+        console.log('[ChatOps Ext] Snooze loop broken for one-time task (left as pending):', taskId);
       }
       return; // Do NOT show any notification
     }
