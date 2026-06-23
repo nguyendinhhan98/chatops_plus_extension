@@ -116,21 +116,25 @@ export async function handleTaskAlarm(taskId, alarmScheduledTime) {
     // Guard 2: snooze loop — alarm.scheduledTime is fresh (5 min ago), but task.reminder is
     // hours in the past because user never clicked Done/Skip. Without this guard the snooze
     // chain runs forever.
-    const originalReminderTime = task.reminder ? new Date(task.reminder).getTime() : null;
-    if (originalReminderTime && (now - originalReminderTime > STALE_THRESHOLD_MS)) {
-      console.warn(
-        '[ChatOps Ext] Snooze loop guard triggered for task:', taskId,
-        '— original reminder:', new Date(originalReminderTime).toLocaleString(),
-        '— overdue by:', Math.round((now - originalReminderTime) / 60000), 'min'
-      );
-
-      if (task.repeatDaily) {
-        await rescheduleToNextDailyOccurrence(task, memos);
-      } else {
+    //
+    // NOTE: This guard is intentionally SKIPPED for repeatDaily tasks.
+    // For daily tasks, task.reminder always stores the original absolute timestamp (e.g.
+    // "yesterday at 08:56"), so `now - originalReminderTime` is always ≥ 24h — far
+    // exceeding any stale threshold — which would incorrectly block every daily notification.
+    // Guard 1 (alarm.scheduledTime stale check) already handles the suspended-browser case
+    // for all task types, so daily tasks are fully protected without Guard 2.
+    if (!task.repeatDaily) {
+      const originalReminderTime = task.reminder ? new Date(task.reminder).getTime() : null;
+      if (originalReminderTime && (now - originalReminderTime > STALE_THRESHOLD_MS)) {
+        console.warn(
+          '[ChatOps Ext] Snooze loop guard triggered for one-time task:', taskId,
+          '— original reminder:', new Date(originalReminderTime).toLocaleString(),
+          '— overdue by:', Math.round((now - originalReminderTime) / 60000), 'min'
+        );
         chrome.alarms.clear(taskId);
         console.log('[ChatOps Ext] Snooze loop broken for one-time task (left as pending):', taskId);
+        return; // Do NOT show any notification
       }
-      return; // Do NOT show any notification
     }
 
     // --- Alarm is fresh — proceed to notify ---
@@ -185,6 +189,9 @@ export async function handleTaskAlarm(taskId, alarmScheduledTime) {
     // 3. Schedule snooze alarm so notification repeats until user acts (Done / Skip).
     // The stale guard above ensures that if Chrome was suspended and this snooze
     // alarm fires much later, it will be discarded gracefully instead of looping.
+    // Note: for repeatDaily tasks, the snooze loop is intentional — it keeps reminding
+    // the user until they click Done or Skip. Once they act, handleMarkTaskDone /
+    // handleSkipTaskDaily will reschedule the alarm to the next day's occurrence.
     chrome.alarms.create(taskId, { delayInMinutes: snoozeMinutes });
     console.log('[ChatOps Ext] Task alarm fired, snooze scheduled in', snoozeMinutes, 'min:', taskId);
 

@@ -104,12 +104,41 @@ async function init() {
  * Handles custom close behavior inside PWA iframe.
  */
 function setupPwaMode() {
-  // 1. Detect if running inside PWA mode (explicitly loaded via ?mode=pwa query parameter)
+  // 1. Detect PWA/Modal mode from URL query parameters
   const urlParams = new URLSearchParams(window.location.search);
   const isPwaMode = urlParams.get('mode') === 'pwa';
+  const viewParam = urlParams.get('view');
+  const isModalMode = viewParam === 'modal';
+  const tabParam = urlParams.get('tab');
   
   if (isPwaMode) {
     document.body.classList.add('pwa-mode');
+  }
+  
+  if (isModalMode) {
+    document.body.classList.add('modal-mode');
+    
+    // Automatically move search and mentions forms inline
+    const searchForm = document.getElementById('spSearchForm');
+    const searchFormPlaceholder = document.getElementById('spSearchFormPlaceholder');
+    if (searchForm && searchFormPlaceholder) {
+      searchFormPlaceholder.appendChild(searchForm);
+      searchFormPlaceholder.style.display = 'block';
+    }
+
+    const mentionsForm = document.getElementById('spMentionsForm');
+    const mentionsFormPlaceholder = document.getElementById('spMentionsFormPlaceholder');
+    if (mentionsForm && mentionsFormPlaceholder) {
+      mentionsFormPlaceholder.appendChild(mentionsForm);
+      mentionsFormPlaceholder.style.display = 'block';
+    }
+
+    // Set up postMessage close listener for modal mode
+    window.addEventListener('message', (event) => {
+      if (event.data && event.data.type === 'CLOSE_CHATOPS_MODAL') {
+        window.parent.postMessage({ type: 'CLOSE_CHATOPS_MODAL' }, '*');
+      }
+    });
   }
   
   const closeIframeBtn = document.getElementById('btnHeaderCloseIframe');
@@ -119,11 +148,28 @@ function setupPwaMode() {
       closeIframeBtn.addEventListener('click', () => {
         window.parent.postMessage({ type: 'CLOSE_PWA_SIDE_PANEL' }, '*');
       });
+    } else if (isModalMode) {
+      closeIframeBtn.style.display = 'block';
+      closeIframeBtn.addEventListener('click', () => {
+        window.parent.postMessage({ type: 'CLOSE_CHATOPS_MODAL' }, '*');
+      });
     } else {
       closeIframeBtn.style.display = 'none';
     }
   }
 
+  // Handle active tab routing from URL
+  if (tabParam) {
+    setTimeout(() => {
+      if (tabParam === 'search') {
+        switchTab('tools-search');
+      } else if (tabParam === 'mentions') {
+        switchTab('mentions');
+      } else {
+        switchTab(tabParam);
+      }
+    }, 150);
+  }
 }
 
 /**
@@ -625,12 +671,15 @@ function setupTabs() {
     }
   }
 
-  // 1. Startup redirect handling
-  chrome.storage.local.get([STORAGE_KEYS.SIDEPANEL_TAB, 'sidePanelSubTab'], (res) => { 
-    if (res[STORAGE_KEYS.SIDEPANEL_TAB]) { 
-      handleStorageRedirect(res[STORAGE_KEYS.SIDEPANEL_TAB], res['sidePanelSubTab']);
-    } 
-  });
+  // 1. Startup redirect handling (only if tab parameter is not present in URL)
+  const urlParams = new URLSearchParams(window.location.search);
+  if (!urlParams.get('tab')) {
+    chrome.storage.local.get([STORAGE_KEYS.SIDEPANEL_TAB, 'sidePanelSubTab'], (res) => { 
+      if (res[STORAGE_KEYS.SIDEPANEL_TAB]) { 
+        handleStorageRedirect(res[STORAGE_KEYS.SIDEPANEL_TAB], res['sidePanelSubTab']);
+      } 
+    });
+  }
 
   // 2. Reactive redirect handling (when sidepanel is already open)
   chrome.storage.onChanged.addListener((changes, areaName) => {

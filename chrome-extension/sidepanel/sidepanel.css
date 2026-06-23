@@ -4505,5 +4505,23 @@ span.flatpickr-weekday {
   z-index: 100 !important;
 }
 
+/* ─── Modal Mode Overrides (for iframe in modal dialog) ─── */
+.modal-mode .workspace-header {
+  display: none !important;
+}
+.modal-mode .tab-nav {
+  display: none !important;
+}
+.modal-mode .panel-container {
+  height: 100vh !important;
+  border: none !important;
+}
+.modal-mode .sp-fab {
+  display: none !important;
+}
+.modal-mode .search-filters-row {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
+}
+
 
 

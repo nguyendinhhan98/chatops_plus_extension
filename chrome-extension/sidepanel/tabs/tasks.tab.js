@@ -659,9 +659,23 @@ export function setup(state) {
         if (e.target.checked) {
           chrome.alarms.clear(id);
           chrome.runtime.sendMessage({ type: 'DISMISS_REMINDER', taskId: id }).catch(() => {});
-        } else {
-          const snoozeMins = settings.snoozeMinutes || 5;
-          chrome.runtime.sendMessage({ type: MESSAGE_TYPES.SET_TASK_ALARM, taskId: id, time: Date.now() + snoozeMins * 60 * 1000 });
+        } else if (task.reminder) {
+          // Task marked undone — restore alarm
+          if (task.repeatDaily) {
+            // Daily task: reschedule to next correct daily occurrence, not a snooze interval
+            const reminderDate = new Date(task.reminder);
+            const nextTime = new Date();
+            nextTime.setHours(reminderDate.getHours(), reminderDate.getMinutes(), 0, 0);
+            if (nextTime.getTime() <= Date.now()) {
+              nextTime.setDate(nextTime.getDate() + 1);
+            }
+            chrome.runtime.sendMessage({ type: MESSAGE_TYPES.SET_TASK_ALARM, taskId: id, time: nextTime.getTime() });
+          } else {
+            // One-time task: restore at original reminder time (if still future), else snooze
+            const reminderTime = new Date(task.reminder).getTime();
+            const targetTime = reminderTime > Date.now() ? reminderTime : Date.now() + (settings.snoozeMinutes || 5) * 60 * 1000;
+            chrome.runtime.sendMessage({ type: MESSAGE_TYPES.SET_TASK_ALARM, taskId: id, time: targetTime });
+          }
         }
         loadTasks();
       }
@@ -838,6 +852,7 @@ export function setup(state) {
 
             if (task.repeatDaily !== oldRepeatDaily) {
               if (task.repeatDaily) {
+                // Switched to daily: reschedule alarm to next daily occurrence
                 if (task.reminder) {
                   const originalDate = new Date(task.reminder);
                   if (!isNaN(originalDate.getTime())) {
@@ -853,6 +868,22 @@ export function setup(state) {
                       time: today.getTime()
                     });
                   }
+                }
+              } else {
+                // Switched from daily to one-time: clear daily alarm, reschedule at
+                // original reminder time if still in the future, else clear entirely
+                chrome.alarms.clear(id);
+                if (task.reminder) {
+                  const reminderTime = new Date(task.reminder).getTime();
+                  if (reminderTime > Date.now()) {
+                    chrome.runtime.sendMessage({
+                      type: MESSAGE_TYPES.SET_TASK_ALARM,
+                      taskId: id,
+                      time: reminderTime
+                    });
+                  }
+                  // If reminder is in the past, alarm stays cleared — task remains pending
+                  // and user can set a new reminder time manually
                 }
               }
             }

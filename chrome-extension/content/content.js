@@ -5,13 +5,13 @@
 import { MESSAGE_TYPES, UI_CONFIG, SELECTORS, STORAGE_KEYS, ALARMS, DEFAULT_MEMES } from '../src/constants.js';
 import { language, loadLanguage } from '../src/lang.js';
 import { needsChatOpsConversion, convertForChatOps } from '../src/utils/imageConverter.js';
-import { formatRichText } from '../src/utils/formatter.js';
+import { formatRichText, escapeHtml } from '../src/utils/formatter.js';
 
 const DEFAULT_SETTINGS = {
   spamEnabled: true,
   memeEnabled: true,
   showTabs: { search: true, tasks: true, notes: true, missed: true, reactions: true },
-  floatingButtons: { quickNote: true, quickTask: true, spamReactions: false, imagePicker: true, quickReply: true, quickCopy: true },
+  floatingButtons: { quickNote: true, quickTask: true, spamReactions: false, imagePicker: true, templatePicker: true, quickReply: true, quickCopy: true },
   spamEmojis: ['thumbsup', 'heart', 'fire', 'rocket', 'tada', 'laughing', 'smile', 'wink', 'heart_eyes', 'kissing_heart'],
   tabsCompactMode: false,
   snoozeMinutes: 5,
@@ -24,13 +24,17 @@ const DEFAULT_SETTINGS = {
 let quickNotePopover = null;
 let quickNoteBackdrop = null;
 let imagePickerEl = null;
+let templatePickerEl = null;
 let observer = null;
 let globalInsertImageToChat = null;
 let activeChatTextarea = null;
 let updateImagePickerTranslations = null;
+let updateTemplatePickerTranslations = null;
 let updateResizeModalTranslations = null;
 let currentResizeImageObj = null;
 let updateImageEditorTranslations = null;
+let updateTaskCreateButtonTranslations = null;
+let updateHeaderButtonsTranslations = null;
 
 function runWithObserverDisabled(fn) {
   if (observer) {
@@ -657,6 +661,475 @@ function showToast(msg) {
         e.stopPropagation();
         toggleImagePickerUI(imageBtn, target.textboxId);
       });
+    });
+  }
+
+  // --- Template Integration into Main & RHS Chat UI ---
+  function injectTemplateButton() {
+    const floatingButtons = cachedSettings.floatingButtons || { quickNote: true, quickTask: true, spamReactions: true, imagePicker: true, templatePicker: true, quickReply: false, quickCopy: false };
+    const templateEnabled = floatingButtons.templatePicker !== false;
+    
+    const targets = [
+      { id: 'emojiPickerButton', textboxId: 'post_textbox', btnId: 'chatops-ext-template-btn' },
+      { id: 'rhsEmojiPickerButton', textboxId: 'reply_textbox', btnId: 'chatops-ext-template-btn-rhs' }
+    ];
+
+    targets.forEach(target => {
+      const textbox = document.getElementById(target.textboxId) || 
+        (target.textboxId === 'reply_textbox' 
+          ? document.querySelector('#reply_textbox, .sidebar-right textarea, .rhs-thread textarea, .sidebar--right textarea, [placeholder*="reply" i]')
+          : document.querySelector('#post_textbox, .post-create-body textarea, [placeholder*="write" i]'));
+
+      let emojiBtn = null;
+      if (textbox) {
+        const container = textbox.closest('.post-create-body, .input-container, .post-body__cell, .post-create, form, [class*="post-create"]');
+        if (container) {
+          emojiBtn = container.querySelector('#emojiPickerButton, #rhsEmojiPickerButton, button[aria-label*="emoji" i], button[aria-label*="Emoji"], button[class*="emoji" i], .emoji-picker__container button, button[id*="Emoji"]');
+        }
+      }
+
+      if (!emojiBtn) {
+        emojiBtn = document.getElementById(target.id);
+      }
+
+      if (!emojiBtn) {
+        return;
+      }
+
+      const parent = emojiBtn.parentNode;
+      if (!parent) return;
+
+      const existingBtn = parent.querySelector('.chatops-ext-template-picker-btn');
+
+      if (!templateEnabled) {
+        if (existingBtn) existingBtn.remove();
+        delete emojiBtn.dataset.chatopsTemplateInjected;
+        return;
+      }
+
+      if (existingBtn) {
+        emojiBtn.dataset.chatopsTemplateInjected = 'true';
+        if (!existingBtn.id) {
+          existingBtn.id = target.btnId;
+        }
+        return;
+      }
+
+      const templateBtn = document.createElement('button');
+      templateBtn.id = target.btnId;
+      templateBtn.type = 'button';
+      templateBtn.className = 'chatops-ext-template-picker-btn';
+      templateBtn.innerHTML = '📒';
+      templateBtn.title = language.quickTemplateTooltip || 'Quick Template Picker';
+      templateBtn.dataset.targetTextbox = target.textboxId;
+
+      const imageBtn = parent.querySelector('.chatops-ext-image-picker-btn');
+      if (imageBtn) {
+        parent.insertBefore(templateBtn, imageBtn.nextSibling);
+      } else {
+        parent.insertBefore(templateBtn, emojiBtn.nextSibling);
+      }
+
+      emojiBtn.dataset.chatopsTemplateInjected = 'true';
+
+      templateBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleTemplatePickerUI(templateBtn, target.textboxId);
+      });
+    });
+  }
+
+  updateTemplatePickerTranslations = function() {
+    if (templatePickerEl) {
+      const headerTitleEl = templatePickerEl.querySelector('.chatops-template-picker-header span');
+      if (headerTitleEl) headerTitleEl.textContent = language.templatePickerTitle || 'Mẫu tin nhắn';
+      const searchInput = templatePickerEl.querySelector('.chatops-template-search-input');
+      if (searchInput) searchInput.placeholder = language.searchTemplatePlaceholder || 'Tìm kiếm mẫu...';
+      renderTemplatesList(searchInput ? searchInput.value : '');
+    }
+    document.querySelectorAll('.chatops-ext-template-picker-btn').forEach(btn => {
+      btn.title = language.quickTemplateTooltip || 'Insert Template (📒)';
+    });
+  };
+
+  // --- Task Creation Button Integration into Chat UI ---
+  function injectTaskCreateButton() {
+    const floatingButtons = cachedSettings.floatingButtons || { quickNote: true, quickTask: true, spamReactions: true, imagePicker: true, templatePicker: true, quickReply: false, quickCopy: false };
+    const taskEnabled = floatingButtons.quickTask !== false;
+    
+    const targets = [
+      { id: 'emojiPickerButton', textboxId: 'post_textbox', btnId: 'chatops-ext-task-create-btn' },
+      { id: 'rhsEmojiPickerButton', textboxId: 'reply_textbox', btnId: 'chatops-ext-task-create-btn-rhs' }
+    ];
+
+    targets.forEach(target => {
+      const textbox = document.getElementById(target.textboxId) || 
+        (target.textboxId === 'reply_textbox' 
+          ? document.querySelector('#reply_textbox, .sidebar-right textarea, .rhs-thread textarea, .sidebar--right textarea, [placeholder*="reply" i]')
+          : document.querySelector('#post_textbox, .post-create-body textarea, [placeholder*="write" i]'));
+
+      let emojiBtn = null;
+      if (textbox) {
+        const container = textbox.closest('.post-create-body, .input-container, .post-body__cell, .post-create, form, [class*="post-create"]');
+        if (container) {
+          emojiBtn = container.querySelector('#emojiPickerButton, #rhsEmojiPickerButton, button[aria-label*="emoji" i], button[aria-label*="Emoji"], button[class*="emoji" i], .emoji-picker__container button, button[id*="Emoji"]');
+        }
+      }
+
+      if (!emojiBtn) {
+        emojiBtn = document.getElementById(target.id);
+      }
+
+      if (!emojiBtn) {
+        return;
+      }
+
+      const parent = emojiBtn.parentNode;
+      if (!parent) return;
+
+      const existingBtn = parent.querySelector('.chatops-ext-task-create-btn');
+
+      if (!taskEnabled) {
+        if (existingBtn) existingBtn.remove();
+        delete emojiBtn.dataset.chatopsTaskCreateInjected;
+        return;
+      }
+
+      if (existingBtn) {
+        emojiBtn.dataset.chatopsTaskCreateInjected = 'true';
+        if (!existingBtn.id) {
+          existingBtn.id = target.btnId;
+        }
+        return;
+      }
+
+      const taskBtn = document.createElement('button');
+      taskBtn.id = target.btnId;
+      taskBtn.type = 'button';
+      taskBtn.className = 'chatops-ext-task-create-btn';
+      taskBtn.innerHTML = '🎯';
+      taskBtn.title = language.quickTaskTooltip || 'Tạo công việc (🎯)';
+      taskBtn.dataset.targetTextbox = target.textboxId;
+
+      const templateBtn = parent.querySelector('.chatops-ext-template-picker-btn');
+      if (templateBtn) {
+        parent.insertBefore(taskBtn, templateBtn.nextSibling);
+      } else {
+        const imageBtn = parent.querySelector('.chatops-ext-image-picker-btn');
+        if (imageBtn) {
+          parent.insertBefore(taskBtn, imageBtn.nextSibling);
+        } else {
+          parent.insertBefore(taskBtn, emojiBtn.nextSibling);
+        }
+      }
+
+      emojiBtn.dataset.chatopsTaskCreateInjected = 'true';
+
+      taskBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const text = textbox ? textbox.value.trim() : '';
+        openQuickNote(null, taskBtn, 'task', text);
+      });
+    });
+  }
+
+  updateTaskCreateButtonTranslations = function() {
+    document.querySelectorAll('.chatops-ext-task-create-btn').forEach(btn => {
+      btn.title = language.quickTaskTooltip || 'Tạo công việc (🎯)';
+    });
+  };
+
+  // --- Header Integration (Advanced Search & Missed Mentions Modals) ---
+  let headerModalBackdrop = null;
+
+  function injectHeaderButtons() {
+    // 1. Prioritize finding the flex-parent container of the header buttons via the help wrapper class
+    const helpBtn = document.querySelector('.userGuideHelp') || document.querySelector('[class*="userGuideHelp"]');
+    
+    const container = helpBtn?.parentNode || 
+                     document.querySelector('.flex-parent') ||
+                     document.querySelector('.top-bar__right') ||
+                     document.querySelector('[class*="top-bar__right"]') ||
+                     document.querySelector('.topbar-right') ||
+                     document.querySelector('[class*="topbar-right"]') ||
+                     document.getElementById('searchFormContainer')?.parentElement;
+
+    if (!container) return;
+
+    if (document.getElementById('chatops-header-buttons-wrapper')) return;
+
+    // 2. Find a suitable sibling button (prioritizing Help/Question button to insert after it), but filter out search-related and ChatOps buttons
+    let standardHelpBtn = helpBtn || 
+                          document.querySelector('[id*="HelpButton" i]') ||
+                          document.querySelector('[aria-label*="help" i]') ||
+                          document.querySelector('[aria-label*="trợ giúp" i]') ||
+                          document.getElementById('channelHeaderMentionButton') || 
+                          document.querySelector('[id*="MentionButton" i]') ||
+                          document.querySelector('[aria-label*="mention" i]') ||
+                          document.querySelector('[aria-label*="saved" i]') ||
+                          document.querySelector('[aria-label*="flagged" i]') ||
+                          document.querySelector('[aria-label*="pin" i]') ||
+                          document.querySelector('[id*="FlagButton" i]') ||
+                          document.querySelector('[id*="PinButton" i]');
+
+    if (!standardHelpBtn) {
+      const buttons = Array.from(container.querySelectorAll('button'));
+      standardHelpBtn = buttons.find(btn => {
+        const inSearch = btn.closest('#searchFormContainer, [class*="search" i]');
+        const isChatOps = btn.id && btn.id.includes('chatops');
+        return !inSearch && !isChatOps;
+      });
+    }
+
+    const wrapper = document.createElement('div');
+    wrapper.id = 'chatops-header-buttons-wrapper';
+    wrapper.className = 'chatops-header-buttons-wrapper';
+
+    const searchBtn = document.createElement('button');
+    searchBtn.id = 'chatops-header-search-btn';
+    searchBtn.className = 'chatops-header-icon-btn';
+    searchBtn.title = language.headerSearchTooltip || 'Advanced Search';
+    searchBtn.innerHTML = `<span class="chatops-header-emoji">🔍</span>`;
+    searchBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openHeaderModal('search');
+    });
+
+    const mentionsBtn = document.createElement('button');
+    mentionsBtn.id = 'chatops-header-mentions-btn';
+    mentionsBtn.className = 'chatops-header-icon-btn';
+    mentionsBtn.title = language.headerMentionsTooltip || 'Missed Mentions';
+    mentionsBtn.innerHTML = `<span class="chatops-header-emoji">🔔</span>`;
+    mentionsBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openHeaderModal('mentions');
+    });
+
+    wrapper.appendChild(searchBtn);
+    wrapper.appendChild(mentionsBtn);
+
+    // 3. Find the direct child of the container to insert after, to avoid nesting inside button wrappers
+    let insertTarget = standardHelpBtn;
+    if (standardHelpBtn && standardHelpBtn.parentNode && standardHelpBtn.parentNode !== container) {
+      let current = standardHelpBtn;
+      while (current.parentNode && current.parentNode !== container) {
+        current = current.parentNode;
+      }
+      insertTarget = current;
+    }
+
+    runWithObserverDisabled(() => {
+      if (insertTarget && insertTarget.parentNode) {
+        const nextSibling = insertTarget.nextSibling;
+        insertTarget.parentNode.insertBefore(wrapper, nextSibling);
+      } else {
+        container.appendChild(wrapper);
+      }
+    });
+  }
+
+  updateHeaderButtonsTranslations = function() {
+    const searchBtn = document.getElementById('chatops-header-search-btn');
+    if (searchBtn) searchBtn.title = language.headerSearchTooltip || 'Advanced Search';
+
+    const mentionsBtn = document.getElementById('chatops-header-mentions-btn');
+    if (mentionsBtn) mentionsBtn.title = language.headerMentionsTooltip || 'Missed Mentions';
+  };
+
+  function openHeaderModal(tabName) {
+    if (headerModalBackdrop) {
+      headerModalBackdrop.remove();
+    }
+
+    headerModalBackdrop = document.createElement('div');
+    headerModalBackdrop.className = 'chatops-iframe-modal-backdrop';
+
+    const modalBox = document.createElement('div');
+    modalBox.className = 'chatops-iframe-modal-box';
+
+    const header = document.createElement('div');
+    header.className = 'chatops-iframe-modal-header';
+
+    const titleText = tabName === 'search' 
+      ? (language.headerSearchTooltip || 'Advanced Search') 
+      : (language.headerMentionsTooltip || 'Missed Mentions');
+
+    header.innerHTML = `
+      <span class="chatops-iframe-modal-title">${titleText}</span>
+      <button class="chatops-iframe-modal-close-btn">&times;</button>
+    `;
+
+    const closeBtn = header.querySelector('.chatops-iframe-modal-close-btn');
+    const closeModal = () => {
+      headerModalBackdrop.classList.remove('visible');
+      setTimeout(() => {
+        if (headerModalBackdrop) {
+          headerModalBackdrop.remove();
+          headerModalBackdrop = null;
+        }
+      }, 250);
+    };
+
+    closeBtn.addEventListener('click', closeModal);
+    headerModalBackdrop.addEventListener('click', (e) => {
+      if (e.target === headerModalBackdrop) {
+        closeModal();
+      }
+    });
+
+    const iframe = document.createElement('iframe');
+    iframe.className = 'chatops-iframe-modal-iframe';
+    iframe.src = chrome.runtime.getURL(`sidepanel/sidepanel.html?view=modal&tab=${tabName}`);
+
+    const messageListener = (event) => {
+      if (event.data && event.data.type === 'CLOSE_CHATOPS_MODAL') {
+        closeModal();
+        window.removeEventListener('message', messageListener);
+      }
+    };
+    window.addEventListener('message', messageListener);
+
+    modalBox.appendChild(header);
+    modalBox.appendChild(iframe);
+    headerModalBackdrop.appendChild(modalBox);
+    document.body.appendChild(headerModalBackdrop);
+
+    headerModalBackdrop.getBoundingClientRect();
+    headerModalBackdrop.classList.add('visible');
+  }
+
+  function toggleTemplatePickerUI(anchorBtn, targetTextboxId) {
+    if (!templatePickerEl) {
+      templatePickerEl = document.createElement('div');
+      templatePickerEl.className = 'chatops-template-picker hidden';
+      templatePickerEl.innerHTML = `
+        <div class="chatops-template-picker-header">
+          <span style="font-weight: 700; font-size: 13px; color: #1c58d9;">${language.templatePickerTitle || 'Mẫu tin nhắn'}</span>
+          <button type="button" id="chatops-template-close" class="chatops-template-close-btn">✕</button>
+        </div>
+        <div class="chatops-template-search-area">
+          <input type="text" class="chatops-template-search-input" placeholder="${language.searchTemplatePlaceholder || 'Tìm kiếm mẫu...'}">
+        </div>
+        <div class="chatops-template-list">
+        </div>
+      `;
+      document.body.appendChild(templatePickerEl);
+
+      document.getElementById('chatops-template-close').addEventListener('click', () => {
+        templatePickerEl.classList.add('hidden');
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!templatePickerEl) return;
+        const isClickInside = templatePickerEl.contains(e.target);
+        const isClickAnchor = e.target.closest('.chatops-ext-template-picker-btn');
+        if (!isClickInside && !isClickAnchor) {
+          templatePickerEl.classList.add('hidden');
+        }
+      });
+
+      const searchInput = templatePickerEl.querySelector('.chatops-template-search-input');
+      searchInput.addEventListener('input', (e) => {
+        renderTemplatesList(e.target.value);
+      });
+    }
+
+    const container = anchorBtn.closest('.post-create-body, .input-container, .post-body__cell, .post-create, form, [class*="post-create"]');
+    if (container) {
+      activeChatTextarea = container.querySelector('textarea');
+    } else {
+      activeChatTextarea = document.getElementById(targetTextboxId) || 
+        (targetTextboxId === 'reply_textbox'
+          ? document.querySelector('#reply_textbox, .sidebar-right textarea, .rhs-thread textarea, .sidebar--right textarea, [placeholder*="reply" i]')
+          : document.querySelector('#post_textbox, .post-create-body textarea, [placeholder*="write" i]'));
+    }
+
+    templatePickerEl.dataset.activeTextbox = targetTextboxId || 'post_textbox';
+
+    const isHidden = templatePickerEl.classList.contains('hidden');
+    if (isHidden) {
+      const searchInput = templatePickerEl.querySelector('.chatops-template-search-input');
+      if (searchInput) searchInput.value = '';
+      
+      renderTemplatesList('');
+
+      const rect = anchorBtn.getBoundingClientRect();
+      const pickerHeight = 380;
+      let bottomValue = window.innerHeight - rect.top + 10;
+      const maxBottom = window.innerHeight - pickerHeight - 10;
+      if (bottomValue > maxBottom) {
+        bottomValue = Math.max(10, maxBottom);
+      }
+
+      templatePickerEl.style.position = 'fixed';
+      templatePickerEl.style.bottom = `${bottomValue}px`;
+      templatePickerEl.style.left = `${Math.max(10, rect.left - 260)}px`;
+      templatePickerEl.classList.remove('hidden');
+
+      setTimeout(() => {
+        const searchInput = templatePickerEl.querySelector('.chatops-template-search-input');
+        if (searchInput) searchInput.focus();
+      }, 50);
+    } else {
+      templatePickerEl.classList.add('hidden');
+    }
+  }
+
+  function renderTemplatesList(query = '') {
+    if (!templatePickerEl) return;
+    const listContainer = templatePickerEl.querySelector('.chatops-template-list');
+    if (!listContainer) return;
+
+    listContainer.innerHTML = '';
+
+    const templates = cachedMemos.filter(m => m.type === 'memo');
+
+    const lowerQuery = query.toLowerCase().trim();
+    const filteredTemplates = templates.filter(t => {
+      const titleMatch = (t.title || '').toLowerCase().includes(lowerQuery);
+      const categoryMatch = (t.category || '').toLowerCase().includes(lowerQuery);
+      const noteMatch = (t.note || '').toLowerCase().includes(lowerQuery);
+      return titleMatch || categoryMatch || noteMatch;
+    });
+
+    if (filteredTemplates.length === 0) {
+      const emptyHint = document.createElement('div');
+      emptyHint.className = 'chatops-template-empty';
+      emptyHint.textContent = language.noTemplatesHint || 'Không tìm thấy mẫu nào.';
+      listContainer.appendChild(emptyHint);
+      return;
+    }
+
+    filteredTemplates.forEach(t => {
+      const item = document.createElement('div');
+      item.className = 'chatops-template-item';
+      
+      const displayTitle = t.title ? t.title.trim() : (t.note ? t.note.trim().substring(0, 30) + '...' : 'Ghi chú');
+      const snippet = t.note ? t.note.trim().replace(/\n/g, ' ') : '';
+      const category = t.category || 'General';
+
+      item.innerHTML = `
+        <div class="chatops-template-item-header">
+          <span class="chatops-template-item-title">${escapeHtml(displayTitle)}</span>
+          <span class="chatops-template-item-category">${escapeHtml(category)}</span>
+        </div>
+        <div class="chatops-template-item-snippet">${escapeHtml(snippet)}</div>
+      `;
+
+      item.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (activeChatTextarea && t.note) {
+          insertTextIntoTextarea(activeChatTextarea, t.note);
+        }
+        templatePickerEl.classList.add('hidden');
+      });
+
+      listContainer.appendChild(item);
     });
   }
 
@@ -3366,6 +3839,10 @@ function showToast(msg) {
       if (changes[STORAGE_KEYS.MEMOS]) {
         cachedMemos = changes[STORAGE_KEYS.MEMOS].newValue || [];
         updateFloatingBadgeCount();
+        if (templatePickerEl && !templatePickerEl.classList.contains('hidden')) {
+          const searchInput = templatePickerEl.querySelector('.chatops-template-search-input');
+          renderTemplatesList(searchInput ? searchInput.value : '');
+        }
       }
     }
   });
@@ -3377,6 +3854,12 @@ function showToast(msg) {
     });
     document.querySelectorAll('[data-chatops-image-injected]').forEach(el => {
       el.removeAttribute('data-chatops-image-injected');
+    });
+    document.querySelectorAll('[data-chatops-template-injected]').forEach(el => {
+      el.removeAttribute('data-chatops-template-injected');
+    });
+    document.querySelectorAll('[data-chatops-task-create-injected]').forEach(el => {
+      el.removeAttribute('data-chatops-task-create-injected');
     });
 
     const showTabs = cachedSettings.showTabs || { search: true, tasks: true, notes: true, missed: true, reactions: true };
@@ -3418,6 +3901,9 @@ function showToast(msg) {
     
     injectQuickNoteButtons();
     injectImageButton();
+    injectTemplateButton();
+    injectTaskCreateButton();
+    injectHeaderButtons();
   }
 
   async function getPostRawMessage(postId) {
@@ -4245,11 +4731,13 @@ function showToast(msg) {
     document.querySelectorAll('.chatops-action-group').forEach(el => {
       el.remove();
     });
-    document.querySelectorAll('.chatops-ext-image-picker-btn').forEach(el => {
+    document.querySelectorAll('.chatops-ext-image-picker-btn, .chatops-ext-template-picker-btn, .chatops-ext-task-create-btn').forEach(el => {
       el.remove();
     });
-    document.querySelectorAll('[data-chatops-image-injected]').forEach(el => {
+    document.querySelectorAll('[data-chatops-image-injected], [data-chatops-template-injected], [data-chatops-task-create-injected]').forEach(el => {
       el.removeAttribute('data-chatops-image-injected');
+      el.removeAttribute('data-chatops-template-injected');
+      el.removeAttribute('data-chatops-task-create-injected');
     });
   }
 
@@ -4274,7 +4762,10 @@ function showToast(msg) {
       runWithObserverDisabled(() => {
         handleChannelChange();
         injectImageButton();
+        injectTemplateButton();
+        injectTaskCreateButton();
         injectQuickNoteButtons();
+        injectHeaderButtons();
       });
       mutatedSubtrees.clear();
       emojiButtonMutations = false;
@@ -4322,8 +4813,11 @@ function showToast(msg) {
         emojiButtonMutations = false;
 
         runWithObserverDisabled(() => {
+          injectHeaderButtons();
           if (shouldInjectImages) {
             injectImageButton();
+            injectTemplateButton();
+            injectTaskCreateButton();
           }
           if (subtreesToProcess.length > 0) {
             subtreesToProcess.forEach(subtree => {
@@ -4368,6 +4862,9 @@ function showToast(msg) {
           quickNoteBackdrop = null;
         }
         if (updateImagePickerTranslations) updateImagePickerTranslations();
+        if (updateTemplatePickerTranslations) updateTemplatePickerTranslations();
+        if (updateTaskCreateButtonTranslations) updateTaskCreateButtonTranslations();
+        if (updateHeaderButtonsTranslations) updateHeaderButtonsTranslations();
         if (updateResizeModalTranslations) updateResizeModalTranslations();
         if (updateImageEditorTranslations) updateImageEditorTranslations();
       })();
@@ -4482,6 +4979,7 @@ function showToast(msg) {
   
   runWithObserverDisabled(() => {
     injectImageButton();
+    injectTemplateButton();
     injectQuickNoteButtons();
   });
 

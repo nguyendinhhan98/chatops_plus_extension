@@ -11,9 +11,10 @@
 
 - 🎯 **Tasks** — Tạo task từ bất kỳ tin nhắn nào, set reminder bằng Chrome Alarms
 - 📒 **Notes/Memos** — Ghi chú nhanh phân category
-- 🔍 **Search** — Tìm kiếm posts nâng cao (keyword, người gửi, channel, thời gian)
-- 🔔 **Mentions** — Quét mentions bị bỏ lỡ trong tất cả channels
+- 🔍 **Search** — Tìm kiếm posts nâng cao qua Sidepanel hoặc click icon 🔍 trên header để mở Modal trực tiếp
+- 🔔 **Mentions** — Quét mentions bị bỏ lỡ qua Sidepanel hoặc click icon 🔔 trên header để mở Modal trực tiếp
 - 🖼️ **Image Picker** — Thư viện ảnh tùy chỉnh + Giphy integration + image editor
+- 📒 **Quick Template Picker & Task Creator** — Chèn nhanh mẫu ghi chú (nút 📒) hoặc tạo công việc (nút 🎯) trực tiếp từ ô chat
 - 🔥 **Quick Reactions** — Spam react, clone reactions, undo reactions
 - ⚙️ **Settings** — Cấu hình toàn diện (theme, notifications, emojis, v.v.)
 
@@ -217,8 +218,8 @@ chrome.storage.local['chatops_settings'] = {
   // Floating buttons
   floatingButtons: {
     quickNote: true, quickTask: true, spamReactions: true,
-    reactAlong: true, imagePicker: true, quickReply: true,
-    quickCopy: true
+    reactAlong: true, imagePicker: true, templatePicker: true,
+    quickReply: true, quickCopy: true
   },
   // Notifications
   notificationType: 'both',         // 'in-page' | 'system' | 'both'
@@ -438,7 +439,7 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
 
 ## 10. Phiên Bản & Cập Nhật
 
-- **Version**: 3.4.9 (trong `manifest.json` và `package.json`)
+- **Version**: 3.5.0 (trong `manifest.json` và `package.json`)
 - Khi bump version: cập nhật **cả hai** file.
 - Extension dùng **Manifest V3** — không dùng persistent background page, không dùng `chrome.extension.getBackgroundPage()`.
 

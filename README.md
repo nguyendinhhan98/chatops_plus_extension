@@ -1,6 +1,6 @@
 # 🚀 ChatOps++ — Chrome Extension (Manifest V3)
 
-[![Version](https://img.shields.io/badge/version-3.4.9-blue.svg)](https://chrome.google.com/webstore/devconsole/)
+[![Version](https://img.shields.io/badge/version-3.5.0-blue.svg)](https://chrome.google.com/webstore/devconsole/)
 [![Platform](https://img.shields.io/badge/platform-Chrome%20%7C%20Edge%20%7C%20Opera-lightgrey.svg)]()
 [![Manifest Version](https://img.shields.io/badge/manifest-V3-orange.svg)]()
 
@@ -19,13 +19,16 @@
 * Lưu trữ các ghi chú quan trọng từ tin nhắn hoặc tự viết nhanh.
 * Phân loại ghi chú theo từng chủ đề/dự án (Categories) dễ dàng tìm kiếm.
 * Hỗ trợ đồng bộ hóa đám mây thông minh qua `chrome.storage.sync` (chia nhỏ dữ liệu để vượt giới hạn 8KB của Google).
+* Tích hợp **Mẫu chèn nhanh (Quick Template Picker)** và **Tạo công việc (Quick Task Creator)**: Cho phép chèn nhanh ghi chú làm mẫu báo cáo (biểu tượng `📒`) hoặc tạo công việc nhanh (biểu tượng `🎯` pre-fill nội dung đang gõ) trực tiếp từ ô chat Mattermost (khung chat chính & reply).
 
 ### 🔍 3. Tìm Kiếm Nâng Cao (Advanced Search)
 * Tìm kiếm các bài viết (posts) theo nhiều bộ lọc kết hợp: Từ khóa, người gửi, channel cụ thể, và khoảng thời gian.
 * Giao diện xem kết quả tìm kiếm chi tiết, cho phép điều hướng thẳng tới bài viết gốc.
+* Tích hợp biểu tượng `🔍` ở thanh header đầu trang giúp mở nhanh giao diện tìm kiếm nâng cao dưới dạng modal.
 
 ### 🔔 4. Quét Lượt Nhắc Tên (Mentions Tracker)
 * Tự động quét và liệt kê tất cả các lượt nhắc tên (`@mentions`) chưa đọc trên toàn bộ các kênh (channels) giúp bạn không bao giờ bỏ lỡ tin nhắn quan trọng.
+* Tích hợp biểu tượng `🔔` ở thanh header đầu trang giúp mở nhanh giao diện quét lượt nhắc tên dưới dạng modal.
 
 ### 🖼️ 5. Thư Viện Ảnh & Giphy (Image Picker & Editor)
 * Tích hợp thư viện ảnh Meme tùy chỉnh cá nhân.

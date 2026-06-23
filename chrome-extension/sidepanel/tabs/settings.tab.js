@@ -251,6 +251,7 @@ const DEFAULT_SETTINGS = {
     spamReactions: false,
     reactAlong: false,
     imagePicker: true,
+    templatePicker: true,
     quickReply: false,
     quickCopy: false
   },
@@ -464,6 +465,7 @@ async function loadAndApplySettings() {
   document.getElementById('settingFloatingSpamReactions').checked = settings.floatingButtons?.spamReactions !== false;
   document.getElementById('settingReactAlongEnabled').checked = settings.floatingButtons?.reactAlong !== false;
   document.getElementById('settingFloatingImagePicker').checked = settings.floatingButtons?.imagePicker !== false;
+  document.getElementById('settingFloatingTemplatePicker').checked = settings.floatingButtons?.templatePicker !== false;
   document.getElementById('settingFloatingQuickReply').checked = settings.floatingButtons?.quickReply !== false;
   document.getElementById('settingFloatingQuickCopy').checked = settings.floatingButtons?.quickCopy !== false;
 
@@ -742,22 +744,12 @@ function setupEventListeners() {
         snoozeHint.innerHTML = language.taskReminderHint.replace('{minutes}', val);
       }
 
-      // Reschedule all pending (not done) task alarms with the new snooze interval
-      try {
-        const res = await chrome.storage.local.get(['memos']);
-        const memos = res['memos'] || [];
-        const pendingTasks = memos.filter(m => m.type === 'task' && !m.done && m.reminder);
-        for (const task of pendingTasks) {
-          const alarmInfo = await chrome.alarms.get(task.id);
-          if (alarmInfo) {
-            // Alarm exists — reschedule it with the new snooze interval from now
-            chrome.alarms.clear(task.id);
-            chrome.alarms.create(task.id, { delayInMinutes: val });
-          }
-        }
-      } catch (err) {
-        console.warn('[ChatOps Ext] Failed to reschedule alarms after snooze change:', err);
-      }
+      // Note: we intentionally do NOT reschedule existing alarms here.
+      // The snoozeMinutes setting is read fresh from storage every time an alarm fires
+      // in alarms.js (handleTaskAlarm), so the new value takes effect automatically on
+      // the next alarm fire. Rescheduling here would incorrectly override initial alarms
+      // (tasks not yet fired) causing them to trigger immediately at the snooze interval
+      // instead of at the user's originally scheduled time.
 
       showAutoSaveFeedback();
     });
@@ -1051,6 +1043,7 @@ function setupEventListeners() {
   bindFloatingToggle('settingFloatingSpamReactions', 'spamReactions');
   bindFloatingToggle('settingReactAlongEnabled', 'reactAlong');
   bindFloatingToggle('settingFloatingImagePicker', 'imagePicker');
+  bindFloatingToggle('settingFloatingTemplatePicker', 'templatePicker');
   bindFloatingToggle('settingFloatingQuickReply', 'quickReply');
   bindFloatingToggle('settingFloatingQuickCopy', 'quickCopy');
   bindFloatingToggle('settingFloatingAiSummarize', 'aiSummarize');
@@ -2843,6 +2836,7 @@ export function updateFloatingCheckboxesSync(settings) {
     { row: 'rowFloatingSpamReactions', chk: 'settingFloatingSpamReactions' },
     { row: 'rowFloatingReactAlong', chk: 'settingReactAlongEnabled' },
     { row: 'rowFloatingImagePicker', chk: 'settingFloatingImagePicker' },
+    { row: 'rowFloatingTemplatePicker', chk: 'settingFloatingTemplatePicker' },
     { row: 'rowFloatingAiSummarize', chk: 'settingFloatingAiSummarize' }
   ];
   ids.forEach(({ row, chk }) => {
