@@ -1332,6 +1332,63 @@ function showToast(msg) {
 
   let editorUndoHistory = [];
   function openImageEditor(activeImgObj, onSaveCallback) {
+    const handleGlobalPaste = async (e) => {
+      const overlay = document.getElementById('chatops-image-editor-overlay');
+      if (!overlay || !overlay.classList.contains('visible')) return;
+      const items = (e.clipboardData || e.originalEvent?.clipboardData)?.items;
+      if (!items) return;
+      for (const item of items) {
+        if (item.type.startsWith('image/')) {
+          const file = item.getAsFile();
+          if (file) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            await handleBgImageFile(file);
+            break;
+          }
+        }
+      }
+    };
+
+    const handleKeydownPaste = async (e) => {
+      const overlay = document.getElementById('chatops-image-editor-overlay');
+      if (!overlay || !overlay.classList.contains('visible')) return;
+
+      const isPasteCombo = (e.ctrlKey || e.metaKey) && (e.key === 'v' || e.key === 'V');
+      if (!isPasteCombo) return;
+
+      const activeEl = document.activeElement;
+      if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.contentEditable === 'true')) {
+        return;
+      }
+
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+
+      try {
+        const clipboardItems = await navigator.clipboard.read();
+        for (const item of clipboardItems) {
+          for (const type of item.types) {
+            if (type.startsWith('image/')) {
+              const blob = await item.getType(type);
+              const file = new File([blob], `pasted_image_${Date.now()}.${type.split('/')[1] || 'png'}`, { type });
+              await handleBgImageFile(file);
+              return;
+            }
+          }
+        }
+        showToast(language.noImageInClipboard || 'Không tìm thấy ảnh trong clipboard.');
+      } catch (err) {
+        console.error('[ChatOps] Keydown paste failed:', err);
+        showToast(language.clipboardPermissionDenied || 'Quyền truy cập clipboard bị từ chối. Vui lòng dùng Ctrl+V để dán.');
+      }
+    };
+
+    document.addEventListener('paste', handleGlobalPaste, true);
+    document.addEventListener('keydown', handleKeydownPaste, true);
+
     updateImageEditorTranslations = function() {
       const overlay = document.getElementById('chatops-image-editor-overlay');
       if (!overlay) return;
@@ -1423,6 +1480,8 @@ function showToast(msg) {
         const span = uploadBgBtn.querySelector('span');
         if (span) span.textContent = language.editorUploadBgBtn || 'Tải ảnh nền';
       }
+
+
 
       const cancelBtn = overlay.querySelector('.chatops-image-editor-btn-cancel');
       if (cancelBtn) cancelBtn.textContent = language.cancel;
@@ -1544,21 +1603,19 @@ function showToast(msg) {
         </div>
       `;
       document.body.appendChild(editorOverlay);
-
-      // Close handlers
-      editorOverlay.querySelector('.chatops-image-editor-close-btn').onclick = () => {
-        const textInput = editorOverlay.querySelector('.chatops-image-editor-text-input');
-        if (textInput) textInput.remove();
-        updateImageEditorTranslations = null;
-        editorOverlay.classList.remove('visible');
-      };
-      editorOverlay.querySelector('.chatops-image-editor-btn-cancel').onclick = () => {
-        const textInput = editorOverlay.querySelector('.chatops-image-editor-text-input');
-        if (textInput) textInput.remove();
-        updateImageEditorTranslations = null;
-        editorOverlay.classList.remove('visible');
-      };
     }
+
+    const handleClose = () => {
+      const textInput = editorOverlay.querySelector('.chatops-image-editor-text-input');
+      if (textInput) textInput.remove();
+      updateImageEditorTranslations = null;
+      editorOverlay.classList.remove('visible');
+      document.removeEventListener('paste', handleGlobalPaste, true);
+      document.removeEventListener('keydown', handleKeydownPaste, true);
+    };
+
+    editorOverlay.querySelector('.chatops-image-editor-close-btn').onclick = handleClose;
+    editorOverlay.querySelector('.chatops-image-editor-btn-cancel').onclick = handleClose;
 
     updateImageEditorTranslations();
 
@@ -1727,6 +1784,78 @@ function showToast(msg) {
       saveState();
     };
 
+    async function handleBgImageFile(file) {
+      if (!file) return;
+
+      if (!file.type.startsWith('image/')) {
+        showToast(language.uploadOnlyImages || 'Please upload image files only.');
+        return;
+      }
+
+      showToast(language.webpConvertingToast || 'Converting image... Please wait.');
+
+      let fileDataUrl = '';
+      let fileType = file.type;
+
+      if (needsChatOpsConversion(file.type, file.name)) {
+        try {
+          const converted = await convertForChatOps(file);
+          fileDataUrl = converted.dataUrl;
+          fileType = converted.type;
+        } catch (err) {
+          console.error('[ChatOps] Background image conversion failed:', err);
+        }
+      }
+
+      if (!fileDataUrl) {
+        fileDataUrl = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (ev) => resolve(ev.target.result);
+          reader.readAsDataURL(file);
+        });
+      }
+
+      const newImg = new Image();
+      newImg.onload = () => {
+        activeImgObj.src = fileDataUrl;
+        activeImgObj.mimeType = fileType || 'image/png';
+        activeImgObj.origWidth = newImg.naturalWidth;
+        activeImgObj.origHeight = newImg.naturalHeight;
+        activeImgObj.aspect = newImg.naturalWidth / newImg.naturalHeight;
+
+        img.onload = null;
+        img.src = fileDataUrl;
+
+        canvas.width = newImg.naturalWidth;
+        canvas.height = newImg.naturalHeight;
+        bgImg.src = newImg.src;
+
+        let displayWidth = newImg.naturalWidth;
+        let displayHeight = newImg.naturalHeight;
+        
+        const maxW = Math.max(500, window.innerWidth - 120);
+        const maxH = Math.max(400, window.innerHeight - 240);
+        
+        let scale = 1;
+        if (displayWidth > maxW || displayHeight > maxH) {
+          scale = Math.min(maxW / displayWidth, maxH / displayHeight);
+        }
+        
+        displayWidth = Math.round(displayWidth * scale);
+        displayHeight = Math.round(displayHeight * scale);
+        const container = editorOverlay.querySelector('.chatops-image-editor-canvas-container');
+        if (container) {
+          container.style.width = displayWidth + 'px';
+          container.style.height = displayHeight + 'px';
+        }
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        editorUndoHistory = [];
+        saveState();
+      };
+      newImg.src = fileDataUrl;
+    }
+
     const uploadBgBtn = editorOverlay.querySelector('#chatops-image-editor-upload-bg');
     const bgFileInput = editorOverlay.querySelector('#chatops-image-editor-bg-file');
     if (uploadBgBtn && bgFileInput) {
@@ -1737,75 +1866,14 @@ function showToast(msg) {
 
       bgFileInput.onchange = async (e) => {
         const file = e.target.files[0];
-        if (!file) return;
+        if (file) {
+          await handleBgImageFile(file);
+        }
         bgFileInput.value = '';
-
-        if (!file.type.startsWith('image/')) {
-          showToast(language.uploadOnlyImages || 'Please upload image files only.');
-          return;
-        }
-
-        showToast(language.webpConvertingToast || 'Converting image... Please wait.');
-
-        let fileDataUrl = '';
-        let fileType = file.type;
-
-        if (needsChatOpsConversion(file.type, file.name)) {
-          try {
-            const converted = await convertForChatOps(file);
-            fileDataUrl = converted.dataUrl;
-            fileType = converted.type;
-          } catch (err) {
-            console.error('[ChatOps] Background image conversion failed:', err);
-          }
-        }
-
-        if (!fileDataUrl) {
-          fileDataUrl = await new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = (ev) => resolve(ev.target.result);
-            reader.readAsDataURL(file);
-          });
-        }
-
-        const newImg = new Image();
-        newImg.onload = () => {
-          activeImgObj.src = fileDataUrl;
-          activeImgObj.mimeType = fileType || 'image/png';
-          activeImgObj.origWidth = newImg.naturalWidth;
-          activeImgObj.origHeight = newImg.naturalHeight;
-          activeImgObj.aspect = newImg.naturalWidth / newImg.naturalHeight;
-
-          canvas.width = newImg.naturalWidth;
-          canvas.height = newImg.naturalHeight;
-          bgImg.src = newImg.src;
-
-          let displayWidth = newImg.naturalWidth;
-          let displayHeight = newImg.naturalHeight;
-          
-          const maxW = Math.max(500, window.innerWidth - 120);
-          const maxH = Math.max(400, window.innerHeight - 240);
-          
-          let scale = 1;
-          if (displayWidth > maxW || displayHeight > maxH) {
-            scale = Math.min(maxW / displayWidth, maxH / displayHeight);
-          }
-          
-          displayWidth = Math.round(displayWidth * scale);
-          displayHeight = Math.round(displayHeight * scale);
-          const container = editorOverlay.querySelector('.chatops-image-editor-canvas-container');
-          if (container) {
-            container.style.width = displayWidth + 'px';
-            container.style.height = displayHeight + 'px';
-          }
-
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          editorUndoHistory = [];
-          saveState();
-        };
-        newImg.src = fileDataUrl;
       };
     }
+
+
 
     function getMousePos(e) {
       const rect = canvas.getBoundingClientRect();
@@ -1995,6 +2063,7 @@ function showToast(msg) {
       onSaveCallback(finalDataUrl);
       updateImageEditorTranslations = null;
       editorOverlay.classList.remove('visible');
+      document.removeEventListener('paste', handleGlobalPaste);
     };
   }
 
@@ -2520,6 +2589,75 @@ function showToast(msg) {
     }
 
 
+
+    // Handle global paste event when Image Picker is visible/open
+    document.addEventListener('paste', async (e) => {
+      if (!imagePickerEl || imagePickerEl.classList.contains('hidden')) return;
+
+      // If user is focusing on an input or textarea that is not part of our image picker, do not intercept
+      const activeEl = document.activeElement;
+      if (activeEl) {
+        const isTextareaOrInput = activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'INPUT';
+        const isInsidePicker = imagePickerEl.contains(activeEl);
+        if (isTextareaOrInput && !isInsidePicker) {
+          return;
+        }
+      }
+
+      const items = (e.clipboardData || e.originalEvent?.clipboardData)?.items;
+      if (!items) return;
+      for (const item of items) {
+        if (item.type.startsWith('image/')) {
+          const file = item.getAsFile();
+          if (file) {
+            e.preventDefault();
+            let fileDataUrl = '';
+            let fileType = file.type;
+            if (needsChatOpsConversion(file.type, file.name)) {
+              try {
+                const converted = await convertForChatOps(file);
+                fileDataUrl = converted.dataUrl;
+                fileType = converted.type;
+              } catch (err) {
+                console.error('[ChatOps] Paste image conversion failed:', err);
+              }
+            }
+            if (!fileDataUrl) {
+              fileDataUrl = await new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (ev) => resolve(ev.target.result);
+                reader.readAsDataURL(file);
+              });
+            }
+
+            const newImg = new Image();
+            newImg.onload = () => {
+              const activeImgObj = {
+                src: fileDataUrl,
+                testDataUrl: fileDataUrl,
+                mimeType: fileType || 'image/png',
+                origWidth: newImg.naturalWidth,
+                origHeight: newImg.naturalHeight,
+                aspect: newImg.naturalWidth / newImg.naturalHeight,
+                width: newImg.naturalWidth,
+                height: newImg.naturalHeight,
+                sliderValue: 100,
+                isAspectRatioLocked: true,
+                isDrawing: true
+              };
+              if (imagePickerEl) imagePickerEl.classList.add('hidden');
+              openImageEditor(activeImgObj, (editedDataUrl) => {
+                openImageResizeModal(editedDataUrl);
+              });
+            };
+            newImg.src = fileDataUrl;
+            break;
+          }
+        }
+      }
+    });
+
+
     const fileInput = document.getElementById('chatops-image-upload-input');
     if (fileInput) {
       fileInput.addEventListener('change', async (e) => {
@@ -2670,12 +2808,12 @@ function showToast(msg) {
         <!-- Panel 1: Library -->
         <div id="chatops-picker-panel-library" class="chatops-picker-panel active">
           <div class="chatops-image-upload-area">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px; gap: 8px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px; gap: 8px; flex-wrap: wrap;">
               <div style="display:flex; flex-direction:column; line-height: 1.2; flex-shrink: 0;">
                 <span id="chatops-your-images-header" style="font-size:11px; font-weight:700; color:#555; text-transform:uppercase; letter-spacing:0.5px;">${language.yourImages}</span>
                 <span id="chatops-your-images-size" style="font-size:10px; color:#888; margin-top:2px;">(0 KB / 10 MB)</span>
               </div>
-              <div style="display:flex; gap: 6px; align-items: center;">
+              <div style="display:flex; gap: 6px; align-items: center; flex-wrap: wrap;">
                 <button type="button" id="chatops-draw-btn" class="chatops-image-upload-btn" style="outline: none; font-family: inherit; box-sizing: border-box;">
                   🎨 ${language.drawBtn || 'Tự vẽ'}
                 </button>
@@ -3575,8 +3713,14 @@ function showToast(msg) {
       }
 
       if (!hasSelection) {
-        const msgBodyEl = postEl ? postEl.querySelector('.post-message__text, .post__body p, [class*="post-message"]') : null;
-        msgTextFull = msgBodyEl ? msgBodyEl.innerText.trim() : '';
+        const postId = cleanPostId(postEl);
+        if (postId) {
+          msgTextFull = await getPostRawMessage(postId);
+        }
+        if (!msgTextFull) {
+          const msgBodyEl = postEl ? postEl.querySelector('.post-message__text, .post__body p, [class*="post-message"]') : null;
+          msgTextFull = msgBodyEl ? msgBodyEl.innerText.trim() : '';
+        }
         
         if (postEl) {
           // Find all images in the post to append as Markdown
@@ -3589,11 +3733,16 @@ function showToast(msg) {
           if (imgEls.length > 0) {
             const imgUrls = imgEls.map(img => img.src).filter(Boolean);
             if (imgUrls.length > 0) {
-              const imageMarkdown = imgUrls.map(url => `![Image](${url})`).join('\n');
-              if (msgTextFull) {
-                msgTextFull += '\n\n' + imageMarkdown;
-              } else {
-                msgTextFull = imageMarkdown;
+              const missingImageMarkdown = imgUrls
+                .filter(url => !msgTextFull.includes(url))
+                .map(url => `![Image](${url})`)
+                .join('\n');
+              if (missingImageMarkdown) {
+                if (msgTextFull) {
+                  msgTextFull += '\n\n' + missingImageMarkdown;
+                } else {
+                  msgTextFull = missingImageMarkdown;
+                }
               }
             }
           }

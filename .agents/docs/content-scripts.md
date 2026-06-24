@@ -324,7 +324,7 @@ Wrapper xung quanh `insertImageToChat` hỗ trợ tự động gửi tin nhắn:
 #### Image Editor (`openImageEditor`)
 
 Canvas-based drawing editor:
-- **Tools**: Brush, Shapes (Rect/Circle/Triangle/Line dropdown), Arrow, Text, Eraser, **Upload Custom Background** (cho phép tải ảnh cá nhân lên làm nền để vẽ đè).
+- **Tools**: Brush, Shapes (Rect/Circle/Triangle/Line dropdown), Arrow, Text, Eraser, **Upload Custom Background** (cho phép tải ảnh cá nhân lên làm nền để vẽ đè), **Ctrl+V Paste Background** (hỗ trợ nhấn Ctrl+V/Cmd+V để dán trực tiếp ảnh từ clipboard làm nền vẽ).
 - **Colors**: 6 preset + native color wheel
 - **Size**: Slider 2–50px
 - **Undo**: Stack tối đa 20 states (ctx.getImageData snapshots)

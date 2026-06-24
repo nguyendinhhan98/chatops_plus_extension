@@ -96,7 +96,20 @@ export async function handleTaskAlarm(taskId, alarmScheduledTime) {
     const now = Date.now();
 
     // Guard 1: alarm.scheduledTime is stale (Chrome was suspended/closed)
-    if (alarmScheduledTime && (now - alarmScheduledTime > STALE_THRESHOLD_MS)) {
+    let isStale = false;
+    if (alarmScheduledTime) {
+      if (task.repeatDaily) {
+        // Daily tasks: stale only if scheduled for a different calendar day in local time
+        const scheduledDate = new Date(alarmScheduledTime).toDateString();
+        const currentDate = new Date(now).toDateString();
+        isStale = (scheduledDate !== currentDate) && (now - alarmScheduledTime > STALE_THRESHOLD_MS);
+      } else {
+        // One-time tasks: standard stale threshold check
+        isStale = (now - alarmScheduledTime > STALE_THRESHOLD_MS);
+      }
+    }
+
+    if (isStale) {
       console.warn(
         '[ChatOps Ext] Stale alarm detected for task:', taskId,
         '— scheduled:', new Date(alarmScheduledTime).toLocaleString(),
@@ -197,5 +210,89 @@ export async function handleTaskAlarm(taskId, alarmScheduledTime) {
 
   } catch (err) {
     console.error('[ChatOps Ext] handleTaskAlarm error:', err);
+  }
+}
+
+/**
+ * Synchronizes and registers Chrome alarms for all active (pending) tasks.
+ * Reschedules past daily tasks to their next correct occurrence.
+ */
+export async function syncTaskAlarms() {
+  try {
+    const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
+    const memos = res[STORAGE_KEYS.MEMOS] || [];
+    let updated = false;
+
+    // Get current alarms to clear existing task alarms before rebuilding
+    const alarms = await chrome.alarms.getAll();
+    for (const alarm of alarms) {
+      if (alarm.name.startsWith(ALARMS.TASK_PREFIX)) {
+        await chrome.alarms.clear(alarm.name);
+      }
+    }
+
+    const now = Date.now();
+
+    for (const task of memos) {
+      // Schedule alarms for:
+      // - One-time tasks that are NOT done.
+      // - Daily tasks (even if currently marked done, because they need to fire tomorrow to reset status).
+      if (task.type === 'task' && (!task.done || task.repeatDaily)) {
+        if (!task.reminder) continue;
+
+        const reminderTime = new Date(task.reminder).getTime();
+        if (isNaN(reminderTime)) {
+          console.warn('[ChatOps Ext] Invalid reminder date format for task:', task.id, task.reminder);
+          continue;
+        }
+
+        if (task.repeatDaily) {
+          // If the scheduled time is in the past, reschedule to the next valid daily occurrence
+          if (reminderTime <= now) {
+            // Extract HH:mm
+            const timeMatch = task.reminder.match(/(\d{2}):(\d{2})$/);
+            let nextTime = new Date();
+            if (timeMatch) {
+              nextTime.setHours(parseInt(timeMatch[1], 10), parseInt(timeMatch[2], 10), 0, 0);
+              while (nextTime.getTime() <= now) {
+                nextTime.setDate(nextTime.getDate() + 1);
+              }
+            } else {
+              nextTime = new Date(now + 24 * 60 * 60 * 1000);
+            }
+            task.reminder = formatDateTime(nextTime);
+            // Since we are moving to a future occurrence, reset the completion state
+            task.done = false;
+            task.doneAt = null;
+            if (task.checklist) {
+              task.checklist.forEach(item => {
+                item.done = false;
+              });
+            }
+            chrome.alarms.create(task.id, { when: nextTime.getTime() });
+            console.log('[ChatOps Ext] Startup: Rescheduled past daily task & reset done status:', task.id, 'to', task.reminder);
+            updated = true;
+          } else {
+            // Future reminder, schedule it
+            chrome.alarms.create(task.id, { when: reminderTime });
+            console.log('[ChatOps Ext] Startup: Scheduled future daily task:', task.id, 'at', task.reminder);
+          }
+        } else {
+          // One-time task
+          if (reminderTime > now) {
+            chrome.alarms.create(task.id, { when: reminderTime });
+            console.log('[ChatOps Ext] Startup: Scheduled future task:', task.id, 'at', task.reminder);
+          } else {
+            console.log('[ChatOps Ext] Startup: Skipped past one-time task (retaining as pending):', task.id, 'at', task.reminder);
+          }
+        }
+      }
+    }
+
+    if (updated) {
+      await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
+    }
+  } catch (err) {
+    console.error('[ChatOps Ext] Error in syncTaskAlarms:', err);
   }
 }

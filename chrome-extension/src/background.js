@@ -6,7 +6,8 @@ import { getConfig, getMyProfile, addPostReaction, deletePostReaction, deletePos
 import { syncCookies, setupCookieSync } from './background/cookie-sync.js';
 import { 
   handleMentionCheck, 
-  handleTaskAlarm 
+  handleTaskAlarm,
+  syncTaskAlarms
 } from './background/alarms.js';
 import { 
   setupSidePanel, 
@@ -46,6 +47,9 @@ async function initialize() {
   setupCookieSync();
   syncCookies();
   setupContextMenus();
+  
+  // Re-synchronize alarms for all tasks on extension initialization/startup
+  await syncTaskAlarms();
 }
 
 /**
