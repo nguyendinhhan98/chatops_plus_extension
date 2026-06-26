@@ -330,7 +330,8 @@ Tasks lưu trong `chrome.storage.local['chatops_memos']` với `type: 'task'`:
    - 'pending': !done
    - 'completed': done
 3. Sort: pending trước (theo reminder), completed sau (theo doneAt desc)
-4. Render từng task với renderTaskCard(task, now)
+4. Quét tìm các task bị lỡ (overdue tasks): Nếu phát hiện và chưa hiển thị digest, kích hoạt banner cảnh báo (Warning Toast) "Bạn đã bỏ lỡ {count} nhắc nhở..." với nút "Xem các công việc bị lỡ" để tự động chuyển tab, filter "pending", cuộn tới và highlight task card bị nhỡ đầu tiên.
+5. Render từng task với renderTaskCard(task, now)
 ```
 
 #### `renderTaskCard(task, now)`
@@ -341,6 +342,7 @@ Tạo HTML card với:
 ├── Category badge
 ├── Reminder time (relative: "in 2h" / "2d ago")
 ├── Repeat daily indicator
+├── Badge cảnh báo bị lỡ giờ: "🚨 Lỡ lúc: [Giờ]" / "🚨 Missed at: [Time]" (chỉ hiển thị nếu task quá hạn)
 ├── Checklist items (nếu category='checklist')
 │   └── Mỗi item có checkbox riêng
 ├── Action buttons:

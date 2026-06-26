@@ -132,6 +132,10 @@ const en = {
   reminderSkipBtn: '⏭️ Skip Today',
   gifNotSupported: 'GIF (Resize & edit not supported)',
   reminderTaskCompleted: '✅ Completed!',
+  missedRemindersTitle: 'Missed Reminders',
+  missedRemindersDigest: 'You missed {count} task reminders while you were away.',
+  missedRemindersView: 'View Missed Tasks',
+  missedAt: 'Missed at',
   
   // Content Script - Floating Button
   floatingBtnTitle: 'Open ChatOps++',
@@ -329,6 +333,8 @@ const en = {
   drawApplyBtn: 'Apply',
   editorUploadBg: 'Upload Background',
   editorUploadBgBtn: '📁 Upload Image',
+  noImageInClipboard: 'No image found in clipboard.',
+  clipboardPermissionDenied: 'Clipboard access denied. Please use Ctrl+V to paste.',
   autoSendLabel: 'Send directly',
   drawUploadBtn: 'Upload & Draw',
   gifLibraryTab: 'GIFs',
@@ -905,6 +911,10 @@ const vi = {
   reminderSkipBtn: '⏭️ Bỏ qua hôm nay',
   gifNotSupported: 'GIF (Không hỗ trợ resize & edit)',
   reminderTaskCompleted: '✅ Đã hoàn thành!',
+  missedRemindersTitle: 'Nhắc nhở bị bỏ lỡ',
+  missedRemindersDigest: 'Bạn đã bỏ lỡ {count} nhắc nhở công việc khi không hoạt động.',
+  missedRemindersView: 'Xem các công việc bị lỡ',
+  missedAt: 'Lỡ lúc',
   
   // Content Script - Floating Button
   floatingBtnTitle: 'Mở ChatOps++',
@@ -1102,6 +1112,8 @@ const vi = {
   drawApplyBtn: 'Áp dụng',
   editorUploadBg: 'Upload ảnh nền',
   editorUploadBgBtn: '📁 Upload ảnh',
+  noImageInClipboard: 'Không tìm thấy ảnh trong clipboard.',
+  clipboardPermissionDenied: 'Quyền truy cập clipboard bị từ chối. Vui lòng dùng Ctrl+V để dán.',
   autoSendLabel: 'Gửi trực tiếp',
   drawUploadBtn: 'Vẽ từ ảnh',
   gifLibraryTab: 'GIFs',
@@ -1141,6 +1153,7 @@ const vi = {
   featuresSnoozeTab: '⏳ Nhắc lại',
   featuresAlertsTab: '🔔 Cảnh báo',
   featuresGifTab: '🎬 GIFs',
+  snoozeAlertDesc: 'Thời gian nhắc lại, phương thức & âm thanh cảnh báo',
   giphyApiDesc: 'Cấu hình API Key & giới hạn lượt gọi',
   manageCategoriesDesc: 'Quản lý các danh mục ghi chú tự chọn',
   giphyApiKeyTitle: 'Giphy API Key',

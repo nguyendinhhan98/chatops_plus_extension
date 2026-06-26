@@ -11,6 +11,7 @@ let _state = null;
 let currentFilter = 'pending';
 let isLocalTaskUpdate = false;
 let activeListFlatpickrs = [];
+let hasShownMissedDigest = false;
 
 async function getTargetTeamName(stateInstance) {
   if (!stateInstance) return CHATOPS_CONFIG.DEFAULT_TEAM;
@@ -89,6 +90,34 @@ export function setup(state) {
     }
   }
 
+  function togglePresetReminderVisibility(isDaily) {
+    const orLabel = document.getElementById('quickTaskOrLabel');
+    const customSelect = presetSelect?.nextElementSibling;
+
+    if (isDaily) {
+      if (orLabel) orLabel.style.display = 'none';
+      if (presetSelect) presetSelect.style.display = 'none';
+      if (customSelect && customSelect.classList.contains('custom-dropdown-container')) {
+        customSelect.style.display = 'none';
+      }
+      if (presetSelect) {
+        presetSelect.value = '';
+        if (customSelect && customSelect.classList.contains('custom-dropdown-container')) {
+          const selectedText = customSelect.querySelector('.custom-dropdown-selected-text');
+          if (selectedText) selectedText.textContent = 'Remind in...';
+        }
+      }
+    } else {
+      if (orLabel) orLabel.style.display = 'inline-flex';
+      if (customSelect && customSelect.classList.contains('custom-dropdown-container')) {
+        customSelect.style.display = 'block';
+        if (presetSelect) presetSelect.style.display = 'none';
+      } else {
+        if (presetSelect) presetSelect.style.display = 'block';
+      }
+    }
+  }
+
   let fpQuick = null;
   function initQuickFlatpickr(noCalendarMode = false) {
     if (fpQuick) {
@@ -128,6 +157,7 @@ export function setup(state) {
       const currentVal = reminderInput.value;
       
       initQuickFlatpickr(isChecked);
+      togglePresetReminderVisibility(isChecked);
       
       if (currentVal) {
         if (isChecked) {
@@ -183,6 +213,9 @@ export function setup(state) {
       window.convertToCustomDropdown('quickTaskReminderSelect', '115px');
       window.convertToCustomDropdown('quickTaskCategory', '140px');
     }
+
+    // Initialize toggle state after custom dropdown is built
+    togglePresetReminderVisibility(repeatDailyCheckbox ? repeatDailyCheckbox.checked : false);
 
     const customSelect = presetSelect?.nextElementSibling;
     if (customSelect) {
@@ -997,6 +1030,7 @@ export async function loadTasks() {
   const pending = tasks.filter(t => !t.done);
   const done = tasks.filter(t => t.done);
 
+
   // Update FAB empty/pulse state based on active filtered list being empty
   const isEmpty = (currentFilter === 'pending' ? pending.length : done.length) === 0;
   const fab = document.getElementById('btnFabAddTask');
@@ -1132,6 +1166,7 @@ function renderTaskCard(task, now) {
     }
   }
 
+
   const cachedConfig = _state.getConfig();
   const currentTeam = _state.getTeam();
   const permalink = task.postId && cachedConfig
@@ -1180,7 +1215,7 @@ function renderTaskCard(task, now) {
           </span>
         ` : ''}
         ${!task.done ? `
-          <div class="task-update-reminder-wrapper ${task.reminder ? 'has-reminder' : ''}" style="flex-shrink:0;">
+          <div class="task-update-reminder-wrapper ${task.reminder ? 'has-reminder' : ''} ${isOverdue ? 'overdue' : ''}" style="flex-shrink:0;">
             <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor" class="reminder-clock-icon"><path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/></svg>
             <input type="text" class="task-update-reminder" data-id="${task.id}" value="${reminderDisplayVal}" placeholder="${task.repeatDaily ? 'hh:mm' : 'yyyy-mm-dd hh:mm'}" title="${language.changeReminderTime}" />
           </div>

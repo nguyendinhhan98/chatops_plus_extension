@@ -35,6 +35,11 @@ let currentResizeImageObj = null;
 let updateImageEditorTranslations = null;
 let updateTaskCreateButtonTranslations = null;
 let updateHeaderButtonsTranslations = null;
+// Tracks the last right-clicked post element for context menu reply-quote feature
+let lastRightClickedPostEl = null;
+// Tracks active reaction group dropdown for spam button right-click
+let activeReactionDropdown = null;
+
 
 function runWithObserverDisabled(fn) {
   if (observer) {
@@ -215,6 +220,176 @@ function playNotificationSound() {
   } catch (err) {
     console.warn('[ChatOps Ext] Sound synthesis failed:', err);
   }
+}
+
+/**
+ * Checks if there are overdue pending tasks and displays a digest banner
+ */
+function checkAndShowOverdueDigest(memos) {
+  if (!memos || !Array.isArray(memos)) return;
+  const now = Date.now();
+  const overdueTasks = memos.filter(t => {
+    if (t.type !== 'task' || t.done) return false;
+    if (!t.reminder) return false;
+    const reminderMs = new Date(t.reminder).getTime();
+    return reminderMs && reminderMs < now;
+  });
+
+  if (overdueTasks.length === 0) return;
+
+  let dismissedKeys = [];
+  try {
+    const stored = localStorage.getItem('chatops_dismissed_overdue');
+    if (stored) {
+      dismissedKeys = JSON.parse(stored);
+    }
+  } catch (e) {
+    console.error('[ChatOps Ext] Error parsing dismissed overdue tasks:', e);
+  }
+
+  const newOverdueTasks = overdueTasks.filter(t => {
+    const key = t.id + '_' + new Date(t.reminder).getTime();
+    return !dismissedKeys.includes(key);
+  });
+  if (newOverdueTasks.length === 0) return;
+
+  // Show the page-level banner
+  const overdueKeys = overdueTasks.map(t => t.id + '_' + new Date(t.reminder).getTime());
+  showMissedRemindersDigestBanner(newOverdueTasks.length, overdueKeys);
+}
+
+/**
+ * Displays a page-level banner summarizing missed reminders
+ */
+async function showMissedRemindersDigestBanner(count, overdueKeys) {
+  await injectDynamicTheme();
+
+  // If there's already a digest banner, do not display a new one
+  const existingBanner = document.querySelector('.chatops-reminder-banner[data-digest="true"]');
+  if (existingBanner) return;
+
+  let settings = {};
+  try {
+    const resSettings = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS]);
+    const rawSettings = resSettings[STORAGE_KEYS.SETTINGS] || {};
+    settings = { ...DEFAULT_SETTINGS, ...rawSettings };
+  } catch (err) {
+    console.warn('[ChatOps Ext] Failed to read settings:', err);
+  }
+
+  let container = document.getElementById('chatops-banner-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'chatops-banner-container';
+    document.body.appendChild(container);
+  }
+
+  // Determine container position style & direction based on settings
+  let positionCss = 'top: 24px; right: 20px;';
+  let alignCss = 'align-items: flex-end;';
+  const pos = settings.notificationPosition || 'center';
+  if (pos === 'top-left') {
+    positionCss = 'top: 24px; left: 20px;';
+    alignCss = 'align-items: flex-start;';
+  } else if (pos === 'bottom-right') {
+    positionCss = 'bottom: 24px; right: 20px;';
+    alignCss = 'align-items: flex-end;';
+  } else if (pos === 'bottom-left') {
+    positionCss = 'bottom: 24px; left: 20px;';
+    alignCss = 'align-items: flex-start;';
+  } else if (pos === 'top-center') {
+    positionCss = 'top: 24px; left: 50%; transform: translateX(-50%);';
+    alignCss = 'align-items: center;';
+  } else if (pos === 'bottom-center') {
+    positionCss = 'bottom: 24px; left: 50%; transform: translateX(-50%);';
+    alignCss = 'align-items: center;';
+  } else if (pos === 'center') {
+    positionCss = 'top: 50%; left: 50%; transform: translate(-50%, -50%);';
+    alignCss = 'align-items: center;';
+  }
+
+  let flexDir = 'flex-direction: column;';
+  if (pos.startsWith('bottom')) {
+    flexDir = 'flex-direction: column-reverse;';
+  }
+
+  let containerWidth = '310px';
+  const size = settings.notificationSize || 'medium';
+  if (size === 'small') {
+    containerWidth = '250px';
+  } else if (size === 'large') {
+    containerWidth = '370px';
+  }
+
+  container.style.cssText = `position: fixed; ${positionCss} width: ${containerWidth}; display: flex; ${flexDir} ${alignCss} gap: 12px; z-index: 2147483647; pointer-events: none; transition: all 0.3s ease;`;
+
+  const animStyle = settings.notificationAnimation || 'default';
+  const animationClass = animStyle !== 'default' ? `animation-${animStyle}` : '';
+  const sizeClass = `size-${size}`;
+
+  const banner = document.createElement('div');
+  banner.className = `chatops-reminder-banner ${sizeClass} ${animationClass}`;
+  banner.setAttribute('data-digest', 'true');
+
+  const title = language.missedRemindersTitle || 'Missed Reminders';
+  const bodyText = (language.missedRemindersDigest || 'You missed {count} task reminders while you were away.').replace('{count}', count);
+  const viewBtnText = language.missedRemindersView || 'View Missed Tasks';
+
+  banner.innerHTML = `
+    <div class="crb-inner" style="cursor: pointer;">
+      <div class="crb-icon">⚠️</div>
+      <div class="crb-content" style="display:flex; flex-direction:column; min-width:0; flex:1;">
+        <div style="display:flex; align-items:center; justify-content:space-between; width:100%; margin-bottom: 3px;">
+          <div class="crb-title" style="margin-bottom:0; color: var(--danger, #d0454c); font-weight:700;">${title}</div>
+        </div>
+        <div class="crb-text">${bodyText}</div>
+      </div>
+      <button class="crb-close" title="${language.memoDelete || 'Close'}">×</button>
+    </div>
+    <div class="crb-task-actions" style="display: flex; flex-direction: column; gap: 6px;">
+      <button class="crb-view-missed-btn" style="background: var(--accent, #1c58d9); color: #fff; border: none; padding: 6px 12px; border-radius: 4px; font-weight: 600; cursor: pointer; text-align: center; width: 100%; transition: background 0.2s;">${viewBtnText}</button>
+    </div>
+  `;
+  container.appendChild(banner);
+
+  setTimeout(() => banner.classList.add('visible'), 10);
+
+  const dismissBanner = () => {
+    banner.classList.remove('visible');
+    setTimeout(() => banner.remove(), 400);
+    try {
+      let currentDismissed = [];
+      const stored = localStorage.getItem('chatops_dismissed_overdue');
+      if (stored) {
+        currentDismissed = JSON.parse(stored);
+      }
+      const merged = Array.from(new Set([...currentDismissed, ...overdueKeys]));
+      localStorage.setItem('chatops_dismissed_overdue', JSON.stringify(merged));
+    } catch (e) {}
+  };
+
+  banner.querySelector('.crb-close').addEventListener('click', (e) => {
+    e.stopPropagation();
+    dismissBanner();
+  });
+
+  banner.querySelector('.crb-inner').addEventListener('click', (e) => {
+    if (e.target.closest('.crb-close')) return;
+    dismissBanner();
+    chrome.storage.local.set({ [STORAGE_KEYS.SIDEPANEL_TAB]: 'tasks' }, () => {
+      chrome.runtime.sendMessage({ type: MESSAGE_TYPES.OPEN_SIDE_PANEL }).catch(() => {});
+      chrome.runtime.sendMessage({ type: 'SWITCH_TAB', tab: 'tasks' }).catch(() => {});
+    });
+  });
+
+  const viewBtn = banner.querySelector('.crb-view-missed-btn');
+  viewBtn.addEventListener('click', () => {
+    dismissBanner();
+    chrome.storage.local.set({ [STORAGE_KEYS.SIDEPANEL_TAB]: 'tasks' }, () => {
+      chrome.runtime.sendMessage({ type: MESSAGE_TYPES.OPEN_SIDE_PANEL }).catch(() => {});
+      chrome.runtime.sendMessage({ type: 'SWITCH_TAB', tab: 'tasks' }).catch(() => {});
+    });
+  });
 }
 
 /**
@@ -845,47 +1020,85 @@ function showToast(msg) {
   let headerModalBackdrop = null;
 
   function injectHeaderButtons() {
-    // 1. Prioritize finding the flex-parent container of the header buttons via the help wrapper class
-    const helpBtn = document.querySelector('.userGuideHelp') || document.querySelector('[class*="userGuideHelp"]');
-    
-    const container = helpBtn?.parentNode || 
-                     document.querySelector('.flex-parent') ||
-                     document.querySelector('.top-bar__right') ||
-                     document.querySelector('[class*="top-bar__right"]') ||
-                     document.querySelector('.topbar-right') ||
-                     document.querySelector('[class*="topbar-right"]') ||
-                     document.getElementById('searchFormContainer')?.parentElement;
+    // 1. Find the main channel header / top bar container, filtering out sidebars and modals
+    const allHeaders = Array.from(document.querySelectorAll('#channel-header, .channel-header, .top-bar, [class*="channel-header"], .topbar'));
+    const mainHeaders = allHeaders.filter(el => !el.closest('#sidebar-right, .sidebar--right, .rhs-thread, .modal-dialog, #chatops-sidepanel, .chatops-sidepanel'));
+    const headerContainer = mainHeaders[0];
 
-    if (!container) return;
+    if (!headerContainer) return;
 
-    if (document.getElementById('chatops-header-buttons-wrapper')) return;
-
-    // 2. Find a suitable sibling button (prioritizing Help/Question button to insert after it), but filter out search-related and ChatOps buttons
+    // 2. Find a reference button in the header (prioritizing Help/Question, Pin, or Mention buttons)
+    const helpBtn = headerContainer.querySelector('.userGuideHelp') || headerContainer.querySelector('[class*="userGuideHelp"]');
     let standardHelpBtn = helpBtn || 
-                          document.querySelector('[id*="HelpButton" i]') ||
-                          document.querySelector('[aria-label*="help" i]') ||
-                          document.querySelector('[aria-label*="trợ giúp" i]') ||
-                          document.getElementById('channelHeaderMentionButton') || 
-                          document.querySelector('[id*="MentionButton" i]') ||
-                          document.querySelector('[aria-label*="mention" i]') ||
-                          document.querySelector('[aria-label*="saved" i]') ||
-                          document.querySelector('[aria-label*="flagged" i]') ||
-                          document.querySelector('[aria-label*="pin" i]') ||
-                          document.querySelector('[id*="FlagButton" i]') ||
-                          document.querySelector('[id*="PinButton" i]');
+                          headerContainer.querySelector('#channelHeaderPinButton') || 
+                          headerContainer.querySelector('#channelHeaderMentionButton') ||
+                          headerContainer.querySelector('#channelHeaderFlaggedButton') ||
+                          headerContainer.querySelector('[id*="HelpButton" i]') ||
+                          headerContainer.querySelector('[aria-label*="help" i]') ||
+                          headerContainer.querySelector('[aria-label*="trợ giúp" i]') ||
+                          headerContainer.querySelector('[id*="MentionButton" i]') ||
+                          headerContainer.querySelector('[aria-label*="mention" i]') ||
+                          headerContainer.querySelector('[aria-label*="saved" i]') ||
+                          headerContainer.querySelector('[aria-label*="flagged" i]') ||
+                          headerContainer.querySelector('[aria-label*="pin" i]') ||
+                          headerContainer.querySelector('[id*="FlagButton" i]') ||
+                          headerContainer.querySelector('[id*="PinButton" i]');
 
-    if (!standardHelpBtn) {
-      const buttons = Array.from(container.querySelectorAll('button'));
-      standardHelpBtn = buttons.find(btn => {
-        const inSearch = btn.closest('#searchFormContainer, [class*="search" i]');
-        const isChatOps = btn.id && btn.id.includes('chatops');
-        return !inSearch && !isChatOps;
-      });
+    // 3. Find the correct flex container by traversing up from standardHelpBtn
+    let container = null;
+    if (standardHelpBtn) {
+      let current = standardHelpBtn.parentNode;
+      while (current && current !== headerContainer.parentNode) {
+        if (current.classList && (
+            current.classList.contains('flex-parent') || 
+            current.classList.contains('top-bar__right') || 
+            current.className?.includes?.('top-bar__right') ||
+            current.classList.contains('topbar-right') ||
+            current.className?.includes?.('topbar-right') ||
+            current.className?.includes?.('channel-header') ||
+            current.id === 'channel-header' ||
+            current.classList.contains('channel-header') ||
+            current.id === 'searchFormContainer' ||
+            current.querySelector?.('#searchFormContainer')
+        )) {
+          container = current;
+          break;
+        }
+        current = current.parentNode;
+      }
     }
 
-    const wrapper = document.createElement('div');
-    wrapper.id = 'chatops-header-buttons-wrapper';
-    wrapper.className = 'chatops-header-buttons-wrapper';
+    if (!container) {
+      container = headerContainer.querySelector('.flex-parent') ||
+                  headerContainer.querySelector('.top-bar__right') ||
+                  headerContainer.querySelector('[class*="top-bar__right"]') ||
+                  headerContainer.querySelector('.topbar-right') ||
+                  headerContainer.querySelector('[class*="topbar-right"]') ||
+                  headerContainer.querySelector('#searchFormContainer')?.parentElement ||
+                  headerContainer;
+    }
+
+    // 4. Self-correcting check: clean up all existing wrappers to ensure no duplicates exist
+    const existingWrappers = Array.from(document.querySelectorAll('.chatops-header-buttons-wrapper'));
+    let activeWrapper = null;
+    for (const wrap of existingWrappers) {
+      if (container && container.contains(wrap)) {
+        activeWrapper = wrap;
+      } else {
+        runWithObserverDisabled(() => {
+          wrap.remove();
+        });
+      }
+    }
+
+    if (activeWrapper) {
+      return; // Already in the correct place!
+    }
+
+    // 5. Create wrapper and buttons
+    const newWrapper = document.createElement('div');
+    newWrapper.id = 'chatops-header-buttons-wrapper';
+    newWrapper.className = 'chatops-header-buttons-wrapper';
 
     const searchBtn = document.createElement('button');
     searchBtn.id = 'chatops-header-search-btn';
@@ -909,25 +1122,25 @@ function showToast(msg) {
       openHeaderModal('mentions');
     });
 
-    wrapper.appendChild(searchBtn);
-    wrapper.appendChild(mentionsBtn);
+    newWrapper.appendChild(searchBtn);
+    newWrapper.appendChild(mentionsBtn);
 
-    // 3. Find the direct child of the container to insert after, to avoid nesting inside button wrappers
+    // 6. Find the direct child of the container to insert after, to avoid nesting inside button wrappers
     let insertTarget = standardHelpBtn;
     if (standardHelpBtn && standardHelpBtn.parentNode && standardHelpBtn.parentNode !== container) {
-      let current = standardHelpBtn;
-      while (current.parentNode && current.parentNode !== container) {
-        current = current.parentNode;
+      let curr = standardHelpBtn;
+      while (curr.parentNode && curr.parentNode !== container) {
+        curr = curr.parentNode;
       }
-      insertTarget = current;
+      insertTarget = curr;
     }
 
     runWithObserverDisabled(() => {
-      if (insertTarget && insertTarget.parentNode) {
+      if (insertTarget && insertTarget.parentNode === container) {
         const nextSibling = insertTarget.nextSibling;
-        insertTarget.parentNode.insertBefore(wrapper, nextSibling);
+        container.insertBefore(newWrapper, nextSibling);
       } else {
-        container.appendChild(wrapper);
+        container.appendChild(newWrapper);
       }
     });
   }
@@ -986,9 +1199,34 @@ function showToast(msg) {
     iframe.src = chrome.runtime.getURL(`sidepanel/sidepanel.html?view=modal&tab=${tabName}`);
 
     const messageListener = (event) => {
-      if (event.data && event.data.type === 'CLOSE_CHATOPS_MODAL') {
-        closeModal();
-        window.removeEventListener('message', messageListener);
+      if (event.data) {
+        if (event.data.type === 'CLOSE_CHATOPS_MODAL') {
+          closeModal();
+          window.removeEventListener('message', messageListener);
+        } else if (event.data.type === 'NAVIGATE_CHATOPS_PATH') {
+          closeModal();
+          window.removeEventListener('message', messageListener);
+          
+          const { url, postId, rootId } = event.data;
+          let path = url;
+          try {
+            const urlObj = new URL(url, window.location.origin);
+            if (urlObj.origin === window.location.origin) {
+              path = urlObj.pathname + urlObj.search + urlObj.hash;
+            }
+          } catch (e) {
+            // fallback
+          }
+          if (path) {
+            console.log(`[ChatOps Ext] Navigating internally to: ${path}`);
+            window.history.pushState(null, '', path);
+            window.dispatchEvent(new PopStateEvent('popstate'));
+            
+            if (postId) {
+              handleOpenPostThread(postId, rootId);
+            }
+          }
+        }
       }
     };
     window.addEventListener('message', messageListener);
@@ -1332,6 +1570,63 @@ function showToast(msg) {
 
   let editorUndoHistory = [];
   function openImageEditor(activeImgObj, onSaveCallback) {
+    const handleGlobalPaste = async (e) => {
+      const overlay = document.getElementById('chatops-image-editor-overlay');
+      if (!overlay || !overlay.classList.contains('visible')) return;
+      const items = (e.clipboardData || e.originalEvent?.clipboardData)?.items;
+      if (!items) return;
+      for (const item of items) {
+        if (item.type.startsWith('image/')) {
+          const file = item.getAsFile();
+          if (file) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            await handleBgImageFile(file);
+            break;
+          }
+        }
+      }
+    };
+
+    const handleKeydownPaste = async (e) => {
+      const overlay = document.getElementById('chatops-image-editor-overlay');
+      if (!overlay || !overlay.classList.contains('visible')) return;
+
+      const isPasteCombo = (e.ctrlKey || e.metaKey) && (e.key === 'v' || e.key === 'V');
+      if (!isPasteCombo) return;
+
+      const activeEl = document.activeElement;
+      if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.contentEditable === 'true')) {
+        return;
+      }
+
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+
+      try {
+        const clipboardItems = await navigator.clipboard.read();
+        for (const item of clipboardItems) {
+          for (const type of item.types) {
+            if (type.startsWith('image/')) {
+              const blob = await item.getType(type);
+              const file = new File([blob], `pasted_image_${Date.now()}.${type.split('/')[1] || 'png'}`, { type });
+              await handleBgImageFile(file);
+              return;
+            }
+          }
+        }
+        showToast(language.noImageInClipboard || 'Không tìm thấy ảnh trong clipboard.');
+      } catch (err) {
+        console.error('[ChatOps] Keydown paste failed:', err);
+        showToast(language.clipboardPermissionDenied || 'Quyền truy cập clipboard bị từ chối. Vui lòng dùng Ctrl+V để dán.');
+      }
+    };
+
+    document.addEventListener('paste', handleGlobalPaste, true);
+    document.addEventListener('keydown', handleKeydownPaste, true);
+
     updateImageEditorTranslations = function() {
       const overlay = document.getElementById('chatops-image-editor-overlay');
       if (!overlay) return;
@@ -1423,6 +1718,8 @@ function showToast(msg) {
         const span = uploadBgBtn.querySelector('span');
         if (span) span.textContent = language.editorUploadBgBtn || 'Tải ảnh nền';
       }
+
+
 
       const cancelBtn = overlay.querySelector('.chatops-image-editor-btn-cancel');
       if (cancelBtn) cancelBtn.textContent = language.cancel;
@@ -1544,21 +1841,19 @@ function showToast(msg) {
         </div>
       `;
       document.body.appendChild(editorOverlay);
-
-      // Close handlers
-      editorOverlay.querySelector('.chatops-image-editor-close-btn').onclick = () => {
-        const textInput = editorOverlay.querySelector('.chatops-image-editor-text-input');
-        if (textInput) textInput.remove();
-        updateImageEditorTranslations = null;
-        editorOverlay.classList.remove('visible');
-      };
-      editorOverlay.querySelector('.chatops-image-editor-btn-cancel').onclick = () => {
-        const textInput = editorOverlay.querySelector('.chatops-image-editor-text-input');
-        if (textInput) textInput.remove();
-        updateImageEditorTranslations = null;
-        editorOverlay.classList.remove('visible');
-      };
     }
+
+    const handleClose = () => {
+      const textInput = editorOverlay.querySelector('.chatops-image-editor-text-input');
+      if (textInput) textInput.remove();
+      updateImageEditorTranslations = null;
+      editorOverlay.classList.remove('visible');
+      document.removeEventListener('paste', handleGlobalPaste, true);
+      document.removeEventListener('keydown', handleKeydownPaste, true);
+    };
+
+    editorOverlay.querySelector('.chatops-image-editor-close-btn').onclick = handleClose;
+    editorOverlay.querySelector('.chatops-image-editor-btn-cancel').onclick = handleClose;
 
     updateImageEditorTranslations();
 
@@ -1727,6 +2022,78 @@ function showToast(msg) {
       saveState();
     };
 
+    async function handleBgImageFile(file) {
+      if (!file) return;
+
+      if (!file.type.startsWith('image/')) {
+        showToast(language.uploadOnlyImages || 'Please upload image files only.');
+        return;
+      }
+
+      showToast(language.webpConvertingToast || 'Converting image... Please wait.');
+
+      let fileDataUrl = '';
+      let fileType = file.type;
+
+      if (needsChatOpsConversion(file.type, file.name)) {
+        try {
+          const converted = await convertForChatOps(file);
+          fileDataUrl = converted.dataUrl;
+          fileType = converted.type;
+        } catch (err) {
+          console.error('[ChatOps] Background image conversion failed:', err);
+        }
+      }
+
+      if (!fileDataUrl) {
+        fileDataUrl = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (ev) => resolve(ev.target.result);
+          reader.readAsDataURL(file);
+        });
+      }
+
+      const newImg = new Image();
+      newImg.onload = () => {
+        activeImgObj.src = fileDataUrl;
+        activeImgObj.mimeType = fileType || 'image/png';
+        activeImgObj.origWidth = newImg.naturalWidth;
+        activeImgObj.origHeight = newImg.naturalHeight;
+        activeImgObj.aspect = newImg.naturalWidth / newImg.naturalHeight;
+
+        img.onload = null;
+        img.src = fileDataUrl;
+
+        canvas.width = newImg.naturalWidth;
+        canvas.height = newImg.naturalHeight;
+        bgImg.src = newImg.src;
+
+        let displayWidth = newImg.naturalWidth;
+        let displayHeight = newImg.naturalHeight;
+        
+        const maxW = Math.max(500, window.innerWidth - 120);
+        const maxH = Math.max(400, window.innerHeight - 240);
+        
+        let scale = 1;
+        if (displayWidth > maxW || displayHeight > maxH) {
+          scale = Math.min(maxW / displayWidth, maxH / displayHeight);
+        }
+        
+        displayWidth = Math.round(displayWidth * scale);
+        displayHeight = Math.round(displayHeight * scale);
+        const container = editorOverlay.querySelector('.chatops-image-editor-canvas-container');
+        if (container) {
+          container.style.width = displayWidth + 'px';
+          container.style.height = displayHeight + 'px';
+        }
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        editorUndoHistory = [];
+        saveState();
+      };
+      newImg.src = fileDataUrl;
+    }
+
     const uploadBgBtn = editorOverlay.querySelector('#chatops-image-editor-upload-bg');
     const bgFileInput = editorOverlay.querySelector('#chatops-image-editor-bg-file');
     if (uploadBgBtn && bgFileInput) {
@@ -1737,75 +2104,14 @@ function showToast(msg) {
 
       bgFileInput.onchange = async (e) => {
         const file = e.target.files[0];
-        if (!file) return;
+        if (file) {
+          await handleBgImageFile(file);
+        }
         bgFileInput.value = '';
-
-        if (!file.type.startsWith('image/')) {
-          showToast(language.uploadOnlyImages || 'Please upload image files only.');
-          return;
-        }
-
-        showToast(language.webpConvertingToast || 'Converting image... Please wait.');
-
-        let fileDataUrl = '';
-        let fileType = file.type;
-
-        if (needsChatOpsConversion(file.type, file.name)) {
-          try {
-            const converted = await convertForChatOps(file);
-            fileDataUrl = converted.dataUrl;
-            fileType = converted.type;
-          } catch (err) {
-            console.error('[ChatOps] Background image conversion failed:', err);
-          }
-        }
-
-        if (!fileDataUrl) {
-          fileDataUrl = await new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = (ev) => resolve(ev.target.result);
-            reader.readAsDataURL(file);
-          });
-        }
-
-        const newImg = new Image();
-        newImg.onload = () => {
-          activeImgObj.src = fileDataUrl;
-          activeImgObj.mimeType = fileType || 'image/png';
-          activeImgObj.origWidth = newImg.naturalWidth;
-          activeImgObj.origHeight = newImg.naturalHeight;
-          activeImgObj.aspect = newImg.naturalWidth / newImg.naturalHeight;
-
-          canvas.width = newImg.naturalWidth;
-          canvas.height = newImg.naturalHeight;
-          bgImg.src = newImg.src;
-
-          let displayWidth = newImg.naturalWidth;
-          let displayHeight = newImg.naturalHeight;
-          
-          const maxW = Math.max(500, window.innerWidth - 120);
-          const maxH = Math.max(400, window.innerHeight - 240);
-          
-          let scale = 1;
-          if (displayWidth > maxW || displayHeight > maxH) {
-            scale = Math.min(maxW / displayWidth, maxH / displayHeight);
-          }
-          
-          displayWidth = Math.round(displayWidth * scale);
-          displayHeight = Math.round(displayHeight * scale);
-          const container = editorOverlay.querySelector('.chatops-image-editor-canvas-container');
-          if (container) {
-            container.style.width = displayWidth + 'px';
-            container.style.height = displayHeight + 'px';
-          }
-
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          editorUndoHistory = [];
-          saveState();
-        };
-        newImg.src = fileDataUrl;
       };
     }
+
+
 
     function getMousePos(e) {
       const rect = canvas.getBoundingClientRect();
@@ -1995,6 +2301,7 @@ function showToast(msg) {
       onSaveCallback(finalDataUrl);
       updateImageEditorTranslations = null;
       editorOverlay.classList.remove('visible');
+      document.removeEventListener('paste', handleGlobalPaste);
     };
   }
 
@@ -2520,6 +2827,75 @@ function showToast(msg) {
     }
 
 
+
+    // Handle global paste event when Image Picker is visible/open
+    document.addEventListener('paste', async (e) => {
+      if (!imagePickerEl || imagePickerEl.classList.contains('hidden')) return;
+
+      // If user is focusing on an input or textarea that is not part of our image picker, do not intercept
+      const activeEl = document.activeElement;
+      if (activeEl) {
+        const isTextareaOrInput = activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'INPUT';
+        const isInsidePicker = imagePickerEl.contains(activeEl);
+        if (isTextareaOrInput && !isInsidePicker) {
+          return;
+        }
+      }
+
+      const items = (e.clipboardData || e.originalEvent?.clipboardData)?.items;
+      if (!items) return;
+      for (const item of items) {
+        if (item.type.startsWith('image/')) {
+          const file = item.getAsFile();
+          if (file) {
+            e.preventDefault();
+            let fileDataUrl = '';
+            let fileType = file.type;
+            if (needsChatOpsConversion(file.type, file.name)) {
+              try {
+                const converted = await convertForChatOps(file);
+                fileDataUrl = converted.dataUrl;
+                fileType = converted.type;
+              } catch (err) {
+                console.error('[ChatOps] Paste image conversion failed:', err);
+              }
+            }
+            if (!fileDataUrl) {
+              fileDataUrl = await new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (ev) => resolve(ev.target.result);
+                reader.readAsDataURL(file);
+              });
+            }
+
+            const newImg = new Image();
+            newImg.onload = () => {
+              const activeImgObj = {
+                src: fileDataUrl,
+                testDataUrl: fileDataUrl,
+                mimeType: fileType || 'image/png',
+                origWidth: newImg.naturalWidth,
+                origHeight: newImg.naturalHeight,
+                aspect: newImg.naturalWidth / newImg.naturalHeight,
+                width: newImg.naturalWidth,
+                height: newImg.naturalHeight,
+                sliderValue: 100,
+                isAspectRatioLocked: true,
+                isDrawing: true
+              };
+              if (imagePickerEl) imagePickerEl.classList.add('hidden');
+              openImageEditor(activeImgObj, (editedDataUrl) => {
+                openImageResizeModal(editedDataUrl);
+              });
+            };
+            newImg.src = fileDataUrl;
+            break;
+          }
+        }
+      }
+    });
+
+
     const fileInput = document.getElementById('chatops-image-upload-input');
     if (fileInput) {
       fileInput.addEventListener('change', async (e) => {
@@ -2670,12 +3046,12 @@ function showToast(msg) {
         <!-- Panel 1: Library -->
         <div id="chatops-picker-panel-library" class="chatops-picker-panel active">
           <div class="chatops-image-upload-area">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px; gap: 8px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px; gap: 8px; flex-wrap: wrap;">
               <div style="display:flex; flex-direction:column; line-height: 1.2; flex-shrink: 0;">
                 <span id="chatops-your-images-header" style="font-size:11px; font-weight:700; color:#555; text-transform:uppercase; letter-spacing:0.5px;">${language.yourImages}</span>
                 <span id="chatops-your-images-size" style="font-size:10px; color:#888; margin-top:2px;">(0 KB / 10 MB)</span>
               </div>
-              <div style="display:flex; gap: 6px; align-items: center;">
+              <div style="display:flex; gap: 6px; align-items: center; flex-wrap: wrap;">
                 <button type="button" id="chatops-draw-btn" class="chatops-image-upload-btn" style="outline: none; font-family: inherit; box-sizing: border-box;">
                   🎨 ${language.drawBtn || 'Tự vẽ'}
                 </button>
@@ -3323,7 +3699,7 @@ function showToast(msg) {
                 style="flex:1; cursor:pointer; background:transparent; border:none; outline:none; font-size:12.5px; width:100%; min-width:0; padding:0; margin:0; display:inline-flex; align-items:center; line-height:1; height:100%; box-shadow:none;">
             </div>
 
-            <span style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin: 0 4px; flex-shrink: 0; user-select: none; background: #f1f5f9; padding: 4px 6px; border-radius: 4px; border: 1px solid #e2e8f0; line-height: 1;">${language.orLabel}</span>
+            <span id="cqnOrLabel" style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin: 0 4px; flex-shrink: 0; user-select: none; background: #f1f5f9; padding: 4px 6px; border-radius: 4px; border: 1px solid #e2e8f0; line-height: 1;">${language.orLabel}</span>
 
             <select id="cqnReminderSelect" class="custom-select"
               style="width: 115px; height: 34px; font-size: 12.5px; border-radius: 6px; cursor: pointer; outline: none; box-sizing: border-box; flex-shrink: 0; line-height: 1; padding: 0 24px 0 10px;">
@@ -3443,6 +3819,34 @@ function showToast(msg) {
       timeInput._initCqnFlatpickr = initCqnFlatpickr;
     }
 
+    function toggleCqnPresetReminderVisibility(isDaily) {
+      const orLabel = document.getElementById('cqnOrLabel');
+      const customSelect = cqnReminderSelect?.nextElementSibling;
+
+      if (isDaily) {
+        if (orLabel) orLabel.style.display = 'none';
+        if (cqnReminderSelect) cqnReminderSelect.style.display = 'none';
+        if (customSelect && customSelect.classList.contains('custom-dropdown-container')) {
+          customSelect.style.display = 'none';
+        }
+        if (cqnReminderSelect) {
+          cqnReminderSelect.value = '';
+          if (customSelect && customSelect.classList.contains('custom-dropdown-container')) {
+            const selectedText = customSelect.querySelector('.custom-dropdown-selected-text');
+            if (selectedText) selectedText.textContent = language.remindInPreset;
+          }
+        }
+      } else {
+        if (orLabel) orLabel.style.display = 'inline-flex';
+        if (customSelect && customSelect.classList.contains('custom-dropdown-container')) {
+          customSelect.style.display = 'block';
+          if (cqnReminderSelect) cqnReminderSelect.style.display = 'none';
+        } else {
+          if (cqnReminderSelect) cqnReminderSelect.style.display = 'block';
+        }
+      }
+    }
+
     const repeatDailyCheckbox = document.getElementById('cqnTaskRemindDaily');
     if (repeatDailyCheckbox && timeInput) {
       repeatDailyCheckbox.addEventListener('change', () => {
@@ -3450,6 +3854,7 @@ function showToast(msg) {
         const currentVal = timeInput.value;
         
         initCqnFlatpickr(isChecked);
+        toggleCqnPresetReminderVisibility(isChecked);
         
         if (currentVal) {
           if (isChecked) {
@@ -3502,6 +3907,9 @@ function showToast(msg) {
     // Convert selects to premium custom dropdowns
     convertToCustomDropdown(cqnCategorySelect);
     convertToCustomDropdown(cqnReminderSelect, '115px');
+
+    // Initialize toggle state after custom dropdown is built
+    toggleCqnPresetReminderVisibility(repeatDailyCheckbox ? repeatDailyCheckbox.checked : false);
 
     const customSelect = cqnReminderSelect?.nextElementSibling;
     if (customSelect) {
@@ -3575,13 +3983,25 @@ function showToast(msg) {
       }
 
       if (!hasSelection) {
-        const msgBodyEl = postEl ? postEl.querySelector('.post-message__text, .post__body p, [class*="post-message"]') : null;
-        msgTextFull = msgBodyEl ? msgBodyEl.innerText.trim() : '';
+        const postId = cleanPostId(postEl);
+        if (postId) {
+          msgTextFull = await getPostRawMessage(postId);
+        }
+        if (!msgTextFull) {
+          const msgBodyEl = postEl ? postEl.querySelector('.post-message__text, .post__body p, [class*="post-message"]') : null;
+          msgTextFull = msgBodyEl ? msgBodyEl.innerText.trim() : '';
+        }
         
         if (postEl) {
-          // Find all images in the post to append as Markdown
-          const imgEls = Array.from(postEl.querySelectorAll('img.attachment__image, img.markdown-inline-img, .post-image__column img'))
+          // Find all images in the post — use broad selector, then filter out avatars and custom emojis
+          const imgEls = Array.from(postEl.querySelectorAll('img'))
             .filter(img => {
+              // Skip avatars (have .Avatar class or are inside .status-wrapper)
+              if (img.classList.contains('Avatar') || img.closest('.status-wrapper, .post__img')) return false;
+              // Skip custom emoji spans (Mattermost wraps them in span.emoticon)
+              if (img.closest('.emoticon, .emoji-picker, .emoji')) return false;
+              // Skip small images that are likely icons/emojis (under 20x20)
+              if (img.naturalWidth && img.naturalWidth < 20 && img.naturalHeight && img.naturalHeight < 20) return false;
               // Ensure the image belongs directly to this post, not a nested reply post
               const closestPost = img.closest('.post, [id^="post_"], [id^="rhsPost_"]');
               return closestPost === postEl;
@@ -3589,11 +4009,16 @@ function showToast(msg) {
           if (imgEls.length > 0) {
             const imgUrls = imgEls.map(img => img.src).filter(Boolean);
             if (imgUrls.length > 0) {
-              const imageMarkdown = imgUrls.map(url => `![Image](${url})`).join('\n');
-              if (msgTextFull) {
-                msgTextFull += '\n\n' + imageMarkdown;
-              } else {
-                msgTextFull = imageMarkdown;
+              const missingImageMarkdown = imgUrls
+                .filter(url => !msgTextFull.includes(url))
+                .map(url => `![Image](${url})`)
+                .join('\n');
+              if (missingImageMarkdown) {
+                if (msgTextFull) {
+                  msgTextFull += '\n\n' + missingImageMarkdown;
+                } else {
+                  msgTextFull = missingImageMarkdown;
+                }
               }
             }
           }
@@ -3790,6 +4215,7 @@ function showToast(msg) {
     }
     if (res[STORAGE_KEYS.MEMOS]) {
       cachedMemos = res[STORAGE_KEYS.MEMOS];
+      checkAndShowOverdueDigest(cachedMemos);
     }
     injectDynamicTheme();
     loadCustomImages();
@@ -4558,6 +4984,14 @@ function showToast(msg) {
               }
             });
           });
+
+          // Right-click: show reaction group picker
+          spamBtn.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            showReactionGroupsDropdown(spamBtn, postEl);
+          });
+
           chatopsGroup.appendChild(spamBtn);
         }
 
@@ -4721,6 +5155,187 @@ function showToast(msg) {
       }
     }
   });
+
+  // Track last right-clicked post element for the QUICK_REPLY_QUOTE context menu feature
+  document.addEventListener('contextmenu', (e) => {
+    const postEl = e.target.closest('.post, [id^="post_"], [id^="rhsPost_"]');
+    lastRightClickedPostEl = postEl || null;
+  }, true);
+
+  /**
+   * Shows a custom reaction group picker dropdown when user right-clicks the spam (🔥) button.
+   * Reads groups from cachedSettings.reactionGroups and sends SPAM_POST_REACTIONS with
+   * the chosen group's emojis array as override.
+   */
+  function showReactionGroupsDropdown(spamBtn, postEl) {
+    // Close any existing dropdown
+    if (activeReactionDropdown) {
+      activeReactionDropdown.remove();
+      activeReactionDropdown = null;
+    }
+
+    const groups = cachedSettings?.reactionGroups;
+    const postId = cleanPostId(postEl);
+    if (!postId) return;
+
+    if (!groups || groups.length === 0) {
+      showToast('⚠️ Chưa cấu hình nhóm reaction. Vào Settings → Reactions để thiết lập.');
+      return;
+    }
+
+    // Build dropdown element
+    const dropdown = document.createElement('div');
+    dropdown.className = 'chatops-reaction-dropdown';
+    dropdown.setAttribute('role', 'menu');
+
+    // Style the dropdown
+    Object.assign(dropdown.style, {
+      position: 'fixed',
+      zIndex: '99999',
+      background: 'linear-gradient(135deg, #1e1f26 0%, #2b2d38 100%)',
+      border: '1px solid rgba(255,255,255,0.12)',
+      borderRadius: '12px',
+      boxShadow: '0 8px 32px rgba(0,0,0,0.6), 0 2px 8px rgba(0,0,0,0.4)',
+      padding: '6px',
+      minWidth: '200px',
+      maxWidth: '280px',
+      backdropFilter: 'blur(12px)',
+      fontFamily: 'inherit',
+    });
+
+    // Header
+    const header = document.createElement('div');
+    header.textContent = '🔥 Chọn nhóm reaction';
+    Object.assign(header.style, {
+      color: 'rgba(255,255,255,0.5)',
+      fontSize: '11px',
+      fontWeight: '600',
+      textTransform: 'uppercase',
+      letterSpacing: '0.06em',
+      padding: '4px 8px 6px',
+      borderBottom: '1px solid rgba(255,255,255,0.08)',
+      marginBottom: '4px',
+    });
+    dropdown.appendChild(header);
+
+    groups.forEach(group => {
+      if (!group || !group.name) return;
+
+      const item = document.createElement('button');
+      item.setAttribute('role', 'menuitem');
+
+      const emojis = Array.isArray(group.emojis) ? group.emojis : [];
+      // Show first 6 emojis as preview (using emoji names as text with colons)
+      const preview = emojis.slice(0, 6).map(e => `:${e}:`).join(' ');
+
+      item.innerHTML = `
+        <span class="chatops-rg-name">${escapeHtml(group.name)}</span>
+        <span class="chatops-rg-preview">${escapeHtml(preview)}</span>
+      `;
+
+      Object.assign(item.style, {
+        display: 'flex',
+        flexDirection: 'column',
+        width: '100%',
+        background: 'transparent',
+        border: 'none',
+        borderRadius: '8px',
+        padding: '7px 10px',
+        cursor: 'pointer',
+        color: '#fff',
+        textAlign: 'left',
+        transition: 'background 0.15s ease',
+        gap: '2px',
+      });
+
+      item.querySelector('.chatops-rg-name').style.cssText = 'font-size:13px;font-weight:600;color:#fff;';
+      item.querySelector('.chatops-rg-preview').style.cssText = 'font-size:11px;color:rgba(255,255,255,0.45);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+
+      item.addEventListener('mouseenter', () => { item.style.background = 'rgba(255,255,255,0.08)'; });
+      item.addEventListener('mouseleave', () => { item.style.background = 'transparent'; });
+
+      item.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropdown.remove();
+        activeReactionDropdown = null;
+
+        if (emojis.length === 0) {
+          showToast('⚠️ Nhóm này chưa có emoji nào.');
+          return;
+        }
+
+        const origHtml = spamBtn.innerHTML;
+        spamBtn.innerHTML = '⏳';
+        spamBtn.style.opacity = '0.5';
+        spamBtn.disabled = true;
+
+        chrome.runtime.sendMessage({
+          type: MESSAGE_TYPES.SPAM_POST_REACTIONS,
+          postId,
+          emojis  // Override: use this group's emojis
+        }, (res) => {
+          spamBtn.innerHTML = origHtml;
+          spamBtn.style.opacity = '1';
+          spamBtn.disabled = false;
+
+          if (!res || !res.ok) {
+            let errMsg = res?.error || language.unknown;
+            if (errMsg.toLowerCase().includes('unable to save reaction') || errMsg.toLowerCase().includes('already reacted')) {
+              errMsg = language.reactionAlreadyExists;
+            }
+            showToast(language.spamErrorPrefix + errMsg);
+          } else {
+            showToast(`✅ Đã spam ${emojis.length} reaction từ nhóm "${group.name}"!`);
+          }
+        });
+      });
+
+      dropdown.appendChild(item);
+    });
+
+    // Position dropdown near the button
+    document.body.appendChild(dropdown);
+    activeReactionDropdown = dropdown;
+
+    const btnRect = spamBtn.getBoundingClientRect();
+    const ddRect = dropdown.getBoundingClientRect();
+    let top = btnRect.bottom + 6;
+    let left = btnRect.left;
+
+    // Keep within viewport
+    if (left + ddRect.width > window.innerWidth - 8) {
+      left = window.innerWidth - ddRect.width - 8;
+    }
+    if (top + ddRect.height > window.innerHeight - 8) {
+      top = btnRect.top - ddRect.height - 6;
+    }
+
+    dropdown.style.top = `${top}px`;
+    dropdown.style.left = `${left}px`;
+
+    // Close on outside click or Escape
+    const closeDropdown = (e) => {
+      if (!dropdown.contains(e.target)) {
+        dropdown.remove();
+        activeReactionDropdown = null;
+        document.removeEventListener('mousedown', closeDropdown, true);
+        document.removeEventListener('keydown', closeOnEsc, true);
+      }
+    };
+    const closeOnEsc = (e) => {
+      if (e.key === 'Escape') {
+        dropdown.remove();
+        activeReactionDropdown = null;
+        document.removeEventListener('mousedown', closeDropdown, true);
+        document.removeEventListener('keydown', closeOnEsc, true);
+      }
+    };
+    setTimeout(() => {
+      document.addEventListener('mousedown', closeDropdown, true);
+      document.addEventListener('keydown', closeOnEsc, true);
+    }, 0);
+  }
 
   let lastPathname = window.location.pathname;
 
@@ -4908,6 +5523,61 @@ function showToast(msg) {
       togglePwaSidePanel(message.forceState);
     } else if (message.type === 'SHOW_TOAST') {
       showToast(message.message);
+    } else if (message.type === 'QUICK_REPLY_QUOTE') {
+      // Handle reply-and-quote from context menu
+      const selectedText = message.text;
+      if (!selectedText) return;
+
+      // Format selected text as markdown blockquote
+      const quotedText = selectedText
+        .split('\n')
+        .map(line => `> ${line}`)
+        .join('\n') + '\n\n';
+
+      // Find the post that was right-clicked
+      let postEl = lastRightClickedPostEl;
+      if (!postEl) {
+        // Fallback: try to get from current selection
+        const selection = window.getSelection();
+        if (selection && selection.rangeCount > 0) {
+          const container = selection.getRangeAt(0).commonAncestorContainer;
+          postEl = container.nodeType === Node.ELEMENT_NODE
+            ? container.closest('.post, [id^="post_"], [id^="rhsPost_"]')
+            : container.parentElement?.closest('.post, [id^="post_"], [id^="rhsPost_"]');
+        }
+      }
+
+      if (!postEl) {
+        showToast('\u26a0\ufe0f Kh\u00f4ng x\u00e1c \u0111\u1ecbnh \u0111\u01b0\u1ee3c b\u00e0i vi\u1ebft \u0111\u1ec3 tr\u1ea3 l\u1eddi.');
+        return;
+      }
+
+      // Click the reply button of the post
+      const replyBtn = findReplyButton(postEl);
+      if (!replyBtn) {
+        showToast('\u26a0\ufe0f Kh\u00f4ng t\u00ecm th\u1ea5y n\u00fat tr\u1ea3 l\u1eddi.');
+        return;
+      }
+
+      replyBtn.click();
+
+      // Wait for the reply textarea to appear, then insert the quoted text
+      let attempts = 0;
+      const insertInterval = setInterval(() => {
+        attempts++;
+        const replyTextarea = document.getElementById('reply_textbox')
+          || document.querySelector('.sidebar-right textarea, .rhs-thread textarea, .sidebar--right textarea');
+        if (replyTextarea) {
+          clearInterval(insertInterval);
+          // Small delay to let React fully render the reply box
+          setTimeout(() => {
+            insertTextIntoTextarea(replyTextarea, quotedText);
+          }, 150);
+        } else if (attempts > 30) {
+          clearInterval(insertInterval);
+          showToast('\u26a0\ufe0f Kh\u00f4ng m\u1edf \u0111\u01b0\u1ee3c h\u1ed9p tr\u1ea3 l\u1eddi.');
+        }
+      }, 100);
     }
   });
 

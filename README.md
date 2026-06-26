@@ -1,6 +1,6 @@
 # 🚀 ChatOps++ — Chrome Extension (Manifest V3)
 
-[![Version](https://img.shields.io/badge/version-3.5.0-blue.svg)](https://chrome.google.com/webstore/devconsole/)
+[![Version](https://img.shields.io/badge/version-3.5.1-blue.svg)](https://chrome.google.com/webstore/devconsole/)
 [![Platform](https://img.shields.io/badge/platform-Chrome%20%7C%20Edge%20%7C%20Opera-lightgrey.svg)]()
 [![Manifest Version](https://img.shields.io/badge/manifest-V3-orange.svg)]()
 
@@ -33,7 +33,7 @@
 ### 🖼️ 5. Thư Viện Ảnh & Giphy (Image Picker & Editor)
 * Tích hợp thư viện ảnh Meme tùy chỉnh cá nhân.
 * Kết nối trực tiếp với Giphy API để tìm và gửi ảnh động (GIF) nhanh chóng.
-* Bộ chỉnh sửa ảnh (image editor) cơ bản tích hợp sẵn, hỗ trợ **tự vẽ nét tự do từ ảnh tải lên của cá nhân** (Draw from custom image upload).
+* Bộ chỉnh sửa ảnh (image editor) cơ bản tích hợp sẵn, hỗ trợ **tự vẽ nét tự do từ ảnh tải lên hoặc dán trực tiếp từ clipboard** (Draw from custom image upload/paste from clipboard).
 * Thêm tab quản lý **Files & Hình ảnh (Files)** riêng biệt ngay trong phần công cụ khác (và shortcut tab ở navigation header) cho phép tìm kiếm theo tên và chuyển trang (pagination) mượt mà.
 
 ### 🔥 6. Tương Tác Nhanh (Quick Reactions)

@@ -31,7 +31,8 @@ initialize()
   ├── setupSidePanel()          → Enable/disable panel per tab URL
   ├── setupCookieSync()         → Listen cookie changes
   ├── syncCookies()             → Initial credential sync
-  └── setupContextMenus()       → Create right-click menu items
+  ├── setupContextMenus()       → Create right-click menu items
+  └── syncTaskAlarms()          → Re-synchronize task alarms on startup
 ```
 
 **Context Menu items:**
@@ -128,7 +129,7 @@ chrome.notifications.onClicked
   1. Parse notificationId → tìm task trong storage
   2. Build permalink: {chatopsUrl}/{teamName}/pl/{postId}
   3. Set storage['sidepanel_tab'] = 'tasks'
-  4. Focus tab ChatOps hiện có (hoặc tạo tab mới)
+  4. Focus tab ChatOps hiện có (không reload lại URL) hoặc tạo tab mới nếu chưa có
   5. Mở side panel
   6. Sau 300ms: sendMessage(SWITCH_TAB, 'tasks')
 ```
@@ -152,6 +153,10 @@ Hiện tại chỉ clear badge (logic scan mentions đã được move sang side
       - Reset checklist items: semua checked=false
       - Tiếp tục notify (KHÔNG return)
    b. Nếu không repeatDaily → clearAlarm + return
+4.1. Check Stale Alarm Guard:
+   - Nếu là daily task: Chỉ coi là stale (bị bỏ qua không thông báo) nếu báo thức thuộc ngày lịch cũ khác so với ngày hiện tại (local time) và trễ hơn STALE_THRESHOLD_MS. Nếu thuộc cùng ngày, thông báo vẫn hiển thị bình thường.
+   - Nếu là one-time task: Trễ hơn STALE_THRESHOLD_MS thì coi là stale (bị hủy).
+   - Nếu stale: Tự động dời lịch báo thức sang lần kế tiếp đối với daily task và không hiển thị thông báo.
 5. Build message:
    - Lấy task.postText (truncate 100 chars) + task.note
 6. Check settings.notificationType:
@@ -167,6 +172,21 @@ Hiện tại chỉ clear badge (logic scan mentions đã được move sang side
 7. chrome.action.setBadgeText({ text: 'TASK' })
 8. chrome.action.setBadgeBackgroundColor({ color: '#e74c3c' })
 9. Reschedule alarm: now + snoozeMinutes phút
+```
+
+### `syncTaskAlarms()`
+Đồng bộ và đăng ký lại toàn bộ báo thức Chrome (`chrome.alarms`) cho các task đang active từ storage khi khởi tạo extension (giúp tránh việc mất báo thức khi extension reload hoặc trình duyệt restart).
+
+```
+1. Quét tất cả tasks trong chrome.storage.local['chatops_memos']
+2. Xóa các báo thức Chrome cũ bắt đầu bằng 'task_'
+3. Với mỗi task loại 'task' chưa hoàn thành (hoặc daily task kể cả đã done):
+   - Nếu báo thức ở tương lai: Đăng ký báo thức mới
+   - Nếu báo thức daily ở quá khứ (reminder <= now):
+     a. Tự động tính toán dời ngày báo thức sang lần xảy ra tiếp theo trong tương lai
+     b. Cập nhật thuộc tính reminder trong storage
+     c. Reset trạng thái hoàn thành (task.done = false, checklist done = false)
+     d. Tạo alarm mới trong Chrome
 ```
 
 ---

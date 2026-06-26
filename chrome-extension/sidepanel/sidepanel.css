@@ -750,10 +750,11 @@ textarea.search-form-textarea {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--text-2);
   cursor: default;
   user-select: none;
+  max-height: 24px;
 }
 
 .checkbox-label input[type="checkbox"] {
@@ -2109,6 +2110,19 @@ input:checked + .toggle-slider:before { transform: translateX(16px); }
 .task-update-reminder-wrapper.has-reminder .task-update-reminder {
   color: #d97706 !important;
   font-weight: 600;
+}
+
+.task-update-reminder-wrapper.overdue {
+  background-color: rgba(208, 69, 76, 0.06) !important;
+  border-color: rgba(208, 69, 76, 0.2) !important;
+}
+.task-update-reminder-wrapper.overdue .reminder-clock-icon {
+  color: var(--danger, #d0454c) !important;
+  opacity: 0.9;
+}
+.task-update-reminder-wrapper.overdue .task-update-reminder {
+  color: var(--danger, #d0454c) !important;
+  font-weight: 700;
 }
 
 /* Compact select category options tag backgrounds */
@@ -4523,5 +4537,376 @@ span.flatpickr-weekday {
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
 }
 
+/* Anti-flicker: also hide workspace header & nav via external CSS (inline style is primary guard) */
+html.loading-tab-search .workspace-header,
+html.loading-tab-search .tab-nav,
+html.loading-tab-mentions .workspace-header,
+html.loading-tab-mentions .tab-nav {
+  display: none !important;
+}
+
+/* Show correct tab during loading */
+html.loading-tab-search #tab-tools,
+html.loading-tab-search #tools-section-search {
+  display: flex !important;
+}
+html.loading-tab-search #tab-tasks,
+html.loading-tab-search #tab-memo,
+html.loading-tab-search #tab-mentions,
+html.loading-tab-search #tab-settings {
+  display: none !important;
+}
+
+html.loading-tab-mentions #tab-mentions {
+  display: flex !important;
+}
+html.loading-tab-mentions #tab-tasks,
+html.loading-tab-mentions #tab-memo,
+html.loading-tab-mentions #tab-tools,
+html.loading-tab-mentions #tab-settings {
+  display: none !important;
+}
+
+/* Hide tools sub-tabs navigation bar in search modal (direct search view) */
+html.loading-tab-search #toolsSubTabs,
+html.modal-mode #toolsSubTabs {
+  display: none !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Modal Mode: Search & Mentions Form — Clean 2-Column Layout
+   ═══════════════════════════════════════════════════════════ */
+
+/* Strip heavy box styling from channel picker but make it stand out a bit in modal */
+.modal-mode .search-channel-group {
+  border: 1px solid var(--border) !important;
+  border-left: 3px solid var(--accent) !important;
+  background: var(--bg-1, #ffffff) !important;
+  padding: 6px 10px !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
+  gap: 6px !important;
+  margin-bottom: 0 !important;
+  border-radius: 6px !important;
+}
+.modal-mode .search-channel-group::before {
+  display: none !important; /* Hide "KÊNH TÌM KIẾM" label */
+}
+
+/* Remove dashed border, padding and margin from workspace selector row in modal mode */
+.modal-mode .workspace-inline-row {
+  border-bottom: none !important;
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.modal-mode #spSearchForm {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 5px 12px !important;
+  padding: 8px 12px !important;
+  background: var(--bg-2, #f5f5f7) !important;
+  border-bottom: 1px solid var(--border, rgba(0,0,0,0.08)) !important;
+}
+/* Row 1: Keyword input spans full width */
+.modal-mode #spSearchForm > .search-main-row:not(#spSearchSubmitRow) {
+  grid-column: 1 / span 2 !important;
+  grid-row: 1 !important;
+  margin-top: 0 !important;
+}
+/* Row 2 col 1: Workspace dropdown */
+.modal-mode #searchWorkspaceRow {
+  grid-column: 1 !important;
+  grid-row: 2 !important;
+  margin-bottom: 0 !important;
+  align-self: center !important;
+}
+/* Row 2 col 2: User search autocomplete wrapper */
+.modal-mode #spSearchFromWrapper {
+  grid-column: 2 !important;
+  grid-row: 2 !important;
+  align-self: center !important;
+}
+/* Row 3: Channel filter spans full width */
+.modal-mode #spSearchInGroup {
+  grid-column: 1 / span 2 !important;
+  grid-row: 3 !important;
+}
+/* Row 4 col 1: OR search checkbox */
+.modal-mode #spSearchIsOrWrapper {
+  grid-column: 1 !important;
+  grid-row: 4 !important;
+  align-self: center !important;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+}
+/* Row 4 col 2: After | before date side-by-side */
+.modal-mode #spSearchDatesRow {
+  grid-column: 2 !important;
+  grid-row: 4 !important;
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 8px !important;
+  margin: 0 !important;
+}
+/* Row 5: Search submit button spans full width */
+.modal-mode #spSearchSubmitRow {
+  grid-column: 1 / span 2 !important;
+  grid-row: 5 !important;
+  margin-top: 2px !important;
+}
+.modal-mode #btnSpSearch {
+  height: 32px !important;
+  width: 100% !important;
+  padding: 0 16px !important;
+  font-size: 12.5px !important;
+  flex-shrink: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+.modal-mode #spSearchTerms,
+.modal-mode .search-form #spSearchFrom,
+.modal-mode #searchWorkspaceRow .workspace-inline-selected {
+  height: 30px !important;
+  min-height: 30px !important;
+  max-height: 30px !important;
+  line-height: 28px !important;
+  font-size: 12px !important;
+}
+
+/* ── MENTIONS FORM ───────────────────────────────────────────
+   Row 1: [Workspace ▼      ] [24 giờ qua ▼       ]
+   Row 2: [Tìm kiếm kênh... + ☐ Bao gồm DM  (full)]
+   Row 3: [☑@bạn ] [☑@here ] [☑@channel] [☐DM/GM ]
+           [☑ Chỉ hiển thị chưa tương tác    (full)]
+   Row 4: [🔍 Quét ngay              (full width)  ]
+   ─────────────────────────────────────────────────────────── */
+.modal-mode #spMentionsForm {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 5px 12px !important;
+  padding: 8px 12px !important;
+  background: var(--bg-2, #f5f5f7) !important;
+  border-bottom: 1px solid var(--border, rgba(0,0,0,0.08)) !important;
+}
+/* Row 1 col 1: Workspace dropdown */
+.modal-mode #mentionsWorkspaceRow {
+  grid-column: 1 !important; grid-row: 1 !important;
+  margin-bottom: 0 !important;
+  align-self: center !important;
+}
+/* Row 1 col 2: Time select */
+.modal-mode #spMentionFiltersRow {
+  grid-column: 2 !important; grid-row: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0 !important;
+  margin-top: 0 !important;
+  align-self: center !important;
+}
+/* Row 2: channel group border wraps BOTH search input AND DM checkbox */
+.modal-mode #spMentionChannelRow {
+  grid-column: 1 / span 2 !important; grid-row: 2 !important;
+}
+.modal-mode #spMentionChannelRow .search-channel-group {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0 !important;
+}
+.modal-mode #spMentionChannelRow .mention-include-dm {
+  /* Sits inside the bordered channel group — visually part of it */
+  margin-top: 5px !important;
+  padding-top: 5px !important;
+  border-top: 1px dashed var(--border) !important;
+  font-size: 11px !important;
+  line-height: 16px !important;
+  gap: 5px !important;
+  border-left: none !important;
+  border-right: none !important;
+  border-bottom: none !important;
+}
+.modal-mode #spMentionChannelRow .mention-include-dm input[type="checkbox"] {
+  width: 12px !important; height: 12px !important; flex-shrink: 0 !important;
+}
+/* Row 3: Checkboxes — grid container only (style via ultra-compact section below) */
+.modal-mode #spMentionCheckboxesContainer {
+  grid-column: 1 / span 2 !important; grid-row: 3 !important;
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 0 10px !important;
+  margin-top: 2px !important;
+  padding: 0 !important;
+  border: none !important;
+}
 
 
+/* Row 4: Scan button full width */
+.modal-mode #spMentionScanRow {
+  grid-column: 1 / span 2 !important; grid-row: 4 !important;
+  margin-top: 2px !important;
+}
+
+/* ── COMPACT INPUTS — equal height for all selects/dropdowns ── */
+.modal-mode .search-form input,
+.modal-mode .search-form select,
+.modal-mode .search-form .custom-dropdown-selected,
+.modal-mode .search-form .workspace-inline-selected,
+.modal-mode .search-form .autocomplete-wrapper input,
+.modal-mode .search-form #spSearchIn .multiselect-selected,
+.modal-mode #spMentionsForm #spMentionChannelsMS .multiselect-selected {
+  height: 30px !important;
+  min-height: 30px !important;
+  max-height: 30px !important;
+  line-height: 28px !important;
+  font-size: 12px !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  box-sizing: border-box !important;
+}
+.modal-mode .search-form input[type="text"] { padding: 0 10px !important; }
+/* Workspace custom dropdown — match native select height exactly */
+.modal-mode #mentionsWorkspaceRow .workspace-inline-selected {
+  height: 30px !important;
+  min-height: 30px !important;
+  padding: 0 10px !important;
+  align-items: center !important;
+}
+
+
+/* ── ULTRA-COMPACT CHECKBOXES — reduce via line-height & gap, NOT font-size ── */
+.modal-mode #spMentionCheckboxesContainer {
+  gap: 2px 10px !important;
+}
+.modal-mode #spMentionCheckboxesContainer .checkbox-label,
+.modal-mode #spSearchIsOrWrapper {
+  gap: 5px !important;
+  line-height: 1 !important;     /* tighten row height, not font-size */
+  padding: 2px 0 !important;     /* only 2px top+bottom — no extra space */
+  margin: 0 !important;
+  min-height: 0 !important;      /* let content determine height */
+}
+.modal-mode #spMentionCheckboxesContainer .checkbox-label input[type="checkbox"],
+.modal-mode #spSearchIsOrWrapper input[type="checkbox"] {
+  width: 13px !important;
+  height: 13px !important;
+  flex-shrink: 0 !important;
+}
+/* "Chỉ hiển thị..." — full width */
+.modal-mode #spMentionOnlyUnreadWrapper {
+  grid-column: 1 / span 2 !important;
+  border-top: none !important;
+  padding: 2px 0 0 0 !important;
+  margin: 0 !important;
+}
+
+/* ── DM Checkboxes inside search-channel-group ── */
+.modal-mode .search-channel-group .mention-include-dm,
+.modal-mode .search-channel-group .search-include-dm {
+  margin-top: 5px !important;
+  padding-top: 5px !important;
+  border-top: 1px dashed var(--border) !important;
+  font-size: 11px !important;
+  line-height: 16px !important;
+  gap: 5px !important;
+  border-left: none !important;
+  border-right: none !important;
+  border-bottom: none !important;
+  display: flex !important;
+  align-items: center !important;
+}
+.modal-mode .search-channel-group .mention-include-dm input[type="checkbox"],
+.modal-mode .search-channel-group .search-include-dm input[type="checkbox"] {
+  width: 12px !important; height: 12px !important; flex-shrink: 0 !important;
+}
+
+/* ── EQUAL HEIGHT: workspace dropdown = time select = 30px ── */
+.modal-mode #mentionsWorkspaceRow .workspace-inline-selected {
+  height: 30px !important;
+  min-height: 30px !important;
+  box-sizing: border-box !important;
+  padding: 0 10px !important;
+  display: flex !important;
+  align-items: center !important;
+}
+.modal-mode #searchWorkspaceRow .workspace-inline-selected {
+  height: 30px !important;
+  min-height: 30px !important;
+  box-sizing: border-box !important;
+  padding: 0 10px !important;
+  display: flex !important;
+  align-items: center !important;
+}
+.modal-mode #spMentionFiltersRow select,
+.modal-mode #spSearchForm select,
+.modal-mode #spMentionFiltersRow .custom-dropdown-toggle {
+  height: 30px !important;
+  min-height: 30px !important;
+  padding: 0 10px !important;
+  box-sizing: border-box !important;
+  font-size: 12px !important;
+}
+.modal-mode #btnSpScanMentions { height: 32px !important; font-size: 12.5px !important; }
+
+/* ── RESULTS 70% / FORM 30% — flex allocation ── */
+/* Use loading-tab-mentions to avoid conflicting with search modal's hide rule */
+html.loading-tab-mentions #tab-mentions {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  overflow: hidden !important;
+}
+.modal-mode #spMentionsFormPlaceholder,
+.modal-mode #spMentionsForm {
+  flex-shrink: 0 !important;   /* form stays fixed, does NOT grow */
+}
+.modal-mode #spMentionResults {
+  flex: 1 !important;          /* results take ALL remaining space */
+  min-height: 0 !important;    /* prevent flex overflow */
+  overflow-y: auto !important;
+}
+
+/* Flex allocation for Search modal */
+html.loading-tab-search #tab-tools,
+html.loading-tab-search #tools-section-search {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  overflow: hidden !important;
+}
+.modal-mode #spSearchFormPlaceholder,
+.modal-mode #spSearchForm {
+  flex-shrink: 0 !important;
+}
+.modal-mode #spSearchResults {
+  flex: 1 !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+}
+
+/* Base (non-modal) styling for mentions checkboxes container */
+#spMentionCheckboxesContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+#spMentionOnlyUnreadWrapper {
+  border-top: 1px dashed var(--border);
+  padding-top: 6px;
+  margin-top: 4px;
+}
+
+/* ── HIDE usage guide card in modal ── */
+.modal-mode .sp-how-to-use-card,
+.modal-mode #spMentionResults .empty-state .sp-how-to-use-card,
+.modal-mode #spSearchResults .empty-state .sp-how-to-use-card {
+  display: none !important;
+}
+
+/* Hide warnings to save vertical space */
+.modal-mode #searchWorkspaceWarning,
+.modal-mode #mentionsWorkspaceWarning,
+.modal-mode .search-performance-warning {
+  display: none !important;
+}

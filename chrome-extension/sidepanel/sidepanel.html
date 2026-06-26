@@ -5,6 +5,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ChatOps++ — Panel</title>
+  <script src="modal-init.js"></script>
+  <style>
+    /* Anti-flicker: applied immediately (same rendering pass as HTML, before external CSS loads) */
+    html.modal-mode .workspace-header, html.modal-mode .tab-nav,
+    html.loading-tab-search .workspace-header, html.loading-tab-search .tab-nav,
+    html.loading-tab-mentions .workspace-header, html.loading-tab-mentions .tab-nav { display: none !important; }
+    html.loading-tab-search #toolsSubTabs { display: none !important; }
+    html.modal-mode .sp-fab, html.loading-tab-search .sp-fab,
+    html.loading-tab-mentions .sp-fab { display: none !important; }
+    html.loading-tab-search #tab-tasks, html.loading-tab-search #tab-memo,
+    html.loading-tab-search #tab-mentions, html.loading-tab-search #tab-settings { display: none !important; }
+    html.loading-tab-mentions #tab-tasks, html.loading-tab-mentions #tab-memo,
+    html.loading-tab-mentions #tab-tools, html.loading-tab-mentions #tab-settings { display: none !important; }
+  </style>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -164,7 +178,7 @@
                 style="flex:1; cursor:pointer; background:transparent; border:none; outline:none; font-size:12.5px; width:100%; min-width:0; padding:0; margin:0; display:inline-flex; align-items:center; line-height:1; height:100%; box-shadow:none;">
             </div>
 
-            <span data-i18n="orLabel"
+            <span id="quickTaskOrLabel" data-i18n="orLabel"
               style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin: 0 4px; flex-shrink: 0; user-select: none; background: #f1f5f9; padding: 4px 6px; border-radius: 4px; border: 1px solid #e2e8f0; line-height: 1;">OR</span>
 
             <select id="quickTaskReminderSelect" class="custom-select"
@@ -334,48 +348,53 @@
                 ⚠️ Searching across all workspaces may affect performance and take longer.
               </div>
             </div>
-            <div class="search-main-row" style="display: flex; gap: 8px; align-items: center;">
-              <div style="position: relative; flex: 1; display: flex; align-items: center;">
+            <div class="search-main-row">
+              <div style="position: relative; width: 100%; display: flex; align-items: center;">
                 <input type="text" id="spSearchTerms" data-i18n-placeholder="searchTermsPlaceholder" placeholder="Search keyword... (Enter to search)"
                   style="width: 100%; padding-right: 28px;">
                 <button id="btnSpClearSearch"
                   style="position: absolute; right: 8px; background: none; border: none; font-size: 16px; font-weight: bold; color: var(--text-3); cursor: pointer; display: none; padding: 4px; outline: none; border-radius: 50%; line-height: 1; z-index: 10;">&times;</button>
               </div>
-              <button class="btn btn-primary" id="btnSpSearch" data-i18n-title="search" title="Search"
-                style="width: 42px; height: 42px; padding: 0; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease;">
-                <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor">
+            </div>
+
+            <!-- User filter -->
+            <div class="autocomplete-wrapper" id="spSearchFromWrapper">
+              <input type="text" id="spSearchFrom" class="autocomplete-input" data-i18n-placeholder="searchUserPlaceholder" placeholder="Search user..."
+                autocomplete="off">
+            </div>
+
+            <!-- Channel filter -->
+            <div class="search-channel-group" id="spSearchInGroup" data-label="Kênh tìm kiếm">
+              <div id="spSearchIn" data-i18n-placeholder="searchChannelPlaceholder" data-placeholder="Search channel..."></div>
+              <div class="search-performance-warning" data-i18n="searchPerformanceNotice">
+                ⚠️ Select specific channels to optimize performance.
+              </div>
+              <div class="checkbox-label search-include-dm">
+                <input type="checkbox" id="chkSearchIncludeDM">
+                <span data-i18n="searchIncludeDM">Include Direct Messages</span>
+              </div>
+            </div>
+
+            <!-- OR Search checkbox -->
+            <div class="checkbox-label" id="spSearchIsOrWrapper">
+              <input type="checkbox" id="chkSearchIsOr">
+              <span data-i18n="searchIsOr">OR Search (Match any keyword)</span>
+            </div>
+
+            <!-- Dates container (After & Before) -->
+            <div class="search-filters-row" id="spSearchDatesRow">
+              <input type="text" id="spSearchAfter" data-i18n-placeholder="searchAfterPlaceholder" data-i18n-title="searchAfterPlaceholder" placeholder="After date" title="After date">
+              <input type="text" id="spSearchBefore" data-i18n-placeholder="searchBeforePlaceholder" data-i18n-title="searchBeforePlaceholder" placeholder="Before date" title="Before date">
+            </div>
+
+            <div class="search-main-row" id="spSearchSubmitRow">
+              <button class="btn btn-primary btn-full" id="btnSpSearch" data-i18n-title="search" title="Search">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style="margin-right:6px;">
                   <path
                     d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
                 </svg>
+                <span data-i18n="search">Search</span>
               </button>
-            </div>
-
-            <div class="search-filters-row">
-              <div class="autocomplete-wrapper">
-                <input type="text" id="spSearchFrom" class="autocomplete-input" data-i18n-placeholder="searchUserPlaceholder" placeholder="Search user..."
-                  autocomplete="off">
-              </div>
-              <div style="display:flex; flex-direction:column; gap:4px; flex:1;">
-                <div class="search-channel-group" data-label="Kênh tìm kiếm">
-                  <div id="spSearchIn" data-i18n-placeholder="searchChannelPlaceholder" data-placeholder="Search channel..."></div>
-                  <div class="search-performance-warning" data-i18n="searchPerformanceNotice">
-                    ⚠️ Select specific channels to optimize performance.
-                  </div>
-                  <div class="checkbox-label">
-                    <input type="checkbox" id="chkSearchIncludeDM">
-                    <span style="font-size: 11px;" data-i18n="searchIncludeDM">Include Direct Messages</span>
-                  </div>
-                </div>
-                <div class="checkbox-label" style="margin-left: 2px; margin-top: 4px;">
-                  <input type="checkbox" id="chkSearchIsOr">
-                  <span style="font-size: 11px;" data-i18n="searchIsOr">OR Search (Match any keyword)</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="search-filters-row">
-              <input type="text" id="spSearchAfter" data-i18n-placeholder="searchAfterPlaceholder" data-i18n-title="searchAfterPlaceholder" placeholder="After date" title="After date">
-              <input type="text" id="spSearchBefore" data-i18n-placeholder="searchBeforePlaceholder" data-i18n-title="searchBeforePlaceholder" placeholder="Before date" title="Before date">
             </div>
           </div>
         </div>
@@ -550,27 +569,27 @@
               ⚠️ Scanning across all workspaces may affect performance and take longer.
             </div>
           </div>
-          <div class="search-filters-row">
+          <div class="search-filters-row" id="spMentionFiltersRow">
             <select id="spMentionHours" class="custom-select" style="flex:1">
               <option value="24" data-i18n="last24Hours" selected>Last 24 hours</option>
               <option value="48" data-i18n="last48Hours">Last 48 hours</option>
               <option value="72" data-i18n="last72Hours">Last 72 hours</option>
             </select>
-            <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
-              <div class="search-channel-group" data-label="Kênh tìm kiếm">
-                <div id="spMentionChannelsMS" data-i18n-placeholder="searchChannelPlaceholder" data-placeholder="Search channel..."></div>
-                <div class="search-performance-warning" data-i18n="searchPerformanceNotice">
-                  ⚠️ Select specific channels to optimize performance.
-                </div>
-                <div class="checkbox-label">
-                  <input type="checkbox" id="spMentionIncludeDM">
-                  <span style="font-size:11px" data-i18n="searchIncludeDM">Include Direct Messages</span>
-                </div>
+          </div>
+          <div class="search-channel-row" id="spMentionChannelRow">
+            <div class="search-channel-group" data-label="Kênh tìm kiếm">
+              <div id="spMentionChannelsMS" data-i18n-placeholder="searchChannelPlaceholder" data-placeholder="Search channel..."></div>
+              <div class="search-performance-warning" data-i18n="searchPerformanceNotice">
+                ⚠️ Select specific channels to optimize performance.
+              </div>
+              <div class="checkbox-label mention-include-dm">
+                <input type="checkbox" id="spMentionIncludeDM">
+                <span data-i18n="searchIncludeDM">Include Direct Messages</span>
               </div>
             </div>
           </div>
 
-          <div style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
+          <div class="sp-mentions-checkboxes-container" id="spMentionCheckboxesContainer">
             <div class="checkbox-label">
               <input type="checkbox" id="spMentionDirect" checked>
               <span data-i18n="mentionDirect">Direct mention (@you)</span>
@@ -587,12 +606,12 @@
               <input type="checkbox" id="spMentionDMs">
               <span data-i18n="mentionDMs">Direct Messages (DM / GM)</span>
             </div>
-            <div class="checkbox-label" style="border-top: 1px dashed var(--border); padding-top: 6px; margin-top: 4px;">
+            <div class="checkbox-label" id="spMentionOnlyUnreadWrapper">
               <input type="checkbox" id="spMentionOnlyUnread" checked>
               <span data-i18n="mentionOnlyUnread">Only show un-interacted messages (reacted/replied)</span>
             </div>
           </div>
-          <div class="search-main-row">
+          <div class="search-main-row" id="spMentionScanRow">
             <button class="btn btn-primary btn-full" id="btnSpScanMentions">
               <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style="margin-right:6px;">
                 <path
@@ -1256,11 +1275,7 @@
 
 
       </div>
-      <div id="settingsStatus" class="settings-status"
-        style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(20px); z-index: 9999; background: #10b981; color: #ffffff; font-weight: 600; font-size: 12.5px; padding: 10px 18px; border-radius: 50px; box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.4), 0 8px 10px -6px rgba(16, 185, 129, 0.4); display: flex; align-items: center; gap: 8px; pointer-events: none; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); opacity: 0; white-space: nowrap;">
-        <span style="font-size: 15px;">✓</span>
-        <span data-i18n="settingsSaved">Saved automatically</span>
-      </div>
+
     </div>
   </div>
 
@@ -1601,6 +1616,12 @@
       <button class="tour-btn tour-btn-next" id="tourBtnNext">Next →</button>
     </div>
     <div class="tour-keyboard-hint" data-i18n="tourKeyboardHint">⌨️ Use Arrow keys (← / →) to navigate</div>
+  </div>
+
+  <div id="settingsStatus" class="settings-status"
+    style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(20px); z-index: 9999; background: #10b981; color: #ffffff; font-weight: 600; font-size: 12.5px; padding: 10px 18px; border-radius: 50px; box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.4), 0 8px 10px -6px rgba(16, 185, 129, 0.4); display: flex; align-items: center; gap: 8px; pointer-events: none; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); opacity: 0; white-space: nowrap;">
+    <span style="font-size: 15px;">✓</span>
+    <span data-i18n="settingsSaved">Saved automatically</span>
   </div>
 
   <script src="sidepanel.js" type="module"></script>

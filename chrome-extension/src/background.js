@@ -6,7 +6,8 @@ import { getConfig, getMyProfile, addPostReaction, deletePostReaction, deletePos
 import { syncCookies, setupCookieSync } from './background/cookie-sync.js';
 import { 
   handleMentionCheck, 
-  handleTaskAlarm 
+  handleTaskAlarm,
+  syncTaskAlarms
 } from './background/alarms.js';
 import { 
   setupSidePanel, 
@@ -34,6 +35,11 @@ function setupContextMenus() {
       title: 'Tạo nhanh ghi chú (📒)',
       contexts: ['selection']
     });
+    chrome.contextMenus.create({
+      id: 'quick-reply-quote',
+      title: 'Trả lời và Trích dẫn (💬)',
+      contexts: ['selection']
+    });
   });
 }
 
@@ -46,6 +52,9 @@ async function initialize() {
   setupCookieSync();
   syncCookies();
   setupContextMenus();
+  
+  // Re-synchronize alarms for all tasks on extension initialization/startup
+  await syncTaskAlarms();
 }
 
 /**
@@ -77,6 +86,14 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
       console.log('[ChatOps Ext] Message successfully received by content script');
     }).catch(err => {
       console.warn('[ChatOps Ext] Failed to send context menu message to tab:', err);
+    });
+  } else if (tab && info.menuItemId === 'quick-reply-quote') {
+    console.log('[ChatOps Ext] Sending quick-reply-quote to tab ID:', tab.id, 'text:', info.selectionText);
+    chrome.tabs.sendMessage(tab.id, {
+      type: 'QUICK_REPLY_QUOTE',
+      text: info.selectionText
+    }).catch(err => {
+      console.warn('[ChatOps Ext] Failed to send quick-reply-quote message to tab:', err);
     });
   }
 });
@@ -195,7 +212,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return true;
 
     case MESSAGE_TYPES.SPAM_POST_REACTIONS:
-      handleSpamReactions(message.postId, sendResponse);
+      handleSpamReactions(message.postId, sendResponse, message.emojis);
       return true;
 
     case MESSAGE_TYPES.RETRACT_POST_REACTIONS:
@@ -537,11 +554,17 @@ function getActiveEmojisFromSettings(settings) {
 /**
  * Triggers sequential reaction spamming on a specific post
  */
-async function handleSpamReactions(postId, sendResponse) {
+async function handleSpamReactions(postId, sendResponse, emojisOverride) {
   try {
-    const res = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS]);
-    const settings = res[STORAGE_KEYS.SETTINGS] || {};
-    const emojis = getActiveEmojisFromSettings(settings);
+    let emojis;
+    if (Array.isArray(emojisOverride) && emojisOverride.length > 0) {
+      // Use the explicitly provided group emojis
+      emojis = emojisOverride;
+    } else {
+      const res = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS]);
+      const settings = res[STORAGE_KEYS.SETTINGS] || {};
+      emojis = getActiveEmojisFromSettings(settings);
+    }
 
     if (emojis.length === 0) {
       sendResponse({ ok: false, error: 'No emojis configured' });
@@ -615,29 +638,32 @@ chrome.notifications.onClicked.addListener(async (notificationId) => {
   if (!notificationId) return;
   
   try {
+    const configRes = await chrome.storage.local.get(['chatopsUrl', 'teamName']);
+    const baseUrl = configRes.chatopsUrl || CHATOPS_CONFIG.DEFAULT_URL;
+    
     const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
     const memos = res[STORAGE_KEYS.MEMOS] || [];
     const task = memos.find(m => m.id === notificationId);
     
     if (task) {
       // Build permalink deep link or fallback to chatops base URL
-      let targetUrl = CHATOPS_CONFIG.DEFAULT_URL;
+      let targetUrl = baseUrl;
       if (task.postId && task.teamName) {
-        targetUrl = `${CHATOPS_CONFIG.DEFAULT_URL}/${task.teamName}/pl/${task.postId}`;
+        targetUrl = `${baseUrl}/${task.teamName}/pl/${task.postId}`;
       } else if (task.teamName) {
-        targetUrl = `${CHATOPS_CONFIG.DEFAULT_URL}/${task.teamName}`;
+        targetUrl = `${baseUrl}/${task.teamName}`;
       }
       
       // Save side panel tab setting to tasks
       await chrome.storage.local.set({ [STORAGE_KEYS.SIDEPANEL_TAB]: 'tasks' });
       
-      // Query if we already have an open ChatOps tab
-      const tabs = await chrome.tabs.query({ url: `${CHATOPS_CONFIG.DEFAULT_URL}/*` });
+      // Query if we already have an open ChatOps tab using the dynamic baseUrl
+      const tabs = await chrome.tabs.query({ url: `${baseUrl}/*` });
       let activeTabId = null;
       if (tabs.length > 0) {
-        // Focus the existing tab and update its URL to the target workspace
+        // Focus the existing tab without reloading its URL
         const tab = tabs[0];
-        await chrome.tabs.update(tab.id, { url: targetUrl, active: true });
+        await chrome.tabs.update(tab.id, { active: true });
         await chrome.windows.update(tab.windowId, { focused: true });
         activeTabId = tab.id;
       } else {

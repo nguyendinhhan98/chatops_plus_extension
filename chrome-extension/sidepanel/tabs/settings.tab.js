@@ -1811,6 +1811,7 @@ function setupEventListeners() {
 }
 
 let autoSaveTimeoutId = null;
+let warningClickListener = null;
 
 function showAutoSaveFeedback() {
   const fb = document.getElementById('settingsStatus');
@@ -1819,6 +1820,13 @@ function showAutoSaveFeedback() {
   if (autoSaveTimeoutId) {
     clearTimeout(autoSaveTimeoutId);
   }
+
+  if (warningClickListener) {
+    fb.removeEventListener('click', warningClickListener);
+    warningClickListener = null;
+  }
+  fb.style.pointerEvents = 'none';
+  fb.style.cursor = 'default';
 
   fb.style.background = '#10b981';
   fb.style.boxShadow = '0 10px 25px -5px rgba(16, 185, 129, 0.4), 0 8px 10px -6px rgba(16, 185, 129, 0.4)';
@@ -1845,6 +1853,13 @@ function showSuccessFeedback(message) {
     clearTimeout(autoSaveTimeoutId);
   }
 
+  if (warningClickListener) {
+    fb.removeEventListener('click', warningClickListener);
+    warningClickListener = null;
+  }
+  fb.style.pointerEvents = 'none';
+  fb.style.cursor = 'default';
+
   fb.style.background = '#10b981';
   fb.style.boxShadow = '0 10px 25px -5px rgba(16, 185, 129, 0.4), 0 8px 10px -6px rgba(16, 185, 129, 0.4)';
   fb.innerHTML = `
@@ -1870,6 +1885,13 @@ function showErrorFeedback(message) {
     clearTimeout(autoSaveTimeoutId);
   }
 
+  if (warningClickListener) {
+    fb.removeEventListener('click', warningClickListener);
+    warningClickListener = null;
+  }
+  fb.style.pointerEvents = 'none';
+  fb.style.cursor = 'default';
+
   fb.style.background = '#ef4444';
   fb.style.boxShadow = '0 10px 25px -5px rgba(239, 68, 68, 0.4), 0 8px 10px -6px rgba(239, 68, 68, 0.4)';
   fb.innerHTML = `
@@ -1887,9 +1909,69 @@ function showErrorFeedback(message) {
   }, 3000);
 }
 
+function showWarningFeedback(message, actionText, actionCallback) {
+  const fb = document.getElementById('settingsStatus');
+  if (!fb) return;
+
+  if (autoSaveTimeoutId) {
+    clearTimeout(autoSaveTimeoutId);
+    autoSaveTimeoutId = null;
+  }
+
+  if (warningClickListener) {
+    fb.removeEventListener('click', warningClickListener);
+    warningClickListener = null;
+  }
+
+  fb.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
+  fb.style.boxShadow = '0 10px 25px -5px rgba(217, 119, 6, 0.4), 0 8px 10px -6px rgba(217, 119, 6, 0.4)';
+  fb.style.pointerEvents = 'auto';
+  fb.style.cursor = 'pointer';
+
+  fb.innerHTML = `
+    <span style="font-size: 15px;">⚠️</span>
+    <span style="margin-right: 4px;">${escapeHtml(message)}</span>
+    ${actionText ? `<span class="toast-action" style="text-decoration: underline; font-weight: 700; margin-left: 6px; padding: 2px 6px; background: rgba(255,255,255,0.2); border-radius: 4px; transition: background 0.2s;">${escapeHtml(actionText)}</span>` : ''}
+  `;
+
+  fb.style.opacity = '1';
+  fb.style.transform = 'translateX(-50%) translateY(0)';
+
+  warningClickListener = (e) => {
+    if (actionCallback) {
+      actionCallback(e);
+    }
+    fb.style.opacity = '0';
+    fb.style.transform = 'translateX(-50%) translateY(20px)';
+    fb.style.pointerEvents = 'none';
+    fb.style.cursor = 'default';
+    fb.removeEventListener('click', warningClickListener);
+    warningClickListener = null;
+    if (autoSaveTimeoutId) {
+      clearTimeout(autoSaveTimeoutId);
+      autoSaveTimeoutId = null;
+    }
+  };
+
+  fb.addEventListener('click', warningClickListener);
+
+  autoSaveTimeoutId = setTimeout(() => {
+    fb.style.opacity = '0';
+    fb.style.transform = 'translateX(-50%) translateY(20px)';
+    fb.style.pointerEvents = 'none';
+    fb.style.cursor = 'default';
+    if (warningClickListener) {
+      fb.removeEventListener('click', warningClickListener);
+      warningClickListener = null;
+    }
+    autoSaveTimeoutId = null;
+  }, 6000);
+}
+
 // Expose toast helpers to the window object for other tab modules
 window.showSuccessFeedback = showSuccessFeedback;
 window.showErrorFeedback = showErrorFeedback;
+window.showWarningFeedback = showWarningFeedback;
 
 function escapeHtml(str) {
   if (!str) return '';

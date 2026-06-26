@@ -324,7 +324,7 @@ Wrapper xung quanh `insertImageToChat` hỗ trợ tự động gửi tin nhắn:
 #### Image Editor (`openImageEditor`)
 
 Canvas-based drawing editor:
-- **Tools**: Brush, Shapes (Rect/Circle/Triangle/Line dropdown), Arrow, Text, Eraser, **Upload Custom Background** (cho phép tải ảnh cá nhân lên làm nền để vẽ đè).
+- **Tools**: Brush, Shapes (Rect/Circle/Triangle/Line dropdown), Arrow, Text, Eraser, **Upload Custom Background** (cho phép tải ảnh cá nhân lên làm nền để vẽ đè), **Ctrl+V Paste Background** (hỗ trợ nhấn Ctrl+V/Cmd+V để dán trực tiếp ảnh từ clipboard làm nền vẽ).
 - **Colors**: 6 preset + native color wheel
 - **Size**: Slider 2–50px
 - **Undo**: Stack tối đa 20 states (ctx.getImageData snapshots)
@@ -379,6 +379,22 @@ showReminderBanner(text, taskId, isTask, postId, taskTeamName, isDaily)
   └── Position theo setting:
       top-right, top-left, bottom-right, bottom-left,
       top-center, bottom-center, center
+```
+
+### 4.6.1 Missed Reminders Digest Banner — `checkAndShowOverdueDigest()`
+
+Hệ thống tự động quét các công việc trễ hạn khi người dùng mở trang Mattermost và hiển thị một banner tổng hợp thông báo ở góc màn hình.
+
+```
+checkAndShowOverdueDigest(memos)
+  │
+  ├── Tìm các task pending có reminder < now (trễ hạn)
+  ├── Loại trừ các task đã bị dismiss trong session hiện tại (sessionStorage)
+  ├── Nếu số lượng > 0:
+  │   ├── Tạo banner fixed ở góc màn hình (dựa trên setting notificationPosition)
+  │   ├── Hiển thị số lượng task trễ hạn
+  │   ├── Thêm button "Xem các công việc bị lỡ" để mở sidepanel và chuyển sang tab tasks
+  │   └── Lưu các task ID đã dismissed vào sessionStorage khi đóng banner
 ```
 
 ### 4.7 PWA Side Panel

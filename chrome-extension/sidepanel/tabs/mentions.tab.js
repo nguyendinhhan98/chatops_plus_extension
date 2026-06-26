@@ -63,7 +63,8 @@ export function setup(state) {
   document.getElementById('btnSpScanMentions').addEventListener('click', scanMentionsDeep);
 
   if (typeof window.convertToCustomDropdown === 'function') {
-    window.convertToCustomDropdown('spMentionHours', null, '42px');
+    const isModal = document.body.classList.contains('modal-mode') || window.location.search.includes('view=modal');
+    window.convertToCustomDropdown('spMentionHours', null, isModal ? '30px' : '42px');
   }
 
   // Toggle Collapse

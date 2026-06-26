@@ -459,6 +459,12 @@ function switchTab(id) {
       acc.classList.remove('highlighted');
     });
   }
+
+  // Remove loading-tab classes after routing has finished
+  const docClass = document.documentElement.className;
+  if (docClass.includes('loading-tab-')) {
+    document.documentElement.className = docClass.replace(/\bloading-tab-\S+/g, '').trim();
+  }
 }
 
 // Expose switchTab globally for the tour engine
@@ -766,13 +772,20 @@ function setupStateHandlers() {
     }
   });
 
-  window.addEventListener('beforeunload', () => 
-    chrome.runtime.sendMessage({ type: MESSAGE_TYPES.SIDE_PANEL_STATE, state: 'CLOSED' })
-  );
+  window.addEventListener('beforeunload', () => {
+    if (chrome.runtime?.id) {
+      chrome.runtime.sendMessage({ type: MESSAGE_TYPES.SIDE_PANEL_STATE, state: 'CLOSED' });
+    }
+  });
 
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
-      chrome.runtime.sendMessage({ type: MESSAGE_TYPES.RESET_BADGE });
+      if (!chrome.runtime?.id) return;
+      try {
+        chrome.runtime.sendMessage({ type: MESSAGE_TYPES.RESET_BADGE });
+      } catch (e) {
+        // Extension context invalidated — ignore
+      }
     }
   });
   
@@ -862,6 +875,17 @@ function setupStateHandlers() {
     const url = link.href;
     const postId = link.dataset.postId;
     const rootId = link.dataset.rootId;
+
+    if (document.body.classList.contains('modal-mode')) {
+      console.log(`[ChatOps Ext] Post-jump link clicked in modal mode. Closing modal and navigating internally: ${url}`);
+      window.parent.postMessage({
+        type: 'NAVIGATE_CHATOPS_PATH',
+        url: url,
+        postId: postId,
+        rootId: rootId
+      }, '*');
+      return;
+    }
 
     const triggerThreadOpen = (tabId) => {
       if (!postId) return;
