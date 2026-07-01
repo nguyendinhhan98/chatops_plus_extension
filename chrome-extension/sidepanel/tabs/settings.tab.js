@@ -248,6 +248,7 @@ const DEFAULT_SETTINGS = {
   floatingButtons: {
     quickNote: true,
     quickTask: true,
+    groupReminder: true,
     spamReactions: false,
     reactAlong: false,
     imagePicker: true,
@@ -468,12 +469,14 @@ async function loadAndApplySettings() {
   document.getElementById('settingFloatingTemplatePicker').checked = settings.floatingButtons?.templatePicker !== false;
   document.getElementById('settingFloatingQuickReply').checked = settings.floatingButtons?.quickReply !== false;
   document.getElementById('settingFloatingQuickCopy').checked = settings.floatingButtons?.quickCopy !== false;
+  const grToggle = document.getElementById('settingFloatingGroupReminder');
+  if (grToggle) grToggle.checked = settings.floatingButtons?.groupReminder !== false;
 
   // Sync disabled/dimmed states
   updateFloatingCheckboxesSync(settings);
 
-  // Apply Menu Tabs and Floating Buttons accordions open/close state (default open/true)
-  const resAcc = await chrome.storage.local.get(['accordionMenuTabsOpen', 'accordionFloatingButtonsOpen']);
+  // Apply Menu Tabs, Floating Buttons, and Data Storage accordions open/close state
+  const resAcc = await chrome.storage.local.get(['accordionMenuTabsOpen', 'accordionFloatingButtonsOpen', 'accordionDataStorageOpen']);
   
   const menuTabsOpen = resAcc.accordionMenuTabsOpen !== false;
   const menuTabsAcc = document.getElementById('accordionMenuTabs');
@@ -485,6 +488,12 @@ async function loadAndApplySettings() {
   const floatingButtonsAcc = document.getElementById('accordionFloatingButtons');
   if (floatingButtonsAcc) {
     floatingButtonsAcc.classList.toggle('open', floatingButtonsOpen);
+  }
+
+  const dataStorageOpen = resAcc.accordionDataStorageOpen === true;
+  const dataStorageAcc = document.getElementById('accordionDataStorage');
+  if (dataStorageAcc) {
+    dataStorageAcc.classList.toggle('open', dataStorageOpen);
   }
 
   // Apply categories
@@ -563,6 +572,7 @@ async function loadAndApplySettings() {
   if (settings.giphyApiKey) {
     validateGiphyApiKey(settings.giphyApiKey);
   }
+
 
 }
 
@@ -1047,6 +1057,7 @@ function setupEventListeners() {
   bindFloatingToggle('settingFloatingQuickReply', 'quickReply');
   bindFloatingToggle('settingFloatingQuickCopy', 'quickCopy');
   bindFloatingToggle('settingFloatingAiSummarize', 'aiSummarize');
+  bindFloatingToggle('settingFloatingGroupReminder', 'groupReminder');
 
   const btnTabStd = document.getElementById('emojiTabStandard');
   const btnTabCustom = document.getElementById('emojiTabCustom');
@@ -1519,7 +1530,7 @@ function setupEventListeners() {
       
       if (window.isRedirectingToSetting) return;
 
-      // Collapse other accordions but restore the Menu Tabs & Floating Buttons accordion states
+      // Collapse other accordions but restore the Menu Tabs, Floating Buttons, & Data Storage accordion states
       document.querySelectorAll('.settings-accordion').forEach(acc => {
         if (acc.id === 'accordionMenuTabs') {
           chrome.storage.local.get(['accordionMenuTabsOpen'], (res) => {
@@ -1529,6 +1540,11 @@ function setupEventListeners() {
         } else if (acc.id === 'accordionFloatingButtons') {
           chrome.storage.local.get(['accordionFloatingButtonsOpen'], (res) => {
             const isOpen = res.accordionFloatingButtonsOpen !== false;
+            acc.classList.toggle('open', isOpen);
+          });
+        } else if (acc.id === 'accordionDataStorage') {
+          chrome.storage.local.get(['accordionDataStorageOpen'], (res) => {
+            const isOpen = res.accordionDataStorageOpen === true;
             acc.classList.toggle('open', isOpen);
           });
         } else {
@@ -1671,7 +1687,7 @@ function setupEventListeners() {
       const el = document.getElementById(elementId);
       const accordion = el ? el.closest('.settings-accordion') : null;
       if (accordion) {
-        // Close all other accordions first (except restoring Menu Tabs & Floating Buttons states)
+        // Close all other accordions first (except restoring Menu Tabs, Floating Buttons, & Data Storage states)
         document.querySelectorAll('.settings-accordion').forEach(acc => {
           if (acc === accordion) return;
           if (acc.id === 'accordionMenuTabs') {
@@ -1682,6 +1698,11 @@ function setupEventListeners() {
           } else if (acc.id === 'accordionFloatingButtons') {
             chrome.storage.local.get(['accordionFloatingButtonsOpen'], (res) => {
               const isOpen = res.accordionFloatingButtonsOpen !== false;
+              acc.classList.toggle('open', isOpen);
+            });
+          } else if (acc.id === 'accordionDataStorage') {
+            chrome.storage.local.get(['accordionDataStorageOpen'], (res) => {
+              const isOpen = res.accordionDataStorageOpen === true;
               acc.classList.toggle('open', isOpen);
             });
           } else {
@@ -1805,6 +1826,9 @@ function setupEventListeners() {
       } else if (acc.id === 'accordionFloatingButtons') {
         const isOpen = acc.classList.contains('open');
         chrome.storage.local.set({ accordionFloatingButtonsOpen: isOpen });
+      } else if (acc.id === 'accordionDataStorage') {
+        const isOpen = acc.classList.contains('open');
+        chrome.storage.local.set({ accordionDataStorageOpen: isOpen });
       }
     });
   });
@@ -2864,6 +2888,8 @@ export async function renderSidepanelMemes() {
     <div class="chatops-custom-images-column" style="display: flex; flex-direction: column; gap: 16px; flex: 1; min-width: 0;">${col1Html}</div>
     <div class="chatops-custom-images-column" style="display: flex; flex-direction: column; gap: 16px; flex: 1; min-width: 0;">${col2Html}</div>
   `;
+
+
 }
 
 export function compressSidepanelImage(file, maxWidth, maxHeight, quality, callback) {
@@ -2914,6 +2940,7 @@ export function updateFloatingCheckboxesSync(settings) {
   // So all of them are always enabled.
   const ids = [
     { row: 'rowFloatingQuickTask', chk: 'settingFloatingQuickTask' },
+    { row: 'rowFloatingGroupReminder', chk: 'settingFloatingGroupReminder' },
     { row: 'rowFloatingQuickNote', chk: 'settingFloatingQuickNote' },
     { row: 'rowFloatingSpamReactions', chk: 'settingFloatingSpamReactions' },
     { row: 'rowFloatingReactAlong', chk: 'settingReactAlongEnabled' },
@@ -3122,3 +3149,5 @@ export async function renderTabOrderList() {
 
   container.innerHTML = html;
 }
+
+

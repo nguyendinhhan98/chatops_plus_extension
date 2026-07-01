@@ -264,7 +264,7 @@ Layer 3: Display Name API (last resort)
           → return best match username
 ```
 
-### 4.4 Quick Note/Task Popover — `openQuickNote()`
+### 4.4 Quick Note/Task/Group Reminder Popover — `openQuickNote()`
 
 ```
 openQuickNote(postEl, anchorBtn, mode, overrideText)
@@ -273,22 +273,30 @@ openQuickNote(postEl, anchorBtn, mode, overrideText)
   │   ├── Form fields: title, textarea, category, datetime
   │   ├── Flatpickr datetime picker
   │   ├── Preset offset dropdown (+5m/+15m/+30m/+1h/+2h/+4h/+6h/+8h)
-  │   └── "Repeat daily" checkbox
+  │   ├── "Repeat daily" checkbox
+  │   └── Group Reminder specific settings (khi mode='group_reminder'):
+  │       ├── Ẩn trường title, category, và các dropdown chọn team/channel/tag
+  │       ├── Tự động resolve target channel và teamId dựa trên URL hiện tại
+  │       ├── Bổ sung Format Toolbar (In đậm, In nghiêng, Code, Gạch ngang, Trích dẫn) và các nút chèn nhanh tag (@all, @here)
+  │       └── Textarea tích hợp Auto-complete @mention danh sách thành viên dựa trên keyword (gọi SEARCH_USERS_AUTOCOMPLETE)
   │
   ├── Text extraction (cho mode='task'):
   │   ├── Ưu tiên: window.getSelection() nếu selection nằm trong post
   │   ├── Fallback: .post-message__text innerText
   │   └── Append: markdown của images trong post (![img](url))
   │
-  └── Position popover cạnh anchor button
+  └── Position popover cạnh anchor button (hoặc center màn hình nếu tạo từ chatbox)
 
 Khi save (saveTask):
-  ├── Validate: phải có reminder time
-  ├── Build task object
+  ├── Validate: phải có reminder time (và target channel nếu là group_reminder)
+  ├── Build task/reminder object (type: 'task' | 'memo' | 'group_reminder')
   ├── chrome.storage.local[MEMOS].push(task)
   ├── sendMessage(MEMO_UPDATED)   → sidepanel refresh list
   └── sendMessage(SET_TASK_ALARM) → background set chrome alarm
 ```
+
+#### `injectGroupReminderButton()`
+Injects a 📢 button next to the emoji/file buttons under the main Mattermost chatbox and the RHS chatbox, allowing users to schedule a group reminder directly from the chat UI.
 
 ### 4.5 Image System
 

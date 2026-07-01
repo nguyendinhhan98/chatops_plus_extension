@@ -29,7 +29,10 @@ export async function getUsers(page = 0, perPage = 60, teamId = '') {
 /**
  * Search users by keyword
  */
-export async function searchUsers(term, teamId = '') {
+export async function searchUsers(term, teamId = '', page = 0, perPage = 30) {
+  if (!term) {
+    return getUsers(page, perPage, teamId);
+  }
   const body = { term, allow_inactive: false };
   if (teamId) body.team_id = teamId;
   return request('/users/search', {

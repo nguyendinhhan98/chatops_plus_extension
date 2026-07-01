@@ -1,6 +1,6 @@
 # 🚀 ChatOps++ — Chrome Extension (Manifest V3)
 
-[![Version](https://img.shields.io/badge/version-3.5.1-blue.svg)](https://chrome.google.com/webstore/devconsole/)
+[![Version](https://img.shields.io/badge/version-3.5.2-blue.svg)](https://chrome.google.com/webstore/devconsole/)
 [![Platform](https://img.shields.io/badge/platform-Chrome%20%7C%20Edge%20%7C%20Opera-lightgrey.svg)]()
 [![Manifest Version](https://img.shields.io/badge/manifest-V3-orange.svg)]()
 
@@ -14,6 +14,7 @@
 * Tạo task nhanh chóng trực tiếp từ bất kỳ tin nhắn nào trên Mattermost.
 * Đặt lịch nhắc nhở (Reminder) thông qua Chrome Alarms tích hợp thông báo đẩy tiện dụng.
 * Quản lý trạng thái task (Pending, In Progress, Done) với giao diện trực quan.
+* Hỗ trợ tính năng **Nhắc nhở công việc nhóm định kỳ hằng ngày (Group Reminder)**: Tự động gửi tin nhắn nhắc nhở vào các kênh/nhóm chat của Mattermost theo khung giờ cấu hình sẵn, hỗ trợ định dạng văn bản (in đậm, in nghiêng, code, trích dẫn, gạch ngang) và tag tên thành viên trực tiếp trong nội dung tin nhắn.
 
 ### 📒 2. Ghi Chú Nhanh (Notes/Memos)
 * Lưu trữ các ghi chú quan trọng từ tin nhắn hoặc tự viết nhanh.

@@ -416,6 +416,16 @@ const en = {
   searchTemplatePlaceholder: 'Search by title, content, category...',
   noTemplatesHint: 'No templates found. Go to Notes tab in the side panel or click + to add one!',
   quickTemplateTooltip: 'Insert Note Template (📒)',
+  floatingGroupReminder: 'Group Reminder Button (📢)',
+  quickGroupReminderTooltip: 'Schedule message to this channel (📢)',
+  modalAddGroupReminderTitle: 'SCHEDULE MESSAGE TO CHANNEL',
+  groupReminderTextareaPlaceholder: 'Enter message content... (type @ to tag users)',
+  groupReminderSectionTitle: 'Schedule Message to Channel',
+  groupReminderLabel: 'Schedule Message',
+  groupRemindersTabLabel: 'Schedule Message',
+  quickGroupReminderSaveSuccess: 'Schedule message saved successfully!',
+  targetChannelInfo: 'Messages will be sent to channel: {channel}',
+
 
   quickReplyBtnTooltip: 'Quick Reply (@tag)',
   quickCopyBtnTooltip: 'Quick Copy Message',
@@ -472,6 +482,7 @@ const en = {
   paddingDefault: 'Default (12px)',
   paddingComfortable: 'Comfortable (16px)',
   paddingSpacious: 'Spacious (20px)',
+
   categoriesTitle: 'Note Categories',
   newCategoryPlaceholder: 'Enter new category...',
   addBtn: 'Add',
@@ -538,6 +549,15 @@ const en = {
   importFailed: '❌ Import failed. Please check the file content.',
   categoryNormal: 'Normal',
   categoryChecklist: 'Checklist',
+  categoryGroupReminder: 'Group Reminder',
+  reminderTargetGroupLabel: 'Remind in Group:',
+  selectChannelPlaceholder: 'Choose Group...',
+  mentionTargetLabel: 'Tag whom:',
+  mentionTargetNone: 'No Tag',
+  mentionTargetAll: '@all (All)',
+  mentionTargetHere: '@here (Online)',
+  mentionTargetUsers: 'Specific users...',
+  mentionUsersLabel: 'Users to tag:',
   addChecklineBtn: '+ Add item',
   checklistPlaceholder: 'checklist {num}...',
   checklistMinError: 'Please enter at least one checklist item.',
@@ -783,6 +803,12 @@ const en = {
   tourOpenDocsBtn: '📖 Open Docs',
 
   tourKeyboardHint: '⌨️ Use Arrow keys (← / →) to navigate',
+
+  filterAll: 'All',
+  filterTasks: 'Tasks',
+  filterGroupReminders: 'Schedule Send',
+  mentionAllDesc: 'Notify everyone in this channel',
+  mentionHereDesc: 'Notify active members in this channel',
 };
 
 // Vietnamese Dictionary
@@ -1198,6 +1224,16 @@ const vi = {
   searchTemplatePlaceholder: 'Tìm theo tiêu đề, nội dung, danh mục...',
   noTemplatesHint: 'Không tìm thấy mẫu nào. Hãy thêm ghi chú trong Side Panel để sử dụng!',
   quickTemplateTooltip: 'Chèn mẫu ghi chú (📒)',
+  floatingGroupReminder: 'Nút nhắc nhở nhóm (📢)',
+  quickGroupReminderTooltip: 'Lên lịch gửi tin vào kênh này (📢)',
+  modalAddGroupReminderTitle: 'LÊN LỊCH GỬI TIN VÀO KÊNH NÀY',
+  groupReminderTextareaPlaceholder: 'Nhập nội dung... (gõ @ để tag người)',
+  groupReminderSectionTitle: 'Lên lịch gửi tin vào kênh',
+  groupReminderLabel: 'Lên lịch gửi tin',
+  groupRemindersTabLabel: 'Lên lịch gửi tin',
+  quickGroupReminderSaveSuccess: 'Đã lên lịch gửi tin nhắn thành công!',
+  targetChannelInfo: 'Tin nhắn sẽ được gửi vào kênh: {channel}',
+
 
   quickReplyBtnTooltip: 'Phản hồi nhanh (@)',
   quickCopyBtnTooltip: 'Sao chép nhanh tin nhắn',
@@ -1406,6 +1442,7 @@ const vi = {
   paddingDefault: 'Mặc định (12px)',
   paddingComfortable: 'Dễ nhìn (16px)',
   paddingSpacious: 'Rộng rãi (20px)',
+
   categoriesTitle: 'Danh mục Ghi chú',
   newCategoryPlaceholder: 'Nhập tên danh mục mới...',
   addBtn: 'Thêm',
@@ -1471,6 +1508,15 @@ const vi = {
   importFailed: '❌ Nhập ghi chú thất bại. Vui lòng kiểm tra lại nội dung tệp.',
   categoryNormal: 'Thường',
   categoryChecklist: 'Checklist',
+  categoryGroupReminder: 'Nhắc nhở nhóm',
+  reminderTargetGroupLabel: 'Nhắc tại Group:',
+  selectChannelPlaceholder: 'Chọn Group...',
+  mentionTargetLabel: 'Tag ai:',
+  mentionTargetNone: 'Không Tag',
+  mentionTargetAll: '@all (Tất cả)',
+  mentionTargetHere: '@here (Online)',
+  mentionTargetUsers: 'Người cụ thể...',
+  mentionUsersLabel: 'Người cần tag:',
   addChecklineBtn: '+ Thêm mục',
   checklistPlaceholder: 'mục checklist {num}...',
   checklistMinError: 'Vui lòng nhập ít nhất một mục checklist.',
@@ -1561,6 +1607,12 @@ const vi = {
   tourOpenDocsBtn: '📖 Mở Tài liệu',
 
   tourKeyboardHint: '⌨️ Dùng phím mũi tên (← / →) để di chuyển',
+
+  filterAll: 'Tất cả',
+  filterTasks: 'Công việc',
+  filterGroupReminders: 'Lên lịch gửi tin',
+  mentionAllDesc: 'Thông báo cho mọi người trong kênh',
+  mentionHereDesc: 'Thông báo cho thành viên đang hoạt động',
 };
 
 // Swaps the active language dictionary key-value pairs in-place

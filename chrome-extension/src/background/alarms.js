@@ -1,4 +1,4 @@
-import { getMyProfile, getMyChannelMembers, getTeamByName, getConfig } from '../api/index.js';
+import { getMyProfile, getMyChannelMembers, getTeamByName, getConfig, createPost } from '../api/index.js';
 import { ALARMS, UI_CONFIG, CHATOPS_CONFIG, MESSAGE_TYPES, STORAGE_KEYS } from '../constants.js';
 import { language, loadLanguage } from '../lang.js';
 import { formatDateTime } from '../utils/date.js';
@@ -62,6 +62,50 @@ export async function handleTaskAlarm(taskId, alarmScheduledTime) {
     if (!task) {
       console.warn('[ChatOps Ext] Task not found, clearing alarm:', taskId);
       chrome.alarms.clear(taskId);
+      return;
+    }
+
+    if (task.type === 'group_reminder' || task.taskCategory === 'group_reminder') {
+      try {
+        // Message content already includes any @mentions the user typed
+        const postMessage = task.note;
+
+        if (task.targetChannelId) {
+          console.log('[ChatOps Ext] Posting group reminder to channel:', task.targetChannelId);
+          await createPost(task.targetChannelId, postMessage);
+          
+          // Send toast notification message to all open tabs
+          const tabs = await chrome.tabs.query({ url: `${CHATOPS_CONFIG.DEFAULT_URL}/*` });
+          for (const tab of tabs) {
+            chrome.tabs.sendMessage(tab.id, {
+              type: MESSAGE_TYPES.SHOW_TOAST,
+              message: `[ChatOps++] Posted group reminder: ${task.title || 'Task'}`
+            }).catch(() => {});
+          }
+        } else {
+          console.warn('[ChatOps Ext] Group reminder missing targetChannelId:', taskId);
+        }
+      } catch (postErr) {
+        console.error('[ChatOps Ext] Failed to post group reminder:', postErr);
+        // Show error toast on tabs
+        const tabs = await chrome.tabs.query({ url: `${CHATOPS_CONFIG.DEFAULT_URL}/*` });
+        for (const tab of tabs) {
+          chrome.tabs.sendMessage(tab.id, {
+            type: MESSAGE_TYPES.SHOW_TOAST,
+            message: `[ChatOps++] Failed to send group reminder: ${postErr.message}`
+          }).catch(() => {});
+        }
+      }
+
+      if (task.repeatDaily) {
+        // Reschedule to next daily occurrence immediately
+        await rescheduleToNextDailyOccurrence(task, memos);
+      } else {
+        task.done = true;
+        task.doneAt = Date.now();
+        await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
+        chrome.alarms.clear(taskId);
+      }
       return;
     }
 

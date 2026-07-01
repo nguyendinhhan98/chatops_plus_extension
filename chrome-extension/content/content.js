@@ -35,6 +35,7 @@ let currentResizeImageObj = null;
 let updateImageEditorTranslations = null;
 let updateTaskCreateButtonTranslations = null;
 let updateHeaderButtonsTranslations = null;
+let updateGroupReminderButtonTranslations = null;
 // Tracks the last right-clicked post element for context menu reply-quote feature
 let lastRightClickedPostEl = null;
 // Tracks active reaction group dropdown for spam button right-click
@@ -176,9 +177,14 @@ async function handleNotificationJump(postId, taskTeamName) {
   const currentTeamFromUrl = window.location.pathname.split('/')[1];
   const targetTeam = taskTeamName || currentTeamFromUrl || CHATOPS_CONFIG.DEFAULT_TEAM;
   if (postId) {
-    window.location.href = `/${targetTeam}/pl/${postId}`;
+    const targetPath = `/${targetTeam}/pl/${postId}`;
+    window.history.pushState(null, '', targetPath);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+    handleOpenPostThread(postId);
   } else if (taskTeamName && currentTeamFromUrl !== taskTeamName) {
-    window.location.href = `/${taskTeamName}`;
+    const targetPath = `/${taskTeamName}`;
+    window.history.pushState(null, '', targetPath);
+    window.dispatchEvent(new PopStateEvent('popstate'));
   }
 }
 
@@ -1013,6 +1019,100 @@ function showToast(msg) {
   updateTaskCreateButtonTranslations = function() {
     document.querySelectorAll('.chatops-ext-task-create-btn').forEach(btn => {
       btn.title = language.quickTaskTooltip || 'Tạo công việc (🎯)';
+    });
+  };
+
+  // --- Group Reminder Button Integration into Chat UI ---
+  function injectGroupReminderButton() {
+    const floatingButtons = cachedSettings.floatingButtons || {};
+    const groupReminderEnabled = floatingButtons.groupReminder !== false;
+    
+    const targets = [
+      { id: 'emojiPickerButton', textboxId: 'post_textbox', btnId: 'chatops-ext-group-reminder-btn' },
+      { id: 'rhsEmojiPickerButton', textboxId: 'reply_textbox', btnId: 'chatops-ext-group-reminder-btn-rhs' }
+    ];
+
+    targets.forEach(target => {
+      const textbox = document.getElementById(target.textboxId) || 
+        (target.textboxId === 'reply_textbox' 
+          ? document.querySelector('#reply_textbox, .sidebar-right textarea, .rhs-thread textarea, .sidebar--right textarea, [placeholder*="reply" i]')
+          : document.querySelector('#post_textbox, .post-create-body textarea, [placeholder*="write" i]'));
+
+      let emojiBtn = null;
+      if (textbox) {
+        const container = textbox.closest('.post-create-body, .input-container, .post-body__cell, .post-create, form, [class*="post-create"]');
+        if (container) {
+          emojiBtn = container.querySelector('#emojiPickerButton, #rhsEmojiPickerButton, button[aria-label*="emoji" i], button[aria-label*="Emoji"], button[class*="emoji" i], .emoji-picker__container button, button[id*="Emoji"]');
+        }
+      }
+
+      if (!emojiBtn) {
+        emojiBtn = document.getElementById(target.id);
+      }
+
+      if (!emojiBtn) {
+        return;
+      }
+
+      const parent = emojiBtn.parentNode;
+      if (!parent) return;
+
+      const existingBtn = parent.querySelector('.chatops-ext-group-reminder-btn');
+
+      if (!groupReminderEnabled) {
+        if (existingBtn) existingBtn.remove();
+        delete emojiBtn.dataset.chatopsGroupReminderInjected;
+        return;
+      }
+
+      if (existingBtn) {
+        emojiBtn.dataset.chatopsGroupReminderInjected = 'true';
+        if (!existingBtn.id) {
+          existingBtn.id = target.btnId;
+        }
+        return;
+      }
+
+      const grBtn = document.createElement('button');
+      grBtn.id = target.btnId;
+      grBtn.type = 'button';
+      grBtn.className = 'chatops-ext-group-reminder-btn';
+      grBtn.innerHTML = '📢';
+      grBtn.title = language.quickGroupReminderTooltip || 'Tạo nhắc nhở nhóm (📢)';
+      grBtn.dataset.targetTextbox = target.textboxId;
+
+      // Insert it right after the task button or template button
+      const taskBtn = parent.querySelector('.chatops-ext-task-create-btn');
+      if (taskBtn) {
+        parent.insertBefore(grBtn, taskBtn.nextSibling);
+      } else {
+        const templateBtn = parent.querySelector('.chatops-ext-template-picker-btn');
+        if (templateBtn) {
+          parent.insertBefore(grBtn, templateBtn.nextSibling);
+        } else {
+          const imageBtn = parent.querySelector('.chatops-ext-image-picker-btn');
+          if (imageBtn) {
+            parent.insertBefore(grBtn, imageBtn.nextSibling);
+          } else {
+            parent.insertBefore(grBtn, emojiBtn.nextSibling);
+          }
+        }
+      }
+
+      emojiBtn.dataset.chatopsGroupReminderInjected = 'true';
+
+      grBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const text = textbox ? textbox.value.trim() : '';
+        openQuickNote(null, grBtn, 'group_reminder', text);
+      });
+    });
+  }
+
+  updateGroupReminderButtonTranslations = function() {
+    document.querySelectorAll('.chatops-ext-group-reminder-btn').forEach(btn => {
+      btn.title = language.quickGroupReminderTooltip || 'Tạo nhắc nhở nhóm (📢)';
     });
   };
 
@@ -3659,8 +3759,11 @@ function showToast(msg) {
     quickNotePopover = document.createElement('div');
     quickNotePopover.id = 'chatops-quick-note-popover';
     quickNotePopover.innerHTML = `
-      <div class="sp-modal-header" style="border-top-left-radius: 11px; border-top-right-radius: 11px; border-bottom: 1px solid #cbd5e1;">
-        <h3 class="sp-modal-title cqn-title" style="margin: 0; font-size: 13px; font-weight: 700; text-transform: uppercase;">${language.modalAddTaskTitle.toUpperCase()}</h3>
+      <div class="sp-modal-header" style="border-top-left-radius: 11px; border-top-right-radius: 11px; border-bottom: 1px solid #cbd5e1; display: flex; align-items: center; justify-content: space-between; width: 100%;">
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <h3 class="sp-modal-title cqn-title" style="margin: 0; font-size: 13px; font-weight: 700; text-transform: uppercase;">${language.modalAddTaskTitle.toUpperCase()}</h3>
+          <span id="cqn-beta-badge" style="display: none; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; line-height: 1; vertical-align: middle; user-select: none;">BETA</span>
+        </div>
         <button id="cqn-close" class="sp-modal-close-btn" title="${language.cancel}">&times;</button>
       </div>
       
@@ -3668,10 +3771,55 @@ function showToast(msg) {
         <div class="cqn-title-row" style="margin-bottom: 8px; width: 100%;">
           <input type="text" id="cqn-note-title" placeholder="${language.titleOptional}" style="width: 50%; height: 28px; font-size: 12px; font-weight: 600; padding: 4px 8px; border-radius: 6px; border: 1px solid #cbd5e1; outline: none; box-sizing: border-box; font-family: inherit;" autocomplete="off">
         </div>
-        <div class="task-quick-input-row" style="margin-bottom: 12px; width: 100%;">
-          <textarea id="cqn-note-text" placeholder="${language.taskTextareaPlaceholder}" class="quick-note-textarea" style="width: 100%; min-height: 110px; resize: vertical; box-sizing: border-box;"></textarea>
+        <div class="task-quick-input-row" style="margin-bottom: 12px; width: 100%; position: relative;">
+          <textarea id="cqn-note-text" placeholder="${language.taskTextareaPlaceholder}" class="quick-note-textarea" style="width: 100%; min-height: 110px; resize: vertical; box-sizing: border-box; padding-right: 36px;"></textarea>
+          <div id="cqn-preview-box" class="markdown-preview cqn-hidden" style="display: none; width: 100%; min-height: 110px; max-height: 250px; overflow-y: auto; padding: 8px 36px 8px 12px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-family: inherit; font-size: 13.5px; line-height: 1.5; color: #1e293b; text-align: left; word-break: break-word;"></div>
+          <button type="button" id="cqn-preview-btn" title="Xem trước tin nhắn" style="position: absolute; top: 8px; right: 8px; border: none; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 4px; color: #64748b; transition: all 0.15s ease; z-index: 10;" onmouseover="if(!this.classList.contains('active')){this.style.background='#e2e8f0'; this.style.color='#1e293b';}" onmouseout="if(!this.classList.contains('active')){this.style.background='transparent'; this.style.color='#64748b';}">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
         </div>
-        
+
+        <!-- Format toolbar: shown only in group_reminder mode -->
+        <div id="cqn-format-toolbar" style="display:none; flex-direction:row; align-items:center; flex-wrap:wrap; margin-bottom:12px; padding:4px 6px; background:#f8fafc; border:1px solid #cbd5e1; border-top:none; border-bottom-left-radius:6px; border-bottom-right-radius:6px; width:100%; box-sizing:border-box; gap:2px; overflow:visible; margin-top: -12px;">
+          <button type="button" class="cqn-fmt-btn" data-action="wrap" data-value="**" title="In đậm">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/></svg>
+          </button>
+          <button type="button" class="cqn-fmt-btn" data-action="wrap" data-value="*" title="In nghiêng">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></svg>
+          </button>
+          <span style="width:1px; height:16px; background:#cbd5e1; margin:0 4px; display:inline-block; vertical-align:middle;"></span>
+          <button type="button" class="cqn-fmt-btn" data-action="link" title="Đường dẫn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          </button>
+          <button type="button" class="cqn-fmt-btn" data-action="linePrefix" data-value="- " title="Danh sách">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          </button>
+          <button type="button" class="cqn-fmt-btn" data-action="wrap" data-value="\`" title="Code block">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          </button>
+          <button type="button" class="cqn-fmt-btn" data-action="linePrefix" data-value="&gt; " title="Trích dẫn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </button>
+          <span style="width:1px; height:16px; background:#cbd5e1; margin:0 4px; display:inline-block; vertical-align:middle;"></span>
+          <div style="position:relative; overflow:visible; display:inline-flex;">
+            <button type="button" class="cqn-fmt-btn" id="cqn-emoji-btn" title="Emoji">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+            </button>
+            <div id="cqn-emoji-picker" style="display:none; position:absolute; bottom:30px; left:0; background:#ffffff; border:1px solid #cbd5e1; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.15); padding:8px; width:200px; grid-template-columns:repeat(6, 1fr); gap:6px; z-index:999999; box-sizing:border-box;"></div>
+          </div>
+        </div>
+
+        <!-- Group Channel Info Box -->
+        <div id="cqn-group-channel-info" style="display:none; margin-bottom:10px; padding:10px 12px; background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; align-items:center; gap:8px; font-size:12px; color:#1e40af; width:100%; box-sizing:border-box;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+          </svg>
+          <span class="cqn-channel-text" style="font-weight: 500;"></span>
+        </div>
+        <!-- @mention autocomplete dropdown (injected into body dynamically) -->
+
         <div id="cqn-note-section" style="margin-bottom: 12px; width: 100%; display: none; overflow: visible !important;">
           <div style="font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase; margin-bottom:4px;">${language.categoryLabel}</div>
           <select id="cqn-category" class="custom-select" style="width:100%; height: 34px; font-size: 12.5px; border-radius: 6px; border:1px solid #cbd5e1; background:#fff; outline:none; cursor:pointer; box-sizing: border-box;">
@@ -3683,26 +3831,33 @@ function showToast(msg) {
         </div>
 
         <div id="cqn-task-section" style="margin-bottom: 12px; width: 100%; overflow: visible !important;">
+          <div class="task-category-row" style="margin-bottom: 12px; display:flex; align-items:center; gap:8px; width:100%;">
+            <span style="font-size:12.5px; color:#475569; font-weight:600; white-space:nowrap;">Category:</span>
+            <select id="cqn-task-category" class="custom-select" style="width: 140px; height: 32px; font-size: 12.5px; border-radius: 6px; cursor: pointer; outline: none; box-sizing: border-box; padding: 2px 24px 2px 8px; margin: 0; line-height: 1;">
+              <option value="normal" selected>${language.categoryNormal || 'Normal'}</option>
+              <option value="checklist">${language.categoryChecklist || 'Checklist'}</option>
+            </select>
+          </div>
           <div class="task-reminder-wrapper" style="display:flex; flex-wrap:wrap; align-items:center; gap:8px; width:100%; box-sizing: border-box; overflow: visible !important;">
             <div class="task-reminder-row" id="cqnReminderRow"
-              style="flex:1 1 220px; min-width:220px; background:#fff; padding:0 10px; border-radius:6px; border:1px solid #cbd5e1; cursor:pointer; display:flex; align-items:center; height:34px; box-sizing:border-box; transition: opacity 0.2s ease;">
+               style="flex:1 1 220px; min-width:220px; background:#fff; padding:0 10px; border-radius:6px; border:1px solid #cbd5e1; cursor:pointer; display:flex; align-items:center; height:34px; box-sizing:border-box; transition: opacity 0.2s ease;">
               <label class="task-reminder-label" for="cqn-reminder-time"
-                style="margin-right:6px; cursor:pointer; display:inline-flex; align-items:center; white-space:nowrap; font-size:12.5px; line-height:1; height:100%; margin-bottom:0;">
+                 style="margin-right:6px; cursor:pointer; display:inline-flex; align-items:center; white-space:nowrap; font-size:12.5px; line-height:1; height:100%; margin-bottom:0;">
                 <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"
-                  style="margin-right:4px; opacity:0.7; flex-shrink:0; display:inline-block; vertical-align:middle; position:relative; top:-0.5px;">
+                   style="margin-right:4px; opacity:0.7; flex-shrink:0; display:inline-block; vertical-align:middle; position:relative; top:-0.5px;">
                   <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z" />
                   <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z" />
                 </svg>
                 ${language.taskReminderLabel}
               </label>
               <input type="text" id="cqn-reminder-time" class="quick-task-datetime" placeholder="${language.chooseDatePlaceholder}"
-                style="flex:1; cursor:pointer; background:transparent; border:none; outline:none; font-size:12.5px; width:100%; min-width:0; padding:0; margin:0; display:inline-flex; align-items:center; line-height:1; height:100%; box-shadow:none;">
+                 style="flex:1; cursor:pointer; background:transparent; border:none; outline:none; font-size:12.5px; width:100%; min-width:0; padding:0; margin:0; display:inline-flex; align-items:center; line-height:1; height:100%; box-shadow:none;">
             </div>
 
             <span id="cqnOrLabel" style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin: 0 4px; flex-shrink: 0; user-select: none; background: #f1f5f9; padding: 4px 6px; border-radius: 4px; border: 1px solid #e2e8f0; line-height: 1;">${language.orLabel}</span>
 
             <select id="cqnReminderSelect" class="custom-select"
-              style="width: 115px; height: 34px; font-size: 12.5px; border-radius: 6px; cursor: pointer; outline: none; box-sizing: border-box; flex-shrink: 0; line-height: 1; padding: 0 24px 0 10px;">
+               style="width: 115px; height: 34px; font-size: 12.5px; border-radius: 6px; cursor: pointer; outline: none; box-sizing: border-box; flex-shrink: 0; line-height: 1; padding: 0 24px 0 10px;">
               <option value="">${language.remindInPreset}</option>
               <option value="5">+5m</option>
               <option value="15">+15m</option>
@@ -3899,6 +4054,10 @@ function showToast(msg) {
         }
         syncReminderDimming();
         if (e.target !== timeInput && fpCqn) {
+          const calendarContainer = fpCqn.calendarContainer;
+          if (calendarContainer && calendarContainer.contains(e.target)) {
+            return;
+          }
           fpCqn.open();
         }
       });
@@ -3907,6 +4066,10 @@ function showToast(msg) {
     // Convert selects to premium custom dropdowns
     convertToCustomDropdown(cqnCategorySelect);
     convertToCustomDropdown(cqnReminderSelect, '115px');
+    const cqnTaskCategorySelect = document.getElementById('cqn-task-category');
+    if (cqnTaskCategorySelect) {
+      convertToCustomDropdown(cqnTaskCategorySelect, '140px');
+    }
 
     // Initialize toggle state after custom dropdown is built
     toggleCqnPresetReminderVisibility(repeatDailyCheckbox ? repeatDailyCheckbox.checked : false);
@@ -3933,12 +4096,511 @@ function showToast(msg) {
       });
     }
 
+
+    // Aa formatting toolbar toggle logic has been removed as it is now integrated into a single toolbar.
+
+    const emojiBtn = document.getElementById('cqn-emoji-btn');
+    const emojiPicker = document.getElementById('cqn-emoji-picker');
+    const emojis = ['😀', '😂', '🥰', '👍', '🎉', '🔥', '👏', '🚀', '👀', '💯', '❤️', '✔️'];
+    if (emojiPicker) {
+      emojiPicker.innerHTML = emojis.map(em => `
+        <button type="button" class="cqn-emoji-item" style="border:none; background:transparent; font-size:18px; cursor:pointer; padding:4px; display:inline-flex; align-items:center; justify-content:center; border-radius:4px; transition: background 0.1s; outline:none; width:26px; height:26px;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">${em}</button>
+      `).join('');
+      
+      emojiPicker.addEventListener('click', (e) => {
+        const item = e.target.closest('.cqn-emoji-item');
+        if (!item) return;
+        const em = item.textContent.trim();
+        const ta = document.getElementById('cqn-note-text');
+        if (ta && ta.style.display !== 'none') {
+          const ss = ta.selectionStart, se = ta.selectionEnd, tv = ta.value;
+          ta.value = tv.substring(0, ss) + em + tv.substring(se);
+          const np = ss + em.length;
+          ta.setSelectionRange(np, np);
+          ta.focus();
+        }
+        emojiPicker.style.display = 'none';
+        emojiBtn?.classList.remove('active');
+      });
+    }
+
+    if (emojiBtn && emojiPicker) {
+      emojiBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (emojiBtn.classList.contains('disabled')) return;
+        const isHidden = emojiPicker.style.display === 'none';
+        emojiPicker.style.display = isHidden ? 'grid' : 'none';
+        if (isHidden) {
+          emojiBtn.classList.add('active');
+        } else {
+          emojiBtn.classList.remove('active');
+        }
+      });
+    }
+
+    document.addEventListener('click', (e) => {
+      if (emojiPicker && emojiPicker.style.display !== 'none') {
+        if (!emojiPicker.contains(e.target) && e.target !== emojiBtn && !emojiBtn?.contains(e.target)) {
+          emojiPicker.style.display = 'none';
+          emojiBtn?.classList.remove('active');
+        }
+      }
+    });
+
+    const previewBtn = document.getElementById('cqn-preview-btn');
+    const previewBox = document.getElementById('cqn-preview-box');
+    const taText = document.getElementById('cqn-note-text');
+    if (previewBtn && previewBox && taText) {
+      previewBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isPreviewing = !previewBox.classList.contains('cqn-hidden');
+        if (isPreviewing) {
+          previewBox.classList.add('cqn-hidden');
+          taText.classList.remove('cqn-hidden');
+          previewBox.style.display = 'none';
+          taText.style.display = 'block';
+          previewBtn.classList.remove('active');
+          document.querySelectorAll('#cqn-format-toolbar .cqn-fmt-btn:not(#cqn-preview-btn)').forEach(btn => {
+            btn.classList.remove('disabled');
+            btn.removeAttribute('disabled');
+          });
+          taText.focus();
+        } else {
+          // Sync height to prevent layout shifting
+          const height = taText.offsetHeight;
+          previewBox.style.height = height + 'px';
+          const html = formatRichText(taText.value || `*${language.msgPreviewNoText || 'Không có nội dung'}*`);
+          previewBox.innerHTML = html;
+          previewBox.classList.remove('cqn-hidden');
+          taText.classList.add('cqn-hidden');
+          previewBox.style.display = 'block';
+          taText.style.display = 'none';
+          previewBtn.classList.add('active');
+          if (emojiPicker) {
+            emojiPicker.style.display = 'none';
+            emojiBtn?.classList.remove('active');
+          }
+          document.querySelectorAll('#cqn-format-toolbar .cqn-fmt-btn:not(#cqn-preview-btn)').forEach(btn => {
+            btn.classList.add('disabled');
+            btn.setAttribute('disabled', 'true');
+          });
+        }
+      });
+    }
+
+    const fmtToolbar = document.getElementById('cqn-format-toolbar');
+    if (fmtToolbar) {
+      fmtToolbar.addEventListener('click', (e) => {
+        const btn = e.target.closest('.cqn-fmt-btn');
+        if (!btn) return;
+        if (btn.classList.contains('disabled') || btn.id === 'cqn-preview-btn' || btn.id === 'cqn-fmt-toggle' || btn.id === 'cqn-emoji-btn') {
+          return;
+        }
+        const ta = document.getElementById('cqn-note-text');
+        if (!ta || ta.style.display === 'none') return;
+
+        const action = btn.dataset.action;
+        const rawVal = btn.dataset.value;
+        const val = rawVal === '`' ? '`' : rawVal;
+        const ss = ta.selectionStart, se = ta.selectionEnd, tv = ta.value;
+
+        if (action === 'wrap') {
+          const sel = tv.substring(ss, se);
+          ta.value = tv.substring(0, ss) + val + sel + val + tv.substring(se);
+          ta.setSelectionRange(ss + val.length, ss + val.length + sel.length);
+        } else if (action === 'linePrefix') {
+          const lineStart = tv.lastIndexOf('\n', ss - 1) + 1;
+          ta.value = tv.substring(0, lineStart) + val + tv.substring(lineStart);
+          ta.setSelectionRange(ss + val.length, se + val.length);
+        } else if (action === 'link') {
+          const url = prompt('Nhập địa chỉ liên kết (URL):', 'https://');
+          if (url !== null) {
+            const sel = tv.substring(ss, se);
+            const linkText = `[${sel}](${url})`;
+            ta.value = tv.substring(0, ss) + linkText + tv.substring(se);
+            ta.setSelectionRange(ss, ss + linkText.length);
+          }
+        } else if (action === 'priority') {
+          const pfx = '**[QUAN TRỌNG]** ';
+          const sel = tv.substring(ss, se);
+          if (sel) {
+            ta.value = tv.substring(0, ss) + pfx + sel + tv.substring(se);
+            ta.setSelectionRange(ss + pfx.length, ss + pfx.length + sel.length);
+          } else {
+            ta.value = tv.substring(0, ss) + pfx + tv.substring(ss);
+            ta.setSelectionRange(ss + pfx.length, ss + pfx.length);
+          }
+        } else if (action === 'attachment') {
+          const url = prompt('Nhập đường dẫn tệp tin hoặc hình ảnh (URL):', 'https://');
+          if (url !== null) {
+            const isImage = confirm('Đây có phải là hình ảnh không?');
+            const desc = prompt('Nhập mô tả cho tệp đính kèm:', 'tệp đính kèm');
+            if (desc !== null) {
+              const prefix = isImage ? '!' : '';
+              const linkText = `${prefix}[${desc}](${url})`;
+              ta.value = tv.substring(0, ss) + linkText + tv.substring(se);
+              ta.setSelectionRange(ss, ss + linkText.length);
+            }
+          }
+        }
+        ta.focus();
+      });
+    }
+
     return quickNotePopover;
+  }
+
+  // Resolve current channel info from URL + API (used for group_reminder)
+  async function getCurrentChannelInfo() {
+    try {
+      const pathParts = window.location.pathname.split('/');
+      const teamName = pathParts[1] || '';
+      const channelSlug = pathParts[2] === 'channels' ? (pathParts[3] || '') : (pathParts[2] || '');
+
+      const teamsResponse = await new Promise(resolve => {
+        chrome.runtime.sendMessage({ type: MESSAGE_TYPES.GET_MY_TEAMS }, resolve);
+      });
+      if (!teamsResponse?.ok || !teamsResponse.teams?.length) return null;
+
+      const team = teamsResponse.teams.find(t => t.name === teamName) || teamsResponse.teams[0];
+      if (!team) return null;
+
+      const channelsResponse = await new Promise(resolve => {
+        chrome.runtime.sendMessage({ type: MESSAGE_TYPES.GET_MY_CHANNELS, teamId: team.id }, resolve);
+      });
+      if (!channelsResponse?.ok || !channelsResponse.channels) return null;
+
+      const channel = channelsResponse.channels.find(c => c.name === channelSlug);
+      return { channel: channel || null, teamId: team.id };
+    } catch (e) {
+      console.error('[ChatOps Ext] Failed to resolve current channel:', e);
+      return null;
+    }
+  }
+
+  // @mention autocomplete for group reminder textarea
+  function setupMentionAutocomplete(textarea, getTeamId) {
+    let dropdown = null;
+    let atStart = -1;
+    let debounce = null;
+    let activeIndex = 0;
+    
+    // Pagination & Loading state
+    let currentPage = 0;
+    let isQuerying = false;
+    let hasMore = true;
+    let currentQuery = '';
+    let allItems = []; // Contains all list items (special + users)
+    const perPage = 30;
+
+    function destroyDropdown() {
+      if (dropdown) { dropdown.remove(); dropdown = null; }
+    }
+
+    function insertUser(username) {
+      const val = textarea.value;
+      const cursor = textarea.selectionStart;
+      const newVal = val.substring(0, atStart) + '@' + username + ' ' + val.substring(cursor);
+      textarea.value = newVal;
+      const np = atStart + username.length + 2;
+      textarea.setSelectionRange(np, np);
+      destroyDropdown();
+      textarea.focus();
+    }
+
+    function showSpinner() {
+      if (!dropdown) return;
+      let spinnerBox = dropdown.querySelector('.cqn-spinner-container');
+      if (!spinnerBox) {
+        spinnerBox = document.createElement('div');
+        spinnerBox.className = 'cqn-spinner-container';
+        spinnerBox.style.cssText = 'display:flex;align-items:center;justify-content:center;padding:8px;gap:8px;color:#64748b;font-size:12px;';
+        spinnerBox.innerHTML = `<span class="cqn-spinner"></span><span>${language.loading || 'Đang tải...'}</span>`;
+        dropdown.appendChild(spinnerBox);
+      }
+    }
+    
+    function hideSpinner() {
+      if (!dropdown) return;
+      const spinnerBox = dropdown.querySelector('.cqn-spinner-container');
+      if (spinnerBox) {
+        spinnerBox.remove();
+      }
+    }
+
+    async function loadNextPage() {
+      if (isQuerying || !hasMore || currentQuery) return;
+      isQuerying = true;
+      showSpinner();
+      
+      const teamId = getTeamId();
+      const nextPage = currentPage + 1;
+      
+      try {
+        const resp = await new Promise(resolve => {
+          chrome.runtime.sendMessage({
+            type: MESSAGE_TYPES.SEARCH_USERS_AUTOCOMPLETE,
+            query: '',
+            teamId: teamId || '',
+            page: nextPage,
+            perPage: perPage
+          }, resolve);
+        });
+        
+        if (resp?.ok && Array.isArray(resp.users)) {
+          const newUsers = resp.users;
+          if (newUsers.length < perPage) {
+            hasMore = false;
+          }
+          currentPage = nextPage;
+          
+          const startIdx = allItems.length;
+          let addedCount = 0;
+          newUsers.forEach(u => {
+            if (!allItems.some(item => item.username === u.username)) {
+              allItems.push(u);
+              appendRow(u, startIdx + addedCount);
+              addedCount++;
+            }
+          });
+          
+          if (!hasMore) {
+            hideSpinner();
+          }
+        } else {
+          hasMore = false;
+          hideSpinner();
+        }
+      } catch (err) {
+        console.error('[ChatOps Ext] Failed to load more users:', err);
+        hasMore = false;
+        hideSpinner();
+      } finally {
+        isQuerying = false;
+      }
+    }
+
+    function handleScroll() {
+      if (!dropdown || isQuerying || !hasMore || currentQuery) return;
+      const threshold = 20;
+      if (dropdown.scrollTop + dropdown.clientHeight >= dropdown.scrollHeight - threshold) {
+        loadNextPage();
+      }
+    }
+
+    function appendRow(u, idx) {
+      if (!dropdown) return;
+      
+      const initials = u.initials || ((u.first_name?.[0] || '') + (u.last_name?.[0] || '') || u.username?.[0] || '?').toUpperCase();
+      const displayName = u.isSpecial ? u.displayName : ([u.first_name, u.last_name].filter(Boolean).join(' ') || u.username);
+      const desc = u.isSpecial ? u.email : `@${u.username}`;
+      
+      const row = document.createElement('div');
+      row.className = 'mention-item-row';
+      row.dataset.index = idx;
+      row.dataset.username = u.username;
+      row.style.cssText = 'padding:8px 12px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:background 0.1s;';
+      
+      let avatarHtml = '';
+      if (u.isSpecial) {
+        avatarHtml = `<div style="width:32px;height:32px;border-radius:50%;background:#e2e8f0;color:#1e293b;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0;">${initials}</div>`;
+      } else {
+        avatarHtml = `<div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#5865f2,#8b5cf6);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;">${escapeHtml(initials)}</div>`;
+      }
+      
+      row.innerHTML = `${avatarHtml}<div style="flex:1;min-width:0;"><div style="font-weight:600;font-size:13px;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(displayName)}</div><div style="font-size:11px;color:#64748b;">${escapeHtml(desc)}</div></div>`;
+      
+      row.addEventListener('mouseenter', () => updateActiveIndex(idx));
+      row.addEventListener('mousedown', e => { e.preventDefault(); insertUser(u.username); });
+      
+      const spinnerBox = dropdown.querySelector('.cqn-spinner-container');
+      if (spinnerBox) {
+        dropdown.insertBefore(row, spinnerBox);
+      } else {
+        dropdown.appendChild(row);
+      }
+    }
+
+    function showDropdown(users, query) {
+      destroyDropdown();
+      
+      currentQuery = query;
+      allItems = [];
+      const qLower = (query || '').toLowerCase();
+      if ('all'.startsWith(qLower)) {
+        allItems.push({
+          username: 'all',
+          isSpecial: true,
+          displayName: 'all',
+          email: language.mentionAllDesc || 'Nhắc toàn bộ kênh (@all)',
+          initials: '📢'
+        });
+      }
+      if ('here'.startsWith(qLower)) {
+        allItems.push({
+          username: 'here',
+          isSpecial: true,
+          displayName: 'here',
+          email: language.mentionHereDesc || 'Nhắc người trực tuyến (@here)',
+          initials: '🔔'
+        });
+      }
+      
+      if (users) {
+        users.forEach(u => {
+          if (!allItems.some(item => item.username === u.username)) {
+            allItems.push(u);
+          }
+        });
+      }
+      
+      if (!allItems.length) return;
+      
+      activeIndex = 0;
+      dropdown = document.createElement('div');
+      dropdown.id = 'chatops-mention-dropdown';
+      dropdown.style.cssText = 'position:fixed;background:#fff;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,0.18);z-index:2147483647;min-width:220px;max-width:300px;max-height:200px;overflow-y:auto;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;';
+      
+      const rect = textarea.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      if (spaceBelow < 200 && rect.top > 200) {
+        dropdown.style.bottom = (window.innerHeight - rect.top + 4) + 'px';
+        dropdown.style.left = rect.left + 'px';
+      } else {
+        dropdown.style.top = (rect.bottom + 4) + 'px';
+        dropdown.style.left = rect.left + 'px';
+      }
+      
+      allItems.forEach((u, idx) => {
+        appendRow(u, idx);
+      });
+      
+      dropdown.addEventListener('scroll', handleScroll);
+      
+      if (hasMore && !query) {
+        showSpinner();
+      }
+      
+      document.body.appendChild(dropdown);
+      renderActiveItem();
+    }
+    
+    function updateActiveIndex(idx) {
+      activeIndex = idx;
+      renderActiveItem();
+    }
+    
+    function renderActiveItem() {
+      if (!dropdown) return;
+      const rows = dropdown.querySelectorAll('.mention-item-row');
+      rows.forEach((row, idx) => {
+        if (idx === activeIndex) {
+          row.style.background = '#f1f5f9';
+          row.scrollIntoView({ block: 'nearest' });
+        } else {
+          row.style.background = '';
+        }
+      });
+    }
+
+    textarea.addEventListener('keyup', async e => {
+      if (e.key === 'Escape' || e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'Enter') {
+        return;
+      }
+      const val = textarea.value;
+      const cursor = textarea.selectionStart;
+      const match = val.substring(0, cursor).match(/(?:^|\s)@(\w*)$/);
+      if (!match) { destroyDropdown(); return; }
+      const atIndex = match[0].indexOf('@');
+      atStart = cursor - match[0].length + atIndex;
+      const query = match[1];
+      
+      clearTimeout(debounce);
+      debounce = setTimeout(async () => {
+        const teamId = getTeamId();
+        
+        currentPage = 0;
+        hasMore = true;
+        isQuerying = false;
+
+        const resp = await new Promise(resolve => {
+          chrome.runtime.sendMessage({
+            type: MESSAGE_TYPES.SEARCH_USERS_AUTOCOMPLETE,
+            query,
+            teamId: teamId || '',
+            page: 0,
+            perPage: query ? 100 : perPage
+          }, resolve);
+        });
+        const users = resp?.ok && Array.isArray(resp.users) ? resp.users : [];
+        
+        if (!query && users.length < perPage) {
+          hasMore = false;
+        }
+
+        showDropdown(users, query);
+      }, 150);
+    });
+
+    textarea.addEventListener('keydown', e => {
+      if (dropdown) {
+        const rows = dropdown.querySelectorAll('.mention-item-row');
+        if (!rows.length) return;
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          activeIndex = (activeIndex + 1) % rows.length;
+          renderActiveItem();
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          activeIndex = (activeIndex - 1 + rows.length) % rows.length;
+          renderActiveItem();
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          const activeRow = rows[activeIndex];
+          if (activeRow) {
+            insertUser(activeRow.dataset.username);
+          }
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          destroyDropdown();
+        }
+      }
+    });
+    textarea.addEventListener('blur', () => setTimeout(destroyDropdown, 200));
+    return destroyDropdown;
   }
 
   async function openQuickNote(postEl, anchorBtn, mode = 'task', overrideText = null) {
     const popover = getOrCreatePopover();
     popover.dataset.mode = mode;
+
+    // Reset preview state to edit mode
+    const previewBox = document.getElementById('cqn-preview-box');
+    const taText = document.getElementById('cqn-note-text');
+    const previewBtn = document.getElementById('cqn-preview-btn');
+    if (previewBox && taText && previewBtn) {
+      previewBox.classList.add('cqn-hidden');
+      taText.classList.remove('cqn-hidden');
+      previewBox.style.display = 'none';
+      taText.style.display = 'block';
+      previewBtn.classList.remove('active');
+      document.querySelectorAll('#cqn-format-toolbar .cqn-fmt-btn:not(#cqn-preview-btn)').forEach(btn => {
+        btn.classList.remove('disabled');
+        btn.removeAttribute('disabled');
+      });
+    }
+    const emojiPicker = document.getElementById('cqn-emoji-picker');
+    const emojiBtn = document.getElementById('cqn-emoji-btn');
+    if (emojiPicker) {
+      emojiPicker.style.display = 'none';
+      emojiBtn?.classList.remove('active');
+    }
+    const fmtAdvanced = document.getElementById('cqn-fmt-advanced');
+    const fmtToggleBtn = document.getElementById('cqn-fmt-toggle');
+    if (fmtAdvanced) {
+      fmtAdvanced.style.display = 'none';
+      fmtToggleBtn?.classList.remove('active');
+    }
 
     try {
       const resSettings = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS, 'activeMemoCategory']);
@@ -3964,7 +4626,7 @@ function showToast(msg) {
 
     let msgTextFull = '';
 
-    if (overrideText) {
+    if (overrideText !== null && overrideText !== undefined) {
       msgTextFull = overrideText.trim();
     } else {
       // Highlighted text detection logic
@@ -3998,8 +4660,10 @@ function showToast(msg) {
             .filter(img => {
               // Skip avatars (have .Avatar class or are inside .status-wrapper)
               if (img.classList.contains('Avatar') || img.closest('.status-wrapper, .post__img')) return false;
-              // Skip custom emoji spans (Mattermost wraps them in span.emoticon)
-              if (img.closest('.emoticon, .emoji-picker, .emoji')) return false;
+              // Skip custom emoji spans and reaction elements
+              if (img.closest('.emoticon, .emoji-picker, .emoji, .Reaction, .post-reaction, .post-reactions')) return false;
+              // Skip standard emojis by URL pattern
+              if (img.src && (img.src.includes('/static/emoji') || img.src.includes('emoji'))) return false;
               // Skip small images that are likely icons/emojis (under 20x20)
               if (img.naturalWidth && img.naturalWidth < 20 && img.naturalHeight && img.naturalHeight < 20) return false;
               // Ensure the image belongs directly to this post, not a nested reply post
@@ -4026,7 +4690,7 @@ function showToast(msg) {
       }
     }
 
-    if (!msgTextFull) {
+    if (!msgTextFull && postEl) {
       msgTextFull = language.msgPreviewNoText;
     }
     const postId = cleanPostId(postEl);
@@ -4039,6 +4703,17 @@ function showToast(msg) {
     const repeatDailyCheckbox = document.getElementById('cqnTaskRemindDaily');
     if (repeatDailyCheckbox) {
       repeatDailyCheckbox.checked = false;
+    }
+    const taskCatSelect = document.getElementById('cqn-task-category');
+    if (taskCatSelect) {
+      taskCatSelect.value = 'normal';
+      const customSelect = taskCatSelect.nextElementSibling;
+      if (customSelect && customSelect.classList.contains('custom-dropdown-container')) {
+        const toggleBtnText = customSelect.querySelector('.custom-dropdown-selected-text');
+        if (toggleBtnText) {
+          toggleBtnText.textContent = language.categoryNormal || 'Normal';
+        }
+      }
     }
     if (reminderInput?._flatpickr) {
       if (typeof reminderInput._initCqnFlatpickr === 'function') {
@@ -4063,6 +4738,8 @@ function showToast(msg) {
 
     const taskSection = popover.querySelector('#cqn-task-section');
     const noteSection = popover.querySelector('#cqn-note-section');
+    const groupReminderSection = popover.querySelector('#cqn-group-reminder-section');
+    const taskCatRow = popover.querySelector('.task-category-row');
     const hintEl = popover.querySelector('#cqnSnoozeHintText');
     const saveBtn = document.getElementById('cqn-save-note');
     
@@ -4070,12 +4747,84 @@ function showToast(msg) {
       if (popover.dataset.mode === 'note') {
         if (taskSection) taskSection.style.display = 'none';
         if (noteSection) noteSection.style.display = 'block';
+        if (groupReminderSection) groupReminderSection.style.display = 'none';
+        if (taskCatRow) taskCatRow.style.display = 'none';
+        const channelInfoBox = document.getElementById('cqn-group-channel-info');
+        if (channelInfoBox) channelInfoBox.style.display = 'none';
         popover.querySelector('.cqn-title').textContent = language.quickNoteTitle;
+        const betaBadge = popover.querySelector('#cqn-beta-badge');
+        if (betaBadge) betaBadge.style.display = 'none';
         saveBtn.innerHTML = language.memoAddBtn;
+      } else if (popover.dataset.mode === 'group_reminder') {
+        if (taskSection) taskSection.style.display = 'block';
+        if (noteSection) noteSection.style.display = 'none';
+        if (taskCatRow) taskCatRow.style.display = 'none';
+        if (hintEl) hintEl.innerHTML = '';
+        // Show title row — optional for group reminder
+        const titleRow = popover.querySelector('.cqn-title-row');
+        if (titleRow) titleRow.style.display = 'block';
+        // Show format toolbar
+        const fmtBar = document.getElementById('cqn-format-toolbar');
+        if (fmtBar) fmtBar.style.display = 'flex';
+        
+        // Show channel info box and set default text
+        const channelInfoBox = document.getElementById('cqn-group-channel-info');
+        if (channelInfoBox) {
+          channelInfoBox.style.display = 'flex';
+          const txtSpan = channelInfoBox.querySelector('.cqn-channel-text');
+          if (txtSpan) {
+            txtSpan.textContent = language.targetChannelInfo.replace('{channel}', '...');
+          }
+        }
+
+        // Update textarea placeholder
+        const grTextarea = document.getElementById('cqn-note-text');
+        if (grTextarea) grTextarea.placeholder = language.groupReminderTextareaPlaceholder || 'Nhập nội dung... (gõ @ để tag người)';
+        popover.querySelector('.cqn-title').textContent = language.modalAddGroupReminderTitle || 'Lên lịch gửi tin vào kênh';
+        const betaBadge = popover.querySelector('#cqn-beta-badge');
+        if (betaBadge) betaBadge.style.display = 'inline-block';
+        saveBtn.innerHTML = '📢 ' + (language.save || 'Lưu');
+        // Setup @mention autocomplete
+        if (grTextarea) {
+          if (popover._mentionCleanup) popover._mentionCleanup();
+          popover._mentionCleanup = setupMentionAutocomplete(grTextarea, () => popover.dataset.teamId || '');
+        }
+        // Resolve current channel info + teamId asynchronously
+        popover.dataset.targetChannelId = '';
+        popover.dataset.targetChannelName = '';
+        popover.dataset.teamId = '';
+        getCurrentChannelInfo().then(result => {
+          if (result?.channel) {
+            popover.dataset.targetChannelId = result.channel.id;
+            const channelName = result.channel.display_name || result.channel.name;
+            popover.dataset.targetChannelName = channelName;
+            if (channelInfoBox) {
+              const txtSpan = channelInfoBox.querySelector('.cqn-channel-text');
+              if (txtSpan) {
+                txtSpan.textContent = language.targetChannelInfo.replace('{channel}', '#' + channelName);
+              }
+            }
+          }
+          if (result?.teamId) popover.dataset.teamId = result.teamId;
+        });
       } else {
         if (taskSection) taskSection.style.display = 'block';
         if (noteSection) noteSection.style.display = 'none';
+        if (taskCatRow) taskCatRow.style.display = 'flex';
+        // Restore title row and placeholder for task mode
+        const titleRow = popover.querySelector('.cqn-title-row');
+        if (titleRow) titleRow.style.display = 'block';
+        // Hide format toolbar & cleanup autocomplete
+        const fmtBar = document.getElementById('cqn-format-toolbar');
+        if (fmtBar) fmtBar.style.display = 'none';
+        const channelInfoBox = document.getElementById('cqn-group-channel-info');
+        if (channelInfoBox) channelInfoBox.style.display = 'none';
+        if (popover._mentionCleanup) { popover._mentionCleanup(); popover._mentionCleanup = null; }
+        const grTextarea = document.getElementById('cqn-note-text');
+        if (grTextarea) grTextarea.placeholder = language.taskTextareaPlaceholder;
         popover.querySelector('.cqn-title').textContent = language.quickTaskTitle;
+        const betaBadge = popover.querySelector('#cqn-beta-badge');
+        if (betaBadge) betaBadge.style.display = 'none';
         saveBtn.innerHTML = '🎯 ' + language.taskAddBtn;
         if (hintEl) {
           const res = await chrome.storage.local.get([STORAGE_KEYS.SETTINGS]);
@@ -4121,8 +4870,8 @@ function showToast(msg) {
       }
     }
 
-    // Validation: Require reminder time when creating a task
-    if (mode === 'task' && !reminderVal) {
+    // Validation: Require reminder time when creating a task or group reminder
+    if ((mode === 'task' || mode === 'group_reminder') && !reminderVal) {
       const reminderRow = document.getElementById('cqnReminderRow');
       const presetSelect = document.getElementById('cqnReminderSelect');
 
@@ -4148,7 +4897,7 @@ function showToast(msg) {
       return;
     }
 
-    if (mode === 'task' && reminderVal && isRepeatDaily && reminderVal.length === 5 && reminderVal.includes(':')) {
+    if ((mode === 'task' || mode === 'group_reminder') && reminderVal && isRepeatDaily && reminderVal.length === 5 && reminderVal.includes(':')) {
       const today = new Date();
       const parts = reminderVal.split(':');
       today.setHours(parseInt(parts[0], 10), parseInt(parts[1], 10), 0, 0);
@@ -4158,14 +4907,21 @@ function showToast(msg) {
       reminderVal = formatDateTimeLocal(today);
     }
 
+    const taskCatSelect = document.getElementById('cqn-task-category');
+    const taskCat = taskCatSelect ? taskCatSelect.value : 'normal';
+
     const item = { 
       id, 
-      type: mode === 'note' ? 'memo' : 'task', 
+      type: mode, 
       postId, 
       postText, 
       title: titleText || '',
       note: noteText || postText, 
       category: mode === 'note' ? category : 'General',
+      taskCategory: mode === 'task' ? taskCat : undefined,
+      checklist: (mode === 'task' && taskCat === 'checklist') ? [{ text: noteText || postText, done: false }] : [],
+      targetChannelId: mode === 'group_reminder' ? (popover.dataset.targetChannelId || '') : null,
+      targetChannelName: mode === 'group_reminder' ? (popover.dataset.targetChannelName || '') : null,
       createdAt: Date.now(), 
       done: false, 
       reminder: reminderVal,
@@ -4181,7 +4937,7 @@ function showToast(msg) {
     await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
     chrome.runtime.sendMessage({ type: MESSAGE_TYPES.MEMO_UPDATED });
     
-    if (mode === 'task' && reminderVal) {
+    if ((mode === 'task' || mode === 'group_reminder') && reminderVal) {
       const startTime = new Date(reminderVal).getTime();
       if (!isNaN(startTime)) {
         chrome.runtime.sendMessage({ type: MESSAGE_TYPES.SET_TASK_ALARM, taskId: id, time: startTime });
@@ -4192,7 +4948,10 @@ function showToast(msg) {
     quickNoteBackdrop.classList.remove('visible');
     
     // Display localized success toast message
-    showToast(mode === 'note' ? (language.quickNoteSaveSuccess || 'Đã lưu ghi chú') : (language.quickTaskSaveSuccess || 'Đã lưu công việc'));
+    let successMsg = language.quickTaskSaveSuccess || 'Đã lưu công việc';
+    if (mode === 'note') successMsg = language.quickNoteSaveSuccess || 'Đã lưu ghi chú';
+    else if (mode === 'group_reminder') successMsg = language.quickGroupReminderSaveSuccess || 'Đã lưu nhắc nhở nhóm';
+    showToast(successMsg);
   }
 
   let cachedSettings = { ...DEFAULT_SETTINGS };
@@ -4287,9 +5046,12 @@ function showToast(msg) {
     document.querySelectorAll('[data-chatops-task-create-injected]').forEach(el => {
       el.removeAttribute('data-chatops-task-create-injected');
     });
+    document.querySelectorAll('[data-chatops-group-reminder-injected]').forEach(el => {
+      el.removeAttribute('data-chatops-group-reminder-injected');
+    });
 
     const showTabs = cachedSettings.showTabs || { search: true, tasks: true, notes: true, missed: true, reactions: true };
-    const floatingButtons = cachedSettings.floatingButtons || { quickNote: true, quickTask: true, spamReactions: true, reactAlong: false, imagePicker: true, quickReply: false, quickCopy: false, aiSummarize: true };
+    const floatingButtons = cachedSettings.floatingButtons || { quickNote: true, quickTask: true, spamReactions: true, reactAlong: false, imagePicker: true, quickReply: false, quickCopy: false, aiSummarize: true, groupReminder: true };
     const tasksEnabled = floatingButtons.quickTask !== false;
     const notesEnabled = floatingButtons.quickNote !== false;
     const spamEnabled = floatingButtons.spamReactions !== false;
@@ -4297,6 +5059,7 @@ function showToast(msg) {
     const replyEnabled = floatingButtons.quickReply !== false;
     const copyEnabled = floatingButtons.quickCopy !== false;
     const aiSummarizeEnabled = floatingButtons.aiSummarize !== false;
+    const groupReminderEnabled = floatingButtons.groupReminder !== false;
 
     if (!tasksEnabled) {
       document.querySelectorAll('.chatops-action-group .chatops-quick-note-btn.task-btn').forEach(el => el.remove());
@@ -4319,6 +5082,10 @@ function showToast(msg) {
     if (!reactAlongEnabled) {
       document.querySelectorAll('.chatops-action-group .chatops-quick-note-btn.clone-btn').forEach(el => el.remove());
     }
+
+    if (!groupReminderEnabled) {
+      document.querySelectorAll('.chatops-ext-group-reminder-btn, .chatops-ext-group-reminder-btn-rhs').forEach(el => el.remove());
+    }
     
     const isQuickDeleteEnabled = cachedSettings.quickDelete === true;
     if (!isQuickDeleteEnabled) {
@@ -4329,6 +5096,7 @@ function showToast(msg) {
     injectImageButton();
     injectTemplateButton();
     injectTaskCreateButton();
+    injectGroupReminderButton();
     injectHeaderButtons();
   }
 
@@ -5379,6 +6147,7 @@ function showToast(msg) {
         injectImageButton();
         injectTemplateButton();
         injectTaskCreateButton();
+        injectGroupReminderButton();
         injectQuickNoteButtons();
         injectHeaderButtons();
       });
@@ -5433,6 +6202,7 @@ function showToast(msg) {
             injectImageButton();
             injectTemplateButton();
             injectTaskCreateButton();
+            injectGroupReminderButton();
           }
           if (subtreesToProcess.length > 0) {
             subtreesToProcess.forEach(subtree => {
@@ -5480,6 +6250,7 @@ function showToast(msg) {
         if (updateTemplatePickerTranslations) updateTemplatePickerTranslations();
         if (updateTaskCreateButtonTranslations) updateTaskCreateButtonTranslations();
         if (updateHeaderButtonsTranslations) updateHeaderButtonsTranslations();
+        if (updateGroupReminderButtonTranslations) updateGroupReminderButtonTranslations();
         if (updateResizeModalTranslations) updateResizeModalTranslations();
         if (updateImageEditorTranslations) updateImageEditorTranslations();
       })();
@@ -5502,6 +6273,24 @@ function showToast(msg) {
         const textToInsert = message.text || '';
         insertTextIntoTextarea(textarea, textToInsert);
       }
+    } else if (message.type === 'NAVIGATE_INTERNALLY') {
+      if (message.url) {
+        let path = message.url;
+        if (path.startsWith('http://') || path.startsWith('https://')) {
+          try {
+            const u = new URL(path);
+            path = u.pathname + u.search + u.hash;
+          } catch (e) {
+            console.error('[ChatOps Ext] Failed to parse internal nav URL:', e);
+          }
+        }
+        window.history.pushState(null, '', path);
+        window.dispatchEvent(new PopStateEvent('popstate'));
+        if (message.postId) {
+          handleOpenPostThread(message.postId, message.rootId);
+        }
+      }
+      sendResponse({ success: true });
     } else if (message.action === 'open_post_thread') {
       handleOpenPostThread(message.postId, message.rootId);
     } else if (message.type === 'OPEN_QUICK_NOTE_FROM_CONTEXT_MENU') {

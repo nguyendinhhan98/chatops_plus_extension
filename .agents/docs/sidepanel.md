@@ -317,7 +317,9 @@ Tasks lưu trong `chrome.storage.local['chatops_memos']` với `type: 'task'`:
   checklist: [                 // Chỉ khi category='checklist'
     { text: 'Item 1', checked: false },
     { text: 'Item 2', checked: true }
-  ]
+  ],
+  targetChannelId: 'channel_id',   // Chỉ khi type='group_reminder'
+  targetChannelName: 'Channel Name'// Chỉ khi type='group_reminder'
 }
 ```
 

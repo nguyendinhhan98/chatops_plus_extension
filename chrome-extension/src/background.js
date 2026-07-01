@@ -2,7 +2,7 @@
  * Background Service Worker — ChatOps Chrome Extension
  */
 
-import { getConfig, getMyProfile, addPostReaction, deletePostReaction, deletePost, searchUsers, getUsersByIds, getPostReactions, getPostThread } from './api/index.js';
+import { getConfig, getMyProfile, addPostReaction, deletePostReaction, deletePost, searchUsers, getUsersByIds, getPostReactions, getPostThread, getMyTeams, getMyChannels } from './api/index.js';
 import { syncCookies, setupCookieSync } from './background/cookie-sync.js';
 import { 
   handleMentionCheck, 
@@ -232,6 +232,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     case MESSAGE_TYPES.GET_MY_PROFILE:
       getMyProfile()
         .then((profile) => sendResponse({ ok: true, profile }))
+        .catch((err) => sendResponse({ ok: false, error: err.message }));
+      return true;
+
+    case MESSAGE_TYPES.GET_MY_TEAMS:
+      getMyTeams()
+        .then((teams) => sendResponse({ ok: true, teams }))
+        .catch((err) => sendResponse({ ok: false, error: err.message }));
+      return true;
+
+    case MESSAGE_TYPES.GET_MY_CHANNELS:
+      getMyChannels(message.teamId)
+        .then((channels) => sendResponse({ ok: true, channels }))
+        .catch((err) => sendResponse({ ok: false, error: err.message }));
+      return true;
+
+    case MESSAGE_TYPES.SEARCH_USERS_AUTOCOMPLETE:
+      searchUsers(message.query || '', message.teamId || '', message.page || 0, message.perPage || 30)
+        .then((users) => sendResponse({ ok: true, users: Array.isArray(users) ? users : [] }))
         .catch((err) => sendResponse({ ok: false, error: err.message }));
       return true;
 
@@ -666,6 +684,21 @@ chrome.notifications.onClicked.addListener(async (notificationId) => {
         await chrome.tabs.update(tab.id, { active: true });
         await chrome.windows.update(tab.windowId, { focused: true });
         activeTabId = tab.id;
+        
+        // Wait a brief moment and navigate internally without reloading
+        setTimeout(() => {
+          chrome.tabs.sendMessage(activeTabId, {
+            type: 'NAVIGATE_INTERNALLY',
+            url: targetUrl,
+            postId: task.postId || null,
+            rootId: task.rootId || null
+          }, () => {
+            if (chrome.runtime.lastError) {
+              // Fallback to update URL if content script is not listening
+              chrome.tabs.update(activeTabId, { url: targetUrl });
+            }
+          });
+        }, 150);
       } else {
         // Create new tab if none exists
         const newTab = await chrome.tabs.create({ url: targetUrl });

@@ -68,6 +68,19 @@ export async function deletePost(postId) {
   });
 }
 
-
-
-
+/**
+ * Create a new post (send a message to a channel)
+ */
+export async function createPost(channelId, message, rootId = null) {
+  const body = {
+    channel_id: channelId,
+    message: message
+  };
+  if (rootId) {
+    body.root_id = rootId;
+  }
+  return request('/posts', {
+    method: 'POST',
+    body: JSON.stringify(body)
+  });
+}

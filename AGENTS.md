@@ -11,10 +11,11 @@
 
 - 🎯 **Tasks** — Tạo task từ bất kỳ tin nhắn nào, set reminder bằng Chrome Alarms
 - 📒 **Notes/Memos** — Ghi chú nhanh phân category
+- 📢 **Group Reminders** — Lên lịch gửi tin tự động gửi tin nhắn đến Mattermost channel chỉ định
 - 🔍 **Search** — Tìm kiếm posts nâng cao qua Sidepanel hoặc click icon 🔍 trên header để mở Modal trực tiếp
 - 🔔 **Mentions** — Quét mentions bị bỏ lỡ qua Sidepanel hoặc click icon 🔔 trên header để mở Modal trực tiếp
 - 🖼️ **Image Picker** — Thư viện ảnh tùy chỉnh + Giphy integration + image editor
-- 📒 **Quick Template Picker & Task Creator** — Chèn nhanh mẫu ghi chú (nút 📒) hoặc tạo công việc (nút 🎯) trực tiếp từ ô chat
+- 📒 **Quick Template Picker, Task Creator & Group Reminder Creator** — Chèn nhanh mẫu ghi chú (nút 📒), tạo công việc (nút 🎯) hoặc lên lịch gửi tin (nút 📢) trực tiếp từ ô chat
 - 🔥 **Quick Reactions** — Spam react, clone reactions, undo reactions
 - ⚙️ **Settings** — Cấu hình toàn diện (theme, notifications, emojis, v.v.)
 
@@ -158,6 +159,8 @@ Communication giữa các components dùng `chrome.runtime.sendMessage()`. Toàn
 | `APP_LANG_CHANGED` | sidepanel | content | Reload ngôn ngữ |
 | `SHOW_TOAST` | background/sidepanel | content | Hiện toast trên trang |
 | `INSERT_TEXT_TO_CHAT` | sidepanel | content | Chèn văn bản/hình ảnh vào khung chat Mattermost |
+| `GET_MY_TEAMS` | content | background | Lấy danh sách các workspace teams |
+| `GET_MY_CHANNELS` | content | background | Lấy danh sách các public/private/DM channels theo team |
 
 ---
 
@@ -197,7 +200,11 @@ chrome.storage.local['chatops_memos'] = [
     repeatDaily: false,
     status: 'pending',
     teamName: 'dn',
-    checklist: []           // only for type='checklist'
+    checklist: [],          // only for type='checklist'
+    targetChannelId: 'id',  // only for type='group_reminder'
+    targetChannelName: 'name',
+    mentionTarget: 'all',   // 'all' | 'here' | 'users'
+    mentionUsers: '@user1'
   }
 ]
 
@@ -219,7 +226,8 @@ chrome.storage.local['chatops_settings'] = {
   floatingButtons: {
     quickNote: true, quickTask: true, spamReactions: true,
     reactAlong: true, imagePicker: true, templatePicker: true,
-    quickReply: true, quickCopy: true
+    quickReply: true, quickCopy: true, groupReminder: true
+  },
   },
   // Notifications
   notificationType: 'both',         // 'in-page' | 'system' | 'both'
@@ -439,7 +447,7 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
 
 ## 10. Phiên Bản & Cập Nhật
 
-- **Version**: 3.5.1 (trong `manifest.json` và `package.json`)
+- **Version**: 3.5.2 (trong `manifest.json` và `package.json`)
 - Khi bump version: cập nhật **cả hai** file.
 - Extension dùng **Manifest V3** — không dùng persistent background page, không dùng `chrome.extension.getBackgroundPage()`.
 

@@ -906,15 +906,37 @@ function setupStateHandlers() {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       const activeTab = tabs[0];
       if (activeTab?.url?.includes(CHATOPS_CONFIG.DOMAIN)) {
-        chrome.tabs.update(activeTab.id, { url }, () => {
-          triggerThreadOpen(activeTab.id);
+        chrome.tabs.sendMessage(activeTab.id, {
+          type: 'NAVIGATE_INTERNALLY',
+          url: url,
+          postId: postId,
+          rootId: rootId
+        }, () => {
+          if (chrome.runtime.lastError) {
+            chrome.tabs.update(activeTab.id, { url }, () => {
+              triggerThreadOpen(activeTab.id);
+            });
+          }
         });
       } else {
         chrome.tabs.query({ currentWindow: true }, (allTabs) => {
           const chatOpsTab = allTabs.find(t => t.url?.includes(CHATOPS_CONFIG.DOMAIN));
           if (chatOpsTab) {
-            chrome.tabs.update(chatOpsTab.id, { url, active: true }, () => {
-              triggerThreadOpen(chatOpsTab.id);
+            chrome.tabs.update(chatOpsTab.id, { active: true }, () => {
+              setTimeout(() => {
+                chrome.tabs.sendMessage(chatOpsTab.id, {
+                  type: 'NAVIGATE_INTERNALLY',
+                  url: url,
+                  postId: postId,
+                  rootId: rootId
+                }, () => {
+                  if (chrome.runtime.lastError) {
+                    chrome.tabs.update(chatOpsTab.id, { url }, () => {
+                      triggerThreadOpen(chatOpsTab.id);
+                    });
+                  }
+                });
+              }, 150);
             });
           } else {
             chrome.tabs.create({ url }, (newTab) => {

@@ -147,6 +147,11 @@ Hiện tại chỉ clear badge (logic scan mentions đã được move sang side
 1. Load language strings (loadLanguage())
 2. Load task từ storage theo taskId
 3. Nếu task không tồn tại → clearAlarm + return
+3.1. Nếu task.type === 'group_reminder':
+   a. Lấy nội dung tin nhắn trực tiếp từ task.note.
+   b. Gọi API createPost gửi tin nhắn tới targetChannelId.
+   c. Broadcast SHOW_TOAST tới tất cả các tab ChatOps đang mở.
+   d. Gọi rescheduleToNextDailyOccurrence(task, memos) để dời lịch hằng ngày và return.
 4. Nếu task.done:
    a. Nếu task.repeatDaily:
       - Reset task: done=false, doneAt=null

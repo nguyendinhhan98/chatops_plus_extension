@@ -152,12 +152,38 @@
             <div id="checklistInputsContainer" style="display: flex; flex-direction: column; gap: 6px; width: 100%;"></div>
             <button type="button" id="btnAddChecklistItem" data-i18n="addChecklineBtn" style="align-self: flex-start; padding: 4px 10px; font-size: 11.5px; height: 26px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px; border: 1px dashed var(--border); background: transparent; cursor: pointer; color: var(--text-2); font-weight: 500;">+ Thêm dòng</button>
           </div>
+          <div id="quickTaskGroupReminderFields" style="display: none; flex-direction: column; gap: 8px; margin-bottom: 12px; width: 100%;">
+            <!-- Group/Channel Selector -->
+            <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
+              <span style="font-size:12.5px; color:var(--text-2); font-weight:600; white-space:nowrap; min-width:80px;" data-i18n="reminderTargetGroupLabel">Nhắc tại Group:</span>
+              <select id="quickTaskReminderChannel" class="custom-select" style="flex: 1; height: 32px; font-size: 12.5px; border-radius: 6px; cursor: pointer; outline: none; box-sizing: border-box; padding: 2px 24px 2px 8px; margin: 0; line-height: 1;">
+                <option value="" data-i18n="selectChannelPlaceholder">Chọn Group...</option>
+              </select>
+            </div>
+            <!-- Mention type Selector -->
+            <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
+              <span style="font-size:12.5px; color:var(--text-2); font-weight:600; white-space:nowrap; min-width:80px;" data-i18n="mentionTargetLabel">Tag ai:</span>
+              <select id="quickTaskReminderMention" class="custom-select" style="width: 140px; height: 32px; font-size: 12.5px; border-radius: 6px; cursor: pointer; outline: none; box-sizing: border-box; padding: 2px 24px 2px 8px; margin: 0; line-height: 1;">
+                <option value="none" data-i18n="mentionTargetNone" selected>Không Tag</option>
+                <option value="all" data-i18n="mentionTargetAll">@all (Tất cả)</option>
+                <option value="here" data-i18n="mentionTargetHere">@here (Online)</option>
+                <option value="users" data-i18n="mentionTargetUsers">Người cụ thể...</option>
+              </select>
+            </div>
+            <!-- Specific Users Input -->
+            <div id="quickTaskReminderUsersRow" style="display: none; align-items: center; gap: 8px; width: 100%;">
+              <span style="font-size:12.5px; color:var(--text-2); font-weight:600; white-space:nowrap; min-width:80px;" data-i18n="mentionUsersLabel">Người cần tag:</span>
+              <input type="text" id="quickTaskReminderUsersInput" placeholder="Ví dụ: user1, user2..."
+                style="flex: 1; height: 32px; font-size: 12.5px; border-radius: 6px; border: 1px solid var(--border); padding: 4px 8px; outline: none; box-sizing: border-box; font-family: inherit; background: var(--bg-1); color: var(--text-1);">
+            </div>
+          </div>
 
           <div style="margin-bottom: 12px; display:flex; align-items:center; gap:8px; width:100%;">
             <span style="font-size:12.5px; color:var(--text-2); font-weight:600; white-space:nowrap;" data-i18n="categoryLabelPrefix">Category:</span>
             <select id="quickTaskCategory" class="custom-select" style="width: 140px; height: 32px; font-size: 12.5px; border-radius: 6px; cursor: pointer; outline: none; box-sizing: border-box; padding: 2px 24px 2px 8px; margin: 0; line-height: 1;">
               <option value="normal" data-i18n="categoryNormal" selected>Normal</option>
               <option value="checklist" data-i18n="categoryChecklist">Checklist</option>
+              <option value="group_reminder" data-i18n="categoryGroupReminder">Group Reminder</option>
             </select>
           </div>
 
@@ -212,6 +238,15 @@
               🎯 Add Task
             </button>
           </div>
+        </div>
+      </div>
+
+      <!-- Task Category Filter Tabs -->
+      <div id="taskCatFilterContainer" style="display: flex; align-items: center; padding: 6px var(--app-padding, 16px) 10px var(--app-padding, 16px); background: var(--bg-2); border-bottom: 1px solid var(--border); flex-shrink: 0; box-sizing: border-box; width: 100%;">
+        <div class="memo-sub-tabs" id="taskCatFilterTabs" style="flex: 1; margin: 0 !important; background: var(--bg-1) !important; border: 1px solid var(--border) !important; border-radius: 6px !important; padding: 2px !important; box-shadow: none !important; gap: 4px 2px !important;">
+          <button class="memo-sub-tab active" data-cat-filter="all"><span data-i18n="filterAll">Tất cả</span></button>
+          <button class="memo-sub-tab" data-cat-filter="task"><span data-i18n="filterTasks">Công việc</span></button>
+          <button class="memo-sub-tab" data-cat-filter="group_reminder" style="display: flex; align-items: center; justify-content: center; gap: 4px;"><span data-i18n="filterGroupReminders">Lên lịch gửi tin</span></button>
         </div>
       </div>
 
@@ -677,6 +712,11 @@
                   <input type="checkbox" id="settingFloatingQuickTask" class="settings-toggle" checked>
                   <span class="toggle-slider"></span>
                 </label>
+                <label class="settings-toggle-row" id="rowFloatingGroupReminder">
+                  <span data-i18n="floatingGroupReminder">Group Reminder Button (📢)</span>
+                  <input type="checkbox" id="settingFloatingGroupReminder" class="settings-toggle" checked>
+                  <span class="toggle-slider"></span>
+                </label>
                 <label class="settings-toggle-row" id="rowFloatingQuickNote">
                   <span data-i18n="floatingQuickNote">Create Note Button (📒)</span>
                   <input type="checkbox" id="settingFloatingQuickNote" class="settings-toggle" checked>
@@ -902,6 +942,7 @@
               </ul>
             </div>
           </div>
+
 
           <!-- Group 7: Support & Rate -->
           <div class="settings-accordion" id="accordionSupportRate" style="display:none;">
