@@ -47,6 +47,39 @@ export function formatRichText(unsafe) {
     return prefix + getPlaceholder(url, 'url', { url });
   });
 
+  // Process blockquote lines: lines starting with "&gt; " (escaped ">")
+  // Must be done before newline→<br> conversion, operating line-by-line
+  const htmlLines = html.split('\n');
+  const processedLines = [];
+  let inBlockquote = false;
+  const blockquoteInnerLines = [];
+
+  function flushBlockquote() {
+    if (blockquoteInnerLines.length > 0) {
+      const inner = blockquoteInnerLines.join('<br>');
+      processedLines.push(`<blockquote style="border-left:3px solid #cbd5e1; margin:4px 0; padding:2px 8px; color:#64748b; background:rgba(0,0,0,0.03); border-radius:0 4px 4px 0; font-style:italic;">${inner}</blockquote>`);
+      blockquoteInnerLines.length = 0;
+    }
+    inBlockquote = false;
+  }
+
+  for (const line of htmlLines) {
+    // Match lines starting with "&gt; " or "&gt;" (after escapeHtml, > becomes &gt;)
+    const bqMatch = line.match(/^&gt; ?(.*)/);
+
+    if (bqMatch) {
+      inBlockquote = true;
+      blockquoteInnerLines.push(bqMatch[1]);
+    } else {
+      if (inBlockquote) {
+        flushBlockquote();
+      }
+      processedLines.push(line);
+    }
+  }
+  if (inBlockquote) flushBlockquote();
+  html = processedLines.join('\n');
+
   // Convert newlines to <br>
   html = html.replace(/\n/g, '<br>');
   

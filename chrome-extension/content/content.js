@@ -4912,7 +4912,7 @@ function showToast(msg) {
 
     const item = { 
       id, 
-      type: mode, 
+      type: mode === 'note' ? 'memo' : mode, 
       postId, 
       postText, 
       title: titleText || '',
