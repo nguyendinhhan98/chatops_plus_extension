@@ -362,9 +362,9 @@ Click ✏️:
   │   ├── Textarea (prefilled với postText)
   │   ├── Title input
   │   ├── Category select
-  │   ├── Datetime picker (prefilled với reminder)
+  │   ├── Datetime picker (prefilled với reminder, chặn chọn ngày quá khứ trừ daily repeat)
   │   └── Repeat daily checkbox
-  └── Save → update storage + reschedule alarm
+  └── Save → check past date, update storage + reschedule alarm
 ```
 
 #### Checklist Category

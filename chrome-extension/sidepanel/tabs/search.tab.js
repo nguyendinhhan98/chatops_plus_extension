@@ -407,10 +407,11 @@ export async function performSpSearch(isLoadMore = false) {
     searchState.isCancelled = false; // Reset cancellation flag
 
 
+    const isModal = document.body.classList.contains('modal-mode') || window.location.search.includes('view=modal');
     
     resultsEl.innerHTML = `
       <div style="font-size: 12.5px; color: var(--text-2); text-align: center; margin-bottom: 14px; padding: 0 16px; line-height: 1.45; font-style: italic;">
-        💡 <span data-i18n="scanTimeNotice">${language.scanTimeNotice}</span>
+        💡 <span data-i18n="${isModal ? 'scanTimeNoticeModal' : 'scanTimeNotice'}">${isModal ? language.scanTimeNoticeModal : language.scanTimeNotice}</span>
       </div>
       <div class="progress-bar"><div class="progress-fill" id="searchProgress" style="width:15%"></div></div>
       <div class="loading-state" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; height: 100%; min-height: 150px;">

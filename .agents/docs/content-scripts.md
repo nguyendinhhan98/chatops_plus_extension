@@ -288,7 +288,7 @@ openQuickNote(postEl, anchorBtn, mode, overrideText)
   └── Position popover cạnh anchor button (hoặc center màn hình nếu tạo từ chatbox)
 
 Khi save (saveTask):
-  ├── Validate: phải có reminder time (và target channel nếu là group_reminder)
+  ├── Validate: phải có reminder time (và target channel nếu là group_reminder) và thời gian nhắc nhở không được ở quá khứ
   ├── Build task/reminder object (type: 'task' | 'memo' | 'group_reminder')
   ├── chrome.storage.local[MEMOS].push(task)
   ├── sendMessage(MEMO_UPDATED)   → sidepanel refresh list
@@ -297,6 +297,9 @@ Khi save (saveTask):
 
 #### `injectGroupReminderButton()`
 Injects a 📢 button next to the emoji/file buttons under the main Mattermost chatbox and the RHS chatbox, allowing users to schedule a group reminder directly from the chat UI.
+
+#### `injectMeetCreateButton()`
+Injects a Google Meet button (using a custom SVG Meet logo) next to the emoji/file buttons under the main Mattermost chatbox and the RHS chatbox. When clicked, it coordinates with the Background Service Worker (`background.js`) to open a tab at `https://meet.google.com/new`, capture the resulting authentic Google Meet URL redirect, and automatically insert it back into the chat textarea.
 
 ### 4.5 Image System
 

@@ -1,6 +1,6 @@
 # 🚀 ChatOps++ — Chrome Extension (Manifest V3)
 
-[![Version](https://img.shields.io/badge/version-3.5.3-blue.svg)](https://chrome.google.com/webstore/devconsole/)
+[![Version](https://img.shields.io/badge/version-3.5.4-blue.svg)](https://chrome.google.com/webstore/devconsole/)
 [![Platform](https://img.shields.io/badge/platform-Chrome%20%7C%20Edge%20%7C%20Opera-lightgrey.svg)]()
 [![Manifest Version](https://img.shields.io/badge/manifest-V3-orange.svg)]()
 
@@ -20,7 +20,7 @@
 * Lưu trữ các ghi chú quan trọng từ tin nhắn hoặc tự viết nhanh.
 * Phân loại ghi chú theo từng chủ đề/dự án (Categories) dễ dàng tìm kiếm.
 * Hỗ trợ đồng bộ hóa đám mây thông minh qua `chrome.storage.sync` (chia nhỏ dữ liệu để vượt giới hạn 8KB của Google).
-* Tích hợp **Mẫu chèn nhanh (Quick Template Picker)** và **Tạo công việc (Quick Task Creator)**: Cho phép chèn nhanh ghi chú làm mẫu báo cáo (biểu tượng `📒`) hoặc tạo công việc nhanh (biểu tượng `🎯` pre-fill nội dung đang gõ) trực tiếp từ ô chat Mattermost (khung chat chính & reply).
+* Tích hợp **Mẫu chèn nhanh (Quick Template Picker)**, **Tạo công việc (Quick Task Creator)** và **Tạo phòng họp Google Meet nhanh**: Cho phép chèn nhanh ghi chú làm mẫu báo cáo (biểu tượng `📒`), tạo công việc nhanh (biểu tượng `🎯` pre-fill nội dung đang gõ) hoặc tạo nhanh phòng họp Google Meet (sử dụng biểu tượng logo Google Meet SVG, tự động mở tab mới khởi tạo cuộc họp thật hợp lệ và chèn link vào khung chat) trực tiếp từ ô chat Mattermost (khung chat chính & reply).
 
 ### 🔍 3. Tìm Kiếm Nâng Cao (Advanced Search)
 * Tìm kiếm các bài viết (posts) theo nhiều bộ lọc kết hợp: Từ khóa, người gửi, channel cụ thể, và khoảng thời gian.

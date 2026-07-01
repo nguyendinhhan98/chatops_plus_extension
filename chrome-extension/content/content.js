@@ -11,7 +11,7 @@ const DEFAULT_SETTINGS = {
   spamEnabled: true,
   memeEnabled: true,
   showTabs: { search: true, tasks: true, notes: true, missed: true, reactions: true },
-  floatingButtons: { quickNote: true, quickTask: true, spamReactions: false, imagePicker: true, templatePicker: true, quickReply: true, quickCopy: true },
+  floatingButtons: { quickNote: true, quickTask: true, spamReactions: false, imagePicker: true, templatePicker: true, quickReply: true, quickCopy: true, groupReminder: true, quickMeet: true },
   spamEmojis: ['thumbsup', 'heart', 'fire', 'rocket', 'tada', 'laughing', 'smile', 'wink', 'heart_eyes', 'kissing_heart'],
   tabsCompactMode: false,
   snoozeMinutes: 5,
@@ -36,6 +36,7 @@ let updateImageEditorTranslations = null;
 let updateTaskCreateButtonTranslations = null;
 let updateHeaderButtonsTranslations = null;
 let updateGroupReminderButtonTranslations = null;
+let updateMeetCreateButtonTranslations = null;
 // Tracks the last right-clicked post element for context menu reply-quote feature
 let lastRightClickedPostEl = null;
 // Tracks active reaction group dropdown for spam button right-click
@@ -165,7 +166,7 @@ async function injectDynamicTheme() {
  */
 async function handleNotificationJump(postId, taskTeamName) {
   try {
-    openSidePanel();
+    chrome.runtime.sendMessage({ type: MESSAGE_TYPES.OPEN_SIDE_PANEL }).catch(() => {});
     chrome.storage.local.set({ [STORAGE_KEYS.SIDEPANEL_TAB]: 'tasks' });
     setTimeout(() => {
       chrome.runtime.sendMessage({ type: 'SWITCH_TAB', tab: 'tasks' }).catch(() => {});
@@ -1113,6 +1114,118 @@ function showToast(msg) {
   updateGroupReminderButtonTranslations = function() {
     document.querySelectorAll('.chatops-ext-group-reminder-btn').forEach(btn => {
       btn.title = language.quickGroupReminderTooltip || 'Tạo nhắc nhở nhóm (📢)';
+    });
+  };
+
+  // --- Google Meet Button Integration into Chat UI ---
+  function injectMeetCreateButton() {
+    const floatingButtons = cachedSettings.floatingButtons || {};
+    const meetEnabled = floatingButtons.quickMeet !== false;
+    
+    const targets = [
+      { id: 'emojiPickerButton', textboxId: 'post_textbox', btnId: 'chatops-ext-meet-create-btn' },
+      { id: 'rhsEmojiPickerButton', textboxId: 'reply_textbox', btnId: 'chatops-ext-meet-create-btn-rhs' }
+    ];
+
+    targets.forEach(target => {
+      const textbox = document.getElementById(target.textboxId) || 
+        (target.textboxId === 'reply_textbox' 
+          ? document.querySelector('#reply_textbox, .sidebar-right textarea, .rhs-thread textarea, .sidebar--right textarea, [placeholder*="reply" i]')
+          : document.querySelector('#post_textbox, .post-create-body textarea, [placeholder*="write" i]'));
+
+      let emojiBtn = null;
+      if (textbox) {
+        const container = textbox.closest('.post-create-body, .input-container, .post-body__cell, .post-create, form, [class*="post-create"]');
+        if (container) {
+          emojiBtn = container.querySelector('#emojiPickerButton, #rhsEmojiPickerButton, button[aria-label*="emoji" i], button[aria-label*="Emoji"], button[class*="emoji" i], .emoji-picker__container button, button[id*="Emoji"]');
+        }
+      }
+
+      if (!emojiBtn) {
+        emojiBtn = document.getElementById(target.id);
+      }
+
+      if (!emojiBtn) {
+        return;
+      }
+
+      const parent = emojiBtn.parentNode;
+      if (!parent) return;
+
+      const existingBtn = parent.querySelector('.chatops-ext-meet-create-btn');
+
+      if (!meetEnabled) {
+        if (existingBtn) existingBtn.remove();
+        delete emojiBtn.dataset.chatopsMeetCreateInjected;
+        return;
+      }
+
+      if (existingBtn) {
+        emojiBtn.dataset.chatopsMeetCreateInjected = 'true';
+        if (!existingBtn.id) {
+          existingBtn.id = target.btnId;
+        }
+        return;
+      }
+
+      const meetBtn = document.createElement('button');
+      meetBtn.id = target.btnId;
+      meetBtn.type = 'button';
+      meetBtn.className = 'chatops-ext-meet-create-btn';
+      meetBtn.innerHTML = `<svg viewBox="0 0 24 24" width="20" height="20" style="vertical-align: middle; display: inline-block;">
+        <defs>
+          <linearGradient id="meetGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#FFD54F;" />
+            <stop offset="100%" style="stop-color:#FFB300;" />
+          </linearGradient>
+        </defs>
+        <rect x="1" y="3" width="14" height="18" rx="4" fill="url(#meetGrad)" />
+        <circle cx="5" cy="15" r="1.8" fill="#FFFFFF" />
+        <path d="M16 9l6-4.5v15l-6-4.5v-6z" fill="#FF8F00" />
+      </svg>`;
+      meetBtn.title = language.quickMeetTooltip || 'Tạo phòng họp Google Meet';
+      meetBtn.dataset.targetTextbox = target.textboxId;
+
+      // Insert it right after the group reminder button, task button, template button, or image button
+      const grBtn = parent.querySelector('.chatops-ext-group-reminder-btn');
+      if (grBtn) {
+        parent.insertBefore(meetBtn, grBtn.nextSibling);
+      } else {
+        const taskBtn = parent.querySelector('.chatops-ext-task-create-btn');
+        if (taskBtn) {
+          parent.insertBefore(meetBtn, taskBtn.nextSibling);
+        } else {
+          const templateBtn = parent.querySelector('.chatops-ext-template-picker-btn');
+          if (templateBtn) {
+            parent.insertBefore(meetBtn, templateBtn.nextSibling);
+          } else {
+            const imageBtn = parent.querySelector('.chatops-ext-image-picker-btn');
+            if (imageBtn) {
+              parent.insertBefore(meetBtn, imageBtn.nextSibling);
+            } else {
+              parent.insertBefore(meetBtn, emojiBtn.nextSibling);
+            }
+          }
+        }
+      }
+
+      emojiBtn.dataset.chatopsMeetCreateInjected = 'true';
+
+      meetBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        chrome.runtime.sendMessage({
+          type: MESSAGE_TYPES.CREATE_GOOGLE_MEET,
+          payload: { textboxId: target.textboxId }
+        });
+      });
+    });
+  }
+
+  updateMeetCreateButtonTranslations = function() {
+    document.querySelectorAll('.chatops-ext-meet-create-btn').forEach(btn => {
+      btn.title = language.quickMeetTooltip || 'Tạo phòng họp Google Meet (📹)';
     });
   };
 
@@ -3941,8 +4054,17 @@ function showToast(msg) {
         enableTime: true,
         dateFormat: noCalendarMode ? "H:i" : "Y-m-d H:i",
         appendTo: reminderRow,
+        minDate: "today",
         onChange: function(selectedDates) {
           if (selectedDates.length > 0) {
+            if (!noCalendarMode) {
+              const selectedTime = selectedDates[0].getTime();
+              if (selectedTime < Date.now()) {
+                showToast(language.pastDateError);
+                fpCqn.clear();
+                return;
+              }
+            }
             clearCqnReminderErrorHighlight();
             if (cqnReminderSelect) {
               cqnReminderSelect.value = '';
@@ -4897,6 +5019,22 @@ function showToast(msg) {
       return;
     }
 
+    // Chặn không cho chọn thời gian ở quá khứ
+    if ((mode === 'task' || mode === 'group_reminder') && reminderVal && !isRepeatDaily) {
+      const selectedTime = new Date(reminderVal).getTime();
+      if (!isNaN(selectedTime) && selectedTime < Date.now()) {
+        showToast(language.pastDateError);
+        const reminderRow = document.getElementById('cqnReminderRow');
+        if (reminderRow) {
+          reminderRow.style.setProperty('border-color', '#dc2626', 'important');
+          reminderRow.style.setProperty('box-shadow', '0 0 0 2px rgba(220, 38, 38, 0.2)', 'important');
+          reminderRow.style.borderRadius = '6px';
+          reminderRow.style.transition = 'all 0.2s';
+        }
+        return;
+      }
+    }
+
     if ((mode === 'task' || mode === 'group_reminder') && reminderVal && isRepeatDaily && reminderVal.length === 5 && reminderVal.includes(':')) {
       const today = new Date();
       const parts = reminderVal.split(':');
@@ -5086,6 +5224,11 @@ function showToast(msg) {
     if (!groupReminderEnabled) {
       document.querySelectorAll('.chatops-ext-group-reminder-btn, .chatops-ext-group-reminder-btn-rhs').forEach(el => el.remove());
     }
+
+    const meetEnabled = floatingButtons.quickMeet !== false;
+    if (!meetEnabled) {
+      document.querySelectorAll('.chatops-ext-meet-create-btn, .chatops-ext-meet-create-btn-rhs').forEach(el => el.remove());
+    }
     
     const isQuickDeleteEnabled = cachedSettings.quickDelete === true;
     if (!isQuickDeleteEnabled) {
@@ -5097,6 +5240,7 @@ function showToast(msg) {
     injectTemplateButton();
     injectTaskCreateButton();
     injectGroupReminderButton();
+    injectMeetCreateButton();
     injectHeaderButtons();
   }
 
@@ -6148,6 +6292,7 @@ function showToast(msg) {
         injectTemplateButton();
         injectTaskCreateButton();
         injectGroupReminderButton();
+        injectMeetCreateButton();
         injectQuickNoteButtons();
         injectHeaderButtons();
       });
@@ -6203,6 +6348,7 @@ function showToast(msg) {
             injectTemplateButton();
             injectTaskCreateButton();
             injectGroupReminderButton();
+            injectMeetCreateButton();
           }
           if (subtreesToProcess.length > 0) {
             subtreesToProcess.forEach(subtree => {
@@ -6251,6 +6397,7 @@ function showToast(msg) {
         if (updateTaskCreateButtonTranslations) updateTaskCreateButtonTranslations();
         if (updateHeaderButtonsTranslations) updateHeaderButtonsTranslations();
         if (updateGroupReminderButtonTranslations) updateGroupReminderButtonTranslations();
+        if (updateMeetCreateButtonTranslations) updateMeetCreateButtonTranslations();
         if (updateResizeModalTranslations) updateResizeModalTranslations();
         if (updateImageEditorTranslations) updateImageEditorTranslations();
       })();
@@ -6272,6 +6419,20 @@ function showToast(msg) {
       if (textarea) {
         const textToInsert = message.text || '';
         insertTextIntoTextarea(textarea, textToInsert);
+      }
+    } else if (message.type === MESSAGE_TYPES.GOOGLE_MEET_CREATED) {
+      const textboxId = message.payload?.textboxId || 'post_textbox';
+      let textarea = document.getElementById(textboxId);
+      if (!textarea) {
+        if (textboxId === 'reply_textbox') {
+          textarea = document.querySelector('#reply_textbox, .sidebar-right textarea, .rhs-thread textarea, .sidebar--right textarea, [placeholder*="reply" i]');
+        } else {
+          textarea = document.querySelector('#post_textbox, .post-create-body textarea, [placeholder*="write" i]');
+        }
+      }
+      if (textarea && message.payload?.meetLink) {
+        insertTextIntoTextarea(textarea, message.payload.meetLink);
+        showToast(language.meetRoomCreatedToast || 'Đã tạo và chèn link Google Meet! 📹');
       }
     } else if (message.type === 'NAVIGATE_INTERNALLY') {
       if (message.url) {

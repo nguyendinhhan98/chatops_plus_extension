@@ -15,7 +15,7 @@
 - 🔍 **Search** — Tìm kiếm posts nâng cao qua Sidepanel hoặc click icon 🔍 trên header để mở Modal trực tiếp
 - 🔔 **Mentions** — Quét mentions bị bỏ lỡ qua Sidepanel hoặc click icon 🔔 trên header để mở Modal trực tiếp
 - 🖼️ **Image Picker** — Thư viện ảnh tùy chỉnh + Giphy integration + image editor
-- 📒 **Quick Template Picker, Task Creator & Group Reminder Creator** — Chèn nhanh mẫu ghi chú (nút 📒), tạo công việc (nút 🎯) hoặc lên lịch gửi tin (nút 📢) trực tiếp từ ô chat
+- 📒 **Quick Template Picker, Task Creator, Group Reminder Creator & Google Meet Creator** — Chèn nhanh mẫu ghi chú (nút 📒), tạo công việc (nút 🎯), lên lịch gửi tin (nút 📢) hoặc tạo phòng họp Google Meet (nút 📹) trực tiếp từ ô chat
 - 🔥 **Quick Reactions** — Spam react, clone reactions, undo reactions
 - ⚙️ **Settings** — Cấu hình toàn diện (theme, notifications, emojis, v.v.)
 
@@ -161,6 +161,8 @@ Communication giữa các components dùng `chrome.runtime.sendMessage()`. Toàn
 | `INSERT_TEXT_TO_CHAT` | sidepanel | content | Chèn văn bản/hình ảnh vào khung chat Mattermost |
 | `GET_MY_TEAMS` | content | background | Lấy danh sách các workspace teams |
 | `GET_MY_CHANNELS` | content | background | Lấy danh sách các public/private/DM channels theo team |
+| `CREATE_GOOGLE_MEET` | content | background | Yêu cầu background worker khởi tạo tab Google Meet mới và lắng nghe URL thật |
+| `GOOGLE_MEET_CREATED` | background | content | Trả về link Google Meet thật đã được tạo thành công để chèn vào chatbox |
 
 ---
 
@@ -226,7 +228,8 @@ chrome.storage.local['chatops_settings'] = {
   floatingButtons: {
     quickNote: true, quickTask: true, spamReactions: true,
     reactAlong: true, imagePicker: true, templatePicker: true,
-    quickReply: true, quickCopy: true, groupReminder: true
+    quickReply: true, quickCopy: true, groupReminder: true,
+    quickMeet: true
   },
   },
   // Notifications
@@ -447,7 +450,7 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
 
 ## 10. Phiên Bản & Cập Nhật
 
-- **Version**: 3.5.3 (trong `manifest.json` và `package.json`)
+- **Version**: 3.5.4 (trong `manifest.json` và `package.json`)
 - Khi bump version: cập nhật **cả hai** file.
 - Extension dùng **Manifest V3** — không dùng persistent background page, không dùng `chrome.extension.getBackgroundPage()`.
 

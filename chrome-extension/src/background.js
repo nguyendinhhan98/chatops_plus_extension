@@ -315,6 +315,47 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       });
       return true;
 
+    case MESSAGE_TYPES.CREATE_GOOGLE_MEET: {
+      const mattermostTabId = sender.tab?.id;
+      const textboxId = message.payload?.textboxId;
+      if (!mattermostTabId) {
+        sendResponse({ ok: false, error: 'No sender tab' });
+        break;
+      }
+      chrome.tabs.create({ url: 'https://meet.google.com/new', active: true }, (newTab) => {
+        const newTabId = newTab.id;
+        const listener = (updatedTabId, changeInfo, updatedTab) => {
+          if (updatedTabId === newTabId && changeInfo.url) {
+            const url = changeInfo.url;
+            const match = url.match(/meet\.google\.com\/[a-z]{3}-[a-z]{4}-[a-z]{3}/);
+            if (match) {
+              const cleanMeetUrl = 'https://' + match[0];
+              chrome.tabs.sendMessage(mattermostTabId, {
+                type: MESSAGE_TYPES.GOOGLE_MEET_CREATED,
+                payload: {
+                  meetLink: cleanMeetUrl,
+                  textboxId: textboxId
+                }
+              }).catch((err) => {
+                console.warn('[ChatOps Ext] Failed to send meet link to Mattermost tab:', err);
+              });
+              chrome.tabs.onUpdated.removeListener(listener);
+            }
+          }
+        };
+        chrome.tabs.onUpdated.addListener(listener);
+        const removeListenerOnClose = (closedTabId) => {
+          if (closedTabId === newTabId) {
+            chrome.tabs.onUpdated.removeListener(listener);
+            chrome.tabs.onRemoved.removeListener(removeListenerOnClose);
+          }
+        };
+        chrome.tabs.onRemoved.addListener(removeListenerOnClose);
+      });
+      sendResponse({ ok: true });
+      break;
+    }
+
     case 'DISMISS_REMINDER':
       broadcastDismissReminder(message.taskId);
       sendResponse({ ok: true });

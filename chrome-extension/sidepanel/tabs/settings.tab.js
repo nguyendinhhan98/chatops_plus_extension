@@ -254,7 +254,8 @@ const DEFAULT_SETTINGS = {
     imagePicker: true,
     templatePicker: true,
     quickReply: false,
-    quickCopy: false
+    quickCopy: false,
+    quickMeet: true
   },
   memoCategories: ['General', 'Work'],
   spamEnabled: true,
@@ -471,6 +472,8 @@ async function loadAndApplySettings() {
   document.getElementById('settingFloatingQuickCopy').checked = settings.floatingButtons?.quickCopy !== false;
   const grToggle = document.getElementById('settingFloatingGroupReminder');
   if (grToggle) grToggle.checked = settings.floatingButtons?.groupReminder !== false;
+  const qmToggle = document.getElementById('settingFloatingQuickMeet');
+  if (qmToggle) qmToggle.checked = settings.floatingButtons?.quickMeet !== false;
 
   // Sync disabled/dimmed states
   updateFloatingCheckboxesSync(settings);
@@ -1058,6 +1061,7 @@ function setupEventListeners() {
   bindFloatingToggle('settingFloatingQuickCopy', 'quickCopy');
   bindFloatingToggle('settingFloatingAiSummarize', 'aiSummarize');
   bindFloatingToggle('settingFloatingGroupReminder', 'groupReminder');
+  bindFloatingToggle('settingFloatingQuickMeet', 'quickMeet');
 
   const btnTabStd = document.getElementById('emojiTabStandard');
   const btnTabCustom = document.getElementById('emojiTabCustom');
@@ -2946,7 +2950,8 @@ export function updateFloatingCheckboxesSync(settings) {
     { row: 'rowFloatingReactAlong', chk: 'settingReactAlongEnabled' },
     { row: 'rowFloatingImagePicker', chk: 'settingFloatingImagePicker' },
     { row: 'rowFloatingTemplatePicker', chk: 'settingFloatingTemplatePicker' },
-    { row: 'rowFloatingAiSummarize', chk: 'settingFloatingAiSummarize' }
+    { row: 'rowFloatingAiSummarize', chk: 'settingFloatingAiSummarize' },
+    { row: 'rowFloatingQuickMeet', chk: 'settingFloatingQuickMeet' }
   ];
   ids.forEach(({ row, chk }) => {
     const rowEl = document.getElementById(row);

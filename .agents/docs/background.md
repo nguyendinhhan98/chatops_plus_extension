@@ -123,6 +123,15 @@ Tương tự handleMarkTaskDone nhưng:
 4. Return best match username
 ```
 
+#### Google Meet Creation Handler (`CREATE_GOOGLE_MEET`)
+```
+1. Lấy Mattermost tab ID từ sender.tab.id và textboxId.
+2. Tạo tab mới (active: true) trỏ tới `https://meet.google.com/new`.
+3. Sử dụng `chrome.tabs.onUpdated` để bắt sự kiện URL chuyển hướng sang link phòng họp chính thức của Google (dạng `https://meet.google.com/abc-defg-hij`).
+4. Gửi message `GOOGLE_MEET_CREATED` mang link phòng họp thật và textboxId tương ứng ngược về Mattermost tab để tự động chèn vào ô nhập chat.
+5. Gỡ bỏ listeners (`onUpdated` và `onRemoved`) để dọn dẹp bộ nhớ sau khi hoàn tất hoặc khi tab bị đóng trước lúc redirect.
+```
+
 #### Notification Click Handler
 ```
 chrome.notifications.onClicked

@@ -3075,6 +3075,14 @@ span.flatpickr-weekday {
   color: var(--accent) !important;
 }
 
+.flatpickr-day.flatpickr-disabled,
+.flatpickr-day.flatpickr-disabled:hover {
+  color: #cbd5e1 !important;
+  background: transparent !important;
+  cursor: not-allowed !important;
+  border-color: transparent !important;
+}
+
 .flatpickr-day.today {
   border-color: var(--accent) !important;
   color: var(--accent) !important;

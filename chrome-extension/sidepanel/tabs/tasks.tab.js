@@ -3,7 +3,7 @@
  * Manages To-Do tasks with reminders.
  */
 
-import { escapeHtml, makePermalinkSync, formatUnixMsToVN, formatRelativeTime, initCommonFlatpickr, formatRichText, formatDateTime } from '../../src/utils/index.js';
+import { escapeHtml, makePermalinkSync, formatUnixMsToVN, formatRelativeTime, initCommonFlatpickr, formatRichText, formatDateTime, showToast } from '../../src/utils/index.js';
 import { CHATOPS_CONFIG, MESSAGE_TYPES, UI_CONFIG, STORAGE_KEYS, TABS } from '../../src/constants.js';
 import { language } from '../../src/lang.js';
 import { getMyChannels } from '../../src/api/index.js';
@@ -139,8 +139,17 @@ export function setup(state) {
       noCalendar: noCalendarMode,
       enableTime: true,
       dateFormat: noCalendarMode ? "H:i" : "Y-m-d H:i",
+      minDate: "today",
       onChange: function(selectedDates) {
         if (selectedDates.length > 0) {
+          if (!noCalendarMode) {
+            const selectedTime = selectedDates[0].getTime();
+            if (selectedTime < Date.now()) {
+              showToast(language.pastDateError);
+              fpQuick.clear();
+              return;
+            }
+          }
           clearReminderErrorHighlight();
           if (presetSelect) {
             presetSelect.value = '';
@@ -711,6 +720,21 @@ export function setup(state) {
         }
       }
       return;
+    }
+
+    // Chặn không cho chọn thời gian ở quá khứ
+    if (reminderVal && !isRepeatDaily) {
+      const selectedTime = new Date(reminderVal).getTime();
+      if (!isNaN(selectedTime) && selectedTime < Date.now()) {
+        showToast(language.pastDateError);
+        if (reminderRow) {
+          reminderRow.style.borderColor = 'var(--danger)';
+          reminderRow.style.boxShadow = '0 0 0 2px rgba(231, 76, 60, 0.2)';
+          reminderRow.style.borderRadius = '6px';
+          reminderRow.style.transition = 'all 0.2s';
+        }
+        return;
+      }
     }
 
     if (reminderVal && isRepeatDaily && reminderVal.length === 5 && reminderVal.includes(':')) {
@@ -1327,7 +1351,17 @@ export async function loadTasks() {
       noCalendar: isRepeatDaily,
       enableTime: true,
       dateFormat: isRepeatDaily ? "H:i" : "Y-m-d H:i",
+      minDate: "today",
       onClose: async (selectedDates, dateStr) => {
+        if (selectedDates.length > 0 && !isRepeatDaily) {
+          const selectedTime = selectedDates[0].getTime();
+          if (selectedTime < Date.now()) {
+            showToast(language.pastDateError);
+            loadTasks();
+            return;
+          }
+        }
+
         const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
         const memos = res[STORAGE_KEYS.MEMOS] || [];
         const taskIndex = memos.findIndex(m => m.id === id);
@@ -1336,8 +1370,13 @@ export async function loadTasks() {
           const oldReminder = memos[taskIndex].reminder;
           let finalReminder = dateStr || null;
           if (dateStr && isRepeatDaily && dateStr.length === 5 && dateStr.includes(':')) {
-            const todayStr = new Date().toISOString().split('T')[0];
-            finalReminder = `${todayStr} ${dateStr}`;
+            const today = new Date();
+            const parts = dateStr.split(':');
+            today.setHours(parseInt(parts[0], 10), parseInt(parts[1], 10), 0, 0);
+            if (today.getTime() <= Date.now()) {
+              today.setDate(today.getDate() + 1);
+            }
+            finalReminder = formatDateTime(today);
           }
 
           if (oldReminder === finalReminder) {

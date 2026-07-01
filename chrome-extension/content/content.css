@@ -1044,7 +1044,8 @@ html body #chatops-quick-note-popover #cqn-preview-box.cqn-hidden {
 /* Injected Template/Task Buttons matching other borderless icons in ChatOps toolbar */
 .chatops-ext-template-picker-btn,
 .chatops-ext-task-create-btn,
-.chatops-ext-group-reminder-btn {
+.chatops-ext-group-reminder-btn,
+.chatops-ext-meet-create-btn {
   background: transparent !important;
   border: none !important;
   border-radius: 4px !important;
@@ -1063,13 +1064,15 @@ html body #chatops-quick-note-popover #cqn-preview-box.cqn-hidden {
 }
 .chatops-ext-template-picker-btn:hover,
 .chatops-ext-task-create-btn:hover,
-.chatops-ext-group-reminder-btn:hover {
+.chatops-ext-group-reminder-btn:hover,
+.chatops-ext-meet-create-btn:hover {
   background: rgba(0, 0, 0, 0.05) !important;
   transform: scale(1.05) !important;
 }
 .chatops-ext-template-picker-btn:active,
 .chatops-ext-task-create-btn:active,
-.chatops-ext-group-reminder-btn:active {
+.chatops-ext-group-reminder-btn:active,
+.chatops-ext-meet-create-btn:active {
   transform: scale(0.95) !important;
 }
 
@@ -1431,6 +1434,14 @@ span.flatpickr-weekday {
 .flatpickr-day:hover {
   background: #f1f5f9 !important;
   color: #1c58d9 !important;
+}
+
+.flatpickr-day.flatpickr-disabled,
+.flatpickr-day.flatpickr-disabled:hover {
+  color: #cbd5e1 !important;
+  background: transparent !important;
+  cursor: not-allowed !important;
+  border-color: transparent !important;
 }
 
 .flatpickr-day.today {
