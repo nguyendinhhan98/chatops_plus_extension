@@ -85,12 +85,17 @@ export function initCommonFlatpickr(el, options = {}) {
     console.warn('[ChatOps Ext] Flatpickr is not available globally.');
     return null;
   }
+  const now = new Date();
+  let defaultHour = now.getHours();
+  let defaultMinute = now.getMinutes();
   return flatpickr(el, {
     enableTime: true,
     dateFormat: "Y-m-d H:i",
     time_24hr: true,
-    minuteIncrement: 5,
+    minuteIncrement: 1,
     disableMobile: true,
+    defaultHour: defaultHour,
+    defaultMinute: defaultMinute,
     ...options
   });
 }

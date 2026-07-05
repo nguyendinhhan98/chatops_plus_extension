@@ -142,14 +142,6 @@ export function setup(state) {
       minDate: "today",
       onChange: function(selectedDates) {
         if (selectedDates.length > 0) {
-          if (!noCalendarMode) {
-            const selectedTime = selectedDates[0].getTime();
-            if (selectedTime < Date.now()) {
-              showToast(language.pastDateError);
-              fpQuick.clear();
-              return;
-            }
-          }
           clearReminderErrorHighlight();
           if (presetSelect) {
             presetSelect.value = '';

@@ -60,12 +60,17 @@ function initCommonFlatpickr(el, options = {}) {
     console.warn('[ChatOps Ext] Flatpickr is not available globally.');
     return null;
   }
+  const now = new Date();
+  let defaultHour = now.getHours();
+  let defaultMinute = now.getMinutes();
   return flatpickr(el, {
     enableTime: true,
     dateFormat: "Y-m-d H:i",
     time_24hr: true,
-    minuteIncrement: 5,
+    minuteIncrement: 1,
     disableMobile: true,
+    defaultHour: defaultHour,
+    defaultMinute: defaultMinute,
     ...options
   });
 }
@@ -4057,14 +4062,6 @@ function showToast(msg) {
         minDate: "today",
         onChange: function(selectedDates) {
           if (selectedDates.length > 0) {
-            if (!noCalendarMode) {
-              const selectedTime = selectedDates[0].getTime();
-              if (selectedTime < Date.now()) {
-                showToast(language.pastDateError);
-                fpCqn.clear();
-                return;
-              }
-            }
             clearCqnReminderErrorHighlight();
             if (cqnReminderSelect) {
               cqnReminderSelect.value = '';
@@ -6484,50 +6481,24 @@ function showToast(msg) {
         .map(line => `> ${line}`)
         .join('\n') + '\n\n';
 
-      // Find the post that was right-clicked
-      let postEl = lastRightClickedPostEl;
-      if (!postEl) {
-        // Fallback: try to get from current selection
-        const selection = window.getSelection();
-        if (selection && selection.rangeCount > 0) {
-          const container = selection.getRangeAt(0).commonAncestorContainer;
-          postEl = container.nodeType === Node.ELEMENT_NODE
-            ? container.closest('.post, [id^="post_"], [id^="rhsPost_"]')
-            : container.parentElement?.closest('.post, [id^="post_"], [id^="rhsPost_"]');
+      // Check if thread/RHS panel is open and visible
+      const replyTextarea = document.getElementById('reply_textbox')
+        || document.querySelector('.sidebar-right textarea, .rhs-thread textarea, .sidebar--right textarea');
+      const isRhsOpen = !!replyTextarea && replyTextarea.offsetParent !== null;
+
+      if (isRhsOpen) {
+        // RHS/thread panel is open -> insert quoted text into RHS reply textbox
+        insertTextIntoTextarea(replyTextarea, quotedText);
+      } else {
+        // RHS/thread panel is not open -> insert quoted text into main chat textbox (outside)
+        const mainTextarea = document.getElementById('post_textbox')
+          || document.querySelector('.post-create-body textarea, [placeholder*="write" i]');
+        if (mainTextarea) {
+          insertTextIntoTextarea(mainTextarea, quotedText);
+        } else {
+          showToast('⚠️ Không tìm thấy khung chat để trả lời.');
         }
       }
-
-      if (!postEl) {
-        showToast('\u26a0\ufe0f Kh\u00f4ng x\u00e1c \u0111\u1ecbnh \u0111\u01b0\u1ee3c b\u00e0i vi\u1ebft \u0111\u1ec3 tr\u1ea3 l\u1eddi.');
-        return;
-      }
-
-      // Click the reply button of the post
-      const replyBtn = findReplyButton(postEl);
-      if (!replyBtn) {
-        showToast('\u26a0\ufe0f Kh\u00f4ng t\u00ecm th\u1ea5y n\u00fat tr\u1ea3 l\u1eddi.');
-        return;
-      }
-
-      replyBtn.click();
-
-      // Wait for the reply textarea to appear, then insert the quoted text
-      let attempts = 0;
-      const insertInterval = setInterval(() => {
-        attempts++;
-        const replyTextarea = document.getElementById('reply_textbox')
-          || document.querySelector('.sidebar-right textarea, .rhs-thread textarea, .sidebar--right textarea');
-        if (replyTextarea) {
-          clearInterval(insertInterval);
-          // Small delay to let React fully render the reply box
-          setTimeout(() => {
-            insertTextIntoTextarea(replyTextarea, quotedText);
-          }, 150);
-        } else if (attempts > 30) {
-          clearInterval(insertInterval);
-          showToast('\u26a0\ufe0f Kh\u00f4ng m\u1edf \u0111\u01b0\u1ee3c h\u1ed9p tr\u1ea3 l\u1eddi.');
-        }
-      }, 100);
     }
   });
 
