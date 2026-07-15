@@ -262,7 +262,7 @@ export function setup(state) {
       });
     }
 
-    function addChecklistRow() {
+    function addChecklistRow(defaultValue = '') {
       if (!checklistContainer) return;
       const currentRows = checklistContainer.querySelectorAll('.checklist-builder-row');
       if (currentRows.length >= 10) return;
@@ -284,6 +284,9 @@ export function setup(state) {
       const input = document.createElement('input');
       input.type = 'text';
       input.className = 'checklist-builder-input';
+      if (defaultValue) {
+        input.value = defaultValue;
+      }
       const placeholderText = language.checklistPlaceholder || 'Checklist item {num}...';
       input.placeholder = placeholderText.replace('{num}', currentRows.length + 1);
       input.style.flex = '1';
@@ -430,6 +433,19 @@ export function setup(state) {
         if (groupReminderFields) groupReminderFields.style.display = 'none';
         if (repeatDailyRow) repeatDailyRow.style.display = 'flex';
         if (repeatDailyCheckbox) repeatDailyCheckbox.disabled = false;
+        
+        // Populate checklist builder from textarea if it has content
+        const rawText = quickInput?.value?.trim() || '';
+        if (rawText) {
+          const lines = rawText.split('\n').map(l => l.trim().replace(/^[-*•]\s*/, '').replace(/^\d+\.\s*/, '')).filter(Boolean);
+          if (lines.length > 0) {
+            checklistContainer.innerHTML = '';
+            lines.slice(0, 10).forEach(line => {
+              addChecklistRow(line);
+            });
+            updateAddButtonState();
+          }
+        }
         
         const inputs = checklistContainer?.querySelectorAll('.checklist-builder-input') || [];
         if (inputs.length === 0) {
@@ -742,7 +758,7 @@ export function setup(state) {
     const id = `task_${Date.now()}`;
     const item = {
       id,
-      type: 'task',
+      type: taskCat === 'group_reminder' ? 'group_reminder' : 'task',
       postId: null,
       postText: null,
       title: titleText || '',
@@ -776,6 +792,7 @@ export function setup(state) {
     }
     
     loadTasks();
+    if (typeof loadGroupReminders === 'function') loadGroupReminders();
 
     if (window.ModalManager) {
       window.ModalManager.close();
@@ -831,17 +848,6 @@ export function setup(state) {
     });
   });
 
-  // Category sub-tabs
-  document.querySelectorAll('#taskCatFilterTabs .memo-sub-tab').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      document.querySelectorAll('#taskCatFilterTabs .memo-sub-tab').forEach(b => b.classList.remove('active'));
-      const clickedBtn = e.target.closest('.memo-sub-tab') || e.target;
-      clickedBtn.classList.add('active');
-      currentCatFilter = clickedBtn.dataset.catFilter;
-      loadTasks();
-    });
-  });
-
   // Clear All Tasks
   const btnClearAllTasks = document.getElementById('btnClearAllTasks');
   if (btnClearAllTasks) {
@@ -865,340 +871,32 @@ export function setup(state) {
     });
   }
 
-  // Event delegation for task list
+  // Task search input listener
+  const tasksSearchInput = document.getElementById('tasksSearchInput');
+  if (tasksSearchInput) {
+    tasksSearchInput.addEventListener('input', () => {
+      loadTasks();
+    });
+  }
+
+  // Event delegation for task list click
   document.getElementById('taskList').addEventListener('click', async (e) => {
-    // Delete item
-    if (e.target.classList.contains('btn-delete-task')) {
-      const id = e.target.dataset.id;
-      const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS, STORAGE_KEYS.SETTINGS]);
-      const settings = res[STORAGE_KEYS.SETTINGS] || {};
-      const quickDelete = settings.quickDelete === true;
-      
-      if (!quickDelete) {
-        if (!confirm(language.confirmDeleteTask || "Are you sure you want to delete this task?")) {
-          return;
-        }
-      }
-      
-      const memos = (res[STORAGE_KEYS.MEMOS] || []).filter(m => m.id !== id);
-      await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
-      chrome.alarms.clear(id);
-      chrome.runtime.sendMessage({ type: 'DISMISS_REMINDER', taskId: id }).catch(() => {});
-      loadTasks();
-    }
-
-    // Task completion toggle
-    if (e.target.classList.contains('task-checkbox')) {
-      const id = e.target.dataset.id;
-      const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS, STORAGE_KEYS.SETTINGS]);
-      const memos = res[STORAGE_KEYS.MEMOS] || [];
-      const settings = res[STORAGE_KEYS.SETTINGS] || { snoozeMinutes: 5 };
-      const task = memos.find(m => m.id === id);
-      if (task) {
-        task.done = e.target.checked;
-        task.doneAt = e.target.checked ? Date.now() : null;
-        
-        // If task is checked done, check all checklist items done
-        if (task.taskCategory === 'checklist' && task.checklist) {
-          task.checklist.forEach(item => {
-            item.done = e.target.checked;
-          });
-        }
-        
-        await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
-        if (e.target.checked) {
-          chrome.alarms.clear(id);
-          chrome.runtime.sendMessage({ type: 'DISMISS_REMINDER', taskId: id }).catch(() => {});
-        } else if (task.reminder) {
-          // Task marked undone — restore alarm
-          if (task.repeatDaily) {
-            // Daily task: reschedule to next correct daily occurrence, not a snooze interval
-            const reminderDate = new Date(task.reminder);
-            const nextTime = new Date();
-            nextTime.setHours(reminderDate.getHours(), reminderDate.getMinutes(), 0, 0);
-            if (nextTime.getTime() <= Date.now()) {
-              nextTime.setDate(nextTime.getDate() + 1);
-            }
-            chrome.runtime.sendMessage({ type: MESSAGE_TYPES.SET_TASK_ALARM, taskId: id, time: nextTime.getTime() });
-          } else {
-            // One-time task: restore at original reminder time (if still future), else snooze
-            const reminderTime = new Date(task.reminder).getTime();
-            const targetTime = reminderTime > Date.now() ? reminderTime : Date.now() + (settings.snoozeMinutes || 5) * 60 * 1000;
-            chrome.runtime.sendMessage({ type: MESSAGE_TYPES.SET_TASK_ALARM, taskId: id, time: targetTime });
-          }
-        }
-        loadTasks();
-      }
-    }
-
-    // Checklist item toggle
-    if (e.target.classList.contains('task-checklist-item-checkbox')) {
-      const taskId = e.target.dataset.taskId;
-      const itemIdx = parseInt(e.target.dataset.itemIdx);
-      const isChecked = e.target.checked;
-      
-      // Update styling immediately on the DOM to ensure zero jitter/lag
-      const parentLine = e.target.closest('.task-checklist-line');
-      if (parentLine) {
-        const textSpan = parentLine.querySelector('.task-checklist-text');
-        if (textSpan) {
-          textSpan.style.color = isChecked ? 'var(--text-3)' : 'var(--text-1)';
-          textSpan.style.textDecoration = isChecked ? 'line-through' : 'none';
-        }
-      }
-
-      const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS, STORAGE_KEYS.SETTINGS]);
-      const memos = res[STORAGE_KEYS.MEMOS] || [];
-      const settings = res[STORAGE_KEYS.SETTINGS] || { snoozeMinutes: 5 };
-      const task = memos.find(m => m.id === taskId);
-      
-      if (task && task.checklist && task.checklist[itemIdx]) {
-        task.checklist[itemIdx].done = isChecked;
-        
-        // Check if all checklist items are completed
-        const allDone = task.checklist.every(item => item.done === true);
-        const card = document.getElementById('item_' + taskId);
-        
-        if (allDone) {
-          task.done = true;
-          task.doneAt = Date.now();
-          chrome.alarms.clear(taskId);
-          
-          isLocalTaskUpdate = false;
-          await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
-          // Re-render when status changes so task moves to the completed section
-          loadTasks();
-        } else {
-          // If task was previously done but now a checklist item is unchecked
-          let statusChanged = false;
-          if (task.done) {
-            task.done = false;
-            task.doneAt = null;
-            statusChanged = true;
-            const snoozeMins = settings.snoozeMinutes || 5;
-            chrome.runtime.sendMessage({ type: MESSAGE_TYPES.SET_TASK_ALARM, taskId, time: Date.now() + snoozeMins * 60 * 1000 });
-          }
-          
-          isLocalTaskUpdate = true;
-          await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
-          setTimeout(() => { isLocalTaskUpdate = false; }, 100);
-          
-          if (statusChanged) {
-            isLocalTaskUpdate = false;
-            loadTasks();
-          } else {
-            // Just update parent task checkbox and layout status if needed without re-rendering everything
-            if (card) {
-              const parentCheckbox = card.querySelector('.task-checkbox');
-              if (parentCheckbox) parentCheckbox.checked = false;
-              card.classList.remove('memo-done');
-            }
-          }
-        }
-      }
-    }
-
-    // Inline edit trigger
-    const btnEdit = e.target.closest('.btn-edit-task');
-    if (btnEdit) {
-      const id = btnEdit.dataset.id;
-      const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
-      const memos = res[STORAGE_KEYS.MEMOS] || [];
-      const task = memos.find(m => m.id === id);
-      if (task) {
-        const card = document.getElementById('item_' + id);
-        const collapseBtn = card?.querySelector('.collapse-btn');
-        if (collapseBtn) collapseBtn.style.display = 'none';
-
-        const contentEl = card.querySelector('.memo-content');
-        if (contentEl) {
-          const actionsEl = card.querySelector('.memo-actions');
-          if (actionsEl) actionsEl.style.display = 'none';
-          
-          contentEl.innerHTML = `
-            <div class="inline-edit-form" style="margin-top: 4px; display: flex; flex-direction: column; gap: 8px;">
-              <input type="text" class="inline-edit-title" placeholder="Title (optional)" value="${escapeHtml(task.title || '')}" style="width: 100%; height: 28px; font-size: 13px; font-weight: 600; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); outline: none; box-sizing: border-box; font-family: inherit;" autocomplete="off">
-              <textarea class="inline-edit-textarea" rows="10" style="width: 100%; min-height: 180px; padding: 8px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 13px; outline: none; background: #fff; resize: vertical; color: var(--text-1);">${escapeHtml(task.note)}</textarea>
-              <div style="display:flex; align-items:center; gap:8px;">
-                <span style="font-size:12px; font-weight:600; color:var(--text-2);">${language.categoryLabel || 'Category:'}</span>
-                <select class="sp-compact-select inline-edit-category" style="max-width:120px; margin:0;">
-                  <option value="normal" ${task.taskCategory !== 'checklist' && task.taskCategory !== 'group_reminder' ? 'selected' : ''}>${language.categoryNormal || 'Normal'}</option>
-                  <option value="checklist" ${task.taskCategory === 'checklist' ? 'selected' : ''}>${language.categoryChecklist || 'Checklist'}</option>
-                  ${task.taskCategory === 'group_reminder' ? `<option value="group_reminder" selected>Group Reminder</option>` : ''}
-                </select>
-                <label style="display:inline-flex; align-items:center; gap:4px; font-size:12px; font-weight:600; color:var(--text-2); margin-left:12px; cursor:pointer;">
-                  <input type="checkbox" class="inline-edit-repeat-daily" ${task.repeatDaily ? 'checked' : ''} ${task.taskCategory === 'group_reminder' ? 'disabled' : ''} style="margin:0; width:13px; height:13px; cursor:pointer;">
-                  <span>🔄 ${language.repeatDailyBadgeText || 'Daily'}</span>
-                </label>
-              </div>
-              <div style="display: flex; gap: 6px; justify-content: flex-end;">
-                <button class="btn btn-secondary inline-edit-cancel" data-id="${id}" style="padding: 4px 10px; font-size: 11.5px; height: 26px; border-radius: 6px; cursor:pointer;">${language.cancel}</button>
-                <button class="btn btn-primary inline-edit-save" data-id="${id}" style="padding: 4px 10px; font-size: 11.5px; height: 26px; border-radius: 6px; cursor:pointer; color:#fff;">${language.save}</button>
-              </div>
-            </div>
-          `;
-          
-          const selectEl = contentEl.querySelector('.inline-edit-category');
-          if (selectEl && typeof window.convertToCustomDropdown === 'function') {
-            window.convertToCustomDropdown(selectEl, '110px', '22px');
-          }
-
-          const ta = contentEl.querySelector('.inline-edit-textarea');
-          if (ta) {
-            ta.style.boxSizing = 'border-box';
-            ta.style.height = 'auto';
-            ta.style.height = Math.max(180, ta.scrollHeight) + 'px';
-            ta.style.overflowY = 'hidden';
-            ta.addEventListener('input', () => {
-              ta.style.height = 'auto';
-              ta.style.height = Math.max(180, ta.scrollHeight) + 'px';
-            });
-          }
-        }
-      }
-    }
-
-    // Cancel edit
-    if (e.target.classList.contains('inline-edit-cancel')) {
-      loadTasks();
-    }
-
-    // Save edit
-    if (e.target.classList.contains('inline-edit-save')) {
-      const id = e.target.dataset.id;
-      const card = document.getElementById('item_' + id);
-      const titleInput = card.querySelector('.inline-edit-title');
-      const textarea = card.querySelector('.inline-edit-textarea');
-      const newTitle = titleInput ? titleInput.value.trim() : '';
-      if (textarea) {
-          const newText = textarea.value.trim();
-          if (!newText) {
-            if (typeof window.showErrorFeedback === 'function') {
-              window.showErrorFeedback(language.taskEmptyError);
-            } else {
-              console.warn(language.taskEmptyError);
-            }
-            return;
-          }
-          
-          const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
-          const memos = res[STORAGE_KEYS.MEMOS] || [];
-          const taskIndex = memos.findIndex(m => m.id === id);
-          if (taskIndex !== -1) {
-            const task = memos[taskIndex];
-            task.title = newTitle;
-            task.note = newText;
-            task.updatedAt = Date.now();
-            
-            const categorySelect = card.querySelector('.inline-edit-category');
-            if (categorySelect) {
-              task.taskCategory = categorySelect.value;
-            }
-            
-            const repeatDailyCheckbox = card.querySelector('.inline-edit-repeat-daily');
-            const oldRepeatDaily = task.repeatDaily;
-            if (repeatDailyCheckbox) {
-              task.repeatDaily = repeatDailyCheckbox.checked;
-            }
-
-            if (task.repeatDaily !== oldRepeatDaily) {
-              if (task.repeatDaily) {
-                // Switched to daily: reschedule alarm to next daily occurrence
-                if (task.reminder) {
-                  const originalDate = new Date(task.reminder);
-                  if (!isNaN(originalDate.getTime())) {
-                    const today = new Date();
-                    today.setHours(originalDate.getHours(), originalDate.getMinutes(), 0, 0);
-                    if (today.getTime() <= Date.now()) {
-                      today.setDate(today.getDate() + 1);
-                    }
-                    task.reminder = formatDateTime(today);
-                    chrome.runtime.sendMessage({
-                      type: MESSAGE_TYPES.SET_TASK_ALARM,
-                      taskId: id,
-                      time: today.getTime()
-                    });
-                  }
-                }
-              } else {
-                // Switched from daily to one-time: clear daily alarm, reschedule at
-                // original reminder time if still in the future, else clear entirely
-                chrome.alarms.clear(id);
-                if (task.reminder) {
-                  const reminderTime = new Date(task.reminder).getTime();
-                  if (reminderTime > Date.now()) {
-                    chrome.runtime.sendMessage({
-                      type: MESSAGE_TYPES.SET_TASK_ALARM,
-                      taskId: id,
-                      time: reminderTime
-                    });
-                  }
-                  // If reminder is in the past, alarm stays cleared — task remains pending
-                  // and user can set a new reminder time manually
-                }
-              }
-            }
-            
-            if (task.taskCategory === 'checklist') {
-              const newLines = newText.split('\n').filter(l => l.trim());
-              const oldChecklist = task.checklist || [];
-              
-              task.checklist = newLines.map((lineText, idx) => {
-                const trimmedText = lineText.trim();
-                const matchedOld = oldChecklist.find(oldItem => oldItem.text === trimmedText);
-                return {
-                  id: `${id}_line_${idx}`,
-                  text: trimmedText,
-                  done: matchedOld ? matchedOld.done : false
-                };
-              });
-              
-              // Recalculate done status of the whole task
-              const allDone = task.checklist.every(item => item.done === true);
-              task.done = allDone;
-              if (allDone) {
-                task.doneAt = Date.now();
-                chrome.alarms.clear(id);
-              } else {
-                task.doneAt = null;
-              }
-            } else {
-              task.checklist = [];
-            }
-            
-            await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
-          }
-          loadTasks();
-        }
-    }
+    await handleTaskClick(e, 'tasks');
   });
 
-  // Handle task category inline footer selection
-  document.getElementById('taskList').addEventListener('change', async (e) => {
-    if (e.target.classList.contains('task-edit-category')) {
-      const id = e.target.dataset.id;
-      const newCategory = e.target.value;
-      const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
-      const memos = res[STORAGE_KEYS.MEMOS] || [];
-      const task = memos.find(m => m.id === id);
-      if (task) {
-        task.taskCategory = newCategory;
-        if (newCategory === 'checklist') {
-          const lines = (task.note || '').split('\n').filter(l => l.trim());
-          task.checklist = lines.map((text, idx) => ({ id: `${task.id}_line_${idx}`, text: text.trim(), done: false }));
-        } else {
-          task.checklist = [];
-        }
-        task.updatedAt = Date.now();
-        await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
-        loadTasks();
-      }
-    }
+  // Event delegation for group reminders list click
+  document.getElementById('groupRemindersList')?.addEventListener('click', async (e) => {
+    await handleTaskClick(e, 'reminders');
   });
 
   // Reload when tab is clicked
   document.querySelectorAll('.tab-btn').forEach(btn => {
     if (btn.dataset.tab === TABS.TASKS) btn.addEventListener('click', loadTasks);
+    if (btn.dataset.tab === 'tools-reminders' || btn.dataset.tab === 'tools') {
+      btn.addEventListener('click', () => {
+        if (typeof loadGroupReminders === 'function') loadGroupReminders();
+      });
+    }
   });
 
   // Listen to storage changes reactively to reload tasks list
@@ -1206,6 +904,7 @@ export function setup(state) {
     if (areaName === 'local' && changes[STORAGE_KEYS.MEMOS]) {
       if (isLocalTaskUpdate) return;
       loadTasks();
+      if (typeof loadGroupReminders === 'function') loadGroupReminders();
     }
   });
 
@@ -1219,49 +918,56 @@ export async function loadTasks() {
   const taskList = document.getElementById('taskList');
   if (!taskList) return;
 
-  // Destroy previous flatpickr instances to prevent memory leaks
-  if (activeListFlatpickrs && activeListFlatpickrs.length > 0) {
-    activeListFlatpickrs.forEach(fp => {
-      if (fp && typeof fp.destroy === 'function') {
-        try {
-          fp.destroy();
-        } catch (e) {
-          console.warn('[ChatOps Ext] Error destroying flatpickr:', e);
-        }
+  // Destroy previous flatpickr instances inside tasks list to prevent memory leaks
+  taskList.querySelectorAll('.flatpickr-input').forEach(el => {
+    if (el._flatpickr) {
+      try {
+        el._flatpickr.destroy();
+      } catch (err) {
+        console.error('Error destroying flatpickr inside taskList:', err);
       }
-    });
-  }
-  activeListFlatpickrs = [];
+    }
+  });
 
   const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
   const allItems = res[STORAGE_KEYS.MEMOS] || [];
-  const regularTasks = allItems.filter(m => m.type === 'task');
-  const groupReminders = allItems.filter(m => m.type === 'group_reminder');
+  const regularTasks = allItems.filter(m => (m.type === 'task' || !m.type) && m.taskCategory !== 'group_reminder');
+  const groupReminders = allItems.filter(m => m.type === 'group_reminder' || m.taskCategory === 'group_reminder');
 
-  const pendingTasks = regularTasks.filter(t => !t.done);
-  const doneTasks = regularTasks.filter(t => t.done);
+  const allPendingTasks = regularTasks.filter(t => !t.done);
   const pendingReminders = groupReminders.filter(t => !t.done);
-  const doneReminders = groupReminders.filter(t => t.done);
 
-  const pendingCount = pendingTasks.length + pendingReminders.length;
+  // Update tasks badge
   const taskBadge = document.getElementById('taskTabBadge');
-  if (taskBadge) taskBadge.textContent = pendingCount > 0 ? pendingCount : '';
+  if (taskBadge) taskBadge.textContent = allPendingTasks.length > 0 ? allPendingTasks.length : '';
+
+  // Update reminders badge too
+  const reminderBadge = document.getElementById('reminderTabBadge');
+  if (reminderBadge) reminderBadge.textContent = pendingReminders.length > 0 ? pendingReminders.length : '';
+
+  // Apply search query filter if exists
+  const searchInput = document.getElementById('tasksSearchInput');
+  const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+  let filteredTasks = regularTasks;
+  if (query) {
+    filteredTasks = regularTasks.filter(t => {
+      const titleMatch = (t.title || '').toLowerCase().includes(query);
+      const noteMatch = (t.note || '').toLowerCase().includes(query);
+      const postTextMatch = (t.postText || '').toLowerCase().includes(query);
+      return titleMatch || noteMatch || postTextMatch;
+    });
+  }
+
+  const pendingTasks = filteredTasks.filter(t => !t.done);
+  const doneTasks = filteredTasks.filter(t => t.done);
 
   const now = Date.now();
 
   const hasPendingTasks = pendingTasks.length > 0;
-  const hasPendingReminders = pendingReminders.length > 0;
   const hasDoneTasks = doneTasks.length > 0;
-  const hasDoneReminders = doneReminders.length > 0;
-
-  const showTasksSection = currentCatFilter !== 'group_reminder';
-  const showRemindersSection = currentCatFilter !== 'task';
-
-  const hasMatchingPending = (showTasksSection && hasPendingTasks) || (showRemindersSection && hasPendingReminders);
-  const hasMatchingDone = (showTasksSection && hasDoneTasks) || (showRemindersSection && hasDoneReminders);
 
   // FAB pulse when matching section is empty
-  const isEmpty = currentFilter === 'pending' ? !hasMatchingPending : !hasMatchingDone;
+  const isEmpty = currentFilter === 'pending' ? !hasPendingTasks : !hasDoneTasks;
   const fab = document.getElementById('btnFabAddTask');
   if (fab) {
     if (isEmpty) fab.classList.add('empty-pulsing');
@@ -1271,51 +977,19 @@ export async function loadTasks() {
   let html = '';
   const btnClearAllTasks = document.getElementById('btnClearAllTasks');
 
-  function sectionHeader(label, count, color) {
-    const c = color || 'var(--accent)';
-    const bg = color ? 'rgba(245,158,11,0.07)' : 'rgba(28,88,217,0.05)';
-    const border = color || 'var(--accent)';
-    return `<div style="font-size:11px;font-weight:700;text-transform:uppercase;color:${c};border-left:3px solid ${border};padding:4px 8px;margin:0 0 8px 0;background:${bg};border-radius:0 4px 4px 0;letter-spacing:.5px;display:flex;align-items:center;gap:6px;">${label}<span style="font-size:11px;font-weight:600;background:rgba(255,255,255,0.6);padding:1px 7px;border-radius:10px;border:1px solid ${border};">${count}</span></div>`;
-  }
-
   if (currentFilter === 'pending') {
-    if (btnClearAllTasks) btnClearAllTasks.style.display = hasMatchingPending ? 'inline-flex' : 'none';
-    if (!hasMatchingPending) {
+    if (btnClearAllTasks) btnClearAllTasks.style.display = hasPendingTasks ? 'inline-flex' : 'none';
+    if (!hasPendingTasks) {
       html = `<div class="empty-state">${language.taskEmpty}</div>`;
     } else {
-      if (showTasksSection && hasPendingTasks) {
-        if (currentCatFilter === 'all') {
-          html += sectionHeader(language.tabTasks || 'Công Việc', pendingTasks.length, null);
-        }
-        html += pendingTasks.map(t => renderTaskCard(t, now)).join('');
-      }
-      if (showRemindersSection && hasPendingReminders) {
-        if (showTasksSection && hasPendingTasks && currentCatFilter === 'all') html += '<div style="margin-top:14px;"></div>';
-        if (currentCatFilter === 'all') {
-          html += sectionHeader(language.groupReminderSectionTitle || 'Lên lịch gửi tin', pendingReminders.length, '#d97706');
-        }
-        html += pendingReminders.map(t => renderTaskCard(t, now)).join('');
-      }
+      html += pendingTasks.map(t => renderTaskCard(t, now)).join('');
     }
   } else {
-    if (btnClearAllTasks) btnClearAllTasks.style.display = hasMatchingDone ? 'inline-flex' : 'none';
-    if (!hasMatchingDone) {
+    if (btnClearAllTasks) btnClearAllTasks.style.display = hasDoneTasks ? 'inline-flex' : 'none';
+    if (!hasDoneTasks) {
       html = `<div class="empty-state">${language.noCompletedTasks}</div>`;
     } else {
-      html += `<div style="text-align:right;margin-bottom:8px;"><button class="memo-clear-done-btn" id="btnClearDoneTasks">${language.taskClearAll}</button></div>`;
-      if (showTasksSection && hasDoneTasks) {
-        if (currentCatFilter === 'all') {
-          html += sectionHeader(language.tabTasks || 'Công Việc', doneTasks.length, null);
-        }
-        html += doneTasks.map(t => renderTaskCard(t, now)).join('');
-      }
-      if (showRemindersSection && hasDoneReminders) {
-        if (showTasksSection && hasDoneTasks && currentCatFilter === 'all') html += '<div style="margin-top:14px;"></div>';
-        if (currentCatFilter === 'all') {
-          html += sectionHeader(language.groupReminderSectionTitle || 'Lên lịch gửi tin', doneReminders.length, '#d97706');
-        }
-        html += doneReminders.map(t => renderTaskCard(t, now)).join('');
-      }
+      html += doneTasks.map(t => renderTaskCard(t, now)).join('');
     }
   }
 
@@ -1333,8 +1007,88 @@ export async function loadTasks() {
     }
   });
 
-  // Initialize Flatpickr on dynamically rendered task card datetime inputs
-  taskList.querySelectorAll('.task-update-reminder').forEach(el => {
+  // Re-init flatpickr on date elements inside the task cards
+  initFlatpickrOnList(taskList, allItems, loadTasks);
+}
+
+/**
+ * Loads and renders group reminders in the dedicated Tools panel
+ */
+export async function loadGroupReminders() {
+  const container = document.getElementById('groupRemindersList');
+  if (!container) return;
+
+  // Clean up flatpickr inside groupRemindersList to prevent leaks
+  container.querySelectorAll('.flatpickr-input').forEach(el => {
+    if (el._flatpickr) {
+      try {
+        el._flatpickr.destroy();
+      } catch (err) {
+        console.error('Error destroying flatpickr inside groupRemindersList:', err);
+      }
+    }
+  });
+
+  const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
+  const allItems = res[STORAGE_KEYS.MEMOS] || [];
+  const groupReminders = allItems.filter(m => m.type === 'group_reminder' || m.taskCategory === 'group_reminder');
+
+  const pendingReminders = groupReminders.filter(t => !t.done);
+  const doneReminders = groupReminders.filter(t => t.done);
+
+  // Update reminders badge
+  const reminderBadge = document.getElementById('reminderTabBadge');
+  if (reminderBadge) reminderBadge.textContent = pendingReminders.length > 0 ? pendingReminders.length : '';
+
+  const now = Date.now();
+  let html = '';
+
+  function sectionHeader(label, count, color) {
+    const c = color || '#d97706';
+    const bg = 'rgba(245,158,11,0.07)';
+    const border = color || '#d97706';
+    return `<div style="font-size:11px;font-weight:700;text-transform:uppercase;color:${c};border-left:3px solid ${border};padding:4px 8px;margin:12px 0 8px 0;background:${bg};border-radius:0 4px 4px 0;letter-spacing:.5px;display:flex;align-items:center;gap:6px;">${label}<span style="font-size:11px;font-weight:600;background:rgba(255,255,255,0.6);padding:1px 7px;border-radius:10px;border:1px solid ${border};">${count}</span></div>`;
+  }
+
+  if (pendingReminders.length === 0 && doneReminders.length === 0) {
+    html = `<div class="empty-state">${language.taskEmpty || 'Không có nhắc nhở nào'}</div>`;
+  } else {
+    if (pendingReminders.length > 0) {
+      html += sectionHeader(language.groupRemindersTabLabel || 'Lên lịch gửi tin', pendingReminders.length);
+      html += pendingReminders.map(t => renderTaskCard(t, now)).join('');
+    }
+    if (doneReminders.length > 0) {
+      html += `<div style="text-align:right;margin-bottom:8px;"><button class="memo-clear-done-btn" id="btnClearDoneReminders">${language.taskClearAll || 'Xoá tất cả'}</button></div>`;
+      html += sectionHeader((language.groupRemindersTabLabel || 'Lên lịch gửi tin') + ` (${language.done || 'Đã xong'})`, doneReminders.length, '#64748b');
+      html += doneReminders.map(t => renderTaskCard(t, now)).join('');
+    }
+  }
+
+  container.innerHTML = html;
+
+  // Initialize Flatpickr on reminders list
+  initFlatpickrOnList(container, allItems, loadGroupReminders);
+
+  // Delegate clear completed reminders button
+  const clearRemindersBtn = document.getElementById('btnClearDoneReminders');
+  if (clearRemindersBtn) {
+    clearRemindersBtn.addEventListener('click', async () => {
+      const confirmClear = confirm(language.taskConfirmClear || 'Bạn có chắc chắn muốn xoá tất cả công việc đã hoàn thành?');
+      if (confirmClear) {
+        const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
+        const memos = (res[STORAGE_KEYS.MEMOS] || []).filter(m => !(m.type === 'group_reminder' && m.done));
+        await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
+        loadGroupReminders();
+      }
+    });
+  }
+}
+
+/**
+ * Initialize Flatpickr on updates inside rendering panels
+ */
+function initFlatpickrOnList(container, allItems, reloadFn) {
+  container.querySelectorAll('.task-update-reminder').forEach(el => {
     const id = el.dataset.id;
     const task = allItems.find(t => t.id === id);
     const isRepeatDaily = task ? task.repeatDaily : false;
@@ -1349,7 +1103,7 @@ export async function loadTasks() {
           const selectedTime = selectedDates[0].getTime();
           if (selectedTime < Date.now()) {
             showToast(language.pastDateError);
-            loadTasks();
+            reloadFn();
             return;
           }
         }
@@ -1389,34 +1143,335 @@ export async function loadTasks() {
             chrome.alarms.clear(id);
           }
         }
-        loadTasks();
+        reloadFn();
       }
     });
     if (fpInstance) {
       activeListFlatpickrs.push(fpInstance);
     }
   });
+}
 
-  // Delegate clear completed tasks button
-  const clearBtn = document.getElementById('btnClearDoneTasks');
-  if (clearBtn) {
-    clearBtn.addEventListener('click', async () => {
-      const confirmClear = confirm(language.taskConfirmClear);
-      if (confirmClear) {
-        const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
-        const memos = (res[STORAGE_KEYS.MEMOS] || []).filter(m => !((m.type === 'task' || m.type === 'group_reminder') && m.done));
-        await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
-        loadTasks();
+/**
+ * Handle clicks on task items (delete, toggle complete, edit, cancel edit, save edit)
+ */
+async function handleTaskClick(e, containerType) {
+  const reload = () => {
+    if (containerType === 'tasks') {
+      loadTasks();
+    } else {
+      loadGroupReminders();
+    }
+  };
+
+  // Delete item
+  if (e.target.classList.contains('btn-delete-task')) {
+    const id = e.target.dataset.id;
+    const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS, STORAGE_KEYS.SETTINGS]);
+    const settings = res[STORAGE_KEYS.SETTINGS] || {};
+    const quickDelete = settings.quickDelete === true;
+    
+    if (!quickDelete) {
+      if (!confirm(language.confirmDeleteTask || "Are you sure you want to delete this task?")) {
+        return;
       }
-    });
+    }
+    
+    const memos = (res[STORAGE_KEYS.MEMOS] || []).filter(m => m.id !== id);
+    await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
+    chrome.alarms.clear(id);
+    chrome.runtime.sendMessage({ type: 'DISMISS_REMINDER', taskId: id }).catch(() => {});
+    reload();
   }
 
-  // Convert task category selects to custom dropdowns
-  taskList.querySelectorAll('.task-edit-category').forEach(select => {
-    if (typeof window.convertToCustomDropdown === 'function') {
-      window.convertToCustomDropdown(select, '95px', '22px');
+  // Task completion toggle
+  if (e.target.classList.contains('task-checkbox')) {
+    const id = e.target.dataset.id;
+    const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS, STORAGE_KEYS.SETTINGS]);
+    const memos = res[STORAGE_KEYS.MEMOS] || [];
+    const settings = res[STORAGE_KEYS.SETTINGS] || { snoozeMinutes: 5 };
+    const task = memos.find(m => m.id === id);
+    if (task) {
+      task.done = e.target.checked;
+      task.doneAt = e.target.checked ? Date.now() : null;
+      
+      // If task is checked done, check all checklist items done
+      if (task.taskCategory === 'checklist' && task.checklist) {
+        task.checklist.forEach(item => {
+          item.done = e.target.checked;
+        });
+      }
+      
+      await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
+      if (e.target.checked) {
+        chrome.alarms.clear(id);
+        chrome.runtime.sendMessage({ type: 'DISMISS_REMINDER', taskId: id }).catch(() => {});
+      } else if (task.reminder) {
+        // Task marked undone — restore alarm
+        if (task.repeatDaily) {
+          // Daily task: reschedule to next correct daily occurrence, not a snooze interval
+          const reminderDate = new Date(task.reminder);
+          const nextTime = new Date();
+          nextTime.setHours(reminderDate.getHours(), reminderDate.getMinutes(), 0, 0);
+          if (nextTime.getTime() <= Date.now()) {
+            nextTime.setDate(nextTime.getDate() + 1);
+          }
+          chrome.runtime.sendMessage({ type: MESSAGE_TYPES.SET_TASK_ALARM, taskId: id, time: nextTime.getTime() });
+        } else {
+          // One-time task: restore at original reminder time (if still future), else snooze
+          const reminderTime = new Date(task.reminder).getTime();
+          const targetTime = reminderTime > Date.now() ? reminderTime : Date.now() + (settings.snoozeMinutes || 5) * 60 * 1000;
+          chrome.runtime.sendMessage({ type: MESSAGE_TYPES.SET_TASK_ALARM, taskId: id, time: targetTime });
+        }
+      }
+      reload();
     }
-  });
+  }
+
+  // Checklist item toggle
+  if (e.target.classList.contains('task-checklist-item-checkbox')) {
+    const taskId = e.target.dataset.taskId;
+    const itemIdx = parseInt(e.target.dataset.itemIdx);
+    const isChecked = e.target.checked;
+    
+    // Update styling immediately on the DOM to ensure zero jitter/lag
+    const parentLine = e.target.closest('.task-checklist-line');
+    if (parentLine) {
+      const textSpan = parentLine.querySelector('.task-checklist-text');
+      if (textSpan) {
+        textSpan.style.color = isChecked ? 'var(--text-3)' : 'var(--text-1)';
+        textSpan.style.textDecoration = isChecked ? 'line-through' : 'none';
+      }
+    }
+
+    const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS, STORAGE_KEYS.SETTINGS]);
+    const memos = res[STORAGE_KEYS.MEMOS] || [];
+    const settings = res[STORAGE_KEYS.SETTINGS] || { snoozeMinutes: 5 };
+    const task = memos.find(m => m.id === taskId);
+    
+    if (task && task.checklist && task.checklist[itemIdx]) {
+      task.checklist[itemIdx].done = isChecked;
+      
+      // Check if all checklist items are completed
+      const allDone = task.checklist.every(item => item.done === true);
+      const card = document.getElementById('item_' + taskId);
+      
+      if (allDone) {
+        task.done = true;
+        task.doneAt = Date.now();
+        chrome.alarms.clear(taskId);
+        
+        isLocalTaskUpdate = false;
+        await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
+        // Re-render when status changes so task moves to the completed section
+        reload();
+      } else {
+        // If task was previously done but now a checklist item is unchecked
+        let statusChanged = false;
+        if (task.done) {
+          task.done = false;
+          task.doneAt = null;
+          statusChanged = true;
+          const snoozeMins = settings.snoozeMinutes || 5;
+          chrome.runtime.sendMessage({ type: MESSAGE_TYPES.SET_TASK_ALARM, taskId, time: Date.now() + snoozeMins * 60 * 1000 });
+        }
+        
+        isLocalTaskUpdate = true;
+        await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
+        setTimeout(() => { isLocalTaskUpdate = false; }, 100);
+        
+        if (statusChanged) {
+          isLocalTaskUpdate = false;
+          reload();
+        } else {
+          // Just update parent task checkbox and layout status if needed without re-rendering everything
+          if (card) {
+            const parentCheckbox = card.querySelector('.task-checkbox');
+            if (parentCheckbox) parentCheckbox.checked = false;
+            card.classList.remove('memo-done');
+          }
+        }
+      }
+    }
+  }
+
+  // Inline edit trigger
+  const btnEdit = e.target.closest('.btn-edit-task');
+  if (btnEdit) {
+    const id = btnEdit.dataset.id;
+    const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
+    const memos = res[STORAGE_KEYS.MEMOS] || [];
+    const task = memos.find(m => m.id === id);
+    if (task) {
+      const card = document.getElementById('item_' + id);
+      const collapseBtn = card?.querySelector('.collapse-btn');
+      if (collapseBtn) collapseBtn.style.display = 'none';
+
+      const contentEl = card.querySelector('.memo-content');
+      if (contentEl) {
+        const actionsEl = card.querySelector('.memo-actions');
+        if (actionsEl) actionsEl.style.display = 'none';
+        
+        contentEl.innerHTML = `
+          <div class="inline-edit-form" style="margin-top: 4px; display: flex; flex-direction: column; gap: 8px;">
+            <input type="text" class="inline-edit-title" placeholder="Title (optional)" value="${escapeHtml(task.title || '')}" style="width: 100%; height: 28px; font-size: 13px; font-weight: 600; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); outline: none; box-sizing: border-box; font-family: inherit;" autocomplete="off">
+            <textarea class="inline-edit-textarea" rows="10" style="width: 100%; min-height: 180px; padding: 8px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 13px; outline: none; background: #fff; resize: vertical; color: var(--text-1);">${escapeHtml(task.note)}</textarea>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:12px; font-weight:600; color:var(--text-2);">${language.categoryLabel || 'Category:'}</span>
+              <select class="sp-compact-select inline-edit-category" style="max-width:120px; margin:0;">
+                <option value="normal" ${task.taskCategory !== 'checklist' && task.taskCategory !== 'group_reminder' ? 'selected' : ''}>${language.categoryNormal || 'Normal'}</option>
+                <option value="checklist" ${task.taskCategory === 'checklist' ? 'selected' : ''}>${language.categoryChecklist || 'Checklist'}</option>
+                ${task.taskCategory === 'group_reminder' ? `<option value="group_reminder" selected>Group Reminder</option>` : ''}
+              </select>
+              <label style="display:inline-flex; align-items:center; gap:4px; font-size:12px; font-weight:600; color:var(--text-2); margin-left:12px; cursor:pointer;">
+                <input type="checkbox" class="inline-edit-repeat-daily" ${task.repeatDaily ? 'checked' : ''} ${task.taskCategory === 'group_reminder' ? 'disabled' : ''} style="margin:0; width:13px; height:13px; cursor:pointer;">
+                <span>🔄 ${language.repeatDailyBadgeText || 'Daily'}</span>
+              </label>
+            </div>
+            <div style="display: flex; gap: 6px; justify-content: flex-end;">
+              <button class="btn btn-secondary inline-edit-cancel" data-id="${id}" style="padding: 4px 10px; font-size: 11.5px; height: 26px; border-radius: 6px; cursor:pointer;">${language.cancel}</button>
+              <button class="btn btn-primary inline-edit-save" data-id="${id}" style="padding: 4px 10px; font-size: 11.5px; height: 26px; border-radius: 6px; cursor:pointer; color:#fff;">${language.save}</button>
+            </div>
+          </div>
+        `;
+        
+        const selectEl = contentEl.querySelector('.inline-edit-category');
+        if (selectEl && typeof window.convertToCustomDropdown === 'function') {
+          window.convertToCustomDropdown(selectEl, '110px', '22px');
+        }
+
+        const ta = contentEl.querySelector('.inline-edit-textarea');
+        if (ta) {
+          ta.style.boxSizing = 'border-box';
+          ta.style.height = 'auto';
+          ta.style.height = Math.max(180, ta.scrollHeight) + 'px';
+          ta.style.overflowY = 'hidden';
+          ta.addEventListener('input', () => {
+            ta.style.height = 'auto';
+            ta.style.height = Math.max(180, ta.scrollHeight) + 'px';
+          });
+        }
+      }
+    }
+  }
+
+  // Cancel edit
+  if (e.target.classList.contains('inline-edit-cancel')) {
+    reload();
+  }
+
+  // Save edit
+  if (e.target.classList.contains('inline-edit-save')) {
+    const id = e.target.dataset.id;
+    const card = document.getElementById('item_' + id);
+    const titleInput = card.querySelector('.inline-edit-title');
+    const textarea = card.querySelector('.inline-edit-textarea');
+    const newTitle = titleInput ? titleInput.value.trim() : '';
+    if (textarea) {
+      const newText = textarea.value.trim();
+      if (!newText) {
+        if (typeof window.showErrorFeedback === 'function') {
+          window.showErrorFeedback(language.taskEmptyError);
+        } else {
+          console.warn(language.taskEmptyError);
+        }
+        return;
+      }
+      
+      const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
+      const memos = res[STORAGE_KEYS.MEMOS] || [];
+      const taskIndex = memos.findIndex(m => m.id === id);
+      if (taskIndex !== -1) {
+        const task = memos[taskIndex];
+        task.title = newTitle;
+        task.note = newText;
+        task.updatedAt = Date.now();
+        
+        const categorySelect = card.querySelector('.inline-edit-category');
+        if (categorySelect) {
+          task.taskCategory = categorySelect.value;
+          if (task.taskCategory === 'group_reminder') {
+            task.type = 'group_reminder';
+          } else {
+            task.type = 'task';
+          }
+        }
+        
+        const repeatDailyCheckbox = card.querySelector('.inline-edit-repeat-daily');
+        const oldRepeatDaily = task.repeatDaily;
+        if (repeatDailyCheckbox) {
+          task.repeatDaily = repeatDailyCheckbox.checked;
+        }
+
+        if (task.repeatDaily !== oldRepeatDaily) {
+          if (task.repeatDaily) {
+            // Switched to daily: reschedule alarm to next daily occurrence
+            if (task.reminder) {
+              const originalDate = new Date(task.reminder);
+              if (!isNaN(originalDate.getTime())) {
+                const today = new Date();
+                today.setHours(originalDate.getHours(), originalDate.getMinutes(), 0, 0);
+                if (today.getTime() <= Date.now()) {
+                  today.setDate(today.getDate() + 1);
+                }
+                task.reminder = formatDateTime(today);
+                chrome.runtime.sendMessage({
+                  type: MESSAGE_TYPES.SET_TASK_ALARM,
+                  taskId: id,
+                  time: today.getTime()
+                });
+              }
+            }
+          } else {
+            // Switched from daily to one-time: clear daily alarm, reschedule at
+            // original reminder time if still in the future, else clear entirely
+            chrome.alarms.clear(id);
+            if (task.reminder) {
+              const reminderTime = new Date(task.reminder).getTime();
+              if (reminderTime > Date.now()) {
+                chrome.runtime.sendMessage({
+                  type: MESSAGE_TYPES.SET_TASK_ALARM,
+                  taskId: id,
+                  time: reminderTime
+                });
+              }
+            }
+          }
+        }
+        
+        if (task.taskCategory === 'checklist') {
+          const newLines = newText.split('\n').filter(l => l.trim());
+          const oldChecklist = task.checklist || [];
+          
+          task.checklist = newLines.map((lineText, idx) => {
+            const trimmedText = lineText.trim();
+            const cleanText = trimmedText.replace(/^[-*•]\s*/, '').replace(/^\d+\.\s*/, '');
+            const matchedOld = oldChecklist.find(oldItem => oldItem.text === cleanText || oldItem.text === trimmedText);
+            return {
+              id: `${id}_line_${idx}`,
+              text: cleanText,
+              done: matchedOld ? matchedOld.done : false
+            };
+          });
+          
+          // Recalculate done status of the whole task
+          const allDone = task.checklist.every(item => item.done === true);
+          task.done = allDone;
+          if (allDone) {
+            task.doneAt = Date.now();
+            chrome.alarms.clear(id);
+          } else {
+            task.doneAt = null;
+          }
+        } else {
+          task.checklist = [];
+        }
+        
+        await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
+      }
+      reload();
+    }
+  }
 }
 
 /**
@@ -1433,7 +1488,6 @@ function renderTaskCard(task, now) {
       reminderDisplayVal = match[0];
     }
   }
-
 
   const cachedConfig = _state.getConfig();
   const currentTeam = _state.getTeam();
@@ -1458,7 +1512,7 @@ function renderTaskCard(task, now) {
     taskBodyHtml = `
       <div style="font-size:12.5px; line-height:1.45; background:var(--bg-2); border:1px solid var(--border); padding:8px; border-radius:6px; margin-bottom:4px;">
         <div style="display:flex; align-items:center; gap:4px; margin-bottom:4px; font-weight:600; color:var(--accent);">
-          ${language.groupReminderLabel || 'Schedule Message'}
+          📢 ${language.groupReminderLabel || 'Schedule Message'}
         </div>
         <div style="margin-bottom:2px;"><strong>Group:</strong> ${escapeHtml(task.targetChannelName || 'Unknown')}</div>
         ${mentionStr ? `<div style="margin-bottom:4px;"><strong>Tag:</strong> <span style="background:var(--accent-dim); color:var(--accent); padding:1px 4px; border-radius:4px; font-weight:500;">${escapeHtml(mentionStr)}</span></div>` : ''}
@@ -1493,26 +1547,15 @@ function renderTaskCard(task, now) {
           </div>
         </div>
       </div>
-      <div class="task-attributes-row" style="display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:8px; padding-top:6px; border-top:1px dashed var(--border); width:100%;">
-        <select class="sp-compact-select task-edit-category" data-id="${task.id}" style="max-width: 95px; margin: 0; font-size: 11.5px; font-weight: 400; flex-shrink:0;">
-          <option value="normal" ${task.taskCategory !== 'checklist' && task.taskCategory !== 'group_reminder' ? 'selected' : ''}>${language.categoryNormal || 'Normal'}</option>
-          <option value="checklist" ${task.taskCategory === 'checklist' ? 'selected' : ''}>${language.categoryChecklist || 'Checklist'}</option>
-          ${task.taskCategory === 'group_reminder' ? `<option value="group_reminder" selected>Group Reminder</option>` : ''}
-        </select>
-        ${task.repeatDaily ? `
+      ${task.repeatDaily ? `
+        <div class="task-attributes-row" style="display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:8px; padding-top:6px; border-top:1px dashed var(--border); width:100%;">
           <span class="repeat-daily-badge" style="font-size:10px; font-weight:700; color:var(--accent); background:rgba(28,88,217,0.08); padding:1.5px 5px; border-radius:4px; display:inline-flex; align-items:center; gap:2px; flex-shrink:0; white-space:nowrap;" title="${language.taskRemindDailyLabel}">
             🔄 ${language.repeatDailyBadgeText || 'Daily'}
           </span>
-        ` : ''}
-        ${!task.done ? `
-          <div class="task-update-reminder-wrapper ${task.reminder ? 'has-reminder' : ''} ${isOverdue ? 'overdue' : ''}" style="flex-shrink:0;">
-            <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor" class="reminder-clock-icon"><path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/></svg>
-            <input type="text" class="task-update-reminder" data-id="${task.id}" value="${reminderDisplayVal}" placeholder="${task.repeatDaily ? 'hh:mm' : 'yyyy-mm-dd hh:mm'}" title="${language.changeReminderTime}" />
-          </div>
-        ` : ''}
-      </div>
+        </div>
+      ` : ''}
       <div class="memo-footer" style="margin-top:6px; padding-top:6px; border-top:1px solid var(--border);">
-        <div class="memo-meta" style="display:flex; align-items:center; gap:8px;">
+        <div class="memo-meta" style="display:flex; align-items:center; gap:8px; flex:1; min-width:0;">
           <label class="task-done-badge ${task.done ? 'is-done' : ''}" title="${task.done ? language.taskMarkIncomplete : language.taskMarkDone}">
             <div class="memo-checkbox-container footer-checkbox" style="margin: 0; position: relative;">
               <input type="checkbox" class="task-checkbox" data-id="${task.id}" ${task.done ? 'checked' : ''}>
@@ -1522,7 +1565,12 @@ function renderTaskCard(task, now) {
               ${task.done ? (language.taskCompleted || 'Completed') : (language.taskMarkDoneShort || 'Hoàn thành')}
             </span>
           </label>
-          <span class="sp-card-date">${formatRelativeTime(task.createdAt)}</span>
+          ${!task.done ? `
+            <div class="task-update-reminder-wrapper ${task.reminder ? 'has-reminder' : ''} ${isOverdue ? 'overdue' : ''}" style="margin:0; flex-shrink:0; width:110px;">
+              <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor" class="reminder-clock-icon"><path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/></svg>
+              <input type="text" class="task-update-reminder" data-id="${task.id}" value="${reminderDisplayVal}" placeholder="${task.repeatDaily ? 'hh:mm' : 'yyyy-mm-dd hh:mm'}" title="${language.changeReminderTime}" />
+            </div>
+          ` : ''}
         </div>
         <div class="memo-actions">
           ${permalink ? `<a href="${permalink}" class="post-jump-link" data-post-id="${task.postId || ''}" title="${language.memoViewOriginal}">↗</a>` : ''}

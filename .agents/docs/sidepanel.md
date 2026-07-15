@@ -296,12 +296,14 @@ if (!chatops_tour_done) {
 
 ### Data Schema
 
-Tasks lưu trong `chrome.storage.local['chatops_memos']` với `type: 'task'`:
+Tasks và Group Reminders lưu trong `chrome.storage.local['chatops_memos']`:
+- **Tasks**: `type: 'task'`
+- **Group Reminders**: `type: 'group_reminder'`
 
 ```js
 {
   id: 'uuid-v4',
-  type: 'task',
+  type: 'task',                // 'task' | 'group_reminder'
   postId: 'mm_post_id',        // Linked Mattermost post (optional)
   postText: 'message content', // Truncated post text
   title: 'Task title',         // User-defined title (optional)
@@ -328,12 +330,18 @@ Tasks lưu trong `chrome.storage.local['chatops_memos']` với `type: 'task'`:
 #### `loadTasks()`
 ```
 1. Load từ storage
-2. Filter theo currentFilter:
-   - 'pending': !done
-   - 'completed': done
-3. Sort: pending trước (theo reminder), completed sau (theo doneAt desc)
-4. Quét tìm các task bị lỡ (overdue tasks): Nếu phát hiện và chưa hiển thị digest, kích hoạt banner cảnh báo (Warning Toast) "Bạn đã bỏ lỡ {count} nhắc nhở..." với nút "Xem các công việc bị lỡ" để tự động chuyển tab, filter "pending", cuộn tới và highlight task card bị nhỡ đầu tiên.
-5. Render từng task với renderTaskCard(task, now)
+2. Filter các phần tử có type === 'task'
+3. Render danh sách công việc (pending / completed) riêng biệt
+4. Tự động đếm số lượng pending tasks và update taskTabBadge
+```
+
+#### `loadGroupReminders()`
+```
+1. Load từ storage
+2. Filter các phần tử có type === 'group_reminder'
+3. Chia thành 2 nhóm: pending và done
+4. Render giao diện và update reminderTabBadge
+5. Khởi tạo Flatpickr datepicker cho từng thẻ nhắc nhở
 ```
 
 #### `renderTaskCard(task, now)`

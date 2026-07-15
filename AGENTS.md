@@ -450,7 +450,7 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
 
 ## 10. Phiên Bản & Cập Nhật
 
-- **Version**: 3.5.5 (trong `manifest.json` và `package.json`)
+- **Version**: 3.5.6 (trong `manifest.json` và `package.json`)
 - Khi bump version: cập nhật **cả hai** file.
 - Extension dùng **Manifest V3** — không dùng persistent background page, không dùng `chrome.extension.getBackgroundPage()`.
 

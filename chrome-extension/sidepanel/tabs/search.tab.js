@@ -548,6 +548,12 @@ export async function performSpSearch(isLoadMore = false) {
             ${language.clearResults}
           </button>
         </div>
+        <div class="sp-jump-tip-card" style="display:flex; align-items:flex-start; gap:8px; background:rgba(28,88,217,0.05); border:1px solid rgba(28,88,217,0.15); padding:8px 10px; border-radius:6px; margin: 4px 0 10px 0; font-size:11.5px; line-height:1.45; color:var(--text-1); box-sizing:border-box;">
+          <span style="font-size:13px; flex-shrink:0;">💡</span>
+          <div style="flex:1; min-width:0;">
+            <span data-i18n="permalinkJumpTip">${language.permalinkJumpTip}</span>
+          </div>
+        </div>
         <div id="searchPostList">${html}</div>
       `;
       document.getElementById('btnClearSearch')?.addEventListener('click', clearResults);

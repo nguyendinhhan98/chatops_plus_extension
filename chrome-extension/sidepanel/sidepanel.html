@@ -107,6 +107,10 @@
         <span class="tab-icon">🔥</span>
         <span class="tab-label" data-i18n="toolsReactionsSubTab">Reactions</span>
       </button>
+      <button class="tab-btn" data-tab="tools-reminders" data-i18n-title="groupRemindersTabLabel" title="Schedule Message">
+        <span class="tab-icon">📢</span>
+        <span class="tab-label"><span data-i18n="groupRemindersTabLabel">Schedule Message</span> <span id="reminderTabBadge" class="tab-badge"></span></span>
+      </button>
       <!-- Settings tab -->
       <button class="tab-btn" data-tab="settings" data-i18n-title="settingsTabLabel" title="Settings">
         <span class="tab-icon">⚙️</span>
@@ -130,6 +134,17 @@
         </div>
         <div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-end; margin-left: 8px; flex-shrink: 0;">
           <button id="btnClearAllTasks" class="sync-badge-btn" style="gap:4px; color:#d0454c;" data-i18n="clearAllTasks">🗑️ Xóa tất cả</button>
+        </div>
+      </div>
+
+      <!-- Tasks Search Bar -->
+      <div id="tasksSearchContainer" style="padding: 8px var(--app-padding, 16px); background: var(--bg-2); border-bottom: 1px solid var(--border); flex-shrink: 0;">
+        <div style="position: relative; width: 100%;">
+          <input type="text" id="tasksSearchInput" data-i18n-placeholder="searchTasksPlaceholder" placeholder="Tìm kiếm công việc..." style="width: 100%; height: 28px; padding: 4px 8px 4px 28px; font-size: 12px; border: 1px solid var(--border); border-radius: 6px; outline: none; box-sizing: border-box; background: var(--bg-1); color: var(--text-1); transition: border-color 0.2s; font-family: inherit;" autocomplete="off" />
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; left: 8px; top: 8.5px; color: var(--text-3); pointer-events: none; opacity: 0.7;">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
         </div>
       </div>
 
@@ -183,7 +198,6 @@
             <select id="quickTaskCategory" class="custom-select" style="width: 140px; height: 32px; font-size: 12.5px; border-radius: 6px; cursor: pointer; outline: none; box-sizing: border-box; padding: 2px 24px 2px 8px; margin: 0; line-height: 1;">
               <option value="normal" data-i18n="categoryNormal" selected>Normal</option>
               <option value="checklist" data-i18n="categoryChecklist">Checklist</option>
-              <option value="group_reminder" data-i18n="categoryGroupReminder">Group Reminder</option>
             </select>
           </div>
 
@@ -241,14 +255,7 @@
         </div>
       </div>
 
-      <!-- Task Category Filter Tabs -->
-      <div id="taskCatFilterContainer" style="display: flex; align-items: center; padding: 6px var(--app-padding, 16px) 10px var(--app-padding, 16px); background: var(--bg-2); border-bottom: 1px solid var(--border); flex-shrink: 0; box-sizing: border-box; width: 100%;">
-        <div class="memo-sub-tabs" id="taskCatFilterTabs" style="flex: 1; margin: 0 !important; background: var(--bg-1) !important; border: 1px solid var(--border) !important; border-radius: 6px !important; padding: 2px !important; box-shadow: none !important; gap: 4px 2px !important;">
-          <button class="memo-sub-tab active" data-cat-filter="all"><span data-i18n="filterAll">Tất cả</span></button>
-          <button class="memo-sub-tab" data-cat-filter="task"><span data-i18n="filterTasks">Công việc</span></button>
-          <button class="memo-sub-tab" data-cat-filter="group_reminder" style="display: flex; align-items: center; justify-content: center; gap: 4px;"><span data-i18n="filterGroupReminders">Lên lịch gửi tin</span></button>
-        </div>
-      </div>
+
 
       <!-- Task list -->
       <div id="taskList" class="memo-panel active" style="flex:1;overflow-y:auto;padding:12px var(--app-padding, 16px);"></div>
@@ -362,6 +369,7 @@
           <button class="memo-sub-tab active" data-section="search" data-i18n="toolsSearchSubTab">Search</button>
           <button class="memo-sub-tab" data-section="images" data-i18n="toolsImagesSubTab">Images</button>
           <button class="memo-sub-tab" data-section="reactions" data-i18n="toolsReactionsSubTab">Reactions</button>
+          <button class="memo-sub-tab" data-section="reminders" data-i18n="groupRemindersTabLabel">Schedule Message</button>
         </div>
       </div>
 
@@ -582,6 +590,11 @@
               style="text-align:center; padding:10px; color:var(--text-3); font-size:12px; display:none;">Loading more emojis...</div>
           </div>
         </div>
+      </div>
+
+      <!-- Section: Reminders -->
+      <div id="tools-section-reminders" class="tools-tab-panel" style="display:none; flex:1; flex-direction:column; overflow-y:auto; overflow-x:hidden !important; padding:var(--app-padding, 16px); width:100%; box-sizing:border-box;">
+        <div id="groupRemindersList" style="width: 100%;"></div>
       </div>
 
     </div>
@@ -1112,6 +1125,26 @@
                   <div class="menu-tab-sub-options" id="promoteReactionsWrapper">
                     <label class="menu-tab-promote-row">
                       <input type="checkbox" id="settingPromoteReactions" class="premium-checkbox">
+                      <span data-i18n="promoteToMainTab">Promote to Main Tab</span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Group Reminders Card -->
+                <div class="menu-tab-card">
+                  <div class="menu-tab-card-header">
+                    <div class="menu-tab-info">
+                      <span class="menu-tab-icon">📢</span>
+                      <span class="menu-tab-name" data-i18n="groupRemindersTabLabel">Schedule Message</span>
+                    </div>
+                    <label class="premium-switch">
+                      <input type="checkbox" id="settingShowReminders" checked>
+                      <span class="premium-slider"></span>
+                    </label>
+                  </div>
+                  <div class="menu-tab-sub-options" id="promoteRemindersWrapper">
+                    <label class="menu-tab-promote-row">
+                      <input type="checkbox" id="settingPromoteReminders" class="premium-checkbox">
                       <span data-i18n="promoteToMainTab">Promote to Main Tab</span>
                     </label>
                   </div>

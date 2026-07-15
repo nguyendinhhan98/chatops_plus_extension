@@ -7,7 +7,7 @@ import { setup as setupSearch, reset as resetSearch, getSelects as getSearchSele
 import { setup as setupMentions, reset as resetMentions, getSelects as getMentionsSelects, reRender as reRenderMentions } from './tabs/mentions.tab.js';
 
 import { setup as setupMemo, loadMemos, renderCategories } from './tabs/memo.tab.js';
-import { setup as setupTasks, loadTasks } from './tabs/tasks.tab.js';
+import { setup as setupTasks, loadTasks, loadGroupReminders } from './tabs/tasks.tab.js';
 import { setup as setupSettings, getSettings, updateSettings, applyThemeToDOM, applyTabRepositioning, applyTabVisibilityToDOM, renderSidepanelMemes, applyTabOrderToDOM, renderTabOrderList } from './tabs/settings.tab.js';
 
 import { getMyProfile, getMyTeams, getConfig } from '../src/api/index.js';
@@ -81,6 +81,7 @@ async function init() {
 
   setupMemo(state);
   setupTasks(state);
+  loadGroupReminders();
   setupSettings(state);
   setupTabs();
   setupModalListeners();
@@ -345,13 +346,14 @@ async function setupWorkspaceSelector(teams, dropdownContainer) {
  * Switches the active tab in the UI
  */
 function switchTab(id) {
-  const promoteTabs = window.activeSettings?.promoteTabs || { tasks: true, notes: true, search: false, images: false, reactions: false, mentions: true };
+  const promoteTabs = window.activeSettings?.promoteTabs || { tasks: true, notes: true, search: false, images: false, reactions: false, mentions: true, reminders: false };
   const isTasksPromoted = promoteTabs.tasks !== false;
   const isNotesPromoted = promoteTabs.notes !== false;
   const isSearchPromoted = promoteTabs.search === true;
   const isImagesPromoted = promoteTabs.images === true;
   const isReactionsPromoted = promoteTabs.reactions === true;
   const isMentionsPromoted = promoteTabs.mentions !== false;
+  const isRemindersPromoted = promoteTabs.reminders === true;
 
   let mainId = id;
   let subId = null;
@@ -381,6 +383,11 @@ function switchTab(id) {
       mainId = 'tools';
       subId = 'reactions';
     }
+  } else if (id === 'tools-reminders') {
+    if (!isRemindersPromoted) {
+      mainId = 'tools';
+      subId = 'reminders';
+    }
   } else if (id === 'mentions') {
     if (!isMentionsPromoted) {
       mainId = 'tools';
@@ -408,6 +415,7 @@ function switchTab(id) {
     if (mid === 'tools-search') return 'tools-section-search';
     if (mid === 'tools-images') return 'tools-section-images';
     if (mid === 'tools-reactions') return 'tools-section-reactions';
+    if (mid === 'tools-reminders') return 'tools-section-reminders';
     if (mid === 'settings') return 'tab-settings';
     return '';
   };
@@ -714,12 +722,14 @@ function setupStateHandlers() {
     else if (msg.type === MESSAGE_TYPES.MEMO_UPDATED) {
       loadMemos();
       loadTasks();
+      loadGroupReminders();
     } else if (msg.type === 'APP_LANG_CHANGED') {
       applyI18n();
       updateRateLinks();
       renderCategories();
       loadMemos();
       loadTasks();
+      loadGroupReminders();
       renderSidepanelMemes();
       if (typeof reRenderMentions === 'function') {
         reRenderMentions();
@@ -735,7 +745,7 @@ function setupStateHandlers() {
         let tabId = 'settings';
         let sectionId = '';
 
-        if (subtabName.startsWith('reactions-') || subtabName === 'tools-search') {
+        if (subtabName.startsWith('reactions-') || subtabName === 'tools-search' || subtabName === 'tools-reminders') {
           tabId = 'tools';
           if (subtabName === 'reactions-picker') {
             sectionId = 'reactions';
@@ -743,6 +753,8 @@ function setupStateHandlers() {
             sectionId = 'images';
           } else if (subtabName === 'tools-search') {
             sectionId = 'search';
+          } else if (subtabName === 'tools-reminders') {
+            sectionId = 'reminders';
           }
         } else if (subtabName.startsWith('features-') || subtabName === 'categories') {
           tabId = 'settings';

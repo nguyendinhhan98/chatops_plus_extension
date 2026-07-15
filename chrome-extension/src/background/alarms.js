@@ -276,12 +276,13 @@ export async function syncTaskAlarms() {
     }
 
     const now = Date.now();
+    const tasksToFire = [];
 
     for (const task of memos) {
       // Schedule alarms for:
       // - One-time tasks that are NOT done.
       // - Daily tasks (even if currently marked done, because they need to fire tomorrow to reset status).
-      if (task.type === 'task' && (!task.done || task.repeatDaily)) {
+      if ((task.type === 'task' || task.type === 'group_reminder') && (!task.done || task.repeatDaily)) {
         if (!task.reminder) continue;
 
         const reminderTime = new Date(task.reminder).getTime();
@@ -290,7 +291,15 @@ export async function syncTaskAlarms() {
           continue;
         }
 
-        if (task.repeatDaily) {
+        if (task.taskCategory === 'group_reminder' || task.type === 'group_reminder') {
+          if (reminderTime <= now) {
+            tasksToFire.push(task.id);
+            continue;
+          } else {
+            chrome.alarms.create(task.id, { when: reminderTime });
+            console.log('[ChatOps Ext] Startup: Scheduled future group reminder:', task.id, 'at', task.reminder);
+          }
+        } else if (task.repeatDaily) {
           // If the scheduled time is in the past, reschedule to the next valid daily occurrence
           if (reminderTime <= now) {
             // Extract HH:mm
@@ -335,6 +344,13 @@ export async function syncTaskAlarms() {
 
     if (updated) {
       await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
+    }
+
+    if (tasksToFire.length > 0) {
+      for (const taskId of tasksToFire) {
+        console.log('[ChatOps Ext] Firing overdue group reminder immediately on startup:', taskId);
+        await handleTaskAlarm(taskId);
+      }
     }
   } catch (err) {
     console.error('[ChatOps Ext] Error in syncTaskAlarms:', err);

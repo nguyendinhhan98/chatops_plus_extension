@@ -235,7 +235,8 @@ const DEFAULT_SETTINGS = {
     tasks: true, // Always true
     notes: true,
     missed: true,
-    reactions: true
+    reactions: true,
+    reminders: true
   },
   promoteTabs: {
     tasks: true,
@@ -243,7 +244,8 @@ const DEFAULT_SETTINGS = {
     search: true,
     images: false,
     reactions: false,
-    mentions: true
+    mentions: true,
+    reminders: false
   },
   floatingButtons: {
     quickNote: true,
@@ -442,6 +444,9 @@ async function loadAndApplySettings() {
   const settingShowReactionsEl = document.getElementById('settingShowReactions');
   if (settingShowReactionsEl) settingShowReactionsEl.checked = settings.showTabs.reactions !== false;
 
+  const settingShowRemindersEl = document.getElementById('settingShowReminders');
+  if (settingShowRemindersEl) settingShowRemindersEl.checked = settings.showTabs.reminders !== false;
+
   // Apply promote toggles
   const promoteTasksEl = document.getElementById('settingPromoteTasks');
   if (promoteTasksEl) promoteTasksEl.checked = settings.promoteTabs?.tasks !== false;
@@ -460,6 +465,9 @@ async function loadAndApplySettings() {
 
   const promoteReactionsEl = document.getElementById('settingPromoteReactions');
   if (promoteReactionsEl) promoteReactionsEl.checked = settings.promoteTabs?.reactions === true;
+
+  const promoteRemindersEl = document.getElementById('settingPromoteReminders');
+  if (promoteRemindersEl) promoteRemindersEl.checked = settings.promoteTabs?.reminders === true;
 
   // Apply floating buttons checkboxes
   document.getElementById('settingFloatingQuickTask').checked = settings.floatingButtons?.quickTask !== false;
@@ -1001,6 +1009,7 @@ function setupEventListeners() {
   bindTabToggle('settingShowNotes', 'notes');
   bindTabToggle('settingShowMissed', 'missed');
   bindTabToggle('settingShowReactions', 'reactions');
+  bindTabToggle('settingShowReminders', 'reminders');
 
   const bindPromoteToggle = (elementId, key) => {
     const el = document.getElementById(elementId);
@@ -1027,6 +1036,7 @@ function setupEventListeners() {
   bindPromoteToggle('settingPromoteMentions', 'mentions');
   bindPromoteToggle('settingPromoteImages', 'images');
   bindPromoteToggle('settingPromoteReactions', 'reactions');
+  bindPromoteToggle('settingPromoteReminders', 'reminders');
 
   // Floating buttons toggle saving
   const bindFloatingToggle = (checkboxId, key) => {
@@ -2495,6 +2505,7 @@ export function applyTabRepositioning(settings, showTabs) {
   if (promoteTabs.tasks === undefined) promoteTabs.tasks = true;
   if (promoteTabs.notes === undefined) promoteTabs.notes = true;
   if (promoteTabs.mentions === undefined) promoteTabs.mentions = true;
+  if (promoteTabs.reminders === undefined) promoteTabs.reminders = false;
 
   const panelContainer = document.querySelector('.panel-container');
   const tabTools = document.getElementById('tab-tools');
@@ -2510,7 +2521,8 @@ export function applyTabRepositioning(settings, showTabs) {
     { key: 'search', elId: 'tools-section-search', defaultPromoted: false },
     { key: 'images', elId: 'tools-section-images', defaultPromoted: false },
     { key: 'reactions', elId: 'tools-section-reactions', defaultPromoted: false },
-    { key: 'mentions', elId: 'tab-mentions', defaultPromoted: true }
+    { key: 'mentions', elId: 'tab-mentions', defaultPromoted: true },
+    { key: 'reminders', elId: 'tools-section-reminders', defaultPromoted: false }
   ];
 
   const toolsEnabled = true;
@@ -2528,6 +2540,7 @@ export function applyTabRepositioning(settings, showTabs) {
     else if (key === 'images') isTabEnabled = settings.memeEnabled !== false && (promoted || toolsEnabled);
     else if (key === 'reactions') isTabEnabled = showTabs.reactions !== false && (promoted || toolsEnabled);
     else if (key === 'mentions') isTabEnabled = showTabs.missed !== false && (promoted || toolsEnabled);
+    else if (key === 'reminders') isTabEnabled = showTabs.reminders !== false && (promoted || toolsEnabled);
 
     if (promoted) {
       if (el.parentNode !== panelContainer) {
@@ -2544,6 +2557,7 @@ export function applyTabRepositioning(settings, showTabs) {
       else if (key === 'images') tabNavId = 'tools-images';
       else if (key === 'reactions') tabNavId = 'tools-reactions';
       else if (key === 'mentions') tabNavId = 'mentions';
+      else if (key === 'reminders') tabNavId = 'tools-reminders';
 
       if (isTabEnabled && activeTabId === tabNavId) {
         el.style.display = 'flex';
@@ -2573,6 +2587,7 @@ export function applyTabRepositioning(settings, showTabs) {
         else if (key === 'images') tabSubSectionId = 'images';
         else if (key === 'reactions') tabSubSectionId = 'reactions';
         else if (key === 'mentions') tabSubSectionId = 'mentions';
+        else if (key === 'reminders') tabSubSectionId = 'reminders';
 
         if (activeSub === tabSubSectionId) {
           el.style.display = 'flex';
@@ -2605,6 +2620,9 @@ export function applyTabRepositioning(settings, showTabs) {
       }
       if (promoteTabs.mentions === false && (showTabs.missed !== false)) {
         subTabsHtml += `<button class="memo-sub-tab" data-section="mentions" data-i18n="toolsMentionsSubTab">${language.toolsMentionsSubTab || 'Mentions'}</button>`;
+      }
+      if (promoteTabs.reminders === false && (showTabs.reminders !== false)) {
+        subTabsHtml += `<button class="memo-sub-tab" data-section="reminders" data-i18n="groupRemindersTabLabel">${language.groupRemindersTabLabel || 'Schedule Message'}</button>`;
       }
     }
 
@@ -2646,13 +2664,15 @@ export function applyTabVisibilityToDOM(settings) {
     search: true,
     images: false,
     reactions: false,
-    mentions: true
+    mentions: true,
+    reminders: false
   };
   
   // Set default values for promoteTabs if undefined
   if (promoteTabs.tasks === undefined) promoteTabs.tasks = true;
   if (promoteTabs.notes === undefined) promoteTabs.notes = true;
   if (promoteTabs.mentions === undefined) promoteTabs.mentions = true;
+  if (promoteTabs.reminders === undefined) promoteTabs.reminders = false;
 
   const toolsEnabled = true;
 
@@ -2663,7 +2683,8 @@ export function applyTabVisibilityToDOM(settings) {
     { enabled: showTabs.search !== false, wrapperId: 'promoteSearchWrapper' },
     { enabled: showTabs.missed !== false, wrapperId: 'promoteMentionsWrapper' },
     { enabled: memeEnabled !== false, wrapperId: 'promoteImagesWrapper' },
-    { enabled: showTabs.reactions !== false, wrapperId: 'promoteReactionsWrapper' }
+    { enabled: showTabs.reactions !== false, wrapperId: 'promoteReactionsWrapper' },
+    { enabled: showTabs.reminders !== false, wrapperId: 'promoteRemindersWrapper' }
   ];
   wrapperPairs.forEach(({ enabled, wrapperId }) => {
     const wrapper = document.getElementById(wrapperId);
@@ -2683,7 +2704,8 @@ export function applyTabVisibilityToDOM(settings) {
     { key: 'search', checkboxId: 'settingShowSearch', cardEl: document.getElementById('settingShowSearch')?.closest('.menu-tab-card') },
     { key: 'mentions', checkboxId: 'settingShowMissed', cardEl: document.getElementById('settingShowMissed')?.closest('.menu-tab-card') },
     { key: 'images', checkboxId: 'settingMemeEnabled', cardEl: document.getElementById('settingMemeEnabled')?.closest('.menu-tab-card') },
-    { key: 'reactions', checkboxId: 'settingShowReactions', cardEl: document.getElementById('settingShowReactions')?.closest('.menu-tab-card') }
+    { key: 'reactions', checkboxId: 'settingShowReactions', cardEl: document.getElementById('settingShowReactions')?.closest('.menu-tab-card') },
+    { key: 'reminders', checkboxId: 'settingShowReminders', cardEl: document.getElementById('settingShowReminders')?.closest('.menu-tab-card') }
   ];
 
   dimPairs.forEach(({ key, checkboxId, cardEl }) => {
@@ -2695,6 +2717,7 @@ export function applyTabVisibilityToDOM(settings) {
                      : key === 'mentions' ? promoteTabs.mentions !== false
                      : key === 'images' ? promoteTabs.images === true
                      : key === 'reactions' ? promoteTabs.reactions === true
+                     : key === 'reminders' ? promoteTabs.reminders === true
                      : promoteTabs[key] === true;
                      
     if (!isPromoted && !toolsEnabled) {
@@ -2721,7 +2744,8 @@ export function applyTabVisibilityToDOM(settings) {
     (!promoteTabs.search && (showTabs.search !== false)) ||
     (!promoteTabs.images && (memeEnabled !== false)) ||
     (!promoteTabs.reactions && (showTabs.reactions !== false)) ||
-    (promoteTabs.mentions === false && (showTabs.missed !== false))
+    (promoteTabs.mentions === false && (showTabs.missed !== false)) ||
+    (!promoteTabs.reminders && (showTabs.reminders !== false))
   );
 
   // Set display on main navigation tab buttons
@@ -2746,6 +2770,9 @@ export function applyTabVisibilityToDOM(settings) {
   const toolsReactionsBtn = document.querySelector('.tab-btn[data-tab="tools-reactions"]');
   if (toolsReactionsBtn) toolsReactionsBtn.style.display = (showTabs.reactions !== false && promoteTabs.reactions === true) ? 'flex' : 'none';
 
+  const toolsRemindersBtn = document.querySelector('.tab-btn[data-tab="tools-reminders"]');
+  if (toolsRemindersBtn) toolsRemindersBtn.style.display = (showTabs.reminders !== false && promoteTabs.reminders === true) ? 'flex' : 'none';
+
   // Settings is visible in navigation
   const settingsBtn = document.querySelector('.tab-btn[data-tab="settings"]');
   if (settingsBtn) settingsBtn.style.display = 'flex';
@@ -2766,6 +2793,7 @@ export function applyTabVisibilityToDOM(settings) {
     else if (activeTab === 'tools-search') isCurrentTabVisible = (showTabs.search !== false && promoteTabs.search === true);
     else if (activeTab === 'tools-images') isCurrentTabVisible = (memeEnabled !== false && promoteTabs.images === true);
     else if (activeTab === 'tools-reactions') isCurrentTabVisible = (showTabs.reactions !== false && promoteTabs.reactions === true);
+    else if (activeTab === 'tools-reminders') isCurrentTabVisible = (showTabs.reminders !== false && promoteTabs.reminders === true);
 
     if (!isCurrentTabVisible) {
       const fallbackBtn = document.querySelector(`.tab-btn[data-tab="${firstVisibleTabId}"]`);
@@ -3076,7 +3104,7 @@ export async function renderTabOrderList() {
   if (!container) return;
 
   const settings = await getSettings();
-  const defaultOrder = ['tasks', 'memo', 'mentions', 'tools-search', 'tools-images', 'tools-reactions', 'tools'];
+  const defaultOrder = ['tasks', 'memo', 'mentions', 'tools-search', 'tools-images', 'tools-reactions', 'tools-reminders', 'tools'];
   let order = settings.tabOrder || [...defaultOrder];
   const missingKeys = defaultOrder.filter(key => !order.includes(key));
   if (missingKeys.length > 0) {
@@ -3091,11 +3119,13 @@ export async function renderTabOrderList() {
       search: true,
       images: false,
       reactions: false,
-      mentions: true
+      mentions: true,
+      reminders: false
     };
     if (promoteTabs.tasks === undefined) promoteTabs.tasks = true;
     if (promoteTabs.notes === undefined) promoteTabs.notes = true;
     if (promoteTabs.mentions === undefined) promoteTabs.mentions = true;
+    if (promoteTabs.reminders === undefined) promoteTabs.reminders = false;
 
     const toolsVisible = (
       (promoteTabs.tasks === false && (settings.showTabs.tasks !== false)) ||
@@ -3103,7 +3133,8 @@ export async function renderTabOrderList() {
       (!promoteTabs.search && (settings.showTabs.search !== false)) ||
       (!promoteTabs.images && (settings.memeEnabled !== false)) ||
       (!promoteTabs.reactions && (settings.showTabs.reactions !== false)) ||
-      (promoteTabs.mentions === false && (settings.showTabs.missed !== false))
+      (promoteTabs.mentions === false && (settings.showTabs.missed !== false)) ||
+      (!promoteTabs.reminders && (settings.showTabs.reminders !== false))
     );
 
     if (id === 'settings') return false; // settings is in the header, not nav
@@ -3114,6 +3145,7 @@ export async function renderTabOrderList() {
     if (id === 'tools-search') return (settings.showTabs.search !== false) && (promoteTabs.search === true);
     if (id === 'tools-images') return (settings.memeEnabled !== false) && (promoteTabs.images === true);
     if (id === 'tools-reactions') return (settings.showTabs.reactions !== false) && (promoteTabs.reactions === true);
+    if (id === 'tools-reminders') return (settings.showTabs.reminders !== false) && (promoteTabs.reminders === true);
     return false;
   };
 
@@ -3126,6 +3158,7 @@ export async function renderTabOrderList() {
     'tools-search': { icon: '🔍', labelKey: 'toolsSearchSubTab', fallback: 'Search' },
     'tools-images': { icon: '🖼️', labelKey: 'toolsImagesSubTab', fallback: 'Images' },
     'tools-reactions': { icon: '🔥', labelKey: 'toolsReactionsSubTab', fallback: 'Reactions' },
+    'tools-reminders': { icon: '📢', labelKey: 'groupRemindersTabLabel', fallback: 'Schedule Message' },
     tools: { icon: '⚡', labelKey: 'toolsTabLabel', fallback: 'Other Tools' },
     settings: { icon: '⚙️', labelKey: 'settingsTabLabel', fallback: 'Settings' }
   };

@@ -5053,8 +5053,21 @@ function showToast(msg) {
       title: titleText || '',
       note: noteText || postText, 
       category: mode === 'note' ? category : 'General',
-      taskCategory: mode === 'task' ? taskCat : undefined,
-      checklist: (mode === 'task' && taskCat === 'checklist') ? [{ text: noteText || postText, done: false }] : [],
+      taskCategory: mode === 'task' ? taskCat : (mode === 'group_reminder' ? 'group_reminder' : undefined),
+      checklist: (mode === 'task' && taskCat === 'checklist')
+        ? (noteText || postText || '')
+            .split('\n')
+            .map(l => l.trim())
+            .filter(l => l.length > 0)
+            .map((lineText, idx) => {
+              const cleanText = lineText.replace(/^[-*•]\s*/, '').replace(/^\d+\.\s*/, '');
+              return {
+                id: `${id}_line_${idx}`,
+                text: cleanText,
+                done: false
+              };
+            })
+        : [],
       targetChannelId: mode === 'group_reminder' ? (popover.dataset.targetChannelId || '') : null,
       targetChannelName: mode === 'group_reminder' ? (popover.dataset.targetChannelName || '') : null,
       createdAt: Date.now(), 
