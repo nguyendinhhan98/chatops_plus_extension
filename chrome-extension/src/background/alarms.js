@@ -257,11 +257,19 @@ export async function handleTaskAlarm(taskId, alarmScheduledTime) {
   }
 }
 
+// Guard to prevent concurrent syncTaskAlarms calls (e.g. initialize() called twice on onInstalled + module load)
+let _syncInProgress = false;
+
 /**
  * Synchronizes and registers Chrome alarms for all active (pending) tasks.
  * Reschedules past daily tasks to their next correct occurrence.
  */
 export async function syncTaskAlarms() {
+  if (_syncInProgress) {
+    console.log('[ChatOps Ext] syncTaskAlarms already running — skipping duplicate call');
+    return;
+  }
+  _syncInProgress = true;
   try {
     const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
     const memos = res[STORAGE_KEYS.MEMOS] || [];
@@ -293,7 +301,27 @@ export async function syncTaskAlarms() {
 
         if (task.taskCategory === 'group_reminder' || task.type === 'group_reminder') {
           if (reminderTime <= now) {
-            tasksToFire.push(task.id);
+
+            if (task.repeatDaily) {
+              // Daily reminders: fire once today if not already sent, then reschedule
+              const todayStr = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+              if (task.lastFiredDate === todayStr) {
+                // Already sent today — just reschedule without firing again
+                console.log('[ChatOps Ext] Startup: Daily group reminder already sent today — rescheduling:', task.id);
+                await rescheduleToNextDailyOccurrence(task, memos);
+              } else {
+                // Not sent yet today — fire once, mark lastFiredDate, then reschedule
+                console.log('[ChatOps Ext] Startup: Daily group reminder missed — firing once then rescheduling:', task.id);
+                tasksToFire.push(task.id);
+                task.lastFiredDate = todayStr;
+              }
+              updated = true;
+            } else {
+              // One-time reminder: always fire even if overdue — message must be sent
+              // (sending late is better than silently dropping it)
+              console.log('[ChatOps Ext] Startup: Past one-time group reminder — firing now (overdue by', Math.round((now - reminderTime) / 60000), 'min):', task.id);
+              tasksToFire.push(task.id);
+            }
             continue;
           } else {
             chrome.alarms.create(task.id, { when: reminderTime });
@@ -349,10 +377,13 @@ export async function syncTaskAlarms() {
     if (tasksToFire.length > 0) {
       for (const taskId of tasksToFire) {
         console.log('[ChatOps Ext] Firing overdue group reminder immediately on startup:', taskId);
-        await handleTaskAlarm(taskId);
+        // Pass Date.now() as scheduledTime so stale guard in handleTaskAlarm can work correctly
+        await handleTaskAlarm(taskId, Date.now());
       }
     }
   } catch (err) {
     console.error('[ChatOps Ext] Error in syncTaskAlarms:', err);
+  } finally {
+    _syncInProgress = false;
   }
 }

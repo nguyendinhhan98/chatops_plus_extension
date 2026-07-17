@@ -1066,6 +1066,21 @@ export async function loadGroupReminders() {
 
   container.innerHTML = html;
 
+  // Only show collapse button/bar if the text actually overflows (same as loadTasks)
+  container.querySelectorAll('.memo-item').forEach(card => {
+    const textEl = card.querySelector('.memo-note-text');
+    const collapseBtn = card.querySelector('.collapse-btn');
+    if (textEl && collapseBtn) {
+      const isOverflowing = textEl.scrollHeight > textEl.clientHeight + 1;
+      if (!isOverflowing) {
+        collapseBtn.style.display = 'none';
+        // Also hide bottom collapse bar if visible
+        const bottomBar = card.querySelector('.collapse-bottom-bar');
+        if (bottomBar) bottomBar.style.display = 'none';
+      }
+    }
+  });
+
   // Initialize Flatpickr on reminders list
   initFlatpickrOnList(container, allItems, loadGroupReminders);
 
@@ -1531,7 +1546,7 @@ function renderTaskCard(task, now) {
             ? `<div class="memo-item-title" style="font-weight:700; font-size:13.5px; color:var(--text-1); letter-spacing:-0.1px; margin:0;">${escapeHtml(task.title)}</div>`
             : task.type === 'group_reminder'
               ? `<div class="memo-item-title" style="font-weight:700; font-size:13.5px; color:#d97706; letter-spacing:-0.1px; margin:0;">${language.groupReminderLabel || 'Lên lịch gửi tin'}</div>`
-              : `<div class="memo-item-title" style="font-weight:700; font-size:13.5px; color:var(--text-3); font-style:italic; letter-spacing:-0.1px; margin:0;">${language.confirmDeleteTask.includes('chắc') ? 'Công việc' : 'Task'}</div>`
+              : `<div class="memo-item-title" style="font-weight:700; font-size:13.5px; color:var(--text-3); font-style:italic; letter-spacing:-0.1px; margin:0;">${language.taskDefaultTitle || 'Task'}</div>`
           }
         </div>
         <button class="collapse-btn" data-id="${task.id}" style="margin:0; flex-shrink:0;" title="${language.expandCollapseBtn}">▶</button>
