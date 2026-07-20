@@ -7,7 +7,8 @@ import { setup as setupSearch, reset as resetSearch, getSelects as getSearchSele
 import { setup as setupMentions, reset as resetMentions, getSelects as getMentionsSelects, reRender as reRenderMentions } from './tabs/mentions.tab.js';
 
 import { setup as setupMemo, loadMemos, renderCategories } from './tabs/memo.tab.js';
-import { setup as setupTasks, loadTasks, loadGroupReminders } from './tabs/tasks.tab.js';
+import { setup as setupTasks, loadTasks } from './tabs/tasks.tab.js';
+import { setup as setupReminders, loadGroupReminders } from './tabs/reminders.tab.js';
 import { setup as setupSettings, getSettings, updateSettings, applyThemeToDOM, applyTabRepositioning, applyTabVisibilityToDOM, renderSidepanelMemes, applyTabOrderToDOM, renderTabOrderList } from './tabs/settings.tab.js';
 
 import { getMyProfile, getMyTeams, getConfig } from '../src/api/index.js';
@@ -81,6 +82,7 @@ async function init() {
 
   setupMemo(state);
   setupTasks(state);
+  setupReminders(state);
   loadGroupReminders();
   setupSettings(state);
   setupTabs();

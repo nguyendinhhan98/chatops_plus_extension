@@ -51,6 +51,7 @@ chatops_mcp/
     │   ├── polyfill.js            # Browser polyfills
     │   └── tabs/
     │       ├── tasks.tab.js       # Tab Tasks (~1186 dòng)
+    │       ├── reminders.tab.js   # Tab Group Reminders (~450 dòng)
     │       ├── memo.tab.js        # Tab Notes/Memos (~800 dòng)
     │       ├── mentions.tab.js    # Tab Mentions (~881 dòng)
     │       ├── search.tab.js      # Tab Search (~585 dòng)
@@ -450,7 +451,7 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
 
 ## 10. Phiên Bản & Cập Nhật
 
-- **Version**: 3.5.7 (trong `manifest.json` và `package.json`)
+- **Version**: 3.5.8 (trong `manifest.json` và `package.json`)
 - Khi bump version: cập nhật **cả hai** file.
 - Extension dùng **Manifest V3** — không dùng persistent background page, không dùng `chrome.extension.getBackgroundPage()`.
 

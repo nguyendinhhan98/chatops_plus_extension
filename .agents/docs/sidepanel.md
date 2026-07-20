@@ -16,12 +16,13 @@ sidepanel.js           ← Orchestrator / Router
 ├── autocomplete.js    ← Typeahead component
 ├── multiselect.js     ← Multi-select component
 ├── tour.js            ← Onboarding flow
-└── tabs/
-    ├── tasks.tab.js   ← Tab công việc
-    ├── memo.tab.js    ← Tab ghi chú
-    ├── mentions.tab.js← Tab mentions
-    ├── search.tab.js  ← Tab tìm kiếm
-    └── settings.tab.js← Tab cài đặt (bao gồm tệp tin & ảnh trong kênh)
+├── tabs/
+│   ├── tasks.tab.js   ← Tab công việc
+│   ├── reminders.tab.js← Tab lên lịch gửi tin (group reminders)
+│   ├── memo.tab.js    ← Tab ghi chú
+│   ├── mentions.tab.js← Tab mentions
+│   ├── search.tab.js  ← Tab tìm kiếm
+│   └── settings.tab.js← Tab cài đặt (bao gồm tệp tin & ảnh trong kênh)
 ```
 
 ---
@@ -335,13 +336,25 @@ Tasks và Group Reminders lưu trong `chrome.storage.local['chatops_memos']`:
 4. Tự động đếm số lượng pending tasks và update taskTabBadge
 ```
 
+---
+
+## 8.1. `tabs/reminders.tab.js`
+
+Quản lý danh sách **Lên lịch gửi tin** (Group Reminders). Tách riêng thành module độc lập để giữ kiến trúc decoupled và dễ bảo trì.
+
+### Data Schema
+- Group Reminders lưu trong `chrome.storage.local['chatops_memos']` với `type: 'group_reminder'`
+
+### Hàm Chính
+
 #### `loadGroupReminders()`
 ```
 1. Load từ storage
 2. Filter các phần tử có type === 'group_reminder'
-3. Chia thành 2 nhóm: pending và done
-4. Render giao diện và update reminderTabBadge
+3. Filter theo sub-tabs (pending / completed) & keyword tìm kiếm
+4. Update reminderTabBadge với số lượng pending reminders
 5. Khởi tạo Flatpickr datepicker cho từng thẻ nhắc nhở
+6. Xử lý xóa tất cả (Clear All completed reminders)
 ```
 
 #### `renderTaskCard(task, now)`

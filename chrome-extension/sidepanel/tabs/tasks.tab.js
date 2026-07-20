@@ -792,7 +792,6 @@ export function setup(state) {
     }
     
     loadTasks();
-    if (typeof loadGroupReminders === 'function') loadGroupReminders();
 
     if (window.ModalManager) {
       window.ModalManager.close();
@@ -884,19 +883,9 @@ export function setup(state) {
     await handleTaskClick(e, 'tasks');
   });
 
-  // Event delegation for group reminders list click
-  document.getElementById('groupRemindersList')?.addEventListener('click', async (e) => {
-    await handleTaskClick(e, 'reminders');
-  });
-
   // Reload when tab is clicked
   document.querySelectorAll('.tab-btn').forEach(btn => {
     if (btn.dataset.tab === TABS.TASKS) btn.addEventListener('click', loadTasks);
-    if (btn.dataset.tab === 'tools-reminders' || btn.dataset.tab === 'tools') {
-      btn.addEventListener('click', () => {
-        if (typeof loadGroupReminders === 'function') loadGroupReminders();
-      });
-    }
   });
 
   // Listen to storage changes reactively to reload tasks list
@@ -904,7 +893,6 @@ export function setup(state) {
     if (areaName === 'local' && changes[STORAGE_KEYS.MEMOS]) {
       if (isLocalTaskUpdate) return;
       loadTasks();
-      if (typeof loadGroupReminders === 'function') loadGroupReminders();
     }
   });
 
@@ -1014,91 +1002,6 @@ export async function loadTasks() {
 /**
  * Loads and renders group reminders in the dedicated Tools panel
  */
-export async function loadGroupReminders() {
-  const container = document.getElementById('groupRemindersList');
-  if (!container) return;
-
-  // Clean up flatpickr inside groupRemindersList to prevent leaks
-  container.querySelectorAll('.flatpickr-input').forEach(el => {
-    if (el._flatpickr) {
-      try {
-        el._flatpickr.destroy();
-      } catch (err) {
-        console.error('Error destroying flatpickr inside groupRemindersList:', err);
-      }
-    }
-  });
-
-  const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
-  const allItems = res[STORAGE_KEYS.MEMOS] || [];
-  const groupReminders = allItems.filter(m => m.type === 'group_reminder' || m.taskCategory === 'group_reminder');
-
-  const pendingReminders = groupReminders.filter(t => !t.done);
-  const doneReminders = groupReminders.filter(t => t.done);
-
-  // Update reminders badge
-  const reminderBadge = document.getElementById('reminderTabBadge');
-  if (reminderBadge) reminderBadge.textContent = pendingReminders.length > 0 ? pendingReminders.length : '';
-
-  const now = Date.now();
-  let html = '';
-
-  function sectionHeader(label, count, color) {
-    const c = color || '#d97706';
-    const bg = 'rgba(245,158,11,0.07)';
-    const border = color || '#d97706';
-    return `<div style="font-size:11px;font-weight:700;text-transform:uppercase;color:${c};border-left:3px solid ${border};padding:4px 8px;margin:12px 0 8px 0;background:${bg};border-radius:0 4px 4px 0;letter-spacing:.5px;display:flex;align-items:center;gap:6px;">${label}<span style="font-size:11px;font-weight:600;background:rgba(255,255,255,0.6);padding:1px 7px;border-radius:10px;border:1px solid ${border};">${count}</span></div>`;
-  }
-
-  if (pendingReminders.length === 0 && doneReminders.length === 0) {
-    html = `<div class="empty-state">${language.taskEmpty || 'Không có nhắc nhở nào'}</div>`;
-  } else {
-    if (pendingReminders.length > 0) {
-      html += sectionHeader(language.groupRemindersTabLabel || 'Lên lịch gửi tin', pendingReminders.length);
-      html += pendingReminders.map(t => renderTaskCard(t, now)).join('');
-    }
-    if (doneReminders.length > 0) {
-      html += `<div style="text-align:right;margin-bottom:8px;"><button class="memo-clear-done-btn" id="btnClearDoneReminders">${language.taskClearAll || 'Xoá tất cả'}</button></div>`;
-      html += sectionHeader((language.groupRemindersTabLabel || 'Lên lịch gửi tin') + ` (${language.done || 'Đã xong'})`, doneReminders.length, '#64748b');
-      html += doneReminders.map(t => renderTaskCard(t, now)).join('');
-    }
-  }
-
-  container.innerHTML = html;
-
-  // Only show collapse button/bar if the text actually overflows (same as loadTasks)
-  container.querySelectorAll('.memo-item').forEach(card => {
-    const textEl = card.querySelector('.memo-note-text');
-    const collapseBtn = card.querySelector('.collapse-btn');
-    if (textEl && collapseBtn) {
-      const isOverflowing = textEl.scrollHeight > textEl.clientHeight + 1;
-      if (!isOverflowing) {
-        collapseBtn.style.display = 'none';
-        // Also hide bottom collapse bar if visible
-        const bottomBar = card.querySelector('.collapse-bottom-bar');
-        if (bottomBar) bottomBar.style.display = 'none';
-      }
-    }
-  });
-
-  // Initialize Flatpickr on reminders list
-  initFlatpickrOnList(container, allItems, loadGroupReminders);
-
-  // Delegate clear completed reminders button
-  const clearRemindersBtn = document.getElementById('btnClearDoneReminders');
-  if (clearRemindersBtn) {
-    clearRemindersBtn.addEventListener('click', async () => {
-      const confirmClear = confirm(language.taskConfirmClear || 'Bạn có chắc chắn muốn xoá tất cả công việc đã hoàn thành?');
-      if (confirmClear) {
-        const res = await chrome.storage.local.get([STORAGE_KEYS.MEMOS]);
-        const memos = (res[STORAGE_KEYS.MEMOS] || []).filter(m => !(m.type === 'group_reminder' && m.done));
-        await chrome.storage.local.set({ [STORAGE_KEYS.MEMOS]: memos });
-        loadGroupReminders();
-      }
-    });
-  }
-}
-
 /**
  * Initialize Flatpickr on updates inside rendering panels
  */
@@ -1170,13 +1073,9 @@ function initFlatpickrOnList(container, allItems, reloadFn) {
 /**
  * Handle clicks on task items (delete, toggle complete, edit, cancel edit, save edit)
  */
-async function handleTaskClick(e, containerType) {
+async function handleTaskClick(e) {
   const reload = () => {
-    if (containerType === 'tasks') {
-      loadTasks();
-    } else {
-      loadGroupReminders();
-    }
+    loadTasks();
   };
 
   // Delete item
@@ -1518,22 +1417,6 @@ function renderTaskCard(task, now) {
     taskBodyHtml = task.checklist.map((item, idx) => {
       return `<div class="task-checklist-line" style="display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;font-size:13px;white-space:normal;"><label class="memo-checkbox-container footer-checkbox" style="margin:0;position:relative;top:2px;" title="${language.taskMarkDone}"><input type="checkbox" class="task-checklist-item-checkbox" data-task-id="${task.id}" data-item-idx="${idx}" ${item.done ? 'checked' : ''}><span class="memo-checkmark-custom"></span></label><span class="task-checklist-text" style="flex:1;min-width:0;color:${item.done ? 'var(--text-3)' : 'var(--text-1)'};text-decoration:${item.done ? 'line-through' : 'none'};transition:all 0.2s;white-space:normal !important;">${formatRichText(item.text)}</span></div>`;
     }).join('');
-  } else if (task.taskCategory === 'group_reminder') {
-    let mentionStr = '';
-    if (task.mentionTarget === 'all') mentionStr = '@all';
-    else if (task.mentionTarget === 'here') mentionStr = '@here';
-    else if (task.mentionTarget === 'users') mentionStr = task.mentionUsers || '';
-    
-    taskBodyHtml = `
-      <div style="font-size:12.5px; line-height:1.45; background:var(--bg-2); border:1px solid var(--border); padding:8px; border-radius:6px; margin-bottom:4px;">
-        <div style="display:flex; align-items:center; gap:4px; margin-bottom:4px; font-weight:600; color:var(--accent);">
-          📢 ${language.groupReminderLabel || 'Schedule Message'}
-        </div>
-        <div style="margin-bottom:2px;"><strong>Group:</strong> ${escapeHtml(task.targetChannelName || 'Unknown')}</div>
-        ${mentionStr ? `<div style="margin-bottom:4px;"><strong>Tag:</strong> <span style="background:var(--accent-dim); color:var(--accent); padding:1px 4px; border-radius:4px; font-weight:500;">${escapeHtml(mentionStr)}</span></div>` : ''}
-        <div style="border-top:1px dashed var(--border); padding-top:4px; margin-top:4px; color:var(--text-1); white-space:pre-wrap;">${escapeHtml(task.note)}</div>
-      </div>
-    `;
   } else {
     taskBodyHtml = formatRichText(task.note || language.taskNoContent);
   }
